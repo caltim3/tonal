@@ -624,7 +624,7 @@
         <button onclick="addMeasure()" aria-label="Add measure">Add Measure</button>
         <button onclick="removeMeasure()" aria-label="Remove measure">Remove Measure</button>
         <div class="checkbox-wrapper">
-            <button id="chordsEnabled" class="toggle-button active">Chords Enabled</button>
+            <<button id="chordsEnabled" class="toggle-button active">Chords Enabled</button>
         </div>
         <div class="volume-control">
             <label for="chord-volume">Chord Volume:</label>
@@ -668,14 +668,18 @@ function debounce(func, wait) {
 }
 
 // Musical Constants
-const NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-        
+const NOTES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+
 const ENHARMONIC_MAP = {
     'C#': 'Db', 'Db': 'Db',
     'D#': 'Eb', 'Eb': 'Eb',
     'F#': 'Gb', 'Gb': 'Gb',
     'G#': 'Ab', 'Ab': 'Ab',
     'A#': 'Bb', 'Bb': 'Bb'
+};
+        
+const SAMPLE_NOTE_MAP = {
+    'Gb': 'Fs', 'Eb': 'Ds', 'F#': 'Fs', 'D#': 'Ds'
 };
 
 const SAMPLED_NOTES = ['A', 'C', 'Ds', 'Fs'];
@@ -1094,20 +1098,11 @@ function getNoteFromScaleDegree(degree, key, scale) {
 // ------------------------------------------------------------------
         
 function standardizeNoteName(note) {
-  if (!note) return 'C';
-  const match = note.match(/^([A-G])([b#])?(\d)?$/);
-  if (!match) return note.toUpperCase();
-  let [, letter, accidental, octave] = match;
-  letter = letter.toUpperCase();
-  const CHROMATIC = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
-  if (accidental === 'b') {
-    const index = chromatic.indexOf(letter);
-    return chromatic[(index - 1 + 12) % 12];
-  } else if (accidental === '#') {
-    const index = chromatic.indexOf(letter);
-    return chromatic[(index + 1) % 12];
-  }
-  return letter;
+    if (!note) return 'C';
+    const isMinor = note.trim().endsWith('m') || note.trim().endsWith('min');
+    const baseNote = note.trim().replace(/m$|min$/, '');
+    const standardized = ENHARMONIC_MAP[baseNote] || baseNote;
+    return isMinor ? standardized + 'm' : standardized;
 }
 
        
@@ -1179,43 +1174,15 @@ function getNoteAtFret(startNote, fretNumber) {
     const noteIndex = (startIndex + fretNumber) % 12;
     return chromaticScale[noteIndex];
 }
-function getPitchShiftedNote(note, targetOctave = 3) {
-  const cleanNote = standardizeNoteName(note).replace('m', '');
-  const mappedNote = ENHARMONIC_MAP[cleanNote] || cleanNote;
-  const targetIndex = NOTES.indexOf(mappedNote);
-  if (targetIndex === -1) {
-    console.warn(`Note ${note} not found in NOTES.`);
-    return { sampleKey: 'C3v12', semitoneDiff: 0 };
-  }
-
-  let bestMatch = null;
-  let minDistance = Infinity;
-
-  for (let sampleNote of SAMPLED_NOTES) {
-    const sampleIndex = NOTES.indexOf(sampleNote); // Use sampleNote directly
-    if (sampleIndex === -1) continue;
-    for (let octave of PIANO_CONFIG.octaves[sampleNote]) {
-      let semitoneDiff = targetIndex - sampleIndex;
-      const octaveDiff = targetOctave - octave;
-      semitoneDiff += octaveDiff * 12;
-      const distance = Math.abs(semitoneDiff);
-      if (distance < minDistance) {
-        minDistance = distance;
-        bestMatch = { sampleKey: `${sampleNote}${octave}v12`, semitoneDiff };
-      }
-    }
-  }
-
-  if (!bestMatch) {
-    console.warn(`No valid match found for ${note}, fallback to C3`);
-    return { sampleKey: 'C3v12', semitoneDiff: 0 };
-  }
-
-  // Log for debugging
-  console.log(`[getPitchShiftedNote] ${note}${targetOctave} → ${bestMatch.sampleKey}, semitoneDiff: ${bestMatch.semitoneDiff}`);
-  return bestMatch;
+function getPitchShiftedNote(note, octave) {
+    const standardNote = standardizeNoteName(note);
+    const nearest = findNearestSampledNote(standardNote, octave);
+    const playbackRate = Math.pow(2, nearest.semitoneDiff / 12);
+    return {
+        sampleKey: nearest.sampleKey,
+        playbackRate: playbackRate
+    };
 }
-
 
 function isMinorKeyName(key) {
     return key && (key.endsWith('m') || key.endsWith('min'));
@@ -1596,93 +1563,78 @@ function playNote(noteName, volume = 1.0, duration = 1000) {
 }
 
 
-async function playChord(root, quality, startTime = AudioContextManager.context.currentTime, duration = 2, isContinuation = false) {
-  await ensureAudioInitialized();
-  if (!AudioContextManager.samplesLoaded) {
-    console.warn('Piano samples not loaded yet');
-    return;
-  }
-  if (!UI.elements.chordsEnabled.classList.contains('active')) return;
-  const chordNotes = getChordNotes(root, quality);
-  const chordVolume = parseFloat(UI.elements.chordVolume.value);
-  if (chordVolume <= 0) return;
-  const gainNode = AudioContextManager.context.createGain();
-  gainNode.gain.value = chordVolume;
-  if (!isContinuation && AudioContextManager.currentChordGain) {
-    AudioContextManager.currentChordGain.gain.setValueAtTime(AudioContextManager.currentChordGain.gain.value, startTime);
-    AudioContextManager.currentChordGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.05);
-  }
-  AudioContextManager.currentChordGain = gainNode;
-  for (let i = 0; i < chordNotes.length; i++) {
-    const note = chordNotes[i];
-    const octave = i === 0 ? 3 : 4;
-    const { sampleKey, semitoneDiff } = getPitchShiftedNote(note, octave);
-    const playbackRate = Math.pow(2, semitoneDiff / 12);
-    const source = AudioContextManager.context.createBufferSource();
-    source.buffer = AudioContextManager.pianoSampleBuffers[sampleKey];
-    source.playbackRate.value = playbackRate;
-    source.connect(gainNode);
-    gainNode.connect(AudioContextManager.context.destination);
-    const reverbGain = AudioContextManager.context.createGain();
-    reverbGain.gain.value = 0.2;
-    source.connect(reverbGain);
-    reverbGain.connect(AudioContextManager.reverbNode);
-    source.start(startTime);
-    source.stop(startTime + duration);
-    log(`[playChord] ${note}${octave} → ${sampleKey} @ ${playbackRate.toFixed(3)}x`);
-  }
+async function playChord(root, quality, startTime = AudioContextManager.context.currentTime, duration = 1, isPassingChord = false) {
+    if (!document.getElementById('chordsEnabled').classList.contains('active')) return;
+    await AudioContextManager.ensureAudioContext();
+
+    const chordVolume = parseFloat(UI.elements.chordVolume.value) || 0.75;
+    if (chordVolume <= 0) return;
+
+    const chordNotes = getChordNotes(root, quality);
+
+    if (AudioContextManager.currentChordGain) {
+        AudioContextManager.currentChordGain.gain.setValueAtTime(AudioContextManager.currentChordGain.gain.value, startTime);
+        AudioContextManager.currentChordGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.05);
+    }
+
+    AudioContextManager.currentChordGain = AudioContextManager.context.createGain();
+    AudioContextManager.currentChordGain.gain.setValueAtTime(chordVolume, startTime);
+    AudioContextManager.currentChordGain.connect(AudioContextManager.context.destination);
+
+    // Random inversion (while keeping root on bottom)
+    const rootNote = chordNotes[0];
+    const otherNotes = chordNotes.slice(1);
+    const shuffled = otherNotes.sort(() => 0.5 - Math.random());
+    const finalChord = [rootNote, ...shuffled];
+
+    finalChord.forEach((note, index) => {
+        // Spread the chord notes a bit across octaves for realism
+        const baseOctave = index === 0 ? 2 : 3;
+        const octave = Math.min(4, Math.max(2, baseOctave + Math.floor(Math.random() * 2))); // C2–A4
+        const { sampleKey, playbackRate } = getPitchShiftedNote(note, octave);
+        const buffer = AudioContextManager.pianoSampleBuffers[sampleKey];
+        if (buffer) {
+            const source = AudioContextManager.context.createBufferSource();
+            source.buffer = buffer;
+            source.playbackRate.value = playbackRate;
+            source.connect(AudioContextManager.currentChordGain);
+            source.start(startTime);
+            source.stop(startTime + duration);
+        }
+    });
 }
 
 function getChordNotes(root, quality) {
-  const CHORD_INTERVALS = {
-    'maj': [0, 4, 7],
-    'min': [0, 3, 7],
-    'minor': [0, 3, 7],
-    'major': [0, 4, 7],
-    'dim': [0, 3, 6],
-    'aug': [0, 4, 8],
-    '6': [0, 4, 9],
-    'm6': [0, 3, 9],
-    'min6': [0, 3, 9],
-    '7': [0, 4, 7, 10],
-    'dom7': [0, 4, 7, 10],
-    'maj7': [0, 4, 7, 11],
-    'min7': [0, 3, 7, 10],
-    'm7': [0, 3, 7, 10],
-    'dim7': [0, 3, 6, 9],
-    'm7b5': [0, 3, 6, 10],
-    'min7b5': [0, 3, 6, 10],
-    'sus2': [0, 2, 7],
-    'sus4': [0, 5, 7],
-    'add9': [0, 4, 7, 14]
-  };
+    const rootIndex = NOTES.indexOf(standardizeNoteName(root));
 
-  const CHROMATIC = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+    const INTERVAL_MAP = {
+        'major': [0, 4, 7],
+        'minor': [0, 3, 7],
+        'maj7': [0, 4, 7, 11],
+        'min7': [0, 3, 7, 10],
+        '7': [0, 4, 7, 10],
+        'dom7': [0, 4, 7, 10],
+        'm7b5': [0, 3, 6, 10],
+        'dim7': [0, 3, 6, 9],
+        'aug': [0, 4, 8],
+        'sus2': [0, 2, 7],
+        'sus4': [0, 5, 7],
+        '7b9': [0, 4, 7, 10, 13],
+        '7#9': [0, 4, 7, 10, 15],
+        '7b13': [0, 4, 7, 10, 20],
+        '7#11': [0, 4, 7, 10, 18]
+    };
 
-  const standardizedRoot = standardizeNoteName(root);
-  let rootIndex = CHROMATIC.indexOf(standardizedRoot);
+    const intervals = INTERVAL_MAP[quality];
+    if (!intervals) {
+        console.warn(`Unknown chord quality "${quality}" — defaulting to major triad`);
+    }
 
-  if (rootIndex === -1) {
-    rootIndex = CHROMATIC.indexOf(root);
-    if (rootIndex === -1) rootIndex = 0; // fallback to C
-  }
-
-  const normQuality = quality?.toLowerCase();
-  let intervals = CHORD_INTERVALS[normQuality];
-
-  if (!intervals) {
-    console.warn(`Unknown chord quality "${quality}", defaulting to major`);
-    intervals = CHORD_INTERVALS['maj'];
-  }
-
-  const chordNotes = intervals.map(semitones => {
-    const noteIndex = (rootIndex + semitones) % 12;
-    return CHROMATIC[noteIndex];
-  });
-
-  return chordNotes;
+    return (intervals || [0, 4, 7]).map(interval => {
+        const noteIndex = (rootIndex + interval) % 12;
+        return NOTES[noteIndex];
+    });
 }
-
 
 async function playMetronomeSound(baseVolume) {
     if (!AudioContextManager.context) return;
@@ -1982,7 +1934,6 @@ function updateFretboardNotes(container, rootNote, scale, tuning) {
         const noteIndex = (rootIndex + interval) % 12;
         return NOTES[noteIndex];
     });
-    console.log(`[updateFretboardNotes] scaleNotes for ${rootNote} ${scale}: ${scaleNotes.join(',')}`);
     for (let string = 0; string < 6; string++) {
         const openNote = tuning[string];
         const openNoteIndex = NOTES.indexOf(openNote);
@@ -2034,7 +1985,7 @@ function updateFretboardNotes(container, rootNote, scale, tuning) {
     }
     log(`Fretboard updated with ${rootNote} ${scale} scale`);
 }
-        
+
 function createBeats() {
     const container = document.querySelector('.beats-container');
     container.innerHTML = '';
