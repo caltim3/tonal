@@ -1113,11 +1113,11 @@ function standardizeNoteName(note) {
   letter = letter.toUpperCase();
   const CHROMATIC = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
   if (accidental === 'b') {
-    const index = chromatic.indexOf(letter);
-    return chromatic[(index - 1 + 12) % 12];
+    const index = CHROMATIC.indexOf(letter);
+    return CHROMATIC[(index - 1 + 12) % 12];
   } else if (accidental === '#') {
-    const index = chromatic.indexOf(letter);
-    return chromatic[(index + 1) % 12];
+    const index = CHROMATIC.indexOf(letter);
+    return CHROMATIC[(index + 1) % 12];
   }
   return letter;
 }
