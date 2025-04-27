@@ -2961,56 +2961,121 @@ function initializeStaticFretboards() {
 
     // Initialize key and scale selects for each fretboard
     for (let i = 1; i <= 4; i++) {
-        const keySelect = document.querySelector(`.static-key-select[data-fretboard="${i}"]`);
-        const scaleSelect = document.querySelector(`.static-scale-select[data-fretboard="${i}"]`);
-        
-        if (keySelect && scaleSelect) {
+        try {
+            const keySelect = document.querySelector(`.static-key-select[data-fretboard="${i}"]`);
+            const scaleSelect = document.querySelector(`.static-scale-select[data-fretboard="${i}"]`);
+            const tuningSelect = document.querySelector(`.tuning-select[data-fretboard="${i}"]`);
+            const fretboardContainer = document.getElementById(`static-fretboard-${i}`);
+            
+            if (!keySelect || !scaleSelect || !fretboardContainer) {
+                console.warn(`Missing elements for static fretboard ${i}`);
+                continue;
+            }
+
             // Populate key options
             keySelect.innerHTML = createKeyOptions();
             
             // Populate scale options
             scaleSelect.innerHTML = createScaleOptions();
             
+            // Get current tuning or default to standard
+            const currentTuning = tuningSelect ? TUNINGS[tuningSelect.value] : TUNINGS.standard;
+            
             // Initialize the fretboard
-            const fretboardContainer = document.getElementById(`static-fretboard-${i}`);
-            if (fretboardContainer) {
-                const tuningSelect = document.querySelector(`.tuning-select[data-fretboard="${i}"]`);
-                const tuning = TUNINGS[tuningSelect?.value || 'standard'];
-                createFretboard(fretboardContainer, tuning);
-                updateFretboardNotes(fretboardContainer, keySelect.value, scaleSelect.value, tuning);
+            createFretboard(fretboardContainer, currentTuning);
+            updateFretboardNotes(fretboardContainer, keySelect.value, scaleSelect.value, currentTuning);
+
+            // Add event listeners for changes
+            keySelect.addEventListener('change', (e) => {
+                updateFretboardNotes(
+                    fretboardContainer,
+                    e.target.value,
+                    scaleSelect.value,
+                    tuningSelect ? TUNINGS[tuningSelect.value] : TUNINGS.standard
+                );
+            });
+
+            scaleSelect.addEventListener('change', (e) => {
+                updateFretboardNotes(
+                    fretboardContainer,
+                    keySelect.value,
+                    e.target.value,
+                    tuningSelect ? TUNINGS[tuningSelect.value] : TUNINGS.standard
+                );
+            });
+
+            if (tuningSelect) {
+                tuningSelect.addEventListener('change', (e) => {
+                    const newTuning = TUNINGS[e.target.value];
+                    createFretboard(fretboardContainer, newTuning);
+                    updateFretboardNotes(fretboardContainer, keySelect.value, scaleSelect.value, newTuning);
+                });
             }
+        } catch (error) {
+            console.error(`Error initializing static fretboard ${i}:`, error);
         }
     }
 }
 
-// Helper functions for creating options
 function createKeyOptions(selected = 'C') {
-    return NOTES.map(note =>
-        `<option value="${note}"${note === selected ? ' selected' : ''}>${note}</option>`
-    ).join('');
+    try {
+        if (!Array.isArray(NOTES)) {
+            console.error('NOTES is not properly defined');
+            return '';
+        }
+        return NOTES.map(note => {
+            const sanitizedNote = String(note).replace(/[<>]/g, ''); // Basic XSS prevention
+            return `<option value="${sanitizedNote}"${sanitizedNote === selected ? ' selected' : ''}>${sanitizedNote}</option>`;
+        }).join('');
+    } catch (error) {
+        console.error('Error creating key options:', error);
+        return '';
+    }
 }
 
 function createScaleOptions(selected = 'major') {
-    return Object.keys(SCALES).map(scale =>
-        `<option value="${scale}"${scale === selected ? ' selected' : ''}>${scale.charAt(0).toUpperCase() + scale.slice(1)}</option>`
-    ).join('');
+    try {
+        if (!SCALES || typeof SCALES !== 'object') {
+            console.error('SCALES is not properly defined');
+            return '';
+        }
+        return Object.keys(SCALES).map(scale => {
+            const sanitizedScale = String(scale).replace(/[<>]/g, ''); // Basic XSS prevention
+            const displayName = sanitizedScale.charAt(0).toUpperCase() + sanitizedScale.slice(1);
+            return `<option value="${sanitizedScale}"${sanitizedScale === selected ? ' selected' : ''}>${displayName}</option>`;
+        }).join('');
+    } catch (error) {
+        console.error('Error creating scale options:', error);
+        return '';
+    }
 }
 
-// DOMContentLoaded event to initialize everything
-document.addEventListener('DOMContentLoaded', () => {
-    initializeApp().catch(error => {
-        console.error("Initialization failed:", error);
-        updateLoadingStatus("Initialization failed");
-    });
-
-    // Show/hide drum set toggle button based on sound type
-    const soundType = document.getElementById('sound-type').value;
-    document.getElementById('drumSetToggleBtn').style.display = soundType === 'drums' ? 'inline-block' : 'none';
-
-    // Initialize static fretboards
-    initializeStaticFretboards();
-});
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        await initializeApp();
         
+        // Show/hide drum set toggle button based on sound type
+        const soundTypeSelect = document.getElementById('sound-type');
+        const drumSetToggleBtn = document.getElementById('drumSetToggleBtn');
+        
+        if (soundTypeSelect && drumSetToggleBtn) {
+            const soundType = soundTypeSelect.value;
+            drumSetToggleBtn.style.display = soundType === 'drums' ? 'inline-block' : 'none';
+            
+            // Add event listener for sound type changes
+            soundTypeSelect.addEventListener('change', (e) => {
+                drumSetToggleBtn.style.display = e.target.value === 'drums' ? 'inline-block' : 'none';
+            });
+        }
+
+        // Initialize static fretboards
+        initializeStaticFretboards();
+
+    } catch (error) {
+        console.error("Initialization failed:", error);
+        updateLoadingStatus("Initialization failed: " + error.message);
+    }
+});  
             </script>
         </body>
         </html>
