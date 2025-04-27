@@ -2306,6 +2306,7 @@ function toggleBeatState(beat, timeSignature, soundType) {
 }
 
 async function playBeat() {
+    // Remove active class from all beats and highlight current beat
     const beats = document.querySelectorAll('.beat');
     beats.forEach(beat => beat.classList.remove('active'));
     
@@ -2336,7 +2337,7 @@ async function playBeat() {
                     if (AppState.currentBeat === 0) {
                         // First chord in root position
                         await playChord(root, quality, AudioContextManager.context.currentTime, beatDuration * 2, false);
-                    } else if (AppState.currentBeat === 4) {
+                    } else if (AppState.currentBeat === 2) {
                         // Second chord with inversion
                         await playChord(root, quality, AudioContextManager.context.currentTime, beatDuration * 2, true);
                     }
@@ -2352,8 +2353,22 @@ async function playBeat() {
             }
         }
     }
-}
 
+    // Update measure highlighting
+    if (measures.length > 0) {
+        measures.forEach((measure, index) => {
+            measure.classList.toggle('active', index === AppState.currentMeasure);
+        });
+    }
+
+    // Update beat counter and measure counter
+    const totalBeats = timeSignature === 4 ? 8 : timeSignature;
+    AppState.currentBeat = (AppState.currentBeat + 1) % totalBeats;
+    
+    if (AppState.currentBeat === 0 && measures.length > 0) {
+        AppState.currentMeasure = (AppState.currentMeasure + 1) % measures.length;
+    }
+}
 
 async function startPlayback() {
     try {
