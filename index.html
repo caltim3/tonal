@@ -683,7 +683,7 @@ function noteNameToSampleName(note) {
   return note.replace('#', 's');
 }
 // Musical Constants
-const NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+const NOTES = ['C', 'Cs', 'D', 'Ds', 'E', 'F', 'Fs', 'G', 'Gs', 'A', 'As', 'B'];
         
 const ENHARMONIC_MAP = {
     'C#': 'Db', 'Db': 'Db',
@@ -704,7 +704,20 @@ const PIANO_CONFIG = {
     velocities: [12],
     fileFormat: 'wav'
 };
-
+        
+function toSampleNoteName(note) {
+  // Converts "A#" to "As", "Bb" to "As", etc.
+  if (!note) return '';
+  // Convert flats to equivalent sharps
+  const flatToSharp = {
+    'Bb': 'As', 'Db': 'Cs', 'Eb': 'Ds', 'Gb': 'Fs', 'Ab': 'Gs'
+  };
+  if (flatToSharp[note]) return flatToSharp[note];
+  // Convert sharps to 's' format
+  if (note.includes('#')) return note.replace('#', 's');
+  return note;
+}
+        
 const PIANO_NOTES = {
     'A2': 110.00, 'As2': 116.54, 'B2': 123.47,
     'C3': 130.81, 'Cs3': 138.59, 'D3': 146.83, 'Ds3': 155.56, 'E3': 164.81, 'F3': 174.61,
@@ -1097,8 +1110,7 @@ async function ensureAudioInitialized() {
 // --- NEW GLOBAL HELPER -------------------------------------------
 function getNoteFromScaleDegree(degree, key, scale) {
     // Convert the degree (0–6) into an actual note name in the chosen key
-    const chromaticScale = ['C', 'Db', 'D', 'Eb', 'E', 'F',
-                            'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+    const chromaticScale = ['C', 'Cs', 'D', 'Ds', 'E', 'F', 'Fs', 'G', 'Gs', 'A', 'As', 'B'];
     const keyIndex = chromaticScale.indexOf(standardizeNoteName(key));
     if (keyIndex === -1) return null;           // safety check
 
@@ -1137,7 +1149,7 @@ const MAX_OCTAVE = 4;
 function findNearestSampledNote(note, targetOctave = 3) {
     const cleanNote = standardizeNoteName(note).replace('m', '');
     const mappedNote = ENHARMONIC_MAP[cleanNote] || cleanNote;
-    const targetIndex = NOTES.indexOf(mappedNote);
+    const targetIndex = NOTES.indexOf(toSampleNoteName(mappedNote));
     if (targetIndex === -1) {
         console.warn(`Note ${note} not found in NOTES.`);
         return { sampleKey: 'C3v12', semitoneDiff: 0 };
