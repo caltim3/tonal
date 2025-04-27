@@ -678,7 +678,10 @@ function debounce(func, wait) {
         timeout = setTimeout(() => func.apply(this, args), wait);
     };
 }
-
+function noteNameToSampleName(note) {
+  // Converts "F#" to "Fs", "D#" to "Ds", etc.
+  return note.replace('#', 's');
+}
 // Musical Constants
 const NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
         
@@ -1033,7 +1036,7 @@ const AudioContextManager = {
         }
         for (let note of SAMPLED_NOTES) {
             for (let octave of PIANO_CONFIG.octaves[note]) {
-                const sampleName = `${note}${octave}v12`;
+                const sampleName = `${noteNameToSampleName(note)}${octave}v12`;
                 try {
                     const response = await fetch(`./${sampleName}.${PIANO_CONFIG.fileFormat}`);
                     if (!response.ok) throw new Error(`Failed to load ${sampleName}`);
@@ -1213,7 +1216,7 @@ function getPitchShiftedNote(note, targetOctave = 3) {
       const distance = Math.abs(semitoneDiff);
       if (distance < minDistance) {
         minDistance = distance;
-        bestMatch = { sampleKey: `${sampleNote}${octave}v12`, semitoneDiff };
+        bestMatch = { sampleKey: `${noteNameToSampleName(sampleNote)}${octave}v12`, semitoneDiff };
       }
     }
   }
@@ -1576,7 +1579,7 @@ function playNote(noteName, volume = 1.0, duration = 1000) {
     const mappedNote = SAMPLE_NOTE_MAP[baseNote] || baseNote;
     const octave = Math.max(2, Math.min(6, parseInt(octaveStr)));
 
-    const sampleName = `${mappedNote}${octave}v12`;
+    const sampleName = `${noteNameToSampleName(mappedNote)}${octave}v12`;
     const buffer = AudioContextManager.pianoSampleBuffers[sampleName];
 
     if (!buffer) {
