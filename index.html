@@ -651,7 +651,44 @@
             <span>Fretboard Volume:</span>
             <input type="range" id="fretboard-volume" min="0" max="1" step="0.1" value="0.3" aria-label="Fretboard volume">
         </div>
-        <div class="fretboards-grid"></div>
+       <div class="fretboards-grid" id="static-fretboards">
+  <!-- Fretboard 1 -->
+  <div class="fretboard-container">
+    <div class="scale-display" id="static-scale-display-1"></div>
+    <div class="controls">
+      <select class="static-key-select" data-fretboard="1"></select>
+      <select class="static-scale-select" data-fretboard="1"></select>
+    </div>
+    <div class="fretboard" id="static-fretboard-1"></div>
+  </div>
+  <!-- Fretboard 2 -->
+  <div class="fretboard-container">
+    <div class="scale-display" id="static-scale-display-2"></div>
+    <div class="controls">
+      <select class="static-key-select" data-fretboard="2"></select>
+      <select class="static-scale-select" data-fretboard="2"></select>
+    </div>
+    <div class="fretboard" id="static-fretboard-2"></div>
+  </div>
+  <!-- Fretboard 3 -->
+  <div class="fretboard-container">
+    <div class="scale-display" id="static-scale-display-3"></div>
+    <div class="controls">
+      <select class="static-key-select" data-fretboard="3"></select>
+      <select class="static-scale-select" data-fretboard="3"></select>
+    </div>
+    <div class="fretboard" id="static-fretboard-3"></div>
+  </div>
+  <!-- Fretboard 4 -->
+  <div class="fretboard-container">
+    <div class="scale-display" id="static-scale-display-4"></div>
+    <div class="controls">
+      <select class="static-key-select" data-fretboard="4"></select>
+      <select class="static-scale-select" data-fretboard="4"></select>
+    </div>
+    <div class="fretboard" id="static-fretboard-4"></div>
+  </div>
+</div>
     </div>
 
     <script>
