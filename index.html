@@ -2303,6 +2303,7 @@ async function playBeat() {
         const volume = parseFloat(currentBeatElement.dataset.volume) || 0;
         await playMetronomeSound(volume);
     }
+
     const measures = UI.elements.measures.children;
     const timeSignature = parseInt(UI.elements.timeSignature.value);
     if (measures.length > 0) {
@@ -2312,33 +2313,36 @@ async function playBeat() {
             const quality = currentMeasureElement.querySelector('.chord-controls .chord-quality')?.value;
             const scaleRoot = currentMeasureElement.querySelector('.scale-controls .second-key')?.value;
             const scaleType = currentMeasureElement.querySelector('.scale-controls .scale-select')?.value;
+
             if (root && quality && scaleRoot && scaleType) {
                 const chordTuning = TUNINGS[UI.elements.chordTuning.value];
                 updateFretboardNotes(UI.elements.chordFretboard, scaleRoot, scaleType, chordTuning);
                 const beatDuration = 60 / AppState.tempo;
                 if (timeSignature === 4) {
                     if (AppState.currentBeat === 0) {
-                        playChord(root, quality, AudioContextManager.context.currentTime, beatDuration * 2, false);
-                    } else if (AppState.currentBeat === 4) {
-                        playChord(root, quality, AudioContextManager.context.currentTime, beatDuration * 2, true);
+                        playChord(root, quality, AudioContextManager.context.currentTime, beatDuration * 4);
                     }
-                } else if (AppState.currentBeat === 0) {
-                    playChord(root, quality, AudioContextManager.context.currentTime, beatDuration * 4, false);
+                } else {
+                    if (AppState.currentBeat === 0) {
+                        playChord(root, quality, AudioContextManager.context.currentTime, beatDuration * timeSignature);
+                    }
                 }
             }
         }
     }
+
     if (measures.length > 0) {
-        Array.from(measures).forEach((measure, index) => {
+        measures.forEach((measure, index) => {
             measure.classList.toggle('active', index === AppState.currentMeasure);
         });
     }
+
     const totalBeats = timeSignature === 4 ? 8 : timeSignature;
     AppState.currentBeat = (AppState.currentBeat + 1) % totalBeats;
+    
     if (AppState.currentBeat === 0 && measures.length > 0) {
         AppState.currentMeasure = (AppState.currentMeasure + 1) % measures.length;
     }
-    AppState.updateState({ currentBeat: AppState.currentBeat, currentMeasure: AppState.currentMeasure });
 }
 
 async function startPlayback() {
