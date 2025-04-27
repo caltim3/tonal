@@ -2832,7 +2832,44 @@ async function initializeApp() {
     }, 1000);
     log("Application initialized");
 }
+function initializeStaticFretboards() {
+    // For each static fretboard
+    for (let i = 1; i <= 4; i++) {
+        const keySelect = document.querySelector(`.static-key-select[data-fretboard="${i}"]`);
+        const scaleSelect = document.querySelector(`.static-scale-select[data-fretboard="${i}"]`);
+        const fretboard = document.getElementById(`static-fretboard-${i}`);
+        const scaleDisplay = document.getElementById(`static-scale-display-${i}`);
 
+        // Populate key options
+        keySelect.innerHTML = NOTES.map(note =>
+            `<option value="${note}">${note}</option>`
+        ).join('');
+
+        // Populate scale options
+        scaleSelect.innerHTML = Object.keys(SCALES).map(scale =>
+            `<option value="${scale}">${scale.charAt(0).toUpperCase() + scale.slice(1)}</option>`
+        ).join('');
+
+        // Set default values
+        keySelect.value = 'C';
+        scaleSelect.value = 'major';
+
+        // Create initial fretboard
+        createFretboard(fretboard, TUNINGS.standard);
+        updateFretboardNotes(fretboard, 'C', 'major', TUNINGS.standard);
+        scaleDisplay.textContent = 'C Major';
+
+        // Add event listeners
+        keySelect.addEventListener('change', () => {
+            updateFretboardNotes(fretboard, keySelect.value, scaleSelect.value, TUNINGS.standard);
+            scaleDisplay.textContent = `${keySelect.value} ${scaleSelect.value.charAt(0).toUpperCase() + scaleSelect.value.slice(1)}`;
+        });
+
+        scaleSelect.addEventListener('change', () => {
+            updateFretboardNotes(fretboard, keySelect.value, scaleSelect.value, TUNINGS.standard);
+            scaleDisplay.textContent = `${keySelect.value} ${scaleSelect.value.charAt(0).toUpperCase() + scaleSelect.value.slice(1)}`;
+        });
+    }
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize the app (your existing functionality)
     initializeApp().catch(error => {
@@ -2857,7 +2894,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initialize static fretboards
     const staticFretboardsGrid = document.querySelector('.fretboards-grid');
+    // Add this to your existing DOMContentLoaded event listener
+document.addEventListener('DOMContentLoaded', () => {
+    // Your existing initialization code...
     
+    // Initialize the app (your existing functionality)
+    initializeApp().catch(error => {
+        console.error("Initialization failed:", error);
+        updateLoadingStatus("Initialization failed");
+    });
+
+    // Add the new drum set functionality
+    const soundType = document.getElementById('sound-type').value;
+    document.getElementById('drumSetToggleBtn').style.display = soundType === 'drums' ? 'inline-block' : 'none';
+    
+    // Add event listener for drum set toggle button
+    document.getElementById('drumSetToggleBtn').addEventListener('click', function() {
+        currentDrumSetIndex = (currentDrumSetIndex + 1) % drumSoundSets.length;
+        this.textContent = drumSoundSets[currentDrumSetIndex].name;
+    });
+    
+    // Add event listener for sound type changes
+    document.getElementById('sound-type').addEventListener('change', function() {
+        onMetronomeInstrumentChange(this.value);
+    });
+
+    // Initialize static fretboards
+    initializeStaticFretboards();
+});
     // Create the four static fretboards
     for (let i = 1; i <= 4; i++) {
         const fretboardContainer = document.createElement('div');
