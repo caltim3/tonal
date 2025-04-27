@@ -2354,19 +2354,6 @@ async function playBeat() {
     }
 }
 
-    if (measures.length > 0) {
-        measures.forEach((measure, index) => {
-            measure.classList.toggle('active', index === AppState.currentMeasure);
-        });
-    }
-
-    const totalBeats = timeSignature === 4 ? 8 : timeSignature;
-    AppState.currentBeat = (AppState.currentBeat + 1) % totalBeats;
-    
-    if (AppState.currentBeat === 0 && measures.length > 0) {
-        AppState.currentMeasure = (AppState.currentMeasure + 1) % measures.length;
-    }
-}
 
 async function startPlayback() {
     try {
