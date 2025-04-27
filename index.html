@@ -1608,41 +1608,45 @@ function playNote(noteName, volume = 1.0, duration = 1000) {
 }
 
 
-async function playChord(root, quality, startTime = AudioContextManager.context.currentTime, duration = 2, isContinuation = false) {
-  await ensureAudioInitialized();
-  if (!AudioContextManager.samplesLoaded) {
-    console.warn('Piano samples not loaded yet');
-    return;
-  }
-  if (!UI.elements.chordsEnabled.classList.contains('active')) return;
-  const chordNotes = getChordNotes(root, quality);
-  const chordVolume = parseFloat(UI.elements.chordVolume.value);
-  if (chordVolume <= 0) return;
-  const gainNode = AudioContextManager.context.createGain();
-  gainNode.gain.value = chordVolume;
-  if (!isContinuation && AudioContextManager.currentChordGain) {
-    AudioContextManager.currentChordGain.gain.setValueAtTime(AudioContextManager.currentChordGain.gain.value, startTime);
-    AudioContextManager.currentChordGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.05);
-  }
-  AudioContextManager.currentChordGain = gainNode;
-  for (let i = 0; i < chordNotes.length; i++) {
-    const note = chordNotes[i];
-    const octave = i === 0 ? 3 : 4;
-    const { sampleKey, semitoneDiff } = getPitchShiftedNote(note, octave);
-    const playbackRate = Math.pow(2, semitoneDiff / 12);
-    const source = AudioContextManager.context.createBufferSource();
-    source.buffer = AudioContextManager.pianoSampleBuffers[sampleKey];
-    source.playbackRate.value = playbackRate;
-    source.connect(gainNode);
-    gainNode.connect(AudioContextManager.context.destination);
-    const reverbGain = AudioContextManager.context.createGain();
-    reverbGain.gain.value = 0.2;
-    source.connect(reverbGain);
-    reverbGain.connect(AudioContextManager.reverbNode);
-    source.start(startTime);
-    source.stop(startTime + duration);
-    log(`[playChord] ${note}${octave} → ${sampleKey} @ ${playbackRate.toFixed(3)}x`);
-  }
+async function playChord(root, quality, startTime = AudioContextManager.context.currentTime, duration = 1, isPassingChord = false) {
+    if (!document.getElementById('chordsEnabled').classList.contains('active')) return;
+    await AudioContextManager.ensureAudioContext();
+
+    const chordVolume = parseFloat(UI.elements.chordVolume.value) || 0.75;
+    if (chordVolume <= 0) return;
+
+    const chordNotes = getChordNotes(root, quality);
+
+    if (AudioContextManager.currentChordGain) {
+        AudioContextManager.currentChordGain.gain.setValueAtTime(AudioContextManager.currentChordGain.gain.value, startTime);
+        AudioContextManager.currentChordGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.05);
+    }
+
+    AudioContextManager.currentChordGain = AudioContextManager.context.createGain();
+    AudioContextManager.currentChordGain.gain.setValueAtTime(chordVolume, startTime);
+    AudioContextManager.currentChordGain.connect(AudioContextManager.context.destination);
+
+    // Random inversion (while keeping root on bottom)
+    const rootNote = chordNotes[0];
+    const otherNotes = chordNotes.slice(1);
+    const shuffled = otherNotes.sort(() => 0.5 - Math.random());
+    const finalChord = [rootNote, ...shuffled];
+
+    finalChord.forEach((note, index) => {
+        // Spread the chord notes a bit across octaves for realism
+        const baseOctave = index === 0 ? 2 : 3;
+        const octave = Math.min(4, Math.max(2, baseOctave + Math.floor(Math.random() * 2))); // C2–A4
+        const { sampleKey, playbackRate } = getPitchShiftedNote(note, octave);
+        const buffer = AudioContextManager.pianoSampleBuffers[sampleKey];
+        if (buffer) {
+            const source = AudioContextManager.context.createBufferSource();
+            source.buffer = buffer;
+            source.playbackRate.value = playbackRate;
+            source.connect(AudioContextManager.currentChordGain);
+            source.start(startTime);
+            source.stop(startTime + duration);
+        }
+    });
 }
 
 function getChordNotes(root, quality) {
