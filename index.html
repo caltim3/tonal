@@ -2332,18 +2332,17 @@ async function playBeat() {
                 }
             }
         }
+    }
 
-        // Update measure highlighting
-        Array.from(measures).forEach((measure, index) => {
+    if (measures.length > 0) {
+        measures.forEach((measure, index) => {
             measure.classList.toggle('active', index === AppState.currentMeasure);
         });
     }
 
-    // Calculate total beats based on time signature
     const totalBeats = timeSignature === 4 ? 8 : timeSignature;
-
-    // Update beat counter and measure counter
     AppState.currentBeat = (AppState.currentBeat + 1) % totalBeats;
+    
     if (AppState.currentBeat === 0 && measures.length > 0) {
         AppState.currentMeasure = (AppState.currentMeasure + 1) % measures.length;
     }
