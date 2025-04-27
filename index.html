@@ -2297,6 +2297,7 @@ function toggleBeatState(beat, timeSignature, soundType) {
 async function playBeat() {
     const beats = document.querySelectorAll('.beat');
     beats.forEach(beat => beat.classList.remove('active'));
+    
     const currentBeatElement = beats[AppState.currentBeat];
     if (currentBeatElement) {
         currentBeatElement.classList.add('active');
@@ -2306,6 +2307,7 @@ async function playBeat() {
 
     const measures = UI.elements.measures.children;
     const timeSignature = parseInt(UI.elements.timeSignature.value);
+
     if (measures.length > 0) {
         const currentMeasureElement = measures[AppState.currentMeasure];
         if (currentMeasureElement) {
@@ -2317,29 +2319,31 @@ async function playBeat() {
             if (root && quality && scaleRoot && scaleType) {
                 const chordTuning = TUNINGS[UI.elements.chordTuning.value];
                 updateFretboardNotes(UI.elements.chordFretboard, scaleRoot, scaleType, chordTuning);
+                
                 const beatDuration = 60 / AppState.tempo;
                 if (timeSignature === 4) {
                     if (AppState.currentBeat === 0) {
-                        playChord(root, quality, AudioContextManager.context.currentTime, beatDuration * 4);
+                        await playChord(root, quality, AudioContextManager.context.currentTime, beatDuration * 4);
                     }
                 } else {
                     if (AppState.currentBeat === 0) {
-                        playChord(root, quality, AudioContextManager.context.currentTime, beatDuration * timeSignature);
+                        await playChord(root, quality, AudioContextManager.context.currentTime, beatDuration * timeSignature);
                     }
                 }
             }
         }
-    }
 
-    if (measures.length > 0) {
-        measures.forEach((measure, index) => {
+        // Update measure highlighting
+        Array.from(measures).forEach((measure, index) => {
             measure.classList.toggle('active', index === AppState.currentMeasure);
         });
     }
 
+    // Calculate total beats based on time signature
     const totalBeats = timeSignature === 4 ? 8 : timeSignature;
+
+    // Update beat counter and measure counter
     AppState.currentBeat = (AppState.currentBeat + 1) % totalBeats;
-    
     if (AppState.currentBeat === 0 && measures.length > 0) {
         AppState.currentMeasure = (AppState.currentMeasure + 1) % measures.length;
     }
