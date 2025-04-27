@@ -2337,7 +2337,7 @@ async function playBeat() {
                     if (AppState.currentBeat === 0) {
                         // First chord in root position
                         await playChord(root, quality, AudioContextManager.context.currentTime, beatDuration * 2, false);
-                    } else if (AppState.currentBeat === 2) {
+                    } else if (AppState.currentBeat === 4) {
                         // Second chord with inversion
                         await playChord(root, quality, AudioContextManager.context.currentTime, beatDuration * 2, true);
                     }
