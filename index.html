@@ -2306,7 +2306,7 @@ async function playBeat() {
         await playMetronomeSound(volume);
     }
 
-    const measures = UI.elements.measures.children;
+    const measures = Array.from(UI.elements.measures.children);
     const timeSignature = parseInt(UI.elements.timeSignature.value);
 
     if (measures.length > 0) {
@@ -2831,41 +2831,33 @@ async function initializeApp() {
 }
 
 function initializeStaticFretboards() {
+    const staticFretboardsContainer = document.getElementById('static-fretboards');
+    if (!staticFretboardsContainer) {
+        console.warn('Static fretboards container not found');
+        return;
+    }
+
+    // Initialize key and scale selects for each fretboard
     for (let i = 1; i <= 4; i++) {
         const keySelect = document.querySelector(`.static-key-select[data-fretboard="${i}"]`);
         const scaleSelect = document.querySelector(`.static-scale-select[data-fretboard="${i}"]`);
-        const fretboard = document.getElementById(`static-fretboard-${i}`);
-        const scaleDisplay = document.getElementById(`static-scale-display-${i}`);
-
-        // Populate key options
-        keySelect.innerHTML = NOTES.map(note =>
-            `<option value="${note}">${note}</option>`
-        ).join('');
-
-        // Populate scale options
-        scaleSelect.innerHTML = Object.keys(SCALES).map(scale =>
-            `<option value="${scale}">${scale.charAt(0).toUpperCase() + scale.slice(1)}</option>`
-        ).join('');
-
-        // Set default values
-        keySelect.value = 'C';
-        scaleSelect.value = 'major';
-
-        // Create initial fretboard
-        createFretboard(fretboard, TUNINGS.standard);
-        updateFretboardNotes(fretboard, 'C', 'major', TUNINGS.standard);
-        scaleDisplay.textContent = 'C Major';
-
-        // Add event listeners
-        keySelect.addEventListener('change', () => {
-            updateFretboardNotes(fretboard, keySelect.value, scaleSelect.value, TUNINGS.standard);
-            scaleDisplay.textContent = `${keySelect.value} ${scaleSelect.value.charAt(0).toUpperCase() + scaleSelect.value.slice(1)}`;
-        });
-
-        scaleSelect.addEventListener('change', () => {
-            updateFretboardNotes(fretboard, keySelect.value, scaleSelect.value, TUNINGS.standard);
-            scaleDisplay.textContent = `${keySelect.value} ${scaleSelect.value.charAt(0).toUpperCase() + scaleSelect.value.slice(1)}`;
-        });
+        
+        if (keySelect && scaleSelect) {
+            // Populate key options
+            keySelect.innerHTML = createKeyOptions();
+            
+            // Populate scale options
+            scaleSelect.innerHTML = createScaleOptions();
+            
+            // Initialize the fretboard
+            const fretboardContainer = document.getElementById(`static-fretboard-${i}`);
+            if (fretboardContainer) {
+                const tuningSelect = document.querySelector(`.tuning-select[data-fretboard="${i}"]`);
+                const tuning = TUNINGS[tuningSelect?.value || 'standard'];
+                createFretboard(fretboardContainer, tuning);
+                updateFretboardNotes(fretboardContainer, keySelect.value, scaleSelect.value, tuning);
+            }
+        }
     }
 }
 
