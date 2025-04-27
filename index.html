@@ -2623,36 +2623,20 @@ function initializeFretFlow() {
             const newTuning = TUNINGS[tuningSelect.value];
             createFretboard(fretboard, newTuning);
             updateFretboardNotes(fretboard, UI.elements.keySelect.value, scale, newTuning);
-            
-            // Reattach note click handlers
-            const updatedNotes = fretboard.getElementsByClassName('note');
-            Array.from(updatedNotes).forEach(note => {
-                note.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    const noteName = this.dataset.note;
-                    if (noteName) {
-                        const fretboardVolume = parseFloat(UI.elements.fretboardVolume.value) || 1.0;
-                        playNote(noteName, fretboardVolume, 500);
-                        log(`Playing note: ${noteName}`);
-                    }
-                }); 
-            });
         });
     });
-    
     log("FretFlow initialized");
 }
 
 // Add event listener for drum set toggle button
 document.getElementById('drumSetToggleBtn').addEventListener('click', () => {
     currentDrumSetIndex = (currentDrumSetIndex + 1) % drumSoundSets.length;
-    const currentSet = drumSoundSets[currentDrumSetIndex];
-    document.getElementById('drumSetToggleBtn').textContent = currentSet.name;
+    document.getElementById('drumSetToggleBtn').textContent = drumSoundSets[currentDrumSetIndex].name;
 });
 
 // Initialize the button text with the first drum set name
 document.getElementById('drumSetToggleBtn').textContent = drumSoundSets[0].name;
-        
+
 // Event Listeners
 function addFirstChordListener() {
     const firstMeasure = UI.elements.measures.firstElementChild;
@@ -2685,22 +2669,17 @@ function setupEventListeners() {
         }
     });
 
-
-    // Add this to your initialization code
-    document.getElementById('drumSetToggleBtn').addEventListener('click', function() {
-        currentDrumSetIndex = (currentDrumSetIndex + 1) % drumSoundSets.length;
-        this.textContent = drumSoundSets[currentDrumSetIndex].name;
-    });
-
     // Initial visibility of drum set toggle button
     document.getElementById('drumSetToggleBtn').style.display = 
         document.getElementById('sound-type').value === 'drums' ? 'inline-block' : 'none';
     
-        document.getElementById('sound-type').addEventListener('change', function(e) {
+    document.getElementById('sound-type').addEventListener('change', function(e) {
         const drumSetToggleBtn = document.getElementById('drumSetToggleBtn');
         drumSetToggleBtn.style.display = e.target.value === 'drums' ? 'inline-block' : 'none';
         createBeats(); // Recreate beats with new sound type
+        onMetronomeInstrumentChange(e.target.value);
     });
+
     // Modified dark mode toggle with three modes
     let colorMode = 0; // 0 = light, 1 = dark-mode-1, 2 = dark-mode-2, 3 = dark-mode-3
     UI.elements.darkModeToggle.addEventListener('click', () => {
@@ -2760,8 +2739,6 @@ function setupEventListeners() {
         }
     });
 
-    UI.elements.soundType.addEventListener('change', createBeats);
-
     UI.elements.metronomeVolume.addEventListener('input', () => {
         const volume = parseFloat(UI.elements.metronomeVolume.value);
         log(`Metronome volume set to ${volume}`);
@@ -2804,22 +2781,6 @@ function setupEventListeners() {
         AppState.lastTap = now;
     });
 
-    // Add this to the setupEventListeners function
-UI.elements.soundType.addEventListener('change', (e) => {
-    createBeats();
-    onMetronomeInstrumentChange(e.target.value);
-});
-
-// Add the drum set toggle button event listener
-document.getElementById('drumSetToggleBtn').addEventListener('click', () => {
-    currentDrumSetIndex = (currentDrumSetIndex + 1) % drumSoundSets.length;
-    document.getElementById('drumSetToggleBtn').textContent = `Drum Set ${currentDrumSetIndex + 1}`;
-    log(`Switched to drum set ${currentDrumSetIndex + 1}`);
-});
-
-// Initially hide the drum set toggle button if drums aren't selected
-onMetronomeInstrumentChange(UI.elements.soundType.value);
-    
     UI.elements.chordFretboardVolume.addEventListener('input', () => {
         log(`Chord fretboard volume set to ${UI.elements.chordFretboardVolume.value}`);
     });
@@ -2867,8 +2828,8 @@ async function initializeApp() {
     }, 1000);
     log("Application initialized");
 }
+
 function initializeStaticFretboards() {
-    // For each static fretboard
     for (let i = 1; i <= 4; i++) {
         const keySelect = document.querySelector(`.static-key-select[data-fretboard="${i}"]`);
         const scaleSelect = document.querySelector(`.static-scale-select[data-fretboard="${i}"]`);
@@ -2905,137 +2866,9 @@ function initializeStaticFretboards() {
             scaleDisplay.textContent = `${keySelect.value} ${scaleSelect.value.charAt(0).toUpperCase() + scaleSelect.value.slice(1)}`;
         });
     }
-document.addEventListener('DOMContentLoaded', () => {
-    // Initialize the app (your existing functionality)
-    initializeApp().catch(error => {
-        console.error("Initialization failed:", error);
-        updateLoadingStatus("Initialization failed");
-    });
+}
 
-    // Add the new drum set functionality
-    const soundType = document.getElementById('sound-type').value;
-    document.getElementById('drumSetToggleBtn').style.display = soundType === 'drums' ? 'inline-block' : 'none';
-    
-    // Add event listener for drum set toggle button
-    document.getElementById('drumSetToggleBtn').addEventListener('click', function() {
-        currentDrumSetIndex = (currentDrumSetIndex + 1) % drumSoundSets.length;
-        this.textContent = drumSoundSets[currentDrumSetIndex].name;
-    });
-    
-    // Add event listener for sound type changes
-    document.getElementById('sound-type').addEventListener('change', function() {
-        onMetronomeInstrumentChange(this.value);
-    });
-
-    // Initialize static fretboards
-    const staticFretboardsGrid = document.querySelector('.fretboards-grid');
-    // Add this to your existing DOMContentLoaded event listener
-document.addEventListener('DOMContentLoaded', () => {
-    // Your existing initialization code...
-    
-    // Initialize the app (your existing functionality)
-    initializeApp().catch(error => {
-        console.error("Initialization failed:", error);
-        updateLoadingStatus("Initialization failed");
-    });
-
-    // Add the new drum set functionality
-    const soundType = document.getElementById('sound-type').value;
-    document.getElementById('drumSetToggleBtn').style.display = soundType === 'drums' ? 'inline-block' : 'none';
-    
-    // Add event listener for drum set toggle button
-    document.getElementById('drumSetToggleBtn').addEventListener('click', function() {
-        currentDrumSetIndex = (currentDrumSetIndex + 1) % drumSoundSets.length;
-        this.textContent = drumSoundSets[currentDrumSetIndex].name;
-    });
-    
-    // Add event listener for sound type changes
-    document.getElementById('sound-type').addEventListener('change', function() {
-        onMetronomeInstrumentChange(this.value);
-    });
-
-    // Initialize static fretboards
-    initializeStaticFretboards();
-});
-    // Create the four static fretboards
-    for (let i = 1; i <= 4; i++) {
-        const fretboardContainer = document.createElement('div');
-        fretboardContainer.className = 'fretboard-container';
-        fretboardContainer.innerHTML = `
-            <div class="scale-display" id="static-scale-display-${i}"></div>
-            <div class="controls">
-                <select class="static-key-select" data-fretboard="${i}">
-                    ${createKeyOptions('C')}
-                </select>
-                <select class="static-scale-select" data-fretboard="${i}">
-                    ${createScaleOptions('major')}
-                </select>
-            </div>
-            <div class="fretboard" id="static-fretboard-${i}"></div>
-        `;
-        
-        staticFretboardsGrid.appendChild(fretboardContainer);
-
-        // Initialize the static fretboards
-const staticFretboards = document.querySelectorAll('#static-fretboards .fretboard');
-staticFretboards.forEach((fretboard, index) => {
-    const container = fretboard.closest('.fretboard-container');
-    const tuningSelect = container.querySelector('.tuning-select');
-    const keySelect = container.querySelector('.static-key-select');
-    const scaleSelect = container.querySelector('.static-scale-select');
-
-    // Initialize the fretboard
-    createFretboard(fretboard, TUNINGS.standard);
-
-    // Populate key select
-    keySelect.innerHTML = NOTES.map(note => 
-        `<option value="${note}">${note}</option>`
-    ).join('');
-    keySelect.value = 'C';
-
-    // Populate scale select
-    scaleSelect.innerHTML = Object.keys(SCALES).map(scale => 
-        `<option value="${scale}">${scale.charAt(0).toUpperCase() + scale.slice(1)}</option>`
-    ).join('');
-    scaleSelect.value = 'major';
-
-    // Update fretboard when any select changes
-    [tuningSelect, keySelect, scaleSelect].forEach(select => {
-        select.addEventListener('change', () => {
-            const tuning = TUNINGS[tuningSelect.value];
-            updateFretboardNotes(fretboard, keySelect.value, scaleSelect.value, tuning);
-        });
-    });
-
-    // Initial update
-    updateFretboardNotes(fretboard, 'C', 'major', TUNINGS.standard);
-});
-        
-        // Get the elements we just created
-        const fretboard = document.getElementById(`static-fretboard-${i}`);
-        const keySelect = fretboardContainer.querySelector('.static-key-select');
-        const scaleSelect = fretboardContainer.querySelector('.static-scale-select');
-        const scaleDisplay = document.getElementById(`static-scale-display-${i}`);
-
-        // Create the initial fretboard
-        createFretboard(fretboard, TUNINGS.standard);
-        updateFretboardNotes(fretboard, 'C', 'major', TUNINGS.standard);
-        scaleDisplay.textContent = 'C Major';
-
-        // Add event listeners for the dropdowns
-        keySelect.addEventListener('change', () => {
-            updateFretboardNotes(fretboard, keySelect.value, scaleSelect.value, TUNINGS.standard);
-            scaleDisplay.textContent = `${keySelect.value} ${scaleSelect.value.charAt(0).toUpperCase() + scaleSelect.value.slice(1)}`;
-        });
-
-        scaleSelect.addEventListener('change', () => {
-            updateFretboardNotes(fretboard, keySelect.value, scaleSelect.value, TUNINGS.standard);
-            scaleDisplay.textContent = `${keySelect.value} ${scaleSelect.value.charAt(0).toUpperCase() + scaleSelect.value.slice(1)}`;
-        });
-    }
-});
-
-// Helper functions for creating options (add these outside the DOMContentLoaded event)
+// Helper functions for creating options
 function createKeyOptions(selected = 'C') {
     return NOTES.map(note =>
         `<option value="${note}"${note === selected ? ' selected' : ''}>${note}</option>`
@@ -3048,6 +2881,20 @@ function createScaleOptions(selected = 'major') {
     ).join('');
 }
 
+// DOMContentLoaded event to initialize everything
+document.addEventListener('DOMContentLoaded', () => {
+    initializeApp().catch(error => {
+        console.error("Initialization failed:", error);
+        updateLoadingStatus("Initialization failed");
+    });
+
+    // Show/hide drum set toggle button based on sound type
+    const soundType = document.getElementById('sound-type').value;
+    document.getElementById('drumSetToggleBtn').style.display = soundType === 'drums' ? 'inline-block' : 'none';
+
+    // Initialize static fretboards
+    initializeStaticFretboards();
+});
         
             </script>
         </body>
