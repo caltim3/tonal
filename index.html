@@ -787,19 +787,19 @@ const DRUM_PATTERNS = {
 };
 const drumSoundSets = [
     {
-        name: "Drums Drums",
+        name: "Drums",
         snare: "Snare.wav",
         hihat: "HiHat.wav",
         kick: "Kick.wav"
     },
     {
-        name: "Makaya Drums",
+        name: "Makaya",
         snare: "Snare2.wav",
         hihat: "HiHat2.wav",
         kick: "Kick2.wav"
     },
     {
-        name: "Max Drums",
+        name: "PhillyJoe",
         kick: 'jazzkick.wav',
         snare: 'jazzsnare.wav',
         hihat: 'jazzhat.wav'
@@ -2582,6 +2582,22 @@ function setupEventListeners() {
         }
     });
 
+
+    // Add this to your initialization code
+    document.getElementById('drumSetToggleBtn').addEventListener('click', function() {
+        currentDrumSetIndex = (currentDrumSetIndex + 1) % drumSoundSets.length;
+        this.textContent = drumSoundSets[currentDrumSetIndex].name;
+    });
+
+    // Initial visibility of drum set toggle button
+    document.getElementById('drumSetToggleBtn').style.display = 
+        document.getElementById('sound-type').value === 'drums' ? 'inline-block' : 'none';
+    
+        document.getElementById('sound-type').addEventListener('change', function(e) {
+        const drumSetToggleBtn = document.getElementById('drumSetToggleBtn');
+        drumSetToggleBtn.style.display = e.target.value === 'drums' ? 'inline-block' : 'none';
+        createBeats(); // Recreate beats with new sound type
+    });
     // Modified dark mode toggle with three modes
     let colorMode = 0; // 0 = light, 1 = dark-mode-1, 2 = dark-mode-2, 3 = dark-mode-3
     UI.elements.darkModeToggle.addEventListener('click', () => {
