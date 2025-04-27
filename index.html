@@ -644,52 +644,80 @@
         </div>
     </div>
 
-    <div class="app-section" id="fretflow-section">
-        <h2>FretFlow</h2>
-        <h3>Multiple scale workout</h3>
-        <div class="volume-control">
-            <span>Fretboard Volume:</span>
-            <input type="range" id="fretboard-volume" min="0" max="1" step="0.1" value="0.3" aria-label="Fretboard volume">
+   <div class="app-section" id="fretflow-section">
+    <h2>FretFlow</h2>
+    <h3>Multiple scale workout</h3>
+    <div class="volume-control">
+        <span>Fretboard Volume:</span>
+        <input type="range" id="fretboard-volume" min="0" max="1" step="0.1" value="0.3">
+    </div>
+    <div class="fretboards-grid" id="static-fretboards">
+        <!-- Bottom four fretboards with tuning dropdowns -->
+        <div class="fretboard-container">
+            <div class="scale-display" id="static-scale-display-1"></div>
+            <div class="controls">
+                <select class="tuning-select" data-fretboard="1">
+                    <option value="standard">Standard (EADGBE)</option>
+                    <option value="dropD">Drop D (DADGBE)</option>
+                    <option value="openG">Open G (DGDGBD)</option>
+                    <option value="DADGAD">DADGAD</option>
+                    <option value="openE">Open E (EBEG#BE)</option>
+                </select>
+                <select class="static-key-select" data-fretboard="1"></select>
+                <select class="static-scale-select" data-fretboard="1"></select>
+            </div>
+            <div class="fretboard" id="static-fretboard-1"></div>
         </div>
-       <div class="fretboards-grid" id="static-fretboards">
-  <!-- Fretboard 1 -->
-  <div class="fretboard-container">
-    <div class="scale-display" id="static-scale-display-1"></div>
-    <div class="controls">
-      <select class="static-key-select" data-fretboard="1"></select>
-      <select class="static-scale-select" data-fretboard="1"></select>
+
+        <div class="fretboard-container">
+            <div class="scale-display" id="static-scale-display-2"></div>
+            <div class="controls">
+                <select class="tuning-select" data-fretboard="2">
+                    <option value="standard">Standard (EADGBE)</option>
+                    <option value="dropD">Drop D (DADGBE)</option>
+                    <option value="openG">Open G (DGDGBD)</option>
+                    <option value="DADGAD">DADGAD</option>
+                    <option value="openE">Open E (EBEG#BE)</option>
+                </select>
+                <select class="static-key-select" data-fretboard="2"></select>
+                <select class="static-scale-select" data-fretboard="2"></select>
+            </div>
+            <div class="fretboard" id="static-fretboard-2"></div>
+        </div>
+
+        <div class="fretboard-container">
+            <div class="scale-display" id="static-scale-display-3"></div>
+            <div class="controls">
+                <select class="tuning-select" data-fretboard="3">
+                    <option value="standard">Standard (EADGBE)</option>
+                    <option value="dropD">Drop D (DADGBE)</option>
+                    <option value="openG">Open G (DGDGBD)</option>
+                    <option value="DADGAD">DADGAD</option>
+                    <option value="openE">Open E (EBEG#BE)</option>
+                </select>
+                <select class="static-key-select" data-fretboard="3"></select>
+                <select class="static-scale-select" data-fretboard="3"></select>
+            </div>
+            <div class="fretboard" id="static-fretboard-3"></div>
+        </div>
+
+        <div class="fretboard-container">
+            <div class="scale-display" id="static-scale-display-4"></div>
+            <div class="controls">
+                <select class="tuning-select" data-fretboard="4">
+                    <option value="standard">Standard (EADGBE)</option>
+                    <option value="dropD">Drop D (DADGBE)</option>
+                    <option value="openG">Open G (DGDGBD)</option>
+                    <option value="DADGAD">DADGAD</option>
+                    <option value="openE">Open E (EBEG#BE)</option>
+                </select>
+                <select class="static-key-select" data-fretboard="4"></select>
+                <select class="static-scale-select" data-fretboard="4"></select>
+            </div>
+            <div class="fretboard" id="static-fretboard-4"></div>
+        </div>
     </div>
-    <div class="fretboard" id="static-fretboard-1"></div>
-  </div>
-  <!-- Fretboard 2 -->
-  <div class="fretboard-container">
-    <div class="scale-display" id="static-scale-display-2"></div>
-    <div class="controls">
-      <select class="static-key-select" data-fretboard="2"></select>
-      <select class="static-scale-select" data-fretboard="2"></select>
-    </div>
-    <div class="fretboard" id="static-fretboard-2"></div>
-  </div>
-  <!-- Fretboard 3 -->
-  <div class="fretboard-container">
-    <div class="scale-display" id="static-scale-display-3"></div>
-    <div class="controls">
-      <select class="static-key-select" data-fretboard="3"></select>
-      <select class="static-scale-select" data-fretboard="3"></select>
-    </div>
-    <div class="fretboard" id="static-fretboard-3"></div>
-  </div>
-  <!-- Fretboard 4 -->
-  <div class="fretboard-container">
-    <div class="scale-display" id="static-scale-display-4"></div>
-    <div class="controls">
-      <select class="static-key-select" data-fretboard="4"></select>
-      <select class="static-scale-select" data-fretboard="4"></select>
-    </div>
-    <div class="fretboard" id="static-fretboard-4"></div>
-  </div>
 </div>
-    </div>
 
     <script>
         
@@ -2941,6 +2969,41 @@ document.addEventListener('DOMContentLoaded', () => {
         
         staticFretboardsGrid.appendChild(fretboardContainer);
 
+        // Initialize the static fretboards
+const staticFretboards = document.querySelectorAll('#static-fretboards .fretboard');
+staticFretboards.forEach((fretboard, index) => {
+    const container = fretboard.closest('.fretboard-container');
+    const tuningSelect = container.querySelector('.tuning-select');
+    const keySelect = container.querySelector('.static-key-select');
+    const scaleSelect = container.querySelector('.static-scale-select');
+
+    // Initialize the fretboard
+    createFretboard(fretboard, TUNINGS.standard);
+
+    // Populate key select
+    keySelect.innerHTML = NOTES.map(note => 
+        `<option value="${note}">${note}</option>`
+    ).join('');
+    keySelect.value = 'C';
+
+    // Populate scale select
+    scaleSelect.innerHTML = Object.keys(SCALES).map(scale => 
+        `<option value="${scale}">${scale.charAt(0).toUpperCase() + scale.slice(1)}</option>`
+    ).join('');
+    scaleSelect.value = 'major';
+
+    // Update fretboard when any select changes
+    [tuningSelect, keySelect, scaleSelect].forEach(select => {
+        select.addEventListener('change', () => {
+            const tuning = TUNINGS[tuningSelect.value];
+            updateFretboardNotes(fretboard, keySelect.value, scaleSelect.value, tuning);
+        });
+    });
+
+    // Initial update
+    updateFretboardNotes(fretboard, 'C', 'major', TUNINGS.standard);
+});
+        
         // Get the elements we just created
         const fretboard = document.getElementById(`static-fretboard-${i}`);
         const keySelect = fretboardContainer.querySelector('.static-key-select');
