@@ -574,10 +574,11 @@
         <div class="beats-container"></div>
     </div>
 
-    <div class="volume-control">
-        <label for="accent-intensity">Accent Intensity:</label>
-        <input type="range" id="accent-intensity" min="1" max="2" step="0.1" value="1.5" aria-label="Accent intensity">
-    </div>
+<div class="control-group">
+  <label for="swing-control">Swing</label><br>
+  <input type="range" id="swing-control" min="0" max="20" value="0" step="1">
+  <span id="swing-value">0%</span>
+</div>
     
     <div class="app-section" id="chord-progression-section">
         <h2>Chord Progression Practice</h2>
@@ -957,7 +958,7 @@ const UI = {
         fretboardVolume: document.getElementById('fretboard-volume'),
         fretboardsGrid: document.querySelector('.fretboards-grid'),
         darkModeToggle: document.getElementById('dark-mode-toggle'),
-        accentIntensity: document.getElementById('accent-intensity')
+
     },
     init() {
         Object.entries(this.elements).forEach(([key, el]) => {
@@ -1056,6 +1057,26 @@ const AudioContextManager = {
         return buffer;
     },
 
+        const SwingControl = {
+            element: document.getElementById('swing-control'),
+            valueElement: document.getElementById('swing-value'),
+        
+            getSwingAmount() {
+                return parseFloat(this.element?.value ?? 0); // returns 0-20
+            },
+        
+            initialize() {
+                if (!this.element || !this.valueElement) {
+                    console.warn('SwingControl elements not found');
+                    return;
+                }
+                this.element.addEventListener('input', () => {
+                    this.valueElement.textContent = `${this.element.value}%`;
+                });
+            }
+        };
+
+    
     async loadPianoSamples() {
         log('Starting full piano sample loading...');
         const octaves = [2, 3, 4, 5];
@@ -1664,12 +1685,10 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
 
     if (!shouldInvert && AudioContextManager.currentChordGain) {
         AudioContextManager.currentChordGain.gain.setValueAtTime(
-            AudioContextManager.currentChordGain.gain.value, 
-            startTime
+            AudioContextManager.currentChordGain.gain.value, startTime
         );
         AudioContextManager.currentChordGain.gain.exponentialRampToValueAtTime(
-            0.001, 
-            startTime + 0.05
+            0.001, startTime + 0.05
         );
     }
     AudioContextManager.currentChordGain = gainNode;
@@ -1678,69 +1697,67 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
     const upperNotes = chordNotes.slice(1);
     let finalChordNotes = [rootNote, ...upperNotes];
 
-        if (shouldInvert) {
-            // Weighted random inversion selection
-            const inversionPool = [
-                'drop2', 'drop2', 'drop2', 'drop2', 'drop2', // drop2 more common
-                'drop3', 'drop3',                            // drop3 medium
-                'drop2and4'                                  // drop2and4 rare
-            ];
-            const inversionType = inversionPool[Math.floor(Math.random() * inversionPool.length)];
-        
-            switch (inversionType) {
-                case 'drop2':
-                    if (upperNotes.length >= 2) {
-                        finalChordNotes = [rootNote, ...upperNotes.slice(0, 1), ...upperNotes.slice(2), upperNotes[1]];
-                    }
-                    break;
-                case 'drop3':
-                    if (upperNotes.length >= 3) {
-                        finalChordNotes = [rootNote, upperNotes[0], ...upperNotes.slice(2), upperNotes[1]];
-                    }
-                    break;
-                case 'drop2and4':
-                    if (upperNotes.length >= 4) {
-                        finalChordNotes = [rootNote, ...upperNotes.slice(0, 1), ...upperNotes.slice(2, 3), ...upperNotes.slice(4), upperNotes[1], upperNotes[3]];
-                    }
-                    break;
-                default:
-                    break;
-            }
+    if (shouldInvert) {
+        const inversionPool = [
+            'drop2', 'drop2', 'drop2', 'drop2', 'drop2',
+            'drop3', 'drop3',
+            'drop2and4'
+        ];
+        const inversionType = inversionPool[Math.floor(Math.random() * inversionPool.length)];
+
+        switch (inversionType) {
+            case 'drop2':
+                if (upperNotes.length >= 2) {
+                    finalChordNotes = [rootNote, ...upperNotes.slice(0, 1), ...upperNotes.slice(2), upperNotes[1]];
+                }
+                break;
+            case 'drop3':
+                if (upperNotes.length >= 3) {
+                    finalChordNotes = [rootNote, upperNotes[0], ...upperNotes.slice(2), upperNotes[1]];
+                }
+                break;
+            case 'drop2and4':
+                if (upperNotes.length >= 4) {
+                    finalChordNotes = [rootNote, ...upperNotes.slice(0, 1), ...upperNotes.slice(2, 3), ...upperNotes.slice(4), upperNotes[1], upperNotes[3]];
+                }
+                break;
         }
-
-
-finalChordNotes.forEach((note, index) => {
-    const baseOctave = (index === 0) ? 2 : 3;
-
-    const mappedNote = toSampleNoteName(note);
-    const sampleKey = `${mappedNote.toUpperCase()}${baseOctave}`;
-
-    const buffer = AudioContextManager.pianoSampleBuffers[sampleKey];
-    if (!buffer) {
-        console.warn(`No piano sample found for ${sampleKey}`);
-        return;
     }
 
-    const source = AudioContextManager.context.createBufferSource();
-    source.buffer = buffer;
-    source.connect(gainNode);
-
-    const reverbGain = AudioContextManager.context.createGain();
-    reverbGain.gain.value = 0.2;
-    source.connect(reverbGain);
-    reverbGain.connect(AudioContextManager.reverbNode);
-
-    // 🎯 Apply swing: random slight offset per note
+    // 🎯 Move swing math outside loop
     const swingPercent = SwingControl.getSwingAmount();
-    const maxSwingMs = (swingPercent / 100) * 100; // up to 100ms total at 100%
-    const randomSwingMs = (Math.random() - 0.5) * 2 * maxSwingMs; // random between -max and +max
-    const swingOffset = randomSwingMs / 1000; // convert to seconds
+    const curvedSwingPercent = Math.pow(swingPercent / 20, 2) * 20;
+    const maxSwingMs = (curvedSwingPercent / 100) * 100;
 
-    source.start(startTime + swingOffset);
-    source.stop(startTime + swingOffset + duration);
-});
+    finalChordNotes.forEach((note, index) => {
+        const baseOctave = (index === 0) ? 2 : 3;
 
+        const mappedNote = toSampleNoteName(note);
+        const sampleKey = `${mappedNote.toUpperCase()}${baseOctave}`;
+
+        const buffer = AudioContextManager.pianoSampleBuffers[sampleKey];
+        if (!buffer) {
+            console.warn(`No piano sample found for ${sampleKey}`);
+            return;
+        }
+
+        const source = AudioContextManager.context.createBufferSource();
+        const reverbGain = AudioContextManager.context.createGain();
+        reverbGain.gain.value = 0.2;
+
+        source.buffer = buffer;
+        source.connect(gainNode);
+        source.connect(reverbGain);
+        reverbGain.connect(AudioContextManager.reverbNode);
+
+        const randomSwingMs = (Math.random() - 0.5) * 2 * maxSwingMs;
+        const swingOffset = randomSwingMs / 1000;
+
+        source.start(startTime + swingOffset);
+        source.stop(startTime + swingOffset + duration);
+    });
 }
+
 
 
         
@@ -2856,6 +2873,9 @@ function createScaleOptions(selected = 'major') {
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         await initializeApp();
+
+        // Initialize Swing Control after app setup
+        SwingControl.initialize();
         
         // Show/hide drum set toggle button based on sound type
         const soundTypeSelect = document.getElementById('sound-type');
@@ -2870,7 +2890,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 drumSetToggleBtn.style.display = e.target.value === 'drums' ? 'inline-block' : 'none';
             });
         }
-
+        
+    } catch (error) {
+        console.error('Error during app initialization:', error);
+    }
+});
+        
     const fretboardsGrid = document.querySelector('.fretboards-grid');
     for (let i = 1; i <= 4; i++) {
         const container = createFretboardContainer(i);
