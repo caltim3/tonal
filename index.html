@@ -1657,12 +1657,10 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
     const chordVolume = parseFloat(UI.elements.chordVolume.value);
     if (chordVolume <= 0) return;
 
-    // Create a new gain node for this chord
     const gainNode = AudioContextManager.context.createGain();
     gainNode.gain.value = chordVolume;
     gainNode.connect(AudioContextManager.context.destination);
 
-    // Fade out previous chord if not continuation
     if (!shouldInvert && AudioContextManager.currentChordGain) {
         AudioContextManager.currentChordGain.gain.setValueAtTime(
             AudioContextManager.currentChordGain.gain.value, 
@@ -1675,23 +1673,45 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
     }
     AudioContextManager.currentChordGain = gainNode;
 
-    // Setup root and upper notes
     const rootNote = chordNotes[0];
     const upperNotes = chordNotes.slice(1);
-    let finalChordNotes = shouldInvert
-        ? [rootNote, ...upperNotes.sort(() => Math.random() - 0.5)]
-        : chordNotes;
+    let finalChordNotes = [rootNote, ...upperNotes];
 
-    // Play each note
+    if (shouldInvert) {
+        // Pick a random inversion type
+        const inversionTypes = ['drop2', 'drop3', 'drop2and4'];
+        const inversionType = inversionTypes[Math.floor(Math.random() * inversionTypes.length)];
+
+        switch (inversionType) {
+            case 'drop2':
+                if (upperNotes.length >= 2) {
+                    finalChordNotes = [rootNote, ...upperNotes.slice(0, 1), ...upperNotes.slice(2), upperNotes[1]];
+                }
+                break;
+            case 'drop3':
+                if (upperNotes.length >= 3) {
+                    finalChordNotes = [rootNote, upperNotes[0], ...upperNotes.slice(2), upperNotes[1]];
+                }
+                break;
+            case 'drop2and4':
+                if (upperNotes.length >= 4) {
+                    finalChordNotes = [rootNote, ...upperNotes.slice(0, 1), ...upperNotes.slice(2, 3), ...upperNotes.slice(4), upperNotes[1], upperNotes[3]];
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
     finalChordNotes.forEach((note, index) => {
-        let octave;
-        if (shouldInvert) {
-            octave = index === 0 ? 3 : (4 + Math.floor(Math.random() * 2));
-        } else {
-            octave = (index < 3) ? 3 : 4;
+        let octave = (index === 0) ? 2 : 3; // Default root in octave 2, others in 3
+
+        // If this note was "dropped," bring it lower to octave 2
+        if (shouldInvert && index > 0 && (index === finalChordNotes.length - 1)) {
+            octave = 2;
         }
 
-        const mappedNote = toSampleNoteName(note); // "A#" → "As"
+        const mappedNote = toSampleNoteName(note);
         const sampleKey = `${mappedNote.toUpperCase()}${octave}`;
 
         const buffer = AudioContextManager.pianoSampleBuffers[sampleKey];
@@ -1704,7 +1724,6 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
         source.buffer = buffer;
         source.connect(gainNode);
 
-        // Add reverb (optional, nice touch)
         const reverbGain = AudioContextManager.context.createGain();
         reverbGain.gain.value = 0.2;
         source.connect(reverbGain);
@@ -1714,6 +1733,7 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
         source.stop(startTime + duration);
     });
 }
+
 
         
 function getChordNotes(root, quality) {
