@@ -826,6 +826,7 @@ const drumSoundSets = [
 ];
 
 let currentDrumSetIndex = 0;
+        
 const progressions = {
     "I V7": { defaultKey: "C", progression: ["I", "V7"] },
     "jazz_blues": { defaultKey: "Bb", progression: ["I7", "IV7", "I7", "I7", "IV7", "IV7", "I7", "VI7", "IIm7", "V7", "I7", "V7"] },
@@ -1677,61 +1678,68 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
     const upperNotes = chordNotes.slice(1);
     let finalChordNotes = [rootNote, ...upperNotes];
 
-    if (shouldInvert) {
-        // Pick a random inversion type
-        const inversionTypes = ['drop2', 'drop3', 'drop2and4'];
-        const inversionType = inversionTypes[Math.floor(Math.random() * inversionTypes.length)];
-
-        switch (inversionType) {
-            case 'drop2':
-                if (upperNotes.length >= 2) {
-                    finalChordNotes = [rootNote, ...upperNotes.slice(0, 1), ...upperNotes.slice(2), upperNotes[1]];
-                }
-                break;
-            case 'drop3':
-                if (upperNotes.length >= 3) {
-                    finalChordNotes = [rootNote, upperNotes[0], ...upperNotes.slice(2), upperNotes[1]];
-                }
-                break;
-            case 'drop2and4':
-                if (upperNotes.length >= 4) {
-                    finalChordNotes = [rootNote, ...upperNotes.slice(0, 1), ...upperNotes.slice(2, 3), ...upperNotes.slice(4), upperNotes[1], upperNotes[3]];
-                }
-                break;
-            default:
-                break;
+        if (shouldInvert) {
+            // Weighted random inversion selection
+            const inversionPool = [
+                'drop2', 'drop2', 'drop2', 'drop2', 'drop2', // drop2 more common
+                'drop3', 'drop3',                            // drop3 medium
+                'drop2and4'                                  // drop2and4 rare
+            ];
+            const inversionType = inversionPool[Math.floor(Math.random() * inversionPool.length)];
+        
+            switch (inversionType) {
+                case 'drop2':
+                    if (upperNotes.length >= 2) {
+                        finalChordNotes = [rootNote, ...upperNotes.slice(0, 1), ...upperNotes.slice(2), upperNotes[1]];
+                    }
+                    break;
+                case 'drop3':
+                    if (upperNotes.length >= 3) {
+                        finalChordNotes = [rootNote, upperNotes[0], ...upperNotes.slice(2), upperNotes[1]];
+                    }
+                    break;
+                case 'drop2and4':
+                    if (upperNotes.length >= 4) {
+                        finalChordNotes = [rootNote, ...upperNotes.slice(0, 1), ...upperNotes.slice(2, 3), ...upperNotes.slice(4), upperNotes[1], upperNotes[3]];
+                    }
+                    break;
+                default:
+                    break;
+            }
         }
+
+
+finalChordNotes.forEach((note, index) => {
+    const baseOctave = (index === 0) ? 2 : 3;
+
+    const mappedNote = toSampleNoteName(note);
+    const sampleKey = `${mappedNote.toUpperCase()}${baseOctave}`;
+
+    const buffer = AudioContextManager.pianoSampleBuffers[sampleKey];
+    if (!buffer) {
+        console.warn(`No piano sample found for ${sampleKey}`);
+        return;
     }
 
-    finalChordNotes.forEach((note, index) => {
-        let octave = (index === 0) ? 2 : 3; // Default root in octave 2, others in 3
+    const source = AudioContextManager.context.createBufferSource();
+    source.buffer = buffer;
+    source.connect(gainNode);
 
-        // If this note was "dropped," bring it lower to octave 2
-        if (shouldInvert && index > 0 && (index === finalChordNotes.length - 1)) {
-            octave = 2;
-        }
+    const reverbGain = AudioContextManager.context.createGain();
+    reverbGain.gain.value = 0.2;
+    source.connect(reverbGain);
+    reverbGain.connect(AudioContextManager.reverbNode);
 
-        const mappedNote = toSampleNoteName(note);
-        const sampleKey = `${mappedNote.toUpperCase()}${octave}`;
+    // 🎯 Apply swing: random slight offset per note
+    const swingPercent = SwingControl.getSwingAmount();
+    const maxSwingMs = (swingPercent / 100) * 100; // up to 100ms total at 100%
+    const randomSwingMs = (Math.random() - 0.5) * 2 * maxSwingMs; // random between -max and +max
+    const swingOffset = randomSwingMs / 1000; // convert to seconds
 
-        const buffer = AudioContextManager.pianoSampleBuffers[sampleKey];
-        if (!buffer) {
-            console.warn(`No piano sample found for ${sampleKey}`);
-            return;
-        }
+    source.start(startTime + swingOffset);
+    source.stop(startTime + swingOffset + duration);
+});
 
-        const source = AudioContextManager.context.createBufferSource();
-        source.buffer = buffer;
-        source.connect(gainNode);
-
-        const reverbGain = AudioContextManager.context.createGain();
-        reverbGain.gain.value = 0.2;
-        source.connect(reverbGain);
-        reverbGain.connect(AudioContextManager.reverbNode);
-
-        source.start(startTime);
-        source.stop(startTime + duration);
-    });
 }
 
 
