@@ -1062,14 +1062,14 @@ const AudioContextManager = {
                 log(`Loaded ${type} sound from ${filename}`);
             } catch (error) {
                 console.error(`Failed to load ${filename}:`, error);
-                this.soundBuffers[type] = await this.createDrumSound(type);
+                this.soundBuffers[type] = await this.createDrumSound(type); // Now correctly references the method
                 log(`Using fallback synthetic sound for ${type}`);
             }
         }
         updateLoadingStatus("Drum sounds loaded");
     },
-};
-    async createDrumSound(type) {
+
+    async createDrumSound(type) { // Moved inside the object
         const sampleRate = this.context.sampleRate;
         const duration = type === 'hihat' ? 0.05 : 0.2;
         const buffer = this.context.createBuffer(1, sampleRate * duration, sampleRate);
@@ -1106,7 +1106,8 @@ const AudioContextManager = {
                 break;
         }
         return buffer;
-    },
+    } // No trailing comma here unless another method follows
+}; // Semicolon ends the const declaration
 
         const SwingControl = {
             element: document.getElementById('swing-control'),
