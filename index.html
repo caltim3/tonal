@@ -989,14 +989,6 @@ const AudioContextManager = {
         targetBuffer[key] = audioBuffer;
     },
 
-    async loadPianoSamples(sampleMap) {
-        const promises = Object.entries(sampleMap).map(([note, url]) =>
-            this.loadSample(url, this.pianoSampleBuffers, note)
-        );
-        await Promise.all(promises);
-        this.samplesLoaded = true;
-    },
-
     playSample(buffer, time = 0, destination = null, gainValue = 1) {
         const source = this.context.createBufferSource();
         const gainNode = this.context.createGain();
@@ -1129,13 +1121,22 @@ const AudioContextManager = {
         };
 
     
-    async loadPianoSamples() {
+async loadPianoSamples(sampleMap = null) {
+    if (sampleMap) {
+        // Load specific samples from sampleMap
+        const promises = Object.entries(sampleMap).map(([note, url]) =>
+            this.loadSample(url, this.pianoSampleBuffers, note)
+        );
+        await Promise.all(promises);
+        this.samplesLoaded = true;
+    } else {
+        // Load full set of piano samples
         log('Starting full piano sample loading...');
         const octaves = [2, 3, 4, 5];
         const notes = ['c', 'cs', 'd', 'ds', 'e', 'f', 'fs', 'g', 'gs', 'a', 'as', 'b'];
         for (const octave of octaves) {
             for (const note of notes) {
-                const sampleName = `${note}${octave}.wav`; // e.g., 'as3.wav'
+                const sampleName = `${note}${octave}.wav`;
                 try {
                     const response = await fetch(`./${sampleName}`);
                     if (!response.ok) throw new Error(`Failed to load ${sampleName}`);
@@ -1149,7 +1150,8 @@ const AudioContextManager = {
         }
         this.samplesLoaded = true;
         updateLoadingStatus("Full piano samples loaded");
-    },
+    }
+},
 
     setupReverb() {
         if (!this.reverbNode) {
