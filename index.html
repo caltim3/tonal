@@ -1070,15 +1070,7 @@ async loadPianoSamples() {
     updateLoadingStatus("Full piano samples loaded");
 }
 
-    createSyntheticSample(note, octave) {
-        const buffer = this.context.createBuffer(1, this.context.sampleRate, this.context.sampleRate);
-        const data = buffer.getChannelData(0);
-        const frequency = PIANO_NOTES[`${note}${octave}`] || 440;
-        for (let i = 0; i < data.length; i++) {
-            data[i] = Math.sin(2 * Math.PI * frequency * i / this.context.sampleRate) * Math.exp(-i / this.context.sampleRate);
-        }
-        return buffer;
-    },
+
     async setupReverb() {
         if (!this.reverbNode) {
             this.reverbNode = this.context.createConvolver();
