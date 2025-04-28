@@ -1115,6 +1115,30 @@ const AudioContextManager = {
         }
     }
 };
+function createFretboardContainer(index) {
+    const container = document.createElement('div');
+    container.className = 'fretboard-container';
+    container.innerHTML = `
+        <div class="controls">
+            <select class="tuning-select" id="tuning-${index}">
+                ${Object.entries(TUNINGS).map(([key, value]) =>
+                    `<option value="${key}">${key} (${value.join('')})</option>`
+                ).join('')}
+            </select>
+            <select id="key-${index}">
+                ${NOTES.map(note => `<option>${note}</option>`).join('')}
+            </select>
+            <select id="scale-${index}">
+                ${Object.keys(SCALES).map(scale =>
+                    `<option value="${scale}">${scale.charAt(0).toUpperCase() + scale.slice(1)}</option>`
+                ).join('')}
+            </select>
+        </div>
+        <div id="fretboard-${index}" class="fretboard"></div>
+    `;
+    return container;
+}
+        
 async function ensureAudioInitialized() {
     if (!AudioContextManager.context || AudioContextManager.context.state === 'suspended') {
         try {
