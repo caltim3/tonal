@@ -707,18 +707,7 @@ const ENHARMONIC_MAP = {
     'A#': 'Bb', 'Bb': 'Bb'
 };
 
-const SAMPLED_NOTES = ['A', 'C', 'Ds', 'Fs'];
-const PIANO_CONFIG = {
-    octaves: {
-        'A': [2, 3, 4, 5],
-        'C': [2, 3, 4, 5],
-        'Fs': [2, 3, 4, 5],
-        'Ds': [2, 3, 4, 5]
-    },
-    velocities: [12],
-    fileFormat: 'wav'
-};
-        
+       
 function toSampleNoteName(note) {
   // Converts "A#" to "As", "Bb" to "As", etc.
   if (!note) return '';
@@ -1056,29 +1045,31 @@ const AudioContextManager = {
         }
         return buffer;
     },
-    async loadPianoSamples() {
-        log('Starting piano sample loading...');
-        if (!this.context) {
-            await this.initialize();
-        }
-        for (let note of SAMPLED_NOTES) {
-            for (let octave of PIANO_CONFIG.octaves[note]) {
-                const sampleName = `${noteNameToSampleName(note)}${octave}v12`;
-                try {
-                    const response = await fetch(`./${sampleName}.${PIANO_CONFIG.fileFormat}`);
-                    if (!response.ok) throw new Error(`Failed to load ${sampleName}`);
-                    const arrayBuffer = await response.arrayBuffer();
-                    this.pianoSampleBuffers[sampleName] = await this.context.decodeAudioData(arrayBuffer);
-                    log(`Loaded piano sample: ${sampleName}`);
-                } catch (error) {
-                    console.warn(`Could not load ${sampleName}, using fallback`, error);
-                    this.pianoSampleBuffers[sampleName] = this.createSyntheticSample(note, octave);
-                }
+async loadPianoSamples() {
+    log('Starting new full piano sample loading...');
+    if (!this.context) {
+        await this.initialize();
+    }
+    const octaves = [2, 3, 4, 5];
+    const notes = ['c', 'cs', 'd', 'ds', 'e', 'f', 'fs', 'g', 'gs', 'a', 'as', 'b'];
+    for (const octave of octaves) {
+        for (const note of notes) {
+            const sampleName = `${note}${octave}.wav`; // Example: 'as3.wav'
+            try {
+                const response = await fetch(`./${sampleName}`);
+                if (!response.ok) throw new Error(`Failed to load ${sampleName}`);
+                const arrayBuffer = await response.arrayBuffer();
+                this.pianoSampleBuffers[`${note.toUpperCase()}${octave}`] = await this.context.decodeAudioData(arrayBuffer);
+                log(`Loaded ${sampleName}`);
+            } catch (error) {
+                console.error(`Error loading ${sampleName}:`, error);
             }
         }
-        this.samplesLoaded = true;
-        updateLoadingStatus("Piano samples loaded");
-    },
+    }
+    this.samplesLoaded = true;
+    updateLoadingStatus("Full piano samples loaded");
+}
+
     createSyntheticSample(note, octave) {
         const buffer = this.context.createBuffer(1, this.context.sampleRate, this.context.sampleRate);
         const data = buffer.getChannelData(0);
@@ -1614,10 +1605,8 @@ function playNote(noteName, volume = 1.0, duration = 1000) {
     const fretboardVolumeControl = document.getElementById('fretboard-volume');
     const fretboardVolume = parseFloat(fretboardVolumeControl?.value ?? 1);
     const finalVolume = volume * fretboardVolume;
-
     if (finalVolume <= 0) return;
 
-    // Extract the pitch class and octave from the note name
     const match = noteName.match(/^([A-G][b#]?)(\d)$/);
     if (!match) {
         console.warn(`Invalid note format: ${noteName}`);
@@ -1625,15 +1614,12 @@ function playNote(noteName, volume = 1.0, duration = 1000) {
     }
 
     let [, rawNote, octaveStr] = match;
-    const baseNote = standardizeNoteName(rawNote).replace('m', '');
-    const mappedNote = SAMPLE_NOTE_MAP[baseNote] || baseNote;
-    const octave = Math.max(2, Math.min(6, parseInt(octaveStr)));
+    const mappedNote = toSampleNoteName(rawNote);  // Turn 'A#' into 'As'
+    const sampleKey = `${mappedNote.toUpperCase()}${octaveStr}`;
 
-    const sampleName = `${noteNameToSampleName(mappedNote)}${octave}v12`;
-    const buffer = AudioContextManager.pianoSampleBuffers[sampleName];
-
+    const buffer = AudioContextManager.pianoSampleBuffers[sampleKey];
     if (!buffer) {
-        console.warn(`No piano sample found for ${sampleName}`);
+        console.warn(`No piano sample found for ${sampleKey}`);
         return;
     }
 
@@ -1651,14 +1637,13 @@ function playNote(noteName, volume = 1.0, duration = 1000) {
         setTimeout(() => {
             try {
                 source.stop();
-            } catch (e) {
-                // No-op on already stopped source
-            }
+            } catch (e) {}
         }, duration);
     } catch (error) {
         console.error('Error playing note:', error);
     }
 }
+
 
 
 async function playChord(root, quality, startTime = AudioContextManager.context.currentTime, duration = 2, shouldInvert = false) {
@@ -1678,7 +1663,7 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
     gainNode.gain.value = chordVolume;
     gainNode.connect(AudioContextManager.context.destination);
 
-    // Fade out previous chord if this isn't a continuation
+    // Fade out previous chord if not continuation
     if (!shouldInvert && AudioContextManager.currentChordGain) {
         AudioContextManager.currentChordGain.gain.setValueAtTime(
             AudioContextManager.currentChordGain.gain.value, 
@@ -1689,54 +1674,38 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
             startTime + 0.05
         );
     }
-
     AudioContextManager.currentChordGain = gainNode;
 
-    // Split chord into root and upper notes for inversion
+    // Setup root and upper notes
     const rootNote = chordNotes[0];
     const upperNotes = chordNotes.slice(1);
-    
-    let finalChordNotes;
-    if (shouldInvert) {
-        // For inversions, randomize the order of upper notes and potentially move some to higher octaves
-        const shuffledUpperNotes = [...upperNotes].sort(() => Math.random() - 0.5);
-        finalChordNotes = [rootNote, ...shuffledUpperNotes];
-    } else {
-        // For root position, keep original order
-        finalChordNotes = chordNotes;
-    }
+    let finalChordNotes = shouldInvert
+        ? [rootNote, ...upperNotes.sort(() => Math.random() - 0.5)]
+        : chordNotes;
 
-    // Play each note in the chord
+    // Play each note
     finalChordNotes.forEach((note, index) => {
-        // Determine octave based on position and inversion
         let octave;
         if (shouldInvert) {
-            // For inversions, use higher octaves for upper notes
-            octave = index === 0 ? 2 : (3 + Math.floor(Math.random() * 2));
+            octave = index === 0 ? 3 : (4 + Math.floor(Math.random() * 2));
         } else {
-            // For root position, keep all notes in the same octave range
-            octave = index === 0 ? 2 : 3;
+            octave = (index < 3) ? 3 : 4;
         }
-        
-        const { sampleKey, semitoneDiff } = getPitchShiftedNote(note, octave);
-        if (!AudioContextManager.pianoSampleBuffers[sampleKey]) {
-            console.warn(`No sample found for ${sampleKey}`);
+
+        const mappedNote = toSampleNoteName(note); // "A#" → "As"
+        const sampleKey = `${mappedNote.toUpperCase()}${octave}`;
+
+        const buffer = AudioContextManager.pianoSampleBuffers[sampleKey];
+        if (!buffer) {
+            console.warn(`No piano sample found for ${sampleKey}`);
             return;
         }
 
         const source = AudioContextManager.context.createBufferSource();
-        source.buffer = AudioContextManager.pianoSampleBuffers[sampleKey];
-        
-        const playbackRate = Math.pow(2, semitoneDiff / 12);
-        if (!isFinite(playbackRate) || playbackRate <= 0) {
-            console.warn(`Invalid playback rate ${playbackRate} for note ${note}`);
-            return;
-        }
-        
-        source.playbackRate.value = playbackRate;
+        source.buffer = buffer;
         source.connect(gainNode);
 
-        // Add reverb
+        // Add reverb (optional, nice touch)
         const reverbGain = AudioContextManager.context.createGain();
         reverbGain.gain.value = 0.2;
         source.connect(reverbGain);
@@ -1746,6 +1715,7 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
         source.stop(startTime + duration);
     });
 }
+
         
 function getChordNotes(root, quality) {
   const CHORD_INTERVALS = {
