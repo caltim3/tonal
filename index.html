@@ -1731,32 +1731,41 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
 
     finalChordNotes.forEach((note, index) => {
         const baseOctave = (index === 0) ? 2 : 3;
-
+    
         const mappedNote = toSampleNoteName(note);
         const sampleKey = `${mappedNote.toUpperCase()}${baseOctave}`;
-
+    
         const buffer = AudioContextManager.pianoSampleBuffers[sampleKey];
         if (!buffer) {
             console.warn(`No piano sample found for ${sampleKey}`);
             return;
         }
-
+    
         const source = AudioContextManager.context.createBufferSource();
+        source.buffer = buffer;
+    
+        // 🎯 Create individual gain per note
+        const noteGainNode = AudioContextManager.context.createGain();
+        noteGainNode.gain.value = (index === 0) ? 1.2 : 0.8; 
+        // Root note slightly louder (120%), others a bit softer (80%)
+    
+        // Connect nodes
+        source.connect(noteGainNode);
+        noteGainNode.connect(gainNode);
+    
+        // Optional: reverb chain
         const reverbGain = AudioContextManager.context.createGain();
         reverbGain.gain.value = 0.2;
-
-        source.buffer = buffer;
-        source.connect(gainNode);
         source.connect(reverbGain);
         reverbGain.connect(AudioContextManager.reverbNode);
-
+    
+        // 🎯 Apply Swing timing
         const randomSwingMs = (Math.random() - 0.5) * 2 * maxSwingMs;
         const swingOffset = randomSwingMs / 1000;
-
+    
         source.start(startTime + swingOffset);
         source.stop(startTime + swingOffset + duration);
     });
-}
 
 
 
