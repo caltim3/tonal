@@ -976,6 +976,58 @@ const AudioContextManager = {
     samplesLoaded: false,
     currentChordGain: null,
 
+    init() {
+        if (!this.context) {
+            this.context = new (window.AudioContext || window.webkitAudioContext)();
+        }
+    },
+
+    async loadSample(url, targetBuffer, key) {
+        const response = await fetch(url);
+        const arrayBuffer = await response.arrayBuffer();
+        const audioBuffer = await this.context.decodeAudioData(arrayBuffer);
+        targetBuffer[key] = audioBuffer;
+    },
+
+    async loadPianoSamples(sampleMap) {
+        const promises = Object.entries(sampleMap).map(([note, url]) =>
+            this.loadSample(url, this.pianoSampleBuffers, note)
+        );
+        await Promise.all(promises);
+        this.samplesLoaded = true;
+    },
+
+    playSample(buffer, time = 0, destination = null, gainValue = 1) {
+        const source = this.context.createBufferSource();
+        const gainNode = this.context.createGain();
+        source.buffer = buffer;
+        gainNode.gain.value = gainValue;
+
+        source.connect(gainNode);
+        gainNode.connect(destination || this.context.destination);
+
+        source.start(this.context.currentTime + time);
+        return source;
+    },
+
+    applyReverb(buffer) {
+        if (!this.reverbNode) {
+            this.reverbNode = this.context.createConvolver();
+            // You would load an impulse response for reverb separately and assign it here
+        }
+        buffer.connect(this.reverbNode);
+        this.reverbNode.connect(this.context.destination);
+    },
+
+    stopAllSounds() {
+        if (this.currentChordGain) {
+            this.currentChordGain.disconnect();
+            this.currentChordGain = null;
+        }
+        // Optionally stop any other ongoing sounds
+    }
+};
+
     async initialize() {
         if (!this.context) {
             this.context = new (window.AudioContext || window.webkitAudioContext)();
