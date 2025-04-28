@@ -973,12 +973,13 @@ const AudioContextManager = {
     reverbNode: null,
     samplesLoaded: false,
     currentChordGain: null,
+
     async initialize() {
         if (!this.context) {
             this.context = new (window.AudioContext || window.webkitAudioContext)();
             await this.loadSounds();
             await this.loadPianoSamples();
-            await this.setupReverb();
+            this.setupReverb();
         }
         if (this.context.state === 'suspended') {
             await this.context.resume();
@@ -986,9 +987,11 @@ const AudioContextManager = {
         AppState.updateState({ audioInitialized: true });
         return this.context;
     },
+
     async ensureAudioContext() {
         return await this.initialize();
     },
+
     async loadSounds() {
         const soundFiles = {
             'click': 'Click.wav',
@@ -997,7 +1000,7 @@ const AudioContextManager = {
             'snare': 'Snare.wav',
             'woodblock': 'woodblock.wav'
         };
-        for (let [type, filename] of Object.entries(soundFiles)) {
+        for (const [type, filename] of Object.entries(soundFiles)) {
             try {
                 const response = await fetch(`./${filename}`);
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -1012,17 +1015,23 @@ const AudioContextManager = {
         }
         updateLoadingStatus("Drum sounds loaded");
     },
+
     async createDrumSound(type) {
         const sampleRate = this.context.sampleRate;
         const duration = type === 'hihat' ? 0.05 : 0.2;
         const buffer = this.context.createBuffer(1, sampleRate * duration, sampleRate);
         const data = buffer.getChannelData(0);
+
         switch (type) {
             case 'click':
-                for (let i = 0; i < data.length; i++) data[i] = Math.sin(i * 0.05) * Math.exp(-i * 0.01);
+                for (let i = 0; i < data.length; i++) {
+                    data[i] = Math.sin(i * 0.05) * Math.exp(-i * 0.01);
+                }
                 break;
             case 'hihat':
-                for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (sampleRate * 0.01));
+                for (let i = 0; i < data.length; i++) {
+                    data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (sampleRate * 0.01));
+                }
                 break;
             case 'kick':
                 for (let i = 0; i < data.length; i++) {
@@ -1045,33 +1054,30 @@ const AudioContextManager = {
         }
         return buffer;
     },
-async loadPianoSamples() {
-    log('Starting new full piano sample loading...');
-    if (!this.context) {
-        await this.initialize();
-    }
-    const octaves = [2, 3, 4, 5];
-    const notes = ['c', 'cs', 'd', 'ds', 'e', 'f', 'fs', 'g', 'gs', 'a', 'as', 'b'];
-    for (const octave of octaves) {
-        for (const note of notes) {
-            const sampleName = `${note}${octave}.wav`; // Example: 'as3.wav'
-            try {
-                const response = await fetch(`./${sampleName}`);
-                if (!response.ok) throw new Error(`Failed to load ${sampleName}`);
-                const arrayBuffer = await response.arrayBuffer();
-                this.pianoSampleBuffers[`${note.toUpperCase()}${octave}`] = await this.context.decodeAudioData(arrayBuffer);
-                log(`Loaded ${sampleName}`);
-            } catch (error) {
-                console.error(`Error loading ${sampleName}:`, error);
+
+    async loadPianoSamples() {
+        log('Starting full piano sample loading...');
+        const octaves = [2, 3, 4, 5];
+        const notes = ['c', 'cs', 'd', 'ds', 'e', 'f', 'fs', 'g', 'gs', 'a', 'as', 'b'];
+        for (const octave of octaves) {
+            for (const note of notes) {
+                const sampleName = `${note}${octave}.wav`; // e.g., 'as3.wav'
+                try {
+                    const response = await fetch(`./${sampleName}`);
+                    if (!response.ok) throw new Error(`Failed to load ${sampleName}`);
+                    const arrayBuffer = await response.arrayBuffer();
+                    this.pianoSampleBuffers[`${note.toUpperCase()}${octave}`] = await this.context.decodeAudioData(arrayBuffer);
+                    log(`Loaded ${sampleName}`);
+                } catch (error) {
+                    console.error(`Error loading ${sampleName}:`, error);
+                }
             }
         }
-    }
-    this.samplesLoaded = true;
-    updateLoadingStatus("Full piano samples loaded");
-}
+        this.samplesLoaded = true;
+        updateLoadingStatus("Full piano samples loaded");
+    },
 
-
-    async setupReverb() {
+    setupReverb() {
         if (!this.reverbNode) {
             this.reverbNode = this.context.createConvolver();
             const sampleRate = this.context.sampleRate;
@@ -1088,6 +1094,7 @@ async loadPianoSamples() {
         }
     }
 };
+
 function createFretboardContainer(index) {
     const container = document.createElement('div');
     container.className = 'fretboard-container';
