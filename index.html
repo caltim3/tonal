@@ -1025,8 +1025,7 @@ const AudioContextManager = {
             this.currentChordGain = null;
         }
         // Optionally stop any other ongoing sounds
-    }
-};
+    },
 
     async initialize() {
         if (!this.context) {
@@ -1069,7 +1068,7 @@ const AudioContextManager = {
         }
         updateLoadingStatus("Drum sounds loaded");
     },
-
+};
     async createDrumSound(type) {
         const sampleRate = this.context.sampleRate;
         const duration = type === 'hihat' ? 0.05 : 0.2;
