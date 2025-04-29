@@ -1125,7 +1125,13 @@ class AudioContextManager {
             return null;
         }
     }
-
+    function updateLoadingStatus(message) {
+        const indicator = document.getElementById('loading-indicator');
+        if (indicator) {
+            indicator.textContent = message;
+            console.log(`Loading Status: ${message}`); // Optional console log
+        }
+    }
     setupReverb() {
         try {
             if (!this.reverbNode) {
@@ -1360,11 +1366,11 @@ function standardizeNoteName(note) {
   let [, letter, accidental, octave] = match;
   letter = letter.toUpperCase();
   if (accidental === 'b') {
-    const index = CHROMATIC.indexOf(letter);
-    return CHROMATIC[(index - 1 + 12) % 12];
+    const index = no.indexOf(letter);
+    return NOTES [(index - 1 + 12) % 12];
   } else if (accidental === '#') {
-    const index = CHROMATIC.indexOf(letter);
-    return CHROMATIC[(index + 1) % 12];
+    const index = NOTES.indexOf(letter);
+    return NOTES[(index + 1) % 12];
   }
   return letter;
 }
@@ -1860,7 +1866,27 @@ async function playNote(noteName, volume = 0.7, duration = null) {
         console.error(`playNote: ${error.message}`);
     }
 }
-
+const SwingControl = {
+    swingAmount: 0,
+    initialize() {
+        const swingSlider = document.getElementById('swing-control');
+        const swingValueDisplay = document.getElementById('swing-value');
+        if (swingSlider && swingValueDisplay) {
+            swingSlider.addEventListener('input', (e) => {
+                this.swingAmount = parseInt(e.target.value);
+                swingValueDisplay.textContent = `${this.swingAmount}%`;
+            });
+            // Initialize display
+            this.swingAmount = parseInt(swingSlider.value);
+            swingValueDisplay.textContent = `${this.swingAmount}%`;
+        }
+    },
+    getSwingAmount() {
+        // Return the current swing value (maybe needs scaling?)
+        return this.swingAmount;
+    }
+};
+        
 async function playChord(root, quality, startTime = 0, duration = null, shouldInvert = false) {
     try {
         await AudioContextManager.ensureAudioContext();
@@ -1956,10 +1982,10 @@ function getChordNotes(root, quality) {
   };
 
   const standardizedRoot = standardizeNoteName(root);
-  let rootIndex = CHROMATIC.indexOf(standardizedRoot);
+  let rootIndex = NOTES.indexOf(standardizedRoot);
 
   if (rootIndex === -1) {
-    rootIndex = CHROMATIC.indexOf(root);
+    rootIndex = NOTES.indexOf(root);
     if (rootIndex === -1) rootIndex = 0; // fallback to C
   }
 
@@ -1973,7 +1999,7 @@ function getChordNotes(root, quality) {
 
   const chordNotes = intervals.map(semitones => {
     const noteIndex = (rootIndex + semitones) % 12;
-    return CHROMATIC[noteIndex];
+    return NOTES[noteIndex];
   });
 
   return chordNotes;
@@ -2417,7 +2443,7 @@ function toggleBeatState(beat, timeSignature, soundType) {
             { volume: '1', sound: 'hihat', color: '#9E9E9E' },
             { volume: '1', sound: 'kick', color: '#1F618D' },
             { volume: '1', sound: 'snare', color: '#4CAF50' },
-            { volume: '0', sound: 'silent', color: '#6666' }
+            { volume: '0', sound: 'silent', color: '#66666' }
         ] : [
             { volume: '1', sound: 'kick', color: '#1F618D' },
             { volume: '1', sound: 'snare', color: '#4CAF50' },
@@ -2626,9 +2652,6 @@ function loadProgression(progressionName, overrideKey = null) {
         }
 
     });
-
-    updateMeasureNumbers();
-    addFirstChordListener();
 
     // Update the fretboard with the first measure's scale
     const firstMeasure = UI.elements.measures.firstElementChild;
@@ -2843,7 +2866,6 @@ function setupFretboardEventListeners(container, fretboard, i) {
 }
 
 function initializeFretboards() {
-    initializeFretFlow();
     const fretboardsGrid = UI.elements.fretboardsGrid;
     if (!fretboardsGrid) {
         console.warn('Fretboards grid not found');
@@ -2866,6 +2888,7 @@ function initializeFretboards() {
     }
 }
 
+    
 function initializeDrumControls() {
     const soundTypeSelect = UI.elements.soundType;
     const drumSetToggleBtn = document.getElementById('drum-set-toggle-btn');
