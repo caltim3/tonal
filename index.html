@@ -720,6 +720,22 @@ const NOTES = ['C', 'Cs', 'D', 'Ds', 'E', 'F', 'Fs', 'G', 'Gs', 'A', 'As', 'B'];
 // Define sampled notes for AudioContextManager (matches loadPianoSamples)
 const SAMPLED_NOTES = NOTES; // Same as NOTES, used for sample lookup
 
+// Add near NOTES constant
+const SAMPLE_NOTE_MAP = {
+  'Cs': 'Db', 'Ds': 'Eb', 'Fs': 'Gb', 
+  'Gs': 'Ab', 'As': 'Bb'
+};
+        
+const PIANO_OCTAVES = {
+  'C': [3,4], 'Cs': [3,4], 'D': [3,4], 'Ds': [3,4], 
+  'E': [3,4], 'F': [3,4], 'Fs': [3,4], 'G': [3,4], 
+  'Gs': [3,4], 'A': [3,4], 'As': [3,4], 'B': [3,4]
+};
+// Add this near NOTES constant
+const ENHARMONIC_MAP = {
+  'Db': 'Cs', 'Eb': 'Ds', 'Gb': 'Fs', 'Ab': 'Gs', 'Bb': 'As',
+  'C#': 'Db', 'D#': 'Eb', 'F#': 'Gb', 'G#': 'Ab', 'A#': 'Bb'
+};
 // Note frequency mappings (for pitch calculations, if needed)
 const NOTE_FREQUENCIES = {
     'A2': 110.00, 'As2': 116.54, 'B2': 123.47,
@@ -2867,10 +2883,11 @@ function setupEventListeners() {
         console.warn('Drum set toggle button not found. Check the ID: drumsettogglebtn');
     }
 
-    // Modified dark mode toggle with three modes
-    let colorMode = 0; // 0 = light, 1 = dark-mode-1, 2 = dark-mode-2, 3 = dark-mode-3
-    UI.elements.darkModeToggle.addEventListener('click', () => {
-        // Rest of the dark mode toggle code...
+let colorMode = 0;
+UI.elements.darkModeToggle.addEventListener('click', () => {
+  colorMode = (colorMode + 1) % 3;
+  document.body.className = `dark-mode-${colorMode}`;
+});
 // Initialization
 async function initializeApp() {
     try {
