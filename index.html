@@ -2723,19 +2723,43 @@ function addMeasure(chord = 'C', quality = 'major', scaleRoot = 'C', scaleType =
     measure.className = 'measure';
     const measureCount = UI.elements.measures.children.length + 1;
     measure.innerHTML = `
-    <span class="measure-number">${measureCount}</span>
-    <div class="chord-controls">
-    <select class="root-note">${createKeyOptions(chord)}</select>
-    <select class="chord-quality">${createQualityOptions(quality)}</select>
-    </div>
-    <div class="scale-controls">
-    <select class="second-key">${createKeyOptions(scaleRoot)}</select>
-    <select class="scale-select">${createScaleOptions(scaleType)}</select>
-    </div>
+        <span class="measure-number">${measureCount}</span>
+        <div class="chord-controls">
+            <select class="root-note">${createKeyOptions(chord)}</select>
+            <select class="chord-quality">${createQualityOptions(quality)}</select>
+        </div>
+        <div class="scale-controls">
+            <select class="second-key">${createKeyOptions(scaleRoot)}</select>
+            <select class="scale-select">${createScaleOptions(scaleType)}</select>
+        </div>
     `;
+
+    // Add the measure to the measures container
     UI.elements.measures.appendChild(measure);
+
+    // Set up event listeners for the new measure's controls
+    const rootSelect = measure.querySelector('.root-note');
+    const qualitySelect = measure.querySelector('.chord-quality');
+    const scaleRootSelect = measure.querySelector('.second-key');
+    const scaleTypeSelect = measure.querySelector('.scale-select');
+
+    // Add change event listeners
+    rootSelect.addEventListener('change', () => updateChordProgression(measure));
+    qualitySelect.addEventListener('change', () => updateChordProgression(measure));
+    scaleRootSelect.addEventListener('change', () => updateChordProgression(measure));
+    scaleTypeSelect.addEventListener('change', () => updateChordProgression(measure));
+
+    // Set initial values
+    rootSelect.value = chord;
+    qualitySelect.value = quality;
+    scaleRootSelect.value = scaleRoot;
+    scaleTypeSelect.value = scaleType;
+
+    // Update measure numbers
     updateMeasureNumbers();
-    log(`Added measure ${measureCount}`);
+
+    // Return the measure element in case it's needed
+    return measure;
 }
         
 function removeMeasure() {
