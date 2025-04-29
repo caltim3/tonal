@@ -1707,211 +1707,181 @@ function createScaleOptions(selected = 'major') {
 }
 
 // Audio Playback
-async function playNote(noteName, volume = 0.7, duration = null) {
-    if (!noteName) {
-        console.warn('playNote: No note name provided');
-        return;
-    }
-
-    try {
-        // Ensure audio context is initialized and resumed
-        await AudioContextManager.ensureAudioContext();
-
-        // Get fretboard volume from UI
-        const fretboardVolume = parseFloat(UI.elements.fretboardVolume?.value ?? 0.7);
-        if (!UI.elements.fretboardVolume) {
-            console.warn('playNote: Fretboard volume control not found, using default');
+// Note utilities
+const NoteUtils = {
+    validateNote(noteName) {
+        if (!noteName) {
+            throw new Error('No note name provided');
         }
-
-        // Calculate final volume, clamped to [0, 1]
-        const finalVolume = Math.max(0, Math.min(1, volume * fretboardVolume));
-        if (finalVolume <= 0) {
-            console.warn('playNote: Volume is zero, skipping playback');
-            return;
-        }
-
-        // Convert note name (e.g., A#3 → As3, Bb → As)
         const sampleNote = toSampleNoteName(noteName);
         if (!sampleNote) {
-            console.warn(`playNote: Invalid note format: ${noteName}`);
-            return;
+            throw new Error(`Invalid note format: ${noteName}`);
         }
+        return sampleNote;
+    },
 
-        // Ensure note has an octave (default to 3 if missing)
-        let noteBase = sampleNote;
-        let octave = '3'; // Default octave
+    addOctave(sampleNote, defaultOctave = '3') {
         const octaveMatch = sampleNote.match(/([A-G][sb]?)(\d)?/);
-        if (octaveMatch) {
-            noteBase = octaveMatch[1];
-            octave = octaveMatch[2] || '3';
-        }
+        if (!octaveMatch) return null;
+        
+        const [, noteBase, octave] = octaveMatch;
+        return `${noteBase}${octave || defaultOctave}`;
+    },
 
-        // Create sample key (e.g., Cs3, As3)
-        const sampleKey = `${noteBase}${octave}`;
+    calculateVolume(baseVolume, controlVolume = 0.7) {
+        return Math.max(0, Math.min(1, baseVolume * controlVolume));
+    }
+};
+
+// Audio playback utilities
+const AudioUtils = {
+    async ensureBuffer(sampleKey) {
         const buffer = AudioContextManager.pianoSampleBuffers[sampleKey];
-
         if (!buffer) {
-            console.warn(`playNote: No piano sample found for ${sampleKey}`);
- 
-            return;
+            throw new Error(`No piano sample found for ${sampleKey}`);
         }
+        return buffer;
+    },
 
-        // Use AudioContextManager.playSample for playback
-        const destination = AudioContextManager.reverbNode || AudioContextManager.context.destination;
-        const source = AudioContextManager.playSample(buffer, 0, destination, finalVolume);
-
-        // Stop the source after duration (use buffer duration if not specified)
-        const effectiveDuration = duration || (buffer.duration * 1000) || 1000;
+    createStopTimeout(source, duration, sampleKey) {
         setTimeout(() => {
             try {
                 source.stop();
             } catch (error) {
-                console.error(`playNote: Error stopping source for ${sampleKey}:`, error);
+                console.error(`Error stopping source for ${sampleKey}:`, error);
             }
-        }, effectiveDuration);
+        }, duration);
+    }
+};
+
+// Chord utilities
+const ChordUtils = {
+    validateChordPlayback() {
+        if (!AudioContextManager.samplesLoaded) {
+            throw new Error('Piano samples not loaded yet');
+        }
+
+        const chordsEnabled = UI.elements.chordsEnabled;
+        if (!chordsEnabled) {
+            throw new Error('Chords enabled element not found');
+        }
+        if (!chordsEnabled.classList.contains('active')) {
+            return false;
+        }
+        return true;
+    },
+
+    applyInversion(chordNotes, shouldInvert) {
+        if (!shouldInvert) return chordNotes;
+
+        const inversionPool = ['drop2', 'drop2', 'drop3', 'drop2and4'];
+        const inversionType = inversionPool[Math.floor(Math.random() * inversionPool.length)];
+        const rootNote = chordNotes[0];
+        const upperNotes = chordNotes.slice(1);
+
+        const inversionMap = {
+            drop2: (notes) => notes.length >= 2 ? 
+                [rootNote, ...upperNotes.slice(0, 1), ...upperNotes.slice(2), upperNotes[1]] : notes,
+            drop3: (notes) => notes.length >= 3 ? 
+                [rootNote, upperNotes[0], ...upperNotes.slice(2), upperNotes[1]] : notes,
+            drop2and4: (notes) => notes.length >= 4 ? 
+                [rootNote, ...upperNotes.slice(0, 1), ...upperNotes.slice(2, 3), 
+                 ...upperNotes.slice(4), upperNotes[1], upperNotes[3]] : notes
+        };
+
+        return (inversionMap[inversionType] || ((n) => n))(chordNotes);
+    }
+};
+
+async function playNote(noteName, volume = 0.7, duration = null) {
+    try {
+        await AudioContextManager.ensureAudioContext();
+
+        // Validate and prepare note
+        const sampleNote = NoteUtils.validateNote(noteName);
+        const sampleKey = NoteUtils.addOctave(sampleNote);
+        
+        // Calculate volume
+        const fretboardVolume = parseFloat(UI.elements.fretboardVolume?.value ?? 0.7);
+        const finalVolume = NoteUtils.calculateVolume(volume, fretboardVolume);
+        if (finalVolume <= 0) return;
+
+        // Get and validate buffer
+        const buffer = await AudioUtils.ensureBuffer(sampleKey);
+        
+        // Play note
+        const destination = AudioContextManager.reverbNode || AudioContextManager.context.destination;
+        const source = AudioContextManager.playSample(buffer, 0, destination, finalVolume);
+
+        // Set up stop timeout
+        const effectiveDuration = duration || (buffer.duration * 1000) || 1000;
+        AudioUtils.createStopTimeout(source, effectiveDuration, sampleKey);
 
     } catch (error) {
-        console.error(`playNote: Error playing note ${noteName}:`, error);
+        console.error(`playNote: ${error.message}`);
     }
 }
 
-
 async function playChord(root, quality, startTime = 0, duration = null, shouldInvert = false) {
     try {
-        // Ensure audio context is initialized
         await AudioContextManager.ensureAudioContext();
 
-        // Check if piano samples are loaded
-        if (!AudioContextManager.samplesLoaded) {
-            console.warn('playChord: Piano samples not loaded yet');
-            return;
-        }
+        // Validate chord playback state
+        if (!ChordUtils.validateChordPlayback()) return;
 
-        // Check if chords are enabled
-        const chordsEnabled = UI.elements.chordsEnabled;
-        if (!chordsEnabled) {
-            console.warn('playChord: Chords enabled element not found');
-            return;
-        }
-        if (!chordsEnabled.classList.contains('active')) {
-            console.log('playChord: Chords disabled, skipping playback');
-            return;
-        }
-
-        // Get chord volume
+        // Calculate volume
         const chordVolume = parseFloat(UI.elements.chordVolume?.value ?? 0.7);
-        if (!UI.elements.chordVolume) {
-            console.warn('playChord: Chord volume control not found, using default');
-        }
-        const finalVolume = Math.max(0, Math.min(1, chordVolume));
-        if (finalVolume <= 0) {
-            console.warn('playChord: Chord volume is zero, skipping playback');
-            return;
-        }
+        const finalVolume = NoteUtils.calculateVolume(1, chordVolume);
+        if (finalVolume <= 0) return;
 
-        // Get chord notes
+        // Get and validate chord notes
         const chordNotes = getChordNotes(root, quality);
-        if (!chordNotes || chordNotes.length === 0) {
-            console.warn(`playChord: No valid notes for chord ${root} ${quality}`);
-            return;
+        if (!chordNotes?.length) {
+            throw new Error(`No valid notes for chord ${root} ${quality}`);
         }
 
-        // Stop any existing chord
+        // Stop existing sounds and set up gain node
         AudioContextManager.stopAllSounds();
-
-        // Create shared gain node for chord volume
         const gainNode = AudioContextManager.context.createGain();
         gainNode.gain.value = finalVolume;
         const destination = AudioContextManager.reverbNode || AudioContextManager.context.destination;
         gainNode.connect(destination);
         AudioContextManager.currentChordGain = gainNode;
 
-        // Handle chord inversion
-        let finalChordNotes = chordNotes;
-        if (shouldInvert) {
-            const inversionPool = ['drop2', 'drop2', 'drop3', 'drop2and4']; // Balanced pool
-            const inversionType = inversionPool[Math.floor(Math.random() * inversionPool.length)];
-            const rootNote = chordNotes[0];
-            const upperNotes = chordNotes.slice(1);
+        // Apply inversion if needed
+        const finalChordNotes = ChordUtils.applyInversion(chordNotes, shouldInvert);
 
-            switch (inversionType) {
-                case 'drop2':
-                    if (upperNotes.length >= 2) {
-                        finalChordNotes = [rootNote, ...upperNotes.slice(0, 1), ...upperNotes.slice(2), upperNotes[1]];
-                    }
-                    break;
-                case 'drop3':
-                    if (upperNotes.length >= 3) {
-                        finalChordNotes = [rootNote, upperNotes[0], ...upperNotes.slice(2), upperNotes[1]];
-                    }
-                    break;
-                case 'drop2and4':
-                    if (upperNotes.length >= 4) {
-                        finalChordNotes = [
-                            rootNote,
-                            ...upperNotes.slice(0, 1),
-                            ...upperNotes.slice(2, 3),
-                            ...upperNotes.slice(4),
-                            upperNotes[1],
-                            upperNotes[3]
-                        ];
-                    }
-                    break;
-                default:
-                    console.warn(`playChord: Unknown inversion type ${inversionType}`);
+        // Calculate swing
+        const swingFactor = SwingControl.getSwingAmount() / 500; // Convert 0-20 to 0-0.04
+        const maxSwingMs = swingFactor * 100;
+
+        // Play notes
+        await Promise.all(finalChordNotes.map(async (note, index) => {
+            try {
+                const sampleNote = NoteUtils.validateNote(note);
+                const sampleKey = NoteUtils.addOctave(sampleNote);
+                const buffer = await AudioUtils.ensureBuffer(sampleKey);
+
+                const noteVolume = index === 0 ? 1.2 : 0.8;
+                const swingOffset = (Math.random() - 0.5) * 2 * maxSwingMs / 1000;
+
+                const source = AudioContextManager.playSample(
+                    buffer,
+                    startTime + swingOffset,
+                    gainNode,
+                    noteVolume
+                );
+
+                const effectiveDuration = (duration || buffer.duration || 2) * 1000;
+                AudioUtils.createStopTimeout(source, effectiveDuration, sampleKey);
+            } catch (error) {
+                console.error(`Error playing note in chord: ${error.message}`);
             }
-            console.log(`playChord: Applied ${inversionType} inversion to ${root} ${quality}`);
-        }
-
-        // Calculate swing timing
-        const swingPercent = SwingControl.getSwingAmount(); // 0-20
-        const swingFactor = swingPercent / 100; // Linear: 0-0.2
-        const maxSwingMs = swingFactor * 100; // Up to 20ms swing
-
-        // Play each note
-        finalChordNotes.forEach((note, index) => {
-            // Use octave 3 for all notes (consistent with playNote)
-            const sampleNote = toSampleNoteName(note);
-            const sampleKey = sampleNote.match(/\d$/) ? sampleNote : `${sampleNote}3`;
-
-            const buffer = AudioContextManager.pianoSampleBuffers[sampleKey];
-            if (!buffer) {
-                console.warn(`playChord: No piano sample found for ${sampleKey}`);
-                return;
-            }
-
-            // Apply individual note gain (root louder, others softer)
-            const noteVolume = index === 0 ? 1.2 : 0.8; // 120% for root, 80% for others
-
-            // Apply swing offset
-            const randomSwingMs = (Math.random() - 0.5) * 2 * maxSwingMs;
-            const swingOffset = randomSwingMs / 1000;
-
-            // Play note using AudioContextManager.playSample
-            const source = AudioContextManager.playSample(
-                buffer,
-                startTime + swingOffset,
-                gainNode,
-                noteVolume
-            );
-
-            // Stop after duration (use buffer duration if not specified)
-            const effectiveDuration = duration || (buffer.duration * 1000) || 2000;
-            setTimeout(() => {
-                try {
-                    source.stop();
-                } catch (error) {
-                    console.error(`playChord: Error stopping source for ${sampleKey}:`, error);
-                }
-            }, effectiveDuration * 1000); // Convert to ms
-        });
+        }));
 
     } catch (error) {
-        console.error(`playChord: Error playing chord ${root} ${quality}:`, error);
-        // Clean up gain node on error
-        if (AudioContextManager.currentChordGain) {
-            AudioContextManager.stopAllSounds();
-        }
+        console.error(`playChord: ${error.message}`);
+        AudioContextManager.stopAllSounds();
     }
 }
 
