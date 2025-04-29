@@ -2991,12 +2991,12 @@ function setupEventListeners() {
         AppState.lastTap = now;
     });
 
-    // Fix: chordFretboardVolume was undefined
-    if (UI.elements.chordFretboardVolume) {
+// Fix: chordFretboardVolume was undefined
+if (UI.elements.chordFretboardVolume) {
     UI.elements.chordFretboardVolume.addEventListener('input', () => {
-        log(`Chord fretboard volume set to ${UI.elements.chordFretboardVolume?.value}`);}
-    }
+        log(`Chord fretboard volume set to ${UI.elements.chordFretboardVolume.value}`);
     });
+}
 
     UI.elements.chordVolume.addEventListener('input', () => {
         log(`Chord volume set to ${UI.elements.chordVolume.value}`);
