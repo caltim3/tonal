@@ -2856,13 +2856,18 @@ function initializeFretFlow() {
 }
 
 // Add event listener for drum set toggle button
-document.getElementById('drumSetToggleBtn').addEventListener('click', () => {
-    currentDrumSetIndex = (currentDrumSetIndex + 1) % drumSoundSets.length;
-    document.getElementById('drumSetToggleBtn').textContent = drumSoundSets[currentDrumSetIndex].name;
-});
+const drumSetToggleBtn = document.getElementById('drum-set-toggle-btn'); // Use the hyphenated ID from your HTML
+if (drumSetToggleBtn) {
+    drumSetToggleBtn.addEventListener('click', () => {
+        currentDrumSetIndex = (currentDrumSetIndex + 1) % drumSoundSets.length;
+        drumSetToggleBtn.textContent = drumSoundSets[currentDrumSetIndex].name;
+    });
 
-// Initialize the button text with the first drum set name
-document.getElementById('drumSetToggleBtn').textContent = drumSoundSets[0].name;
+    // Initialize the button text with the first drum set name
+    drumSetToggleBtn.textContent = drumSoundSets[0].name;
+} else {
+    console.error('Drum set toggle button not found. Check the HTML for element with ID: drum-set-toggle-btn');
+}
 
 // Event Listeners
 function addFirstChordListener() {
@@ -3221,7 +3226,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Show/hide drum set toggle button based on sound type
         try {
             const soundTypeSelect = UI.elements.soundType;
-            const drumSetToggleBtn = document.getElementById('drumsettogglebtn'); // Use direct ID reference
+            const drumSetToggleBtn = document.getElementById('drum-set-toggle-btn'); // Use the ID from your HTML
 
             if (soundTypeSelect && drumSetToggleBtn) {
                 drumSetToggleBtn.style.display = soundTypeSelect.value === 'drums' ? 'inline-block' : 'none';
@@ -3245,7 +3250,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             } else {
                 console.warn('Sound type select or drum set toggle button not found');
                 if (!soundTypeSelect) console.warn('Sound type select is missing');
-                if (!drumSetToggleBtn) console.warn('Drum set toggle button is missing, ID: drumsettogglebtn');
+                if (!drumSetToggleBtn) console.warn('Drum set toggle button is missing, ID: drum-set-toggle-btn');
             }
         } catch (error) {
             console.error('Error setting up sound type listener:', error);
