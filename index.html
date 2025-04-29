@@ -1886,7 +1886,8 @@ async function playChord(root, quality, startTime = 0, duration = null, shouldIn
 // Make functions globally available
 window.playNote = playNote;
 window.playChord = playChord;
-
+window.UI = UIManager;
+window.Audio = AudioContextManager.getInstance();
 
         
 function getChordNotes(root, quality) {
