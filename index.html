@@ -1708,6 +1708,7 @@ function createScaleOptions(selected = 'major') {
 
 // Audio Playback
 // Note utilities
+// Note utilities
 const NoteUtils = {
     validateNote(noteName) {
         if (!noteName) {
@@ -1884,6 +1885,10 @@ async function playChord(root, quality, startTime = 0, duration = null, shouldIn
         AudioContextManager.stopAllSounds();
     }
 }
+
+// Make functions globally available
+window.playNote = playNote;
+window.playChord = playChord;
 
 
         
