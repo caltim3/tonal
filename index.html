@@ -3081,12 +3081,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                 });
                 
-                // Add event listener for drum set toggle button
-                drumSetToggleBtn.addEventListener('click', () => {
-                    currentDrumSetIndex = (currentDrumSetIndex + 1) % drumSoundSets.length;
-                    drumSetToggleBtn.textContent = drumSoundSets[currentDrumSetIndex].name;
-                });
-                
                 // Initialize the button text with the first drum set name
                 drumSetToggleBtn.textContent = drumSoundSets[0].name;
             } else {
