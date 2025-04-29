@@ -1119,7 +1119,17 @@ class AudioContextManager {
     setupReverb() {
         if (!this.reverbNode) {
             this.reverbNode = this.context.createConvolver();
-            // TODO: Load impulse response
+            const sampleRate = this.context.sampleRate;
+            const length = sampleRate * 2.5;
+            const impulse = this.context.createBuffer(2, length, sampleRate);
+            for (let channel = 0; channel < 2; channel++) {
+                const channelData = impulse.getChannelData(channel);
+                for (let i = 0; i < length; i++) {
+                    channelData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2);
+                }
+            }
+            this.reverbNode.buffer = impulse;
+            this.reverbNode.connect(this.context.destination);
         }
     }
 
@@ -1169,6 +1179,40 @@ class AudioContextManager {
         }
     }
 
+    async loadPianoSamples(sampleMap = null) {
+        if (sampleMap) {
+            // Load specific samples from sampleMap
+            const promises = Object.entries(sampleMap).map(([note, url]) =>
+                this.loadSample(url, this.pianoSampleBuffers, note)
+            );
+            await Promise.all(promises);
+            this.samplesLoaded = true;
+        } else {
+            // Load full set of piano samples
+            console.log('Starting full piano sample loading...');
+            const octaves = [2, 3, 4, 5];
+            const notes = ['c', 'cs', 'd', 'ds', 'e', 'f', 'fs', 'g', 'gs', 'a', 'as', 'b'];
+            for (const octave of octaves) {
+                for (const note of notes) {
+                    const sampleName = `${note}${octave}.wav`;
+                    try {
+                        const response = await fetch(`./${sampleName}`);
+                        if (!response.ok) throw new Error(`Failed to load ${sampleName}`);
+                        const arrayBuffer = await response.arrayBuffer();
+                        this.pianoSampleBuffers[`${note.toUpperCase()}${octave}`] = await this.context.decodeAudioData(arrayBuffer);
+                        console.log(`Loaded ${sampleName}`);
+                    } catch (error) {
+                        console.error(`Error loading ${sampleName}:`, error);
+                    }
+                }
+            }
+            this.samplesLoaded = true;
+            if (typeof updateLoadingStatus === 'function') {
+                updateLoadingStatus("Full piano samples loaded");
+            }
+        }
+    }
+
     async createDrumSound(type) {
         const sampleRate = this.context.sampleRate;
         const duration = type === 'hihat' ? 0.05 : 0.2;
@@ -1208,57 +1252,6 @@ class AudioContextManager {
         return buffer;
     }
 }
-
-
-    async loadPianoSamples(sampleMap = null) {
-        if (sampleMap) {
-            // Load specific samples from sampleMap
-            const promises = Object.entries(sampleMap).map(([note, url]) =>
-                this.loadSample(url, this.pianoSampleBuffers, note)
-            );
-            await Promise.all(promises);
-            this.samplesLoaded = true;
-        } else {
-            // Load full set of piano samples
-            log('Starting full piano sample loading...');
-            const octaves = [2, 3, 4, 5];
-            const notes = ['c', 'cs', 'd', 'ds', 'e', 'f', 'fs', 'g', 'gs', 'a', 'as', 'b'];
-            for (const octave of octaves) {
-                for (const note of notes) {
-                    const sampleName = `${note}${octave}.wav`;
-                    try {
-                        const response = await fetch(`./${sampleName}`);
-                        if (!response.ok) throw new Error(`Failed to load ${sampleName}`);
-                        const arrayBuffer = await response.arrayBuffer();
-                        this.pianoSampleBuffers[`${note.toUpperCase()}${octave}`] = await this.context.decodeAudioData(arrayBuffer);
-                        log(`Loaded ${sampleName}`);
-                    } catch (error) {
-                        console.error(`Error loading ${sampleName}:`, error);
-                    }
-                }
-            }
-            this.samplesLoaded = true;
-            updateLoadingStatus("Full piano samples loaded");
-        }
-    },
-
-    setupReverb() {
-        if (!this.reverbNode) {
-            this.reverbNode = this.context.createConvolver();
-            const sampleRate = this.context.sampleRate;
-            const length = sampleRate * 2.5;
-            const impulse = this.context.createBuffer(2, length, sampleRate);
-            for (let channel = 0; channel < 2; channel++) {
-                const channelData = impulse.getChannelData(channel);
-                for (let i = 0; i < length; i++) {
-                    channelData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2);
-                }
-            }
-            this.reverbNode.buffer = impulse;
-            this.reverbNode.connect(this.context.destination);
-        }
-    }
-};
 
 function createFretboardContainer(index) {
     const container = document.createElement('div');
