@@ -1083,6 +1083,15 @@ class AudioContextManager {
         }
     }
 
+    function updateLoadingStatus(message) {
+    const indicator = document.getElementById('loading-indicator');
+    if (indicator) {
+        indicator.textContent = message;
+    }
+    // Optional: Keep logging to console for debugging
+    console.log(`Loading Status: ${message}`);
+}
+    
     async loadSample(url, targetBuffer, key) {
         try {
             const response = await fetch(url);
@@ -1125,14 +1134,7 @@ class AudioContextManager {
             return null;
         }
     }
-function updateLoadingStatus(message) {
-    const indicator = document.getElementById('loading-indicator');
-    if (indicator) {
-        indicator.textContent = message;
-    }
-    // Optional: Keep logging to console for debugging
-    console.log(`Loading Status: ${message}`);
-}
+
     setupReverb() {
         try {
             if (!this.reverbNode) {
