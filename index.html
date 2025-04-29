@@ -1118,6 +1118,31 @@ class AudioContextManager {
         return source;
     }
 
+    setupReverb() {
+        if (!this.reverbNode) {
+            this.reverbNode = this.context.createConvolver();
+            // TODO: Load impulse response
+        }
+    }
+
+    applyReverb(buffer) {
+        if (!this.reverbNode) return;
+        
+        buffer.connect(this.reverbNode);
+        this.reverbNode.connect(this.context.destination);
+    }
+
+    stopAllSounds() {
+        if (this.currentChordGain) {
+            this.currentChordGain.disconnect();
+            this.currentChordGain = null;
+        }
+    }
+
+    async ensureAudioContext() {
+        return this.initialize();
+    }
+
     async loadSounds() {
         const soundFiles = {
             'click': 'Click.wav',
@@ -1184,6 +1209,7 @@ class AudioContextManager {
         }
         return buffer;
     }
+}
 
     setupReverb() {
         if (!this.reverbNode) {
