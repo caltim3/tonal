@@ -2131,9 +2131,13 @@ async function playMetronomeSound(baseVolume) {
 function onMetronomeInstrumentChange(selectedInstrument) {
     const drumSetToggleBtn = document.getElementById('drumSetToggleBtn');
     if (drumSetToggleBtn) {
-        // Just update the display, don't add a new event listener each time
+        // Only update the display, don't add another event listener
         drumSetToggleBtn.style.display = selectedInstrument === 'drums' ? 'inline-block' : 'none';
-        drumSetToggleBtn.textContent = drumSoundSets[currentDrumSetIndex].name;
+        
+        // Initialize the button text if needed
+        if (selectedInstrument === 'drums' && !drumSetToggleBtn.textContent) {
+            drumSetToggleBtn.textContent = drumSoundSets[currentDrumSetIndex].name;
+        }
     } else {
         console.warn('Drum set toggle button not found in the DOM');
     }
@@ -2151,12 +2155,6 @@ if (drumSetToggleBtn) {
     drumSetToggleBtn.textContent = drumSoundSets[0].name;
 }
 
-// Add event listener for sound type changes - OUTSIDE the function
-document.getElementById('sound-type').addEventListener('change', (e) => {
-    onMetronomeInstrumentChange(e.target.value);
-});
-
-// Move playDrumSample outside the function
 async function playDrumSample(type) {
     if (!AudioContextManager.context) return;
     
