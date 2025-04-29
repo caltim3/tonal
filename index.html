@@ -2129,7 +2129,7 @@ async function playMetronomeSound(baseVolume) {
     }
 }
 function onMetronomeInstrumentChange(selectedInstrument) {
-    const drumSetToggleBtn = document.getElementById('drumSetToggleBtn');
+    const drumSetToggleBtn = document.getElementById('drumsettogglebtn');
     if (drumSetToggleBtn) {
         // Only update the display, don't add another event listener
         drumSetToggleBtn.style.display = selectedInstrument === 'drums' ? 'inline-block' : 'none';
@@ -2144,7 +2144,7 @@ function onMetronomeInstrumentChange(selectedInstrument) {
 }
 
 // Add event listener for drum set toggle button - OUTSIDE the function
-const drumSetToggleBtn = document.getElementById('drumSetToggleBtn');
+const drumSetToggleBtn = document.getElementById('drumsettogglebtn');
 if (drumSetToggleBtn) {
     drumSetToggleBtn.addEventListener('click', () => {
         currentDrumSetIndex = (currentDrumSetIndex + 1) % drumSoundSets.length;
@@ -2154,7 +2154,7 @@ if (drumSetToggleBtn) {
     // Initialize the button text with the first drum set name
     drumSetToggleBtn.textContent = drumSoundSets[0].name;
 }
-
+        
 async function playDrumSample(type) {
     if (!AudioContextManager.context) return;
     
@@ -3221,7 +3221,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Show/hide drum set toggle button based on sound type
         try {
             const soundTypeSelect = UI.elements.soundType;
-            const drumSetToggleBtn = UI.elements.drumSetToggleBtn;
+            const drumSetToggleBtn = document.getElementById('drumsettogglebtn'); // Use direct ID reference
 
             if (soundTypeSelect && drumSetToggleBtn) {
                 drumSetToggleBtn.style.display = soundTypeSelect.value === 'drums' ? 'inline-block' : 'none';
@@ -3233,8 +3233,19 @@ document.addEventListener('DOMContentLoaded', async () => {
                         console.error('Error handling sound type change:', error);
                     }
                 });
+                
+                // Add event listener for drum set toggle button
+                drumSetToggleBtn.addEventListener('click', () => {
+                    currentDrumSetIndex = (currentDrumSetIndex + 1) % drumSoundSets.length;
+                    drumSetToggleBtn.textContent = drumSoundSets[currentDrumSetIndex].name;
+                });
+                
+                // Initialize the button text with the first drum set name
+                drumSetToggleBtn.textContent = drumSoundSets[0].name;
             } else {
                 console.warn('Sound type select or drum set toggle button not found');
+                if (!soundTypeSelect) console.warn('Sound type select is missing');
+                if (!drumSetToggleBtn) console.warn('Drum set toggle button is missing, ID: drumsettogglebtn');
             }
         } catch (error) {
             console.error('Error setting up sound type listener:', error);
@@ -3249,7 +3260,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 });
-            </script>
+    </script>
         
 </body>
 </html>
