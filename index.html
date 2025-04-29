@@ -685,27 +685,6 @@
     <script>
         
 // Utility Functions
-function log(message) {
-    console.log(`[FretFlow Debug] ${message}`);
-}
-
-function updateLoadingStatus(message) {
-    let indicator = document.getElementById('loading-indicator');
-    if (!indicator) {
-        indicator = document.createElement('div');
-        indicator.id = 'loading-indicator';
-        document.body.appendChild(indicator);
-    }
-    indicator.textContent = message;
-}
-
-function debounce(func, wait) {
-    let timeout;
-    return function (...args) {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(this, args), wait);
-    };
-}
 function noteNameToSampleName(note) {
   // Converts "F#" to "Fs", "D#" to "Ds", etc.
   return note.replace('#', 's');
@@ -780,15 +759,6 @@ function toSampleNoteName(note) {
     }
     return result;
 }
-
-const FRETBOARD_FREQUENCIES = {
-    'string6': [82.41, 87.31, 92.50, 98.00, 103.83, 110.00, 116.54, 123.47, 130.81, 138.59, 146.83, 155.56, 164.81],
-    'string5': [110.00, 116.54, 123.47, 130.81, 138.59, 146.83, 155.56, 164.81, 174.61, 185.00, 196.00, 207.65, 220.00],
-    'string4': [146.83, 155.56, 164.81, 174.61, 185.00, 196.00, 207.65, 220.00, 233.08, 246.94, 261.63, 277.18, 293.66],
-    'string3': [196.00, 207.65, 220.00, 233.08, 246.94, 261.63, 277.18, 293.66, 311.13, 329.63, 349.23, 369.99, 392.00],
-    'string2': [246.94, 261.63, 277.18, 293.66, 311.13, 329.63, 349.23, 369.99, 392.00, 415.30, 440.00, 466.16, 493.88],
-    'string1': [329.63, 349.23, 369.99, 392.00, 415.30, 440.00, 466.16, 493.88, 523.25, 554.37, 587.33, 622.25, 659.25]
-};
 
 const SCALES = {
     // Basic Scales
@@ -1315,7 +1285,6 @@ function standardizeNoteName(note) {
   if (!match) return note.toUpperCase();
   let [, letter, accidental, octave] = match;
   letter = letter.toUpperCase();
-  const CHROMATIC = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
   if (accidental === 'b') {
     const index = CHROMATIC.indexOf(letter);
     return CHROMATIC[(index - 1 + 12) % 12];
@@ -1370,22 +1339,6 @@ function findNearestSampledNote(note, targetOctave = 3) {
 
 
         
-function getScaleNotes(root, scaleName) {
-    if (!root) return [];
-    
-    const scaleIntervals = SCALES[scaleName];
-    if (!scaleIntervals) return [];
-    
-    const chromaticScale = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-    let rootIndex = chromaticScale.indexOf(standardizeNoteName(root));
-    if (rootIndex === -1) return [];
-    
-    return scaleIntervals.map(interval => {
-        const noteIndex = (rootIndex + interval) % 12;
-        return chromaticScale[noteIndex];
-    });
-}
-
 // Helper function to get note at specific fret
 function getNoteAtFret(startNote, fretNumber) {
     const chromaticScale = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
@@ -1395,48 +1348,7 @@ function getNoteAtFret(startNote, fretNumber) {
     const noteIndex = (startIndex + fretNumber) % 12;
     return chromaticScale[noteIndex];
 }
-function getPitchShiftedNote(note, targetOctave = 3) {
-  const cleanNote = standardizeNoteName(note).replace('m', '');
-  const mappedNote = ENHARMONIC_MAP[cleanNote] || cleanNote;
-  const targetIndex = NOTES.indexOf(mappedNote);
-  if (targetIndex === -1) {
-    console.warn(`Note ${note} not found in NOTES.`);
-    return { sampleKey: 'C3v12', semitoneDiff: 0 };
-  }
-
-  let bestMatch = null;
-  let minDistance = Infinity;
-
-  for (let sampleNote of SAMPLED_NOTES) {
-    const sampleIndex = NOTES.indexOf(sampleNote); // Use sampleNote directly
-    if (sampleIndex === -1) continue;
-    for (let octave of PIANO_OCTAVES[sampleNote]) {
-      let semitoneDiff = targetIndex - sampleIndex;
-      const octaveDiff = targetOctave - octave;
-      semitoneDiff += octaveDiff * 12;
-      const distance = Math.abs(semitoneDiff);
-      if (distance < minDistance) {
-        minDistance = distance;
-        bestMatch = { sampleKey: `${noteNameToSampleName(sampleNote)}${octave}v12`, semitoneDiff };
-      }
-    }
-  }
-
-  if (!bestMatch) {
-    console.warn(`No valid match found for ${note}, fallback to C3`);
-    return { sampleKey: 'C3v12', semitoneDiff: 0 };
-  }
-
-  // Log for debugging
-  console.log(`[getPitchShiftedNote] ${note}${targetOctave} → ${bestMatch.sampleKey}, semitoneDiff: ${bestMatch.semitoneDiff}`);
-  return bestMatch;
-}
-
-
-function isMinorKeyName(key) {
-    return key && (key.endsWith('m') || key.endsWith('min'));
-}
-
+        
 function getChordFromFunction(chordFunction, key = 'C') {
     // Helper function to get note from scale degree
     
@@ -1683,15 +1595,15 @@ function suggestScaleForQuality(quality) {
     return scaleMap[quality] || 'major';
 }
 
-        function getCompatibleScales(chord, quality) {
-    const scaleChoices = {
-        'major': ['major', 'lydian', 'mixolydian'],
-        'minor': ['dorian', 'phrygian', 'aeolian'],
-        'dominant': ['mixolydian', 'lydianDominant', 'altered', 'bebopDominant'],
-        'halfDiminished': ['locrian', 'locrian#2'],
-        'diminished': ['diminishedWH', 'diminishedHW'],
-        'altered': ['altered', 'diminishedWH']
-    };
+    function getCompatibleScales(chord, quality) {
+        const scaleChoices = {
+            'major': ['major', 'lydian', 'mixolydian'],
+            'minor': ['dorian', 'phrygian', 'aeolian'],
+            'dominant': ['mixolydian', 'lydianDominant', 'altered', 'bebopDominant'],
+            'halfDiminished': ['locrian', 'locrian#2'],
+            'diminished': ['diminishedWH', 'diminishedHW'],
+            'altered': ['altered', 'diminishedWH']
+        };
     
     // Determine chord category
     let category = 'major';
@@ -1804,14 +1716,7 @@ async function playNote(noteName, volume = 0.7, duration = null) {
 
         if (!buffer) {
             console.warn(`playNote: No piano sample found for ${sampleKey}`);
-            // Optional: Fallback to nearest note (requires findNearestSampledNote)
-            // const fallbackNote = findNearestSampledNote(noteBase, parseInt(octave));
-            // if (fallbackNote && AudioContextManager.pianoSampleBuffers[fallbackNote]) {
-            //     buffer = AudioContextManager.pianoSampleBuffers[fallbackNote];
-            //     console.log(`Using fallback note: ${fallbackNote}`);
-            // } else {
-            //     return;
-            // }
+ 
             return;
         }
 
@@ -1999,8 +1904,6 @@ function getChordNotes(root, quality) {
     'sus4': [0, 5, 7],
     'add9': [0, 4, 7, 14]
   };
-
-  const CHROMATIC = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
   const standardizedRoot = standardizeNoteName(root);
   let rootIndex = CHROMATIC.indexOf(standardizedRoot);
@@ -2778,49 +2681,6 @@ function updateMeasureNumbers() {
     });
 }
 
-
-function initializeFretFlow() {
-    const fretboardsGrid = UI.elements.fretboardsGrid;
-    const scales = ['major', 'minor', 'dorian', 'mixolydian'];
-    const tuning = TUNINGS[UI.elements.chordTuning.value];
-    fretboardsGrid.innerHTML = '';
-    
-    scales.forEach((scale, index) => {
-        const container = document.createElement('div');
-        container.className = 'fretboard-container';
-        container.innerHTML = `
-            <div class="scale-display">${UI.elements.keySelect.value} ${scale.charAt(0).toUpperCase() + scale.slice(1)}</div>
-            <div class="controls">
-                <select class="tuning-select" id="fretflow-tuning-${index}" aria-label="Select guitar tuning">
-                    <option value="standard">Standard (EADGBE)</option>
-                    <option value="dropD">Drop D (DADGBE)</option>
-                    <option value="openG">Open G (DGDGBD)</option>
-                    <option value="DADGAD">DADGAD</option>
-                    <option value="openE">Open E (EBEG#BE)</option>
-                </select>
-            </div>
-            <div id="fretflow-fretboard-${index}" class="fretboard"></div>
-        `;
-        fretboardsGrid.appendChild(container);
-        
-        const fretboard = container.querySelector(`#fretflow-fretboard-${index}`);
-        createFretboard(fretboard, tuning);
-        updateFretboardNotes(fretboard, UI.elements.keySelect.value, scale, tuning);
-        
-        // Add tuning change handler
-        const tuningSelect = container.querySelector(`#fretflow-tuning-${index}`);
-        if (tuningSelect) {
-            tuningSelect.addEventListener('change', () => {
-                const newTuning = TUNINGS[tuningSelect.value];
-                createFretboard(fretboard, newTuning);
-                updateFretboardNotes(fretboard, UI.elements.keySelect.value, scale, newTuning);
-            });
-        } else {
-            console.error(`Tuning select element #fretflow-tuning-${index} not found`);
-        }
-    });
-    log("FretFlow initialized");
-}
 
 function setupEventListeners() {
     document.addEventListener('click', async () => {
