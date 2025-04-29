@@ -961,157 +961,193 @@ const AppState = {
 };
 
 // UI Management
-const UI = {
-    elements: {
-        chordFretboard: null,
-        fretboardsGrid: null,
-        fretboardVolume: null,
-        chordVolume: null,
-        chordsEnabled: null,
-        chordTuning: null,
-        measures: null,
-        progressionSelect: null,
-        keySelect: null,
-        scaleDisplay: null,
-        tempo: null,
-        tempoDisplay: null,
-        tapTempo: null,
-        startStopButton: null,
-        timeSignature: null,
-        metronomeVolume: null,
-        soundType: null,
-        drumSetToggleBtn: null,
-        darkModeToggle: null,
-        loadingIndicator: null,
-        accentIntensity: null,
-    },
-    init() {
-        this.elements.chordFretboard = document.getElementById('chord-fretboard');
-        this.elements.fretboardsGrid = document.querySelector('.fretboards-grid');
-        this.elements.fretboardVolume = document.getElementById('fretboard-volume');
-        this.elements.chordVolume = document.getElementById('chord-volume');
-        this.elements.chordsEnabled = document.getElementById('chords-enabled');
-        this.elements.chordTuning = document.getElementById('chord-tuning');
-        this.elements.measures = document.getElementById('measures');
-        this.elements.progressionSelect = document.getElementById('progression-select');
-        this.elements.keySelect = document.getElementById('key-select');
-        this.elements.scaleDisplay = document.getElementById('scale-display');
-        this.elements.tempo = document.getElementById('tempo');
-        this.elements.tempoDisplay = document.getElementById('tempo-display');
-        this.elements.tapTempo = document.getElementById('tap-tempo');
-        this.elements.startStopButton = document.getElementById('start-stop');
-        this.elements.timeSignature = document.getElementById('time-signature');
-        this.elements.metronomeVolume = document.getElementById('metronome-volume');
-        this.elements.soundType = document.getElementById('sound-type');
-        this.elements.drumSetToggleBtn = document.getElementById('drumsettogglebtn');
-        this.elements.darkModeToggle = document.getElementById('dark-mode-toggle');
-        this.elements.loadingIndicator = document.getElementById('loading-indicator');
-        this.elements.accentIntensity = document.getElementById('accent-intensity');
+class UIManager {
+    static elements = {
+        // Fretboard Elements
+        chordFretboard: { id: 'chord-fretboard', required: true },
+        fretboardsGrid: { selector: '.fretboards-grid', required: true },
+        fretboardVolume: { id: 'fretboard-volume', defaultValue: 0.7 },
+        
+        // Chord Controls
+        chordVolume: { id: 'chord-volume', defaultValue: 0.7 },
+        chordsEnabled: { id: 'chords-enabled', isToggle: true },
+        chordTuning: { id: 'chord-tuning', required: true },
+        
+        // Music Controls
+        measures: { id: 'measures', required: true },
+        progressionSelect: { id: 'progression-select', required: true },
+        keySelect: { id: 'key-select', required: true },
+        scaleDisplay: { id: 'scale-display', required: true },
+        
+        // Tempo Controls
+        tempo: { id: 'tempo', required: true },
+        tempoDisplay: { id: 'tempo-display', required: true },
+        tapTempo: { id: 'tap-tempo', required: true },
+        
+        // Playback Controls
+        startStopButton: { id: 'start-stop', required: true },
+        timeSignature: { id: 'time-signature', required: true },
+        metronomeVolume: { id: 'metronome-volume', required: true },
+        
+        // Sound Controls
+        soundType: { id: 'sound-type', required: true },
+        drumSetToggleBtn: { id: 'drumsettogglebtn', required: true },
+        accentIntensity: { id: 'accent-intensity', required: true },
+        
+        // UI Controls
+        darkModeToggle: { id: 'dark-mode-toggle', required: false },
+        loadingIndicator: { id: 'loading-indicator', required: false }
+    };
 
-        Object.entries(this.elements).forEach(([key, element]) => {
-            if (!element && element !== null) {
-                console.warn(`UI.init: Element for ${key} not found in DOM`);
+    static elementRefs = {};
+
+    static init() {
+        this.initializeElements();
+        this.setupDefaultValues();
+        return this.elementRefs;
+    }
+
+    static initializeElements() {
+        for (const [key, config] of Object.entries(this.elements)) {
+            const element = config.selector ? 
+                document.querySelector(config.selector) : 
+                document.getElementById(config.id);
+
+            if (!element && config.required) {
+                console.error(`Required UI element not found: ${key}`);
+            } else if (!element) {
+                console.warn(`Optional UI element not found: ${key}`);
             }
-        });
 
-        if (this.elements.chordsEnabled) {
-            this.elements.chordsEnabled.classList.add('active');
-        }
-        if (this.elements.fretboardVolume) {
-            this.elements.fretboardVolume.value = 0.7;
-        }
-        if (this.elements.chordVolume) {
-            this.elements.chordVolume.value = 0.7;
+            this.elementRefs[key] = element;
         }
     }
-};
-        
-const SwingControl = {
-    element: document.getElementById('swing-control'),
-    valueElement: document.getElementById('swing-value'),
-    getSwingAmount() {
-        return parseFloat(this.element?.value ?? 0);
-    },
-    initialize() {
-        if (!this.element || !this.valueElement) {
-            console.warn('SwingControl elements not found');
-            return;
+
+    static setupDefaultValues() {
+        for (const [key, config] of Object.entries(this.elements)) {
+            const element = this.elementRefs[key];
+            if (!element) continue;
+
+            if (config.defaultValue !== undefined) {
+                element.value = config.defaultValue;
+            }
+            if (config.isToggle) {
+                element.classList.add('active');
+            }
         }
-        this.element.addEventListener('input', () => {
-            this.valueElement.textContent = `${this.element.value}%`;
-        });
     }
-};
-        
+
+    static getElement(key) {
+        return this.elementRefs[key];
+    }
+}
+
 // Audio Management
-const AudioContextManager = {
-    context: null,
-    soundBuffers: {},
-    pianoSampleBuffers: {},
-    reverbNode: null,
-    samplesLoaded: false,
-    currentChordGain: null,
+class AudioContextManager {
+    static instance = null;
 
-    init() {
+    constructor() {
+        this.context = null;
+        this.soundBuffers = {};
+        this.pianoSampleBuffers = {};
+        this.reverbNode = null;
+        this.samplesLoaded = false;
+        this.currentChordGain = null;
+    }
+
+    static getInstance() {
+        if (!AudioContextManager.instance) {
+            AudioContextManager.instance = new AudioContextManager();
+        }
+        return AudioContextManager.instance;
+    }
+
+    async initialize() {
         if (!this.context) {
             this.context = new (window.AudioContext || window.webkitAudioContext)();
+            await Promise.all([
+                this.loadSounds(),
+                this.loadPianoSamples(),
+                this.setupReverb()
+            ]);
         }
-    },
+
+        if (this.context.state === 'suspended') {
+            await this.context.resume();
+        }
+
+        AppState.updateState({ audioInitialized: true });
+        return this.context;
+    }
 
     async loadSample(url, targetBuffer, key) {
-        const response = await fetch(url);
-        const arrayBuffer = await response.arrayBuffer();
-        const audioBuffer = await this.context.decodeAudioData(arrayBuffer);
-        targetBuffer[key] = audioBuffer;
-    },
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            
+            const arrayBuffer = await response.arrayBuffer();
+            const audioBuffer = await this.context.decodeAudioData(arrayBuffer);
+            targetBuffer[key] = audioBuffer;
+            return audioBuffer;
+        } catch (error) {
+            console.error(`Failed to load sample ${key} from ${url}:`, error);
+            throw error;
+        }
+    }
 
-    playSample(buffer, time = 0, destination = null, gainValue = 1) {
+    createAudioNode(buffer, options = {}) {
         const source = this.context.createBufferSource();
         const gainNode = this.context.createGain();
+        
         source.buffer = buffer;
-        gainNode.gain.value = gainValue;
+        gainNode.gain.value = options.gainValue ?? 1;
 
         source.connect(gainNode);
-        gainNode.connect(destination || this.context.destination);
+        gainNode.connect(options.destination || this.context.destination);
+
+        return { source, gainNode };
+    }
+
+    playSample(buffer, time = 0, destination = null, gainValue = 1) {
+        const { source } = this.createAudioNode(buffer, {
+            gainValue,
+            destination
+        });
 
         source.start(this.context.currentTime + time);
         return source;
-    },
+    }
 
-    applyReverb(buffer) {
+    setupReverb() {
         if (!this.reverbNode) {
             this.reverbNode = this.context.createConvolver();
-            // You would load an impulse response for reverb separately and assign it here
+            // TODO: Load impulse response
         }
+    }
+
+    applyReverb(buffer) {
+        if (!this.reverbNode) return;
+        
         buffer.connect(this.reverbNode);
         this.reverbNode.connect(this.context.destination);
-    },
+    }
 
     stopAllSounds() {
         if (this.currentChordGain) {
             this.currentChordGain.disconnect();
             this.currentChordGain = null;
         }
-        // Optionally stop any other ongoing sounds
-    },
-
-    async initialize() {
-        if (!this.context) {
-            this.context = new (window.AudioContext || window.webkitAudioContext)();
-            await this.loadSounds();
-            await this.loadPianoSamples();
-            this.setupReverb();
-        }
-        if (this.context.state === 'suspended') {
-            await this.context.resume();
-        }
-        AppState.updateState({ audioInitialized: true });
-        return this.context;
-    },
+    }
 
     async ensureAudioContext() {
-        return await this.initialize();
-    },
+        return this.initialize();
+    }
+}
+
+// Export for use
+export const UI = UIManager;
+export const Audio = AudioContextManager.getInstance();
+        
 
     async loadSounds() {
         const soundFiles = {
