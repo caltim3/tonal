@@ -683,7 +683,7 @@
     </main>
 
     <script>
-        
+const log = console.log.bind(console);        
 // Utility Functions
 function noteNameToSampleName(note) {
   // Converts "F#" to "Fs", "D#" to "Ds", etc.
@@ -1061,21 +1061,26 @@ class AudioContextManager {
     }
 
     async initialize() {
-        if (!this.context) {
-            this.context = new (window.AudioContext || window.webkitAudioContext)();
-            await Promise.all([
-                this.loadSounds(),
-                this.loadPianoSamples(),
-                this.setupReverb()
-            ]);
-        }
+        try {
+            if (!this.context) {
+                this.context = new (window.AudioContext || window.webkitAudioContext)();
+                await Promise.all([
+                    this.loadSounds(),
+                    this.loadPianoSamples(),
+                    this.setupReverb()
+                ]);
+            }
 
-        if (this.context.state === 'suspended') {
-            await this.context.resume();
-        }
+            if (this.context.state === 'suspended') {
+                await this.context.resume();
+            }
 
-        AppState.updateState({ audioInitialized: true });
-        return this.context;
+            AppState.updateState({ audioInitialized: true });
+            return this.context;
+        } catch (error) {
+            console.error('Failed to initialize audio context:', error);
+            throw new Error('Audio initialization failed');
+        }
     }
 
     async loadSample(url, targetBuffer, key) {
@@ -1107,43 +1112,75 @@ class AudioContextManager {
     }
 
     playSample(buffer, time = 0, destination = null, gainValue = 1) {
-        const { source } = this.createAudioNode(buffer, {
-            gainValue,
-            destination
-        });
+        try {
+            const { source } = this.createAudioNode(buffer, {
+                gainValue,
+                destination
+            });
 
-        source.start(this.context.currentTime + time);
-        return source;
+            source.start(this.context.currentTime + time);
+            return source;
+        } catch (error) {
+            console.error('Error playing sample:', error);
+            return null;
+        }
     }
 
     setupReverb() {
-        if (!this.reverbNode) {
-            this.reverbNode = this.context.createConvolver();
-            const sampleRate = this.context.sampleRate;
-            const length = sampleRate * 2.5;
-            const impulse = this.context.createBuffer(2, length, sampleRate);
-            for (let channel = 0; channel < 2; channel++) {
-                const channelData = impulse.getChannelData(channel);
-                for (let i = 0; i < length; i++) {
-                    channelData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2);
+        try {
+            if (!this.reverbNode) {
+                this.reverbNode = this.context.createConvolver();
+                const sampleRate = this.context.sampleRate;
+                const length = sampleRate * 2.5;
+                const impulse = this.context.createBuffer(2, length, sampleRate);
+                for (let channel = 0; channel < 2; channel++) {
+                    const channelData = impulse.getChannelData(channel);
+                    for (let i = 0; i < length; i++) {
+                        channelData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2);
+                    }
                 }
+                this.reverbNode.buffer = impulse;
+                this.reverbNode.connect(this.context.destination);
             }
-            this.reverbNode.buffer = impulse;
-            this.reverbNode.connect(this.context.destination);
+        } catch (error) {
+            console.error('Error setting up reverb:', error);
         }
     }
 
     applyReverb(buffer) {
-        if (!this.reverbNode) return;
-        
-        buffer.connect(this.reverbNode);
-        this.reverbNode.connect(this.context.destination);
+        try {
+            if (!this.reverbNode) return;
+            
+            buffer.connect(this.reverbNode);
+            this.reverbNode.connect(this.context.destination);
+        } catch (error) {
+            console.error('Error applying reverb:', error);
+        }
     }
 
     stopAllSounds() {
-        if (this.currentChordGain) {
-            this.currentChordGain.disconnect();
-            this.currentChordGain = null;
+        try {
+            if (this.currentChordGain) {
+                this.currentChordGain.gain.setValueAtTime(
+                    this.currentChordGain.gain.value,
+                    this.context.currentTime
+                );
+                this.currentChordGain.gain.exponentialRampToValueAtTime(
+                    0.001,
+                    this.context.currentTime + 0.1
+                );
+                setTimeout(() => {
+                    this.currentChordGain.disconnect();
+                    this.currentChordGain = null;
+                }, 200);
+            }
+        } catch (error) {
+            console.error('Error stopping sounds:', error);
+            // Fallback to immediate disconnect
+            if (this.currentChordGain) {
+                this.currentChordGain.disconnect();
+                this.currentChordGain = null;
+            }
         }
     }
 
@@ -1180,76 +1217,86 @@ class AudioContextManager {
     }
 
     async loadPianoSamples(sampleMap = null) {
-        if (sampleMap) {
-            // Load specific samples from sampleMap
-            const promises = Object.entries(sampleMap).map(([note, url]) =>
-                this.loadSample(url, this.pianoSampleBuffers, note)
-            );
-            await Promise.all(promises);
-            this.samplesLoaded = true;
-        } else {
-            // Load full set of piano samples
-            console.log('Starting full piano sample loading...');
-            const octaves = [2, 3, 4, 5];
-            const notes = ['c', 'cs', 'd', 'ds', 'e', 'f', 'fs', 'g', 'gs', 'a', 'as', 'b'];
-            for (const octave of octaves) {
-                for (const note of notes) {
-                    const sampleName = `${note}${octave}.wav`;
-                    try {
-                        const response = await fetch(`./${sampleName}`);
-                        if (!response.ok) throw new Error(`Failed to load ${sampleName}`);
-                        const arrayBuffer = await response.arrayBuffer();
-                        this.pianoSampleBuffers[`${note.toUpperCase()}${octave}`] = await this.context.decodeAudioData(arrayBuffer);
-                        console.log(`Loaded ${sampleName}`);
-                    } catch (error) {
-                        console.error(`Error loading ${sampleName}:`, error);
+        try {
+            if (sampleMap) {
+                const promises = Object.entries(sampleMap).map(([note, url]) =>
+                    this.loadSample(url, this.pianoSampleBuffers, note)
+                );
+                await Promise.all(promises);
+                this.samplesLoaded = true;
+            } else {
+                console.log('Starting full piano sample loading...');
+                const octaves = [2, 3, 4, 5];
+                const notes = ['c', 'cs', 'd', 'ds', 'e', 'f', 'fs', 'g', 'gs', 'a', 'as', 'b'];
+                for (const octave of octaves) {
+                    for (const note of notes) {
+                        const sampleName = `${note}${octave}.wav`;
+                        try {
+                            const response = await fetch(`./${sampleName}`);
+                            if (!response.ok) throw new Error(`Failed to load ${sampleName}`);
+                            const arrayBuffer = await response.arrayBuffer();
+                            this.pianoSampleBuffers[`${note.toUpperCase()}${octave}`] = await this.context.decodeAudioData(arrayBuffer);
+                            console.log(`Loaded ${sampleName}`);
+                        } catch (error) {
+                            console.error(`Error loading ${sampleName}:`, error);
+                        }
                     }
                 }
+                this.samplesLoaded = true;
+                if (typeof updateLoadingStatus === 'function') {
+                    updateLoadingStatus("Full piano samples loaded");
+                }
             }
-            this.samplesLoaded = true;
-            if (typeof updateLoadingStatus === 'function') {
-                updateLoadingStatus("Full piano samples loaded");
-            }
+        } catch (error) {
+            console.error('Error loading piano samples:', error);
+            throw error;
         }
     }
 
     async createDrumSound(type) {
-        const sampleRate = this.context.sampleRate;
-        const duration = type === 'hihat' ? 0.05 : 0.2;
-        const buffer = this.context.createBuffer(1, sampleRate * duration, sampleRate);
-        const data = buffer.getChannelData(0);
+        try {
+            const sampleRate = this.context.sampleRate;
+            const duration = type === 'hihat' ? 0.05 : 0.2;
+            const buffer = this.context.createBuffer(1, sampleRate * duration, sampleRate);
+            const data = buffer.getChannelData(0);
 
-        switch (type) {
-            case 'click':
-                for (let i = 0; i < data.length; i++) {
-                    data[i] = Math.sin(i * 0.05) * Math.exp(-i * 0.01);
-                }
-                break;
-            case 'hihat':
-                for (let i = 0; i < data.length; i++) {
-                    data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (sampleRate * 0.01));
-                }
-                break;
-            case 'kick':
-                for (let i = 0; i < data.length; i++) {
-                    const t = i / sampleRate;
-                    data[i] = Math.sin(2 * Math.PI * 100 * t) * Math.exp(-t * 10) * 2;
-                }
-                break;
-            case 'snare':
-                for (let i = 0; i < data.length; i++) {
-                    const t = i / sampleRate;
-                    data[i] = ((Math.random() * 2 - 1) + Math.sin(2 * Math.PI * 200 * t)) * Math.exp(-t * 10) * 2;
-                }
-                break;
-            case 'woodblock':
-                for (let i = 0; i < data.length; i++) {
-                    const t = i / sampleRate;
-                    data[i] = Math.sin(2 * Math.PI * 800 * t) * Math.exp(-t * 20);
-                }
-                break;
+            switch (type) {
+                case 'click':
+                    for (let i = 0; i < data.length; i++) {
+                        data[i] = Math.sin(i * 0.05) * Math.exp(-i * 0.01);
+                    }
+                    break;
+                case 'hihat':
+                    for (let i = 0; i < data.length; i++) {
+                        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (sampleRate * 0.01));
+                    }
+                    break;
+                case 'kick':
+                    for (let i = 0; i < data.length; i++) {
+                        const t = i / sampleRate;
+                        data[i] = Math.sin(2 * Math.PI * 100 * t) * Math.exp(-t * 10) * 2;
+                    }
+                    break;
+                case 'snare':
+                    for (let i = 0; i < data.length; i++) {
+                        const t = i / sampleRate;
+                        data[i] = ((Math.random() * 2 - 1) + Math.sin(2 * Math.PI * 200 * t)) * Math.exp(-t * 10) * 2;
+                    }
+                    break;
+                case 'woodblock':
+                    for (let i = 0; i < data.length; i++) {
+                        const t = i / sampleRate;
+                        data[i] = Math.sin(2 * Math.PI * 800 * t) * Math.exp(-t * 20);
+                    }
+                    break;
+                default:
+                    throw new Error(`Unknown drum sound type: ${type}`);
+            }
+            return buffer;
+        } catch (error) {
+            console.error(`Error creating drum sound ${type}:`, error);
+            throw error;
         }
-        return buffer;
     }
 }
 
