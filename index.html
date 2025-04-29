@@ -1125,13 +1125,14 @@ class AudioContextManager {
             return null;
         }
     }
-    function updateLoadingStatus(message) {
-        const indicator = document.getElementById('loading-indicator');
-        if (indicator) {
-            indicator.textContent = message;
-            console.log(`Loading Status: ${message}`); // Optional console log
-        }
+function updateLoadingStatus(message) {
+    const indicator = document.getElementById('loading-indicator');
+    if (indicator) {
+        indicator.textContent = message;
     }
+    // Optional: Keep logging to console for debugging
+    console.log(`Loading Status: ${message}`);
+}
     setupReverb() {
         try {
             if (!this.reverbNode) {
