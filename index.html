@@ -526,7 +526,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bebop Blueprint</title>
     <!-- Add your CSS link here -->
-    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <main>
@@ -875,6 +874,8 @@ const drumSoundSets = [
 ];
 
 let currentDrumSetIndex = 0;
+        
+let currentMeasure = 0      
         
 const progressions = {
     "I V7": { defaultKey: "C", progression: ["I", "V7"] },
@@ -3032,95 +3033,210 @@ function setupEventListeners() {
 
 // Initialization
 async function initializeApp() {
-    UI.init();
-    createBeats();
-    createFretboard(UI.elements.chordFretboard, TUNINGS.standard);
-    loadProgression(UI.elements.progressionSelect.value);
-    initializeFretFlow();
-    setupEventListeners();
-    updateLoadingStatus("Application initialized");
-    setTimeout(() => {
-        const indicator = document.getElementById('loading-indicator');
-        if (indicator) indicator.remove();
-    }, 1000);
-    log("Application initialized");
+    try {
+        // Initialize UI elements
+        try {
+            UI.init();
+        } catch (error) {
+            console.error('Error initializing UI:', error);
+        }
+
+        // Initialize AudioContextManager
+        try {
+            await AudioContextManager.initialize();
+        } catch (error) {
+            console.error('Error initializing AudioContextManager:', error);
+        }
+
+        // Create metronome beats
+        try {
+            createBeats();
+        } catch (error) {
+            console.error('Error creating beats:', error);
+        }
+
+        // Initialize main chord fretboard
+        try {
+            if (UI.elements.chordFretboard) {
+                createFretboard(UI.elements.chordFretboard, TUNINGS.standard);
+                updateFretboardNotes(UI.elements.chordFretboard, 'C', 'major', TUNINGS.standard);
+            } else {
+                console.warn('Chord fretboard element not found');
+            }
+        } catch (error) {
+            console.error('Error initializing chord fretboard:', error);
+        }
+
+        // Load chord progression
+        try {
+            const progression = UI.elements.progressionSelect?.value || 'I V7';
+            loadProgression(progression);
+        } catch (error) {
+            console.error('Error loading progression:', error);
+        }
+
+        // Initialize FretFlow fretboards
+        try {
+            initializeFretFlow();
+            const fretboardsGrid = UI.elements.fretboardsGrid;
+            if (fretboardsGrid) {
+                for (let i = 1; i <= 4; i++) {
+                    const container = createFretboardContainer(i);
+                    fretboardsGrid.appendChild(container);
+                    const fretboard = container.querySelector('.fretboard');
+                    if (fretboard) {
+                        createFretboard(fretboard, TUNINGS.standard);
+                        updateFretboardNotes(fretboard, 'C', 'major', TUNINGS.standard);
+                    } else {
+                        console.warn(`Fretboard not found in container ${i}`);
+                    }
+
+                    const tuningSelect = container.querySelector('.tuning-select');
+                    const keySelect = container.querySelector(`#key-${i}`);
+                    const scaleSelect = container.querySelector(`#scale-${i}`);
+
+                    if (tuningSelect && keySelect && scaleSelect) {
+                        tuningSelect.addEventListener('change', () => {
+                            try {
+                                const tuning = TUNINGS[tuningSelect.value];
+                                updateFretboardNotes(fretboard, keySelect.value, scaleSelect.value, tuning);
+                            } catch (error) {
+                                console.error(`Error updating fretboard ${i} on tuning change:`, error);
+                            }
+                        });
+
+                        keySelect.addEventListener('change', () => {
+                            try {
+                                const tuning = TUNINGS[tuningSelect.value];
+                                updateFretboardNotes(fretboard, keySelect.value, scaleSelect.value, tuning);
+                            } catch (error) {
+                                console.error(`Error updating fretboard ${i} on key change:`, error);
+                            }
+                        });
+
+                        scaleSelect.addEventListener('change', () => {
+                            try {
+                                const tuning = TUNINGS[tuningSelect.value];
+                                updateFretboardNotes(fretboard, keySelect.value, scaleSelect.value, tuning);
+                            } catch (error) {
+                                console.error(`Error updating fretboard ${i} on scale change:`, error);
+                            }
+                        });
+                    } else {
+                        console.warn(`Fretboard controls missing in container ${i}`);
+                    }
+                }
+            } else {
+                console.warn('Fretboards grid not found');
+            }
+        } catch (error) {
+            console.error('Error initializing FretFlow fretboards:', error);
+        }
+
+        // Set up chord fretboard tuning listener
+        try {
+            if (UI.elements.chordTuning) {
+                UI.elements.chordTuning.addEventListener('change', () => {
+                    try {
+                        const measures = document.getElementsByClassName('measure');
+                        if (measures.length > 0 && typeof currentMeasure === 'number' && currentMeasure < measures.length) {
+                            const currentMeasureElement = measures[currentMeasure];
+                            const root = currentMeasureElement.querySelector('.chord-controls .root-note')?.value;
+                            const scale = currentMeasureElement.querySelector('.scale-controls .scale-select')?.value;
+                            if (root && scale && UI.elements.chordFretboard) {
+                                updateFretboardNotes(UI.elements.chordFretboard, root, scale, TUNINGS[UI.elements.chordTuning.value]);
+                            } else {
+                                console.warn('Invalid chord tuning inputs or missing chord fretboard');
+                            }
+                        } else {
+                            console.warn('No valid measures or invalid currentMeasure');
+                        }
+                    } catch (error) {
+                        console.error('Error updating chord fretboard on tuning change:', error);
+                    }
+                });
+            } else {
+                console.warn('Chord tuning element not found');
+            }
+        } catch (error) {
+            console.error('Error setting up chord tuning listener:', error);
+        }
+
+        // Set up event listeners
+        try {
+            setupEventListeners();
+        } catch (error) {
+            console.error('Error setting up event listeners:', error);
+        }
+
+        // Update loading status
+        try {
+            updateLoadingStatus('Application initialized');
+            log('Application initialized');
+        } catch (error) {
+            console.error('Error updating loading status:', error);
+        }
+
+        // Remove loading indicator
+        setTimeout(() => {
+            try {
+                if (UI.elements.loadingIndicator) {
+                    UI.elements.loadingIndicator.remove();
+                }
+            } catch (error) {
+                console.error('Error removing loading indicator:', error);
+            }
+        }, 1000);
+
+    } catch (error) {
+        console.error('Unexpected error in initializeApp:', error);
+        updateLoadingStatus(`Initialization failed: ${error.message}`);
+        throw error; // Propagate to DOMContentLoaded
+    }
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         await initializeApp();
 
-        // Initialize Swing Control after app setup
-        SwingControl.initialize();
-        
-        // Show/hide drum set toggle button based on sound type
-        const soundTypeSelect = document.getElementById('sound-type');
-        const drumSetToggleBtn = document.getElementById('drumSetToggleBtn');
-        
-        if (soundTypeSelect && drumSetToggleBtn) {
-            const soundType = soundTypeSelect.value;
-            drumSetToggleBtn.style.display = soundType === 'drums' ? 'inline-block' : 'none';
-            
-            // Add event listener for sound type changes
-            soundTypeSelect.addEventListener('change', (e) => {
-                drumSetToggleBtn.style.display = e.target.value === 'drums' ? 'inline-block' : 'none';
-            });
+        // Initialize Swing Control
+        try {
+            SwingControl.initialize();
+        } catch (error) {
+            console.error('Error initializing SwingControl:', error);
         }
-        
+
+        // Show/hide drum set toggle button based on sound type
+        try {
+            const soundTypeSelect = UI.elements.soundType;
+            const drumSetToggleBtn = UI.elements.drumSetToggleBtn;
+
+            if (soundTypeSelect && drumSetToggleBtn) {
+                drumSetToggleBtn.style.display = soundTypeSelect.value === 'drums' ? 'inline-block' : 'none';
+                soundTypeSelect.addEventListener('change', (e) => {
+                    try {
+                        drumSetToggleBtn.style.display = e.target.value === 'drums' ? 'inline-block' : 'none';
+                        console.log(`Sound type changed to: ${e.target.value}`);
+                    } catch (error) {
+                        console.error('Error handling sound type change:', error);
+                    }
+                });
+            } else {
+                console.warn('Sound type select or drum set toggle button not found');
+            }
+        } catch (error) {
+            console.error('Error setting up sound type listener:', error);
+        }
+
     } catch (error) {
         console.error('Error during app initialization:', error);
+        try {
+            updateLoadingStatus(`Initialization failed: ${error.message}`);
+        } catch (statusError) {
+            console.error('Error updating loading status:', statusError);
+        }
     }
 });
-        
-    const fretboardsGrid = document.querySelector('.fretboards-grid');
-    for (let i = 1; i <= 4; i++) {
-        const container = createFretboardContainer(i);
-        fretboardsGrid.appendChild(container);
-        const fretboard = container.querySelector('.fretboard');
-        createFretboard(fretboard, TUNINGS.standard);
-        updateFretboardNotes(fretboard, 'C', 'major', TUNINGS.standard);
-
-        container.querySelector('.tuning-select').addEventListener('change', function() {
-            const tuning = TUNINGS[this.value];
-            const key = container.querySelector(`#key-${i}`).value;
-            const scale = container.querySelector(`#scale-${i}`).value;
-            updateFretboardNotes(fretboard, key, scale, tuning);
-        });
-
-        container.querySelector(`#key-${i}`).addEventListener('change', function() {
-            const tuning = TUNINGS[container.querySelector('.tuning-select').value];
-            const scale = container.querySelector(`#scale-${i}`).value;
-            updateFretboardNotes(fretboard, this.value, scale, tuning);
-        });
-
-        container.querySelector(`#scale-${i}`).addEventListener('change', function() {
-            const tuning = TUNINGS[container.querySelector('.tuning-select').value];
-            const key = container.querySelector(`#key-${i}`).value;
-            updateFretboardNotes(fretboard, key, this.value, tuning);
-        });
-    }
-
-    const chordFretboard = document.getElementById('chord-fretboard');
-    createFretboard(chordFretboard, TUNINGS.standard);
-    updateFretboardNotes(chordFretboard, 'C', 'major', TUNINGS.standard);
-
-    document.getElementById('chord-tuning').addEventListener('change', function() {
-        const measures = document.getElementsByClassName('measure');
-        if (measures.length > 0 && currentMeasure < measures.length) {
-            const currentMeasureElement = measures[currentMeasure];
-            const root = currentMeasureElement.querySelector('.chord-controls .root-note')?.value;
-            const scale = currentMeasureElement.querySelector('.scale-controls .scale-select')?.value;
-            if (root && scale) {
-                updateFretboardNotes(chordFretboard, root, scale, TUNINGS[this.value]);
-            }
-        }
-    });
-
-    } catch (error) {
-        console.error("Initialization failed:", error);
-        updateLoadingStatus("Initialization failed: " + error.message);
-    }
-});  
             </script>
         </body>
         </html>
