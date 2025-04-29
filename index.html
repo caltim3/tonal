@@ -719,7 +719,14 @@ const NOTE_FREQUENCIES = {
     'Fs3': 185.00, 'G3': 196.00, 'Gs3': 207.65, 'A3': 220.00, 'As3': 233.08, 'B3': 246.94,
     'C4': 261.63, 'Cs4': 277.18, 'D4': 293.66, 'Ds4': 311.13, 'E4': 329.63
 };
-
+  function updateLoadingStatus(message) {
+    const indicator = document.getElementById('loading-indicator');
+    if (indicator) {
+        indicator.textContent = message;
+    }
+    // Optional: Keep logging to console for debugging
+    console.log(`Loading Status: ${message}`);
+}
 // Convert note names to sample format (e.g., A# → As, Bb → As, C3 → C3)
 function toSampleNoteName(note) {
     if (!note) {
@@ -1083,14 +1090,7 @@ class AudioContextManager {
         }
     }
 
-    function updateLoadingStatus(message) {
-    const indicator = document.getElementById('loading-indicator');
-    if (indicator) {
-        indicator.textContent = message;
-    }
-    // Optional: Keep logging to console for debugging
-    console.log(`Loading Status: ${message}`);
-}
+  
     
     async loadSample(url, targetBuffer, key) {
         try {
