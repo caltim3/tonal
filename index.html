@@ -157,9 +157,6 @@
             border-radius: 4px;
             transition: opacity 0.2s ease;
         }
-        .measure.dragging {
-            opacity: 0.5;
-        }
         .measure.active {
             background-color: #c3e6cb;
             border: 2px solid #28a745;
@@ -2651,7 +2648,6 @@ function loadProgression(progressionName, overrideKey = null) {
 
         const measure = document.createElement('div');
         measure.className = 'measure';
-        measure.draggable = true;
         measure.innerHTML = `
             <span class="measure-number">${index + 1}</span>
             <div class="chord-controls">
@@ -2679,12 +2675,7 @@ function loadProgression(progressionName, overrideKey = null) {
         } else if (quality === 'm' || quality === 'minor') {
             scaleSelect.value = 'minor';
         }
-        
-        // Add drag events
-        measure.addEventListener('dragstart', dragStart);
-        measure.addEventListener('dragover', dragOver);
-        measure.addEventListener('drop', drop);
-        measure.addEventListener('dragend', dragEnd);
+
     });
 
     updateMeasureNumbers();
@@ -2734,7 +2725,6 @@ function updateProgressionKey(newKey) {
 function addMeasure(chord = 'C', quality = 'major', scaleRoot = 'C', scaleType = 'major') {
     const measure = document.createElement('div');
     measure.className = 'measure';
-    measure.draggable = true;
     const measureCount = UI.elements.measures.children.length + 1;
     measure.innerHTML = `
         <span class="measure-number">${measureCount}</span>
@@ -2747,13 +2737,6 @@ function addMeasure(chord = 'C', quality = 'major', scaleRoot = 'C', scaleType =
             <select class="scale-select">${createScaleOptions(scaleType)}</select>
         </div>
     `;
-    UI.elements.measures.appendChild(measure);
-    measure.addEventListener('dragstart', dragStart);
-    measure.addEventListener('dragover', dragOver);
-    measure.addEventListener('drop', drop);
-    measure.addEventListener('dragend', dragEnd);
-    updateMeasureNumbers();
-    log(`Added measure ${measureCount}`);
 }
 
 function removeMeasure() {
@@ -2772,31 +2755,6 @@ function updateMeasureNumbers() {
     });
 }
 
-// Drag and Drop Handlers
-function dragStart(e) {
-    e.dataTransfer.setData('text/plain', Array.from(UI.elements.measures.children).indexOf(e.target));
-    setTimeout(() => e.target.classList.add('dragging'), 0);
-}
-
-function dragOver(e) {
-    e.preventDefault();
-}
-
-function drop(e) {
-    e.preventDefault();
-    const draggedIndex = parseInt(e.dataTransfer.getData('text/plain'));
-    const targetIndex = Array.from(UI.elements.measures.children).indexOf(e.target.closest('.measure'));
-    if (draggedIndex === targetIndex || isNaN(draggedIndex) || isNaN(targetIndex)) return;
-    const measures = Array.from(UI.elements.measures.children);
-    const draggedMeasure = measures[draggedIndex];
-    UI.elements.measures.insertBefore(draggedMeasure, targetIndex < draggedIndex ? measures[targetIndex] : measures[targetIndex + 1]);
-    updateMeasureNumbers();
-    log(`Moved measure from index ${draggedIndex} to ${targetIndex}`);
-}
-
-function dragEnd(e) {
-    e.target.classList.remove('dragging');
-}
 
 function initializeFretFlow() {
     const fretboardsGrid = UI.elements.fretboardsGrid;
