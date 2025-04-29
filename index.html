@@ -1410,7 +1410,7 @@ function getPitchShiftedNote(note, targetOctave = 3) {
   for (let sampleNote of SAMPLED_NOTES) {
     const sampleIndex = NOTES.indexOf(sampleNote); // Use sampleNote directly
     if (sampleIndex === -1) continue;
-    for (let octave of PIANO_CONFIG.octaves[sampleNote]) {
+    for (let octave of PIANO_OCTAVES[sampleNote]) {
       let semitoneDiff = targetIndex - sampleIndex;
       const octaveDiff = targetOctave - octave;
       semitoneDiff += octaveDiff * 12;
@@ -2336,24 +2336,20 @@ function updateFretboardNotes(container, rootNote, scale, tuning) {
                 } else {
                     noteElement.style.backgroundColor = '#4CAF50';
                 }
-                noteElement.addEventListener('click', async () => {
-                    try {
-                        await AudioContextManager.ensureAudioContext();
-                        let volume = parseFloat(currentBeatElement.dataset.baseVolume) || 0;
-                        const isAccent = volume >= 1 && ['kick', 'snare'].includes(currentBeatElement.dataset.sound);
-                        const accentBoost = parseFloat(UI.elements.accentIntensity?.value || 1);
-                        if (isAccent) {
-                            volume = Math.min(volume * accentBoost, 1); // cap at 1.0
-                        }
-                        await playNote(`string${6 - string}`, fret, volume);
-                        noteElement.style.transform = 'translate(-50%, -50%) scale(1.2)';
-                        setTimeout(() => {
-                            noteElement.style.transform = 'translate(-50%, -50%) scale(1)';
-                        }, 100);
-                    } catch (error) {
-                        console.error('Error playing note:', error);
-                    }
-                });
+            noteElement.addEventListener('click', async () => {
+                try {
+                    await AudioContextManager.ensureAudioContext();
+                    // Use fretboard volume for note playback
+                    const volume = parseFloat(UI.elements.fretboardVolume?.value ?? 0.7);
+                    await playNote(currentNote, volume);
+                    noteElement.style.transform = 'translate(-50%, -50%) scale(1.2)';
+                    setTimeout(() => {
+                        noteElement.style.transform = 'translate(-50%, -50%) scale(1)';
+                    }, 100);
+                } catch (error) {
+                    console.error('Error playing note:', error);
+                }
+            });
                 noteElement.addEventListener('mouseenter', () => {
                     noteElement.style.transform = 'translate(-50%, -50%) scale(1.1)';
                 });
@@ -2727,18 +2723,21 @@ function addMeasure(chord = 'C', quality = 'major', scaleRoot = 'C', scaleType =
     measure.className = 'measure';
     const measureCount = UI.elements.measures.children.length + 1;
     measure.innerHTML = `
-        <span class="measure-number">${measureCount}</span>
-        <div class="chord-controls">
-            <select class="root-note">${createKeyOptions(chord)}</select>
-            <select class="chord-quality">${createQualityOptions(quality)}</select>
-        </div>
-        <div class="scale-controls">
-            <select class="second-key">${createKeyOptions(scaleRoot)}</select>
-            <select class="scale-select">${createScaleOptions(scaleType)}</select>
-        </div>
+    <span class="measure-number">${measureCount}</span>
+    <div class="chord-controls">
+    <select class="root-note">${createKeyOptions(chord)}</select>
+    <select class="chord-quality">${createQualityOptions(quality)}</select>
+    </div>
+    <div class="scale-controls">
+    <select class="second-key">${createKeyOptions(scaleRoot)}</select>
+    <select class="scale-select">${createScaleOptions(scaleType)}</select>
+    </div>
     `;
+    UI.elements.measures.appendChild(measure);
+    updateMeasureNumbers();
+    log(`Added measure ${measureCount}`);
 }
-
+        
 function removeMeasure() {
     const measures = UI.elements.measures.children;
     if (measures.length > 0) {
