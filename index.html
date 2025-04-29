@@ -2129,13 +2129,17 @@ async function playMetronomeSound(baseVolume) {
     }
 }
 function onMetronomeInstrumentChange(selectedInstrument) {
-    const drumSetToggleBtn = document.getElementById("drumSetToggleBtn");
-    if (selectedInstrument === "drums") {
-        drumSetToggleBtn.style.display = "inline-block";
-        drumSetToggleBtn.textContent = drumSoundSets[currentDrumSetIndex].name;
-    } else {
-        drumSetToggleBtn.style.display = "none";
-    }
+    const drumSetToggleBtn = document.getElementById('drumSetToggleBtn');
+    if (drumSetToggleBtn) {
+        drumSetToggleBtn.addEventListener('click', () => {
+            currentDrumSetIndex = (currentDrumSetIndex + 1) % drumSoundSets.length;
+            drumSetToggleBtn.textContent = drumSoundSets[currentDrumSetIndex].name;
+        });
+
+    // Initialize the button text with the first drum set name
+    drumSetToggleBtn.textContent = drumSoundSets[0].name;
+} else {
+    console.warn('Drum set toggle button not found in the DOM');
 }
 
 document.getElementById('sound-type').addEventListener('change', (e) => {
