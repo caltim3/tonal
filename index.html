@@ -2844,11 +2844,15 @@ function initializeFretFlow() {
         
         // Add tuning change handler
         const tuningSelect = container.querySelector(`#fretflow-tuning-${index}`);
-        tuningSelect.addEventListener('change', () => {
-            const newTuning = TUNINGS[tuningSelect.value];
-            createFretboard(fretboard, newTuning);
-            updateFretboardNotes(fretboard, UI.elements.keySelect.value, scale, newTuning);
-        });
+        if (tuningSelect) {
+            tuningSelect.addEventListener('change', () => {
+                const newTuning = TUNINGS[tuningSelect.value];
+                createFretboard(fretboard, newTuning);
+                updateFretboardNotes(fretboard, UI.elements.keySelect.value, scale, newTuning);
+            });
+        } else {
+            console.error(`Tuning select element #fretflow-tuning-${index} not found`);
+        }
     });
     log("FretFlow initialized");
 }
