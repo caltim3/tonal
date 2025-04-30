@@ -1059,7 +1059,7 @@ const AudioContextManager = {
     this.samplesLoaded = true;
 }
     
-    async setupReverb() {
+    setupReverb: async function() {
         if (!this.reverbNode) {
             this.reverbNode = this.context.createConvolver();
             const sampleRate = this.context.sampleRate;
@@ -2762,20 +2762,25 @@ document.addEventListener('DOMContentLoaded', () => {
         updateLoadingStatus("Initialization failed");
     });
 
-    // Add the new drum set functionality
-    const soundType = document.getElementById('sound-type').value;
-    document.getElementById('drumSetToggleBtn').style.display = soundType === 'drums' ? 'inline-block' : 'none';
-    
-    // Add event listener for drum set toggle button
-    document.getElementById('drumSetToggleBtn').addEventListener('click', function() {
-        currentDrumSetIndex = (currentDrumSetIndex + 1) % drumSoundSets.length;
-        this.textContent = drumSoundSets[currentDrumSetIndex].name;
-    });
-    
-    // Add event listener for sound type changes
-    document.getElementById('sound-type').addEventListener('change', function() {
-        onMetronomeInstrumentChange(this.value);
-    });
+    // Defensive: check if elements exist before using them
+    const soundTypeElem = document.getElementById('sound-type');
+    const drumSetToggleBtn = document.getElementById('drumSetToggleBtn');
+
+    if (soundTypeElem && drumSetToggleBtn) {
+        const soundType = soundTypeElem.value;
+        drumSetToggleBtn.style.display = soundType === 'drums' ? 'inline-block' : 'none';
+
+        // Add event listener for drum set toggle button
+        drumSetToggleBtn.addEventListener('click', function() {
+            currentDrumSetIndex = (currentDrumSetIndex + 1) % drumSoundSets.length;
+            this.textContent = drumSoundSets[currentDrumSetIndex].name;
+        });
+
+        // Add event listener for sound type changes
+        soundTypeElem.addEventListener('change', function() {
+            onMetronomeInstrumentChange(this.value);
+        });
+    }
 });
             </script>
         </body>
