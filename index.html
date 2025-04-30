@@ -1637,20 +1637,33 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
 
     AudioContextManager.currentChordGain = gainNode;
 
-    // Split chord into root and upper notes for inversion
-    const rootNote = chordNotes[0];
-    const upperNotes = chordNotes.slice(1);
-    
-    // Randomize the order of upper notes (for inversions)
-    const shuffledUpperNotes = [...upperNotes].sort(() => Math.random() - 0.5);
-    
-    // Combine back with root note always at bottom
-    const finalChordNotes = [rootNote, ...shuffledUpperNotes];
+    // Handle inversions based on continuation
+    let finalChordNotes;
+    if (isContinuation) {
+        // For the second instance, create an inversion
+        // Rotate the chord notes and ensure root is not in the bass
+        const rotatedNotes = [...chordNotes];
+        rotatedNotes.push(rotatedNotes.shift()); // Move first note to end
+        finalChordNotes = rotatedNotes;
+    } else {
+        // First instance - root position
+        finalChordNotes = chordNotes;
+    }
 
-    // Play each note in the chord
+    // Distribute notes across octaves
     finalChordNotes.forEach((note, index) => {
-        // Root note gets lower octave, other notes get higher octaves
-        const octave = index === 0 ? 2 : (3 + Math.floor(Math.random() * 2));
+        // Base octave selection on position in chord and whether it's an inversion
+        let octave;
+        if (isContinuation) {
+            // For inversions, spread notes across higher octaves
+            octave = 3 + Math.floor(index / 2);
+        } else {
+            // For root position, start lower and spread up
+            octave = (index === 0) ? 2 : (3 + Math.floor((index - 1) / 2));
+        }
+        
+        // Ensure octave is within valid range
+        octave = Math.max(2, Math.min(5, octave));
         
         const { sampleKey, semitoneDiff } = getPitchShiftedNote(note, octave);
         if (!AudioContextManager.pianoSampleBuffers[sampleKey]) {
@@ -1677,61 +1690,70 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
         source.connect(reverbGain);
         reverbGain.connect(AudioContextManager.reverbNode);
 
-        source.start(startTime);
+        // Add slight timing variation for more natural sound
+        const timeVariation = isContinuation ? Math.random() * 0.02 : 0;
+        source.start(startTime + timeVariation);
         source.stop(startTime + duration);
     });
 }
 
 function getChordNotes(root, quality) {
-  const CHORD_INTERVALS = {
-    'maj': [0, 4, 7],
-    'min': [0, 3, 7],
-    'minor': [0, 3, 7],
-    'major': [0, 4, 7],
-    'dim': [0, 3, 6],
-    'aug': [0, 4, 8],
-    '6': [0, 4, 9],
-    'm6': [0, 3, 9],
-    'min6': [0, 3, 9],
-    '7': [0, 4, 7, 10],
-    'dom7': [0, 4, 7, 10],
-    'maj7': [0, 4, 7, 11],
-    'min7': [0, 3, 7, 10],
-    'm7': [0, 3, 7, 10],
-    'dim7': [0, 3, 6, 9],
-    'm7b5': [0, 3, 6, 10],
-    'min7b5': [0, 3, 6, 10],
-    'sus2': [0, 2, 7],
-    'sus4': [0, 5, 7],
-    'add9': [0, 4, 7, 14]
-  };
+    const CHORD_INTERVALS = {
+        'maj': [0, 4, 7],
+        'min': [0, 3, 7],
+        'minor': [0, 3, 7],
+        'major': [0, 4, 7],
+        'dim': [0, 3, 6],
+        'aug': [0, 4, 8],
+        '6': [0, 4, 7, 9],
+        'm6': [0, 3, 7, 9],
+        'min6': [0, 3, 7, 9],
+        '7': [0, 4, 7, 10],
+        'dom7': [0, 4, 7, 10],
+        'maj7': [0, 4, 7, 11],
+        'min7': [0, 3, 7, 10],
+        'm7': [0, 3, 7, 10],
+        'dim7': [0, 3, 6, 9],
+        'm7b5': [0, 3, 6, 10],
+        'min7b5': [0, 3, 6, 10],
+        'sus2': [0, 2, 7],
+        'sus4': [0, 5, 7],
+        '9': [0, 4, 7, 10, 14],
+        'maj9': [0, 4, 7, 11, 14],
+        'm9': [0, 3, 7, 10, 14],
+        '13': [0, 4, 7, 10, 14, 21],
+        'maj13': [0, 4, 7, 11, 14, 21],
+        'm13': [0, 3, 7, 10, 14, 21],
+        'add9': [0, 4, 7, 14]
+    };
 
-  const CHROMATIC = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+    // Standardize the chromatic scale
+    const CHROMATIC = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
-  const standardizedRoot = standardizeNoteName(root);
-  let rootIndex = CHROMATIC.indexOf(standardizedRoot);
+    // Standardize the root note
+    const standardizedRoot = standardizeNoteName(root);
+    let rootIndex = CHROMATIC.indexOf(standardizedRoot);
 
-  if (rootIndex === -1) {
-    rootIndex = CHROMATIC.indexOf(root);
-    if (rootIndex === -1) rootIndex = 0; // fallback to C
-  }
+    if (rootIndex === -1) {
+        console.warn(`Invalid root note: ${root}`);
+        rootIndex = 0; // Default to C if invalid root
+    }
 
-  const normQuality = quality?.toLowerCase();
-  let intervals = CHORD_INTERVALS[normQuality];
+    // Normalize the quality
+    const normQuality = quality?.toLowerCase() || 'maj';
+    let intervals = CHORD_INTERVALS[normQuality];
 
-  if (!intervals) {
-    console.warn(`Unknown chord quality "${quality}", defaulting to major`);
-    intervals = CHORD_INTERVALS['maj'];
-  }
+    if (!intervals) {
+        console.warn(`Unknown chord quality "${quality}", defaulting to major`);
+        intervals = CHORD_INTERVALS['maj'];
+    }
 
-  const chordNotes = intervals.map(semitones => {
-    const noteIndex = (rootIndex + semitones) % 12;
-    return CHROMATIC[noteIndex];
-  });
-
-  return chordNotes;
+    // Generate chord notes
+    return intervals.map(interval => {
+        const noteIndex = (rootIndex + interval) % 12;
+        return CHROMATIC[noteIndex];
+    });
 }
-
 
 async function playMetronomeSound(baseVolume) {
     if (!AudioContextManager.context) return;
