@@ -682,6 +682,30 @@ function debounce(func, wait) {
 // Musical Constants
 const NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
         
+const ALL_NOTES = [
+  'a', 'as', 'b', 'c', 'cs', 'd', 'ds', 'e', 'f', 'fs', 'g', 'gs'
+];
+const OCTAVES = [2, 3, 4, 5];
+const FILE_FORMAT = 'wav';
+
+function getSampleFileName(note, octave) {
+  return `${note}${octave}.${FILE_FORMAT}`;
+}
+        
+const allSampleFiles = [];
+for (const note of ALL_NOTES) {
+  for (const octave of OCTAVES) {
+    allSampleFiles.push(getSampleFileName(note, octave));
+  }
+}
+        
+const PIANO_CONFIG = {
+  notes: ALL_NOTES,
+  octaves: OCTAVES,
+  velocities: [12],
+  fileFormat: FILE_FORMAT
+};
+        
 const ENHARMONIC_MAP = {
     'C#': 'Db', 'Db': 'Db',
     'D#': 'Eb', 'Eb': 'Eb',
@@ -689,19 +713,7 @@ const ENHARMONIC_MAP = {
     'G#': 'Ab', 'Ab': 'Ab',
     'A#': 'Bb', 'Bb': 'Bb'
 };
-
-const SAMPLED_NOTES = ['A', 'C', 'Ds', 'Fs'];
-const PIANO_CONFIG = {
-    octaves: {
-        'A': [2, 3, 4, 5, 6],
-        'C': [2, 3, 4, 5, 6],
-        'Fs': [2, 3, 4, 5, 6],
-        'Ds': [2, 3, 4, 5, 6]
-    },
-    velocities: [12],
-    fileFormat: 'wav'
-};
-
+        
 const PIANO_NOTES = {
     'A2': 110.00, 'As2': 116.54, 'B2': 123.47,
     'C3': 130.81, 'Cs3': 138.59, 'D3': 146.83, 'Ds3': 155.56, 'E3': 164.81, 'F3': 174.61,
@@ -1027,37 +1039,26 @@ const AudioContextManager = {
         return buffer;
     },
     async loadPianoSamples() {
-        log('Starting piano sample loading...');
-        if (!this.context) {
-            await this.initialize();
-        }
-        for (let note of SAMPLED_NOTES) {
-            for (let octave of PIANO_CONFIG.octaves[note]) {
-                const sampleName = `${note}${octave}v12`;
-                try {
-                    const response = await fetch(`./${sampleName}.${PIANO_CONFIG.fileFormat}`);
-                    if (!response.ok) throw new Error(`Failed to load ${sampleName}`);
-                    const arrayBuffer = await response.arrayBuffer();
-                    this.pianoSampleBuffers[sampleName] = await this.context.decodeAudioData(arrayBuffer);
-                    log(`Loaded piano sample: ${sampleName}`);
-                } catch (error) {
-                    console.warn(`Could not load ${sampleName}, using fallback`, error);
-                    this.pianoSampleBuffers[sampleName] = this.createSyntheticSample(note, octave);
-                }
+    // Use the new ALL_NOTES and OCTAVES arrays
+    this.pianoSampleBuffers = {}; // Reset
+
+    for (const note of ALL_NOTES) {
+        for (const octave of OCTAVES) {
+            const fileName = getSampleFileName(note, octave); // e.g., 'ds4.wav'
+            const key = `${note}${octave}`; // e.g., 'ds4'
+            try {
+                const response = await fetch(fileName);
+                const arrayBuffer = await response.arrayBuffer();
+                const audioBuffer = await this.context.decodeAudioData(arrayBuffer);
+                this.pianoSampleBuffers[key] = audioBuffer;
+            } catch (e) {
+                console.error(`Failed to load sample: ${fileName}`, e);
             }
         }
-        this.samplesLoaded = true;
-        updateLoadingStatus("Piano samples loaded");
-    },
-    createSyntheticSample(note, octave) {
-        const buffer = this.context.createBuffer(1, this.context.sampleRate, this.context.sampleRate);
-        const data = buffer.getChannelData(0);
-        const frequency = PIANO_NOTES[`${note}${octave}`] || 440;
-        for (let i = 0; i < data.length; i++) {
-            data[i] = Math.sin(2 * Math.PI * frequency * i / this.context.sampleRate) * Math.exp(-i / this.context.sampleRate);
-        }
-        return buffer;
-    },
+    }
+    this.samplesLoaded = true;
+}
+    
     async setupReverb() {
         if (!this.reverbNode) {
             this.reverbNode = this.context.createConvolver();
@@ -1091,19 +1092,40 @@ async function ensureAudioInitialized() {
 }
 // Music Theory Utilities
 
-// --- NEW GLOBAL HELPER -------------------------------------------
 function getNoteFromScaleDegree(degree, key, scale) {
-    // Convert the degree (0–6) into an actual note name in the chosen key
-    const chromaticScale = ['C', 'Db', 'D', 'Eb', 'E', 'F',
-                            'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
-    const keyIndex = chromaticScale.indexOf(standardizeNoteName(key));
-    if (keyIndex === -1) return null;           // safety check
+    // Use the sample file naming convention: lowercase, 's' for sharp, no flats
+    const chromaticScale = ['c', 'cs', 'd', 'ds', 'e', 'f',
+                            'fs', 'g', 'gs', 'a', 'as', 'b'];
+    // Standardize the key to match the format
+    const keyIndex = chromaticScale.indexOf(standardizeNoteNameForSamples(key));
+    if (keyIndex === -1) return null; // safety check
 
     const noteIndex = (keyIndex + scale[degree]) % 12;
-    const note = chromaticScale[noteIndex];
-    return flattenNote(note);                    // keep everything flat‑friendly
+    return chromaticScale[noteIndex];
 }
-// ------------------------------------------------------------------
+
+// Helper to convert input key names to sample format
+function standardizeNoteNameForSamples(note) {
+    // Accepts 'C', 'Db', 'D#', etc. and returns 'c', 'cs', etc.
+    note = note.toLowerCase().replace('♯', '#').replace('♭', 'b');
+    if (note.length === 2 && note[1] === 'b') {
+        // Convert flats to equivalent sharps
+        const flatToSharp = {
+            'cb': 'b',
+            'db': 'cs',
+            'eb': 'ds',
+            'fb': 'e',
+            'gb': 'fs',
+            'ab': 'gs',
+            'bb': 'as'
+        };
+        return flatToSharp[note] || note[0];
+    }
+    if (note.length === 2 && note[1] === '#') {
+        return note[0] + 's';
+    }
+    return note[0];
+}
         
 function standardizeNoteName(note) {
   if (!note) return 'C';
@@ -1122,113 +1144,81 @@ function standardizeNoteName(note) {
   return letter;
 }
 
-       
+// Helper: standardize note names to match sample files
+function standardizeNoteName(note) {
+    note = note.toLowerCase().replace('♯', '#').replace('♭', 'b');
+    // Convert flats to equivalent sharps
+    const flatToSharp = {
+        'cb': 'b', 'db': 'cs', 'eb': 'ds', 'fb': 'e',
+        'gb': 'fs', 'ab': 'gs', 'bb': 'as'
+    };
+    if (note.length === 2 && note[1] === 'b') {
+        return flatToSharp[note] || note[0];
+    }
+    if (note.length === 2 && note[1] === '#') {
+        return note[0] + 's';
+    }
+    return note[0];
+}
+
+// 1. Get the index of a note in the NOTES array
 function getNoteIndex(note) {
     const standardizedNote = standardizeNoteName(note);
     return NOTES.indexOf(standardizedNote);
 }
 
-const MIN_OCTAVE = 2;
-const MAX_OCTAVE = 4;
-
-function findNearestSampledNote(note, targetOctave = 3) {
-    const cleanNote = standardizeNoteName(note).replace('m', '');
-    const mappedNote = ENHARMONIC_MAP[cleanNote] || cleanNote;
-    const targetIndex = NOTES.indexOf(mappedNote);
-    if (targetIndex === -1) {
-        console.warn(`Note ${note} not found in NOTES.`);
-        return { sampleKey: 'C3v12', semitoneDiff: 0 };
+// 2. Find the direct sample key for a note and octave
+function getSampleKey(note, octave) {
+    const standardizedNote = standardizeNoteName(note);
+    if (!ALL_NOTES.includes(standardizedNote)) {
+        console.warn(`Note ${note} not found in sample set.`);
+        return null;
     }
-
-    let bestMatch = null;
-    let minDistance = Infinity;
-
-    for (let sampleNote of SAMPLED_NOTES) {
-        const sampleMapped = SAMPLE_NOTE_MAP[sampleNote] || sampleNote;
-        const sampleIndex = NOTES.indexOf(ENHARMONIC_MAP[sampleMapped] || sampleMapped);
-        for (let octave = MIN_OCTAVE; octave <= MAX_OCTAVE; octave++) {
-            const noteMidi = targetIndex + targetOctave * 12;
-            const sampleMidi = sampleIndex + octave * 12;
-            const distance = Math.abs(noteMidi - sampleMidi);
-            if (distance < minDistance) {
-                minDistance = distance;
-                bestMatch = {
-                    sampleKey: `${sampleNote}${octave}v12`,
-                    semitoneDiff: noteMidi - sampleMidi
-                };
-            }
-        }
+    if (!OCTAVES.includes(octave)) {
+        console.warn(`Octave ${octave} not found in sample set.`);
+        return null;
     }
-
-    return bestMatch;
+    return `${standardizedNote}${octave}`;
 }
 
-
-
-        
+// 3. Get all notes in a scale (returns sample-format note names)
 function getScaleNotes(root, scaleName) {
     if (!root) return [];
-    
     const scaleIntervals = SCALES[scaleName];
     if (!scaleIntervals) return [];
-    
-    const chromaticScale = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+    const chromaticScale = NOTES;
     let rootIndex = chromaticScale.indexOf(standardizeNoteName(root));
     if (rootIndex === -1) return [];
-    
     return scaleIntervals.map(interval => {
         const noteIndex = (rootIndex + interval) % 12;
         return chromaticScale[noteIndex];
     });
 }
 
-// Helper function to get note at specific fret
+// 4. Get the note at a specific fret (returns sample-format note name)
 function getNoteAtFret(startNote, fretNumber) {
-    const chromaticScale = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+    const chromaticScale = NOTES;
     const startIndex = chromaticScale.indexOf(standardizeNoteName(startNote));
     if (startIndex === -1) return startNote;
-    
     const noteIndex = (startIndex + fretNumber) % 12;
     return chromaticScale[noteIndex];
 }
+
+// 5. Get the sample key for a note/octave (no pitch shifting needed)
 function getPitchShiftedNote(note, targetOctave = 3) {
-  const cleanNote = standardizeNoteName(note).replace('m', '');
-  const mappedNote = ENHARMONIC_MAP[cleanNote] || cleanNote;
-  const targetIndex = NOTES.indexOf(mappedNote);
-  if (targetIndex === -1) {
-    console.warn(`Note ${note} not found in NOTES.`);
-    return { sampleKey: 'C3v12', semitoneDiff: 0 };
-  }
-
-  let bestMatch = null;
-  let minDistance = Infinity;
-
-  for (let sampleNote of SAMPLED_NOTES) {
-    const sampleIndex = NOTES.indexOf(sampleNote); // Use sampleNote directly
-    if (sampleIndex === -1) continue;
-    for (let octave of PIANO_CONFIG.octaves[sampleNote]) {
-      let semitoneDiff = targetIndex - sampleIndex;
-      const octaveDiff = targetOctave - octave;
-      semitoneDiff += octaveDiff * 12;
-      const distance = Math.abs(semitoneDiff);
-      if (distance < minDistance) {
-        minDistance = distance;
-        bestMatch = { sampleKey: `${sampleNote}${octave}v12`, semitoneDiff };
-      }
+    const standardizedNote = standardizeNoteName(note);
+    if (!ALL_NOTES.includes(standardizedNote)) {
+        console.warn(`Note ${note} not found in sample set.`);
+        return { sampleKey: 'c3', semitoneDiff: 0 };
     }
-  }
-
-  if (!bestMatch) {
-    console.warn(`No valid match found for ${note}, fallback to C3`);
-    return { sampleKey: 'C3v12', semitoneDiff: 0 };
-  }
-
-  // Log for debugging
-  console.log(`[getPitchShiftedNote] ${note}${targetOctave} → ${bestMatch.sampleKey}, semitoneDiff: ${bestMatch.semitoneDiff}`);
-  return bestMatch;
+    if (!OCTAVES.includes(targetOctave)) {
+        console.warn(`Octave ${targetOctave} not found in sample set.`);
+        return { sampleKey: 'c3', semitoneDiff: 0 };
+    }
+    return { sampleKey: `${standardizedNote}${targetOctave}`, semitoneDiff: 0 };
 }
 
-
+// 6. Minor key name check (unchanged)
 function isMinorKeyName(key) {
     return key && (key.endsWith('m') || key.endsWith('min'));
 }
