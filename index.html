@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -645,80 +644,15 @@
         </div>
     </div>
 
-   <div class="app-section" id="fretflow-section">
-    <h2>FretFlow</h2>
-    <h3>Multiple scale workout</h3>
-    <div class="volume-control">
-        <span>Fretboard Volume:</span>
-        <input type="range" id="fretboard-volume" min="0" max="1" step="0.1" value="0.3">
+    <div class="app-section" id="fretflow-section">
+        <h2>FretFlow</h2>
+        <h3>Multiple scale workout</h3>
+        <div class="volume-control">
+            <span>Fretboard Volume:</span>
+            <input type="range" id="fretboard-volume" min="0" max="1" step="0.1" value="0.3" aria-label="Fretboard volume">
+        </div>
+        <div class="fretboards-grid"></div>
     </div>
-    <div class="fretboards-grid" id="static-fretboards">
-        <!-- Bottom four fretboards with tuning dropdowns -->
-        <div class="fretboard-container">
-            <div class="scale-display" id="static-scale-display-1"></div>
-            <div class="controls">
-                <select class="tuning-select" data-fretboard="1">
-                    <option value="standard">Standard (EADGBE)</option>
-                    <option value="dropD">Drop D (DADGBE)</option>
-                    <option value="openG">Open G (DGDGBD)</option>
-                    <option value="DADGAD">DADGAD</option>
-                    <option value="openE">Open E (EBEG#BE)</option>
-                </select>
-                <select class="static-key-select" data-fretboard="1"></select>
-                <select class="static-scale-select" data-fretboard="1"></select>
-            </div>
-            <div class="fretboard" id="static-fretboard-1"></div>
-        </div>
-
-        <div class="fretboard-container">
-            <div class="scale-display" id="static-scale-display-2"></div>
-            <div class="controls">
-                <select class="tuning-select" data-fretboard="2">
-                    <option value="standard">Standard (EADGBE)</option>
-                    <option value="dropD">Drop D (DADGBE)</option>
-                    <option value="openG">Open G (DGDGBD)</option>
-                    <option value="DADGAD">DADGAD</option>
-                    <option value="openE">Open E (EBEG#BE)</option>
-                </select>
-                <select class="static-key-select" data-fretboard="2"></select>
-                <select class="static-scale-select" data-fretboard="2"></select>
-            </div>
-            <div class="fretboard" id="static-fretboard-2"></div>
-        </div>
-
-        <div class="fretboard-container">
-            <div class="scale-display" id="static-scale-display-3"></div>
-            <div class="controls">
-                <select class="tuning-select" data-fretboard="3">
-                    <option value="standard">Standard (EADGBE)</option>
-                    <option value="dropD">Drop D (DADGBE)</option>
-                    <option value="openG">Open G (DGDGBD)</option>
-                    <option value="DADGAD">DADGAD</option>
-                    <option value="openE">Open E (EBEG#BE)</option>
-                </select>
-                <select class="static-key-select" data-fretboard="3"></select>
-                <select class="static-scale-select" data-fretboard="3"></select>
-            </div>
-            <div class="fretboard" id="static-fretboard-3"></div>
-        </div>
-
-        <div class="fretboard-container">
-            <div class="scale-display" id="static-scale-display-4"></div>
-            <div class="controls">
-                <select class="tuning-select" data-fretboard="4">
-                    <option value="standard">Standard (EADGBE)</option>
-                    <option value="dropD">Drop D (DADGBE)</option>
-                    <option value="openG">Open G (DGDGBD)</option>
-                    <option value="DADGAD">DADGAD</option>
-                    <option value="openE">Open E (EBEG#BE)</option>
-                </select>
-                <select class="static-key-select" data-fretboard="4"></select>
-                <select class="static-scale-select" data-fretboard="4"></select>
-            </div>
-            <div class="fretboard" id="static-fretboard-4"></div>
-        </div>
-    </div>
-</div>
 
     <script>
         
@@ -744,12 +678,9 @@ function debounce(func, wait) {
         timeout = setTimeout(() => func.apply(this, args), wait);
     };
 }
-function noteNameToSampleName(note) {
-  // Converts "F#" to "Fs", "D#" to "Ds", etc.
-  return note.replace('#', 's');
-}
+
 // Musical Constants
-const NOTES = ['C', 'Cs', 'D', 'Ds', 'E', 'F', 'Fs', 'G', 'Gs', 'A', 'As', 'B'];
+const NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
         
 const ENHARMONIC_MAP = {
     'C#': 'Db', 'Db': 'Db',
@@ -762,28 +693,15 @@ const ENHARMONIC_MAP = {
 const SAMPLED_NOTES = ['A', 'C', 'Ds', 'Fs'];
 const PIANO_CONFIG = {
     octaves: {
-        'A': [2, 3, 4, 5],
-        'C': [2, 3, 4, 5],
-        'Fs': [2, 3, 4, 5],
-        'Ds': [2, 3, 4, 5]
+        'A': [2, 3, 4, 5, 6],
+        'C': [2, 3, 4, 5, 6],
+        'Fs': [2, 3, 4, 5, 6],
+        'Ds': [2, 3, 4, 5, 6]
     },
     velocities: [12],
     fileFormat: 'wav'
 };
-        
-function toSampleNoteName(note) {
-  // Converts "A#" to "As", "Bb" to "As", etc.
-  if (!note) return '';
-  // Convert flats to equivalent sharps
-  const flatToSharp = {
-    'Bb': 'As', 'Db': 'Cs', 'Eb': 'Ds', 'Gb': 'Fs', 'Ab': 'Gs'
-  };
-  if (flatToSharp[note]) return flatToSharp[note];
-  // Convert sharps to 's' format
-  if (note.includes('#')) return note.replace('#', 's');
-  return note;
-}
-        
+
 const PIANO_NOTES = {
     'A2': 110.00, 'As2': 116.54, 'B2': 123.47,
     'C3': 130.81, 'Cs3': 138.59, 'D3': 146.83, 'Ds3': 155.56, 'E3': 164.81, 'F3': 174.61,
@@ -1115,7 +1033,7 @@ const AudioContextManager = {
         }
         for (let note of SAMPLED_NOTES) {
             for (let octave of PIANO_CONFIG.octaves[note]) {
-                const sampleName = `${noteNameToSampleName(note)}${octave}v12`;
+                const sampleName = `${note}${octave}v12`;
                 try {
                     const response = await fetch(`./${sampleName}.${PIANO_CONFIG.fileFormat}`);
                     if (!response.ok) throw new Error(`Failed to load ${sampleName}`);
@@ -1176,7 +1094,8 @@ async function ensureAudioInitialized() {
 // --- NEW GLOBAL HELPER -------------------------------------------
 function getNoteFromScaleDegree(degree, key, scale) {
     // Convert the degree (0–6) into an actual note name in the chosen key
-    const chromaticScale = ['C', 'Cs', 'D', 'Ds', 'E', 'F', 'Fs', 'G', 'Gs', 'A', 'As', 'B'];
+    const chromaticScale = ['C', 'Db', 'D', 'Eb', 'E', 'F',
+                            'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
     const keyIndex = chromaticScale.indexOf(standardizeNoteName(key));
     if (keyIndex === -1) return null;           // safety check
 
@@ -1215,7 +1134,7 @@ const MAX_OCTAVE = 4;
 function findNearestSampledNote(note, targetOctave = 3) {
     const cleanNote = standardizeNoteName(note).replace('m', '');
     const mappedNote = ENHARMONIC_MAP[cleanNote] || cleanNote;
-    const targetIndex = NOTES.indexOf(toSampleNoteName(mappedNote));
+    const targetIndex = NOTES.indexOf(mappedNote);
     if (targetIndex === -1) {
         console.warn(`Note ${note} not found in NOTES.`);
         return { sampleKey: 'C3v12', semitoneDiff: 0 };
@@ -1294,7 +1213,7 @@ function getPitchShiftedNote(note, targetOctave = 3) {
       const distance = Math.abs(semitoneDiff);
       if (distance < minDistance) {
         minDistance = distance;
-        bestMatch = { sampleKey: `${noteNameToSampleName(sampleNote)}${octave}v12`, semitoneDiff };
+        bestMatch = { sampleKey: `${sampleNote}${octave}v12`, semitoneDiff };
       }
     }
   }
@@ -1657,7 +1576,7 @@ function playNote(noteName, volume = 1.0, duration = 1000) {
     const mappedNote = SAMPLE_NOTE_MAP[baseNote] || baseNote;
     const octave = Math.max(2, Math.min(6, parseInt(octaveStr)));
 
-    const sampleName = `${noteNameToSampleName(mappedNote)}${octave}v12`;
+    const sampleName = `${mappedNote}${octave}v12`;
     const buffer = AudioContextManager.pianoSampleBuffers[sampleName];
 
     if (!buffer) {
@@ -1689,7 +1608,7 @@ function playNote(noteName, volume = 1.0, duration = 1000) {
 }
 
 
-async function playChord(root, quality, startTime = AudioContextManager.context.currentTime, duration = 2, shouldInvert = false) {
+async function playChord(root, quality, startTime = AudioContextManager.context.currentTime, duration = 2, isContinuation = false) {
     await ensureAudioInitialized();
     if (!AudioContextManager.samplesLoaded) {
         console.warn('Piano samples not loaded yet');
@@ -1707,7 +1626,7 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
     gainNode.connect(AudioContextManager.context.destination);
 
     // Fade out previous chord if this isn't a continuation
-    if (!shouldInvert && AudioContextManager.currentChordGain) {
+    if (!isContinuation && AudioContextManager.currentChordGain) {
         AudioContextManager.currentChordGain.gain.setValueAtTime(
             AudioContextManager.currentChordGain.gain.value, 
             startTime
@@ -1724,27 +1643,16 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
     const rootNote = chordNotes[0];
     const upperNotes = chordNotes.slice(1);
     
-    let finalChordNotes;
-    if (shouldInvert) {
-        // For inversions, randomize the order of upper notes and potentially move some to higher octaves
-        const shuffledUpperNotes = [...upperNotes].sort(() => Math.random() - 0.5);
-        finalChordNotes = [rootNote, ...shuffledUpperNotes];
-    } else {
-        // For root position, keep original order
-        finalChordNotes = chordNotes;
-    }
+    // Randomize the order of upper notes (for inversions)
+    const shuffledUpperNotes = [...upperNotes].sort(() => Math.random() - 0.5);
+    
+    // Combine back with root note always at bottom
+    const finalChordNotes = [rootNote, ...shuffledUpperNotes];
 
     // Play each note in the chord
     finalChordNotes.forEach((note, index) => {
-        // Determine octave based on position and inversion
-        let octave;
-        if (shouldInvert) {
-            // For inversions, use higher octaves for upper notes
-            octave = index === 0 ? 2 : (3 + Math.floor(Math.random() * 2));
-        } else {
-            // For root position, keep all notes in the same octave range
-            octave = index === 0 ? 2 : 3;
-        }
+        // Root note gets lower octave, other notes get higher octaves
+        const octave = index === 0 ? 2 : (3 + Math.floor(Math.random() * 2));
         
         const { sampleKey, semitoneDiff } = getPitchShiftedNote(note, octave);
         if (!AudioContextManager.pianoSampleBuffers[sampleKey]) {
@@ -1755,6 +1663,7 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
         const source = AudioContextManager.context.createBufferSource();
         source.buffer = AudioContextManager.pianoSampleBuffers[sampleKey];
         
+        // Calculate and verify playback rate
         const playbackRate = Math.pow(2, semitoneDiff / 12);
         if (!isFinite(playbackRate) || playbackRate <= 0) {
             console.warn(`Invalid playback rate ${playbackRate} for note ${note}`);
@@ -1774,7 +1683,7 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
         source.stop(startTime + duration);
     });
 }
-        
+
 function getChordNotes(root, quality) {
   const CHORD_INTERVALS = {
     'maj': [0, 4, 7],
@@ -1941,19 +1850,13 @@ async function playMetronomeSound(baseVolume) {
     }
 }
 function onMetronomeInstrumentChange(selectedInstrument) {
-    const drumSetToggleBtn = document.getElementById("drumSetToggleBtn");
-    if (selectedInstrument === "drums") {
-        drumSetToggleBtn.style.display = "inline-block";
-        drumSetToggleBtn.textContent = drumSoundSets[currentDrumSetIndex].name;
-    } else {
-        drumSetToggleBtn.style.display = "none";
-    }
+  if (selectedInstrument === "drums") {
+    document.getElementById("drumSetToggleBtn").style.display = "inline-block";
+  } else {
+    document.getElementById("drumSetToggleBtn").style.display = "none";
+  }
 }
 
-document.getElementById('sound-type').addEventListener('change', (e) => {
-    onMetronomeInstrumentChange(e.target.value);
-});
-        
 async function playDrumSample(type) {
     if (!AudioContextManager.context) return;
     
@@ -2306,20 +2209,16 @@ function toggleBeatState(beat, timeSignature, soundType) {
 }
 
 async function playBeat() {
-    // Remove active class from all beats and highlight current beat
     const beats = document.querySelectorAll('.beat');
     beats.forEach(beat => beat.classList.remove('active'));
-    
     const currentBeatElement = beats[AppState.currentBeat];
     if (currentBeatElement) {
         currentBeatElement.classList.add('active');
         const volume = parseFloat(currentBeatElement.dataset.volume) || 0;
         await playMetronomeSound(volume);
     }
-
-    const measures = Array.from(UI.elements.measures.children);
+    const measures = UI.elements.measures.children;
     const timeSignature = parseInt(UI.elements.timeSignature.value);
-
     if (measures.length > 0) {
         const currentMeasureElement = measures[AppState.currentMeasure];
         if (currentMeasureElement) {
@@ -2327,47 +2226,33 @@ async function playBeat() {
             const quality = currentMeasureElement.querySelector('.chord-controls .chord-quality')?.value;
             const scaleRoot = currentMeasureElement.querySelector('.scale-controls .second-key')?.value;
             const scaleType = currentMeasureElement.querySelector('.scale-controls .scale-select')?.value;
-
             if (root && quality && scaleRoot && scaleType) {
                 const chordTuning = TUNINGS[UI.elements.chordTuning.value];
                 updateFretboardNotes(UI.elements.chordFretboard, scaleRoot, scaleType, chordTuning);
-                
                 const beatDuration = 60 / AppState.tempo;
                 if (timeSignature === 4) {
                     if (AppState.currentBeat === 0) {
-                        // First chord in root position
-                        await playChord(root, quality, AudioContextManager.context.currentTime, beatDuration * 2, false);
+                        playChord(root, quality, AudioContextManager.context.currentTime, beatDuration * 2, false);
                     } else if (AppState.currentBeat === 4) {
-                        // Second chord with inversion
-                        await playChord(root, quality, AudioContextManager.context.currentTime, beatDuration * 2, true);
+                        playChord(root, quality, AudioContextManager.context.currentTime, beatDuration * 2, true);
                     }
-                } else {
-                    if (AppState.currentBeat === 0) {
-                        // First chord in root position
-                        await playChord(root, quality, AudioContextManager.context.currentTime, beatDuration * (timeSignature/2), false);
-                    } else if (AppState.currentBeat === Math.floor(timeSignature/2)) {
-                        // Second chord with inversion
-                        await playChord(root, quality, AudioContextManager.context.currentTime, beatDuration * (timeSignature/2), true);
-                    }
+                } else if (AppState.currentBeat === 0) {
+                    playChord(root, quality, AudioContextManager.context.currentTime, beatDuration * 4, false);
                 }
             }
         }
     }
-
-    // Update measure highlighting
     if (measures.length > 0) {
-        measures.forEach((measure, index) => {
+        Array.from(measures).forEach((measure, index) => {
             measure.classList.toggle('active', index === AppState.currentMeasure);
         });
     }
-
-    // Update beat counter and measure counter
     const totalBeats = timeSignature === 4 ? 8 : timeSignature;
     AppState.currentBeat = (AppState.currentBeat + 1) % totalBeats;
-    
     if (AppState.currentBeat === 0 && measures.length > 0) {
         AppState.currentMeasure = (AppState.currentMeasure + 1) % measures.length;
     }
+    AppState.updateState({ currentBeat: AppState.currentBeat, currentMeasure: AppState.currentMeasure });
 }
 
 async function startPlayback() {
@@ -2645,19 +2530,25 @@ function initializeFretFlow() {
             const newTuning = TUNINGS[tuningSelect.value];
             createFretboard(fretboard, newTuning);
             updateFretboardNotes(fretboard, UI.elements.keySelect.value, scale, newTuning);
+            
+            // Reattach note click handlers
+            const updatedNotes = fretboard.getElementsByClassName('note');
+            Array.from(updatedNotes).forEach(note => {
+                note.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const noteName = this.dataset.note;
+                    if (noteName) {
+                        const fretboardVolume = parseFloat(UI.elements.fretboardVolume.value) || 1.0;
+                        playNote(noteName, fretboardVolume, 500);
+                        log(`Playing note: ${noteName}`);
+                    }
+                }); 
+            });
         });
     });
+    
     log("FretFlow initialized");
 }
-
-// Add event listener for drum set toggle button
-document.getElementById('drumSetToggleBtn').addEventListener('click', () => {
-    currentDrumSetIndex = (currentDrumSetIndex + 1) % drumSoundSets.length;
-    document.getElementById('drumSetToggleBtn').textContent = drumSoundSets[currentDrumSetIndex].name;
-});
-
-// Initialize the button text with the first drum set name
-document.getElementById('drumSetToggleBtn').textContent = drumSoundSets[0].name;
 
 // Event Listeners
 function addFirstChordListener() {
@@ -2691,17 +2582,22 @@ function setupEventListeners() {
         }
     });
 
+
+    // Add this to your initialization code
+    document.getElementById('drumSetToggleBtn').addEventListener('click', function() {
+        currentDrumSetIndex = (currentDrumSetIndex + 1) % drumSoundSets.length;
+        this.textContent = drumSoundSets[currentDrumSetIndex].name;
+    });
+
     // Initial visibility of drum set toggle button
     document.getElementById('drumSetToggleBtn').style.display = 
         document.getElementById('sound-type').value === 'drums' ? 'inline-block' : 'none';
     
-    document.getElementById('sound-type').addEventListener('change', function(e) {
+        document.getElementById('sound-type').addEventListener('change', function(e) {
         const drumSetToggleBtn = document.getElementById('drumSetToggleBtn');
         drumSetToggleBtn.style.display = e.target.value === 'drums' ? 'inline-block' : 'none';
         createBeats(); // Recreate beats with new sound type
-        onMetronomeInstrumentChange(e.target.value);
     });
-
     // Modified dark mode toggle with three modes
     let colorMode = 0; // 0 = light, 1 = dark-mode-1, 2 = dark-mode-2, 3 = dark-mode-3
     UI.elements.darkModeToggle.addEventListener('click', () => {
@@ -2761,6 +2657,8 @@ function setupEventListeners() {
         }
     });
 
+    UI.elements.soundType.addEventListener('change', createBeats);
+
     UI.elements.metronomeVolume.addEventListener('input', () => {
         const volume = parseFloat(UI.elements.metronomeVolume.value);
         log(`Metronome volume set to ${volume}`);
@@ -2803,6 +2701,22 @@ function setupEventListeners() {
         AppState.lastTap = now;
     });
 
+    // Add this to the setupEventListeners function
+UI.elements.soundType.addEventListener('change', (e) => {
+    createBeats();
+    onMetronomeInstrumentChange(e.target.value);
+});
+
+// Add the drum set toggle button event listener
+document.getElementById('drumSetToggleBtn').addEventListener('click', () => {
+    currentDrumSetIndex = (currentDrumSetIndex + 1) % drumSoundSets.length;
+    document.getElementById('drumSetToggleBtn').textContent = `Drum Set ${currentDrumSetIndex + 1}`;
+    log(`Switched to drum set ${currentDrumSetIndex + 1}`);
+});
+
+// Initially hide the drum set toggle button if drums aren't selected
+onMetronomeInstrumentChange(UI.elements.soundType.value);
+    
     UI.elements.chordFretboardVolume.addEventListener('input', () => {
         log(`Chord fretboard volume set to ${UI.elements.chordFretboardVolume.value}`);
     });
@@ -2851,65 +2765,28 @@ async function initializeApp() {
     log("Application initialized");
 }
 
-function initializeStaticFretboards() {
-    const staticFretboardsContainer = document.getElementById('static-fretboards');
-    if (!staticFretboardsContainer) {
-        console.warn('Static fretboards container not found');
-        return;
-    }
-
-    // Initialize key and scale selects for each fretboard
-    for (let i = 1; i <= 4; i++) {
-        const keySelect = document.querySelector(`.static-key-select[data-fretboard="${i}"]`);
-        const scaleSelect = document.querySelector(`.static-scale-select[data-fretboard="${i}"]`);
-        
-        if (keySelect && scaleSelect) {
-            // Populate key options
-            keySelect.innerHTML = createKeyOptions();
-            
-            // Populate scale options
-            scaleSelect.innerHTML = createScaleOptions();
-            
-            // Initialize the fretboard
-            const fretboardContainer = document.getElementById(`static-fretboard-${i}`);
-            if (fretboardContainer) {
-                const tuningSelect = document.querySelector(`.tuning-select[data-fretboard="${i}"]`);
-                const tuning = TUNINGS[tuningSelect?.value || 'standard'];
-                createFretboard(fretboardContainer, tuning);
-                updateFretboardNotes(fretboardContainer, keySelect.value, scaleSelect.value, tuning);
-            }
-        }
-    }
-}
-
-// Helper functions for creating options
-function createKeyOptions(selected = 'C') {
-    return NOTES.map(note =>
-        `<option value="${note}"${note === selected ? ' selected' : ''}>${note}</option>`
-    ).join('');
-}
-
-function createScaleOptions(selected = 'major') {
-    return Object.keys(SCALES).map(scale =>
-        `<option value="${scale}"${scale === selected ? ' selected' : ''}>${scale.charAt(0).toUpperCase() + scale.slice(1)}</option>`
-    ).join('');
-}
-
-// DOMContentLoaded event to initialize everything
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize the app (your existing functionality)
     initializeApp().catch(error => {
         console.error("Initialization failed:", error);
         updateLoadingStatus("Initialization failed");
     });
 
-    // Show/hide drum set toggle button based on sound type
+    // Add the new drum set functionality
     const soundType = document.getElementById('sound-type').value;
     document.getElementById('drumSetToggleBtn').style.display = soundType === 'drums' ? 'inline-block' : 'none';
-
-    // Initialize static fretboards
-    initializeStaticFretboards();
+    
+    // Add event listener for drum set toggle button
+    document.getElementById('drumSetToggleBtn').addEventListener('click', function() {
+        currentDrumSetIndex = (currentDrumSetIndex + 1) % drumSoundSets.length;
+        this.textContent = drumSoundSets[currentDrumSetIndex].name;
+    });
+    
+    // Add event listener for sound type changes
+    document.getElementById('sound-type').addEventListener('change', function() {
+        onMetronomeInstrumentChange(this.value);
+    });
 });
-        
             </script>
         </body>
         </html>
