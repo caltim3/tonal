@@ -1879,70 +1879,6 @@ async function playChord(root, quality, startTime = 0, duration = null, shouldIn
     try {
         await AudioContextManager.ensureAudioContext();
 
-        // Validate chord playback state
-        if (!ChordUtils.validateChordPlayback()) return;
-
-        // Calculate volume
-        const chordVolume = parseFloat(UI.elements.chordVolume?.value ?? 0.7);
-        const finalVolume = NoteUtils.calculateVolume(1, chordVolume);
-        if (finalVolume <= 0) return;
-
-        // Get and validate chord notes
-        const chordNotes = getChordNotes(root, quality);
-        if (!chordNotes?.length) {
-            throw new Error(`No valid notes for chord ${root} ${quality}`);
-        }
-
-        // Stop existing sounds and set up gain node
-        AudioContextManager.stopAllSounds();
-        const gainNode = AudioContextManager.context.createGain();
-        gainNode.gain.value = finalVolume;
-        const destination = AudioContextManager.reverbNode || AudioContextManager.context.destination;
-        gainNode.connect(destination);
-        AudioContextManager.currentChordGain = gainNode;
-
-        // Apply inversion if needed
-        const finalChordNotes = ChordUtils.applyInversion(chordNotes, shouldInvert);
-
-        // Calculate swing
-        const swingFactor = SwingControl.getSwingAmount() / 500; // Convert 0-20 to 0-0.04
-        const maxSwingMs = swingFactor * 100;
-
-        // Play notes
-        await Promise.all(finalChordNotes.map(async (note, index) => {
-            try {
-                const sampleNote = NoteUtils.validateNote(note);
-                const sampleKey = NoteUtils.addOctave(sampleNote);
-                const buffer = await AudioUtils.ensureBuffer(sampleKey);
-
-                const noteVolume = index === 0 ? 1.2 : 0.8;
-                const swingOffset = (Math.random() - 0.5) * 2 * maxSwingMs / 1000;
-
-                const source = AudioContextManager.playSample(
-                    buffer,
-                    startTime + swingOffset,
-                    gainNode,
-                    noteVolume
-                );
-
-                const effectiveDuration = (duration || buffer.duration || 2) * 1000;
-                AudioUtils.createStopTimeout(source, effectiveDuration, sampleKey);
-            } catch (error) {
-                console.error(`Error playing note in chord: ${error.message}`);
-            }
-        }));
-
-    } catch (error) {
-        console.error(`playChord: ${error.message}`);
-        AudioContextManager.stopAllSounds();
-    }
-}
-
-// Make functions globally available
-window.playNote = playNote;
-window.playChord = playChord;
-window.UI = UIManager;
-window.Audio = AudioContextManager.getInstance();
 
         
 function getChordNotes(root, quality) {
@@ -2453,70 +2389,7 @@ function toggleBeatState(beat, timeSignature, soundType) {
 }
 
 async function playBeat() {
-    // Remove active class from all beats and highlight current beat
-    const beats = document.querySelectorAll('.beat');
-    beats.forEach(beat => beat.classList.remove('active'));
     
-    const currentBeatElement = beats[AppState.currentBeat];
-    if (currentBeatElement) {
-        currentBeatElement.classList.add('active');
-        const volume = parseFloat(currentBeatElement.dataset.volume) || 0;
-        await playMetronomeSound(volume);
-    }
-
-    const measures = Array.from(UI.elements.measures.children);
-    const timeSignature = parseInt(UI.elements.timeSignature.value);
-
-    if (measures.length > 0) {
-        const currentMeasureElement = measures[AppState.currentMeasure];
-        if (currentMeasureElement) {
-            const root = currentMeasureElement.querySelector('.chord-controls .root-note')?.value;
-            const quality = currentMeasureElement.querySelector('.chord-controls .chord-quality')?.value;
-            const scaleRoot = currentMeasureElement.querySelector('.scale-controls .second-key')?.value;
-            const scaleType = currentMeasureElement.querySelector('.scale-controls .scale-select')?.value;
-
-            if (root && quality && scaleRoot && scaleType) {
-                const chordTuning = TUNINGS[UI.elements.chordTuning.value];
-                updateFretboardNotes(UI.elements.chordFretboard, scaleRoot, scaleType, chordTuning);
-                
-                const beatDuration = 60 / AppState.tempo;
-                if (timeSignature === 4) {
-                    if (AppState.currentBeat === 0) {
-                        // First chord in root position
-                        await playChord(root, quality, AudioContextManager.context.currentTime, beatDuration * 2, false);
-                    } else if (AppState.currentBeat === 4) {
-                        // Second chord with inversion
-                        await playChord(root, quality, AudioContextManager.context.currentTime, beatDuration * 2, true);
-                    }
-                } else {
-                    if (AppState.currentBeat === 0) {
-                        // First chord in root position
-                        await playChord(root, quality, AudioContextManager.context.currentTime, beatDuration * (timeSignature/2), false);
-                    } else if (AppState.currentBeat === Math.floor(timeSignature/2)) {
-                        // Second chord with inversion
-                        await playChord(root, quality, AudioContextManager.context.currentTime, beatDuration * (timeSignature/2), true);
-                    }
-                }
-            }
-        }
-    }
-
-    // Update measure highlighting
-    if (measures.length > 0) {
-        measures.forEach((measure, index) => {
-            measure.classList.toggle('active', index === AppState.currentMeasure);
-        });
-    }
-
-    // Update beat counter and measure counter
-    const totalBeats = timeSignature === 4 ? 8 : timeSignature;
-    AppState.currentBeat = (AppState.currentBeat + 1) % totalBeats;
-    
-    if (AppState.currentBeat === 0 && measures.length > 0) {
-        AppState.currentMeasure = (AppState.currentMeasure + 1) % measures.length;
-    }
-}
-
 async function startPlayback() {
     try {
         await ensureAudioInitialized();
