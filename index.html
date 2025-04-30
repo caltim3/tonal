@@ -2569,17 +2569,17 @@ function dragEnd(e) {
 function initializeFretFlow() {
     const fretboardsGrid = UI.elements.fretboardsGrid;
     fretboardsGrid.innerHTML = ''; // Clear existing content
-
+    
     // Add CSS to make it a 2x2 grid
     fretboardsGrid.style.display = 'grid';
     fretboardsGrid.style.gridTemplateColumns = 'repeat(2, 1fr)';
     fretboardsGrid.style.gap = '20px';
-
+    
     // Create 4 independent fretboard sections
     for (let i = 0; i < 4; i++) {
         const fretboardSection = document.createElement('div');
         fretboardSection.className = 'fretboard-section';
-
+        
         // Create the HTML structure for each section
         fretboardSection.innerHTML = `
             <div class="fretboard-controls">
@@ -2618,9 +2618,9 @@ function initializeFretFlow() {
             <div class="scale-display"></div>
             <div id="fretflow-fretboard-${i}" class="fretboard"></div>
         `;
-
+        
         fretboardsGrid.appendChild(fretboardSection);
-
+        
         // Initialize this fretboard
         const fretboard = fretboardSection.querySelector(`#fretflow-fretboard-${i}`);
         const keySelect = fretboardSection.querySelector(`#fretflow-key-${i}`);
@@ -2636,35 +2636,37 @@ function initializeFretFlow() {
             option.textContent = scaleName;
             scaleSelect.appendChild(option);
         });
-
+        
         function updateFretboardDisplay() {
             const selectedKey = keySelect.value;
             const selectedScale = scaleSelect.value;
             const selectedTuning = TUNINGS[tuningSelect.value];
-
+            
             // Get the intervals for the selected scale
             const intervals = SCALES[selectedScale];
-
+            
             // Update the scale display
             scaleDisplay.textContent = `${selectedKey} ${selectedScale}`;
-
+            
             // Update the fretboard
             createFretboard(fretboard, selectedTuning);
             updateFretboardNotes(fretboard, selectedKey, intervals, selectedTuning);
-
+            
             // Attach note click handlers
             attachNoteClickHandlers(fretboard);
         }
-
+        
         // Add event listeners for all controls
         keySelect.addEventListener('change', updateFretboardDisplay);
         scaleSelect.addEventListener('change', updateFretboardDisplay);
         tuningSelect.addEventListener('change', updateFretboardDisplay);
-
+        
         // Initial render
         updateFretboardDisplay();
     }
-}
+
+    log("FretFlow initialized with 4 independent fretboards");
+} // Only one closing brace here!
     
 function attachNoteClickHandlers(fretboard) {
     const notes = fretboard.getElementsByClassName('note');
