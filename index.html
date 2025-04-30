@@ -786,6 +786,8 @@ const ALL_NOTES = [
 const OCTAVES = [2, 3, 4, 5];
 const FILE_FORMAT = 'wav';
 
+const chromatic = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
+        
 function getSampleFileName(note, octave) {
   return `${note}${octave}.${FILE_FORMAT}`;
 }
@@ -1217,8 +1219,6 @@ async function ensureAudioInitialized() {
 
 function getNoteFromScaleDegree(degree, key, scale) {
     // Use the sample file naming convention: lowercase, 's' for sharp, no flats
-    const chromaticScale = ['c', 'cs', 'd', 'ds', 'e', 'f',
-                            'fs', 'g', 'gs', 'a', 'as', 'b'];
     // Standardize the key to match the format
     const keyIndex = chromaticScale.indexOf(standardizeNoteNameForSamples(key));
     if (keyIndex === -1) return null; // safety check
@@ -1257,7 +1257,6 @@ function standardizeNoteName(note) {
   if (!match) return note.toUpperCase();
   let [, letter, accidental, octave] = match;
   letter = letter.toUpperCase();
-  const CHROMATIC = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
   if (accidental === 'b') {
     const index = chromatic.indexOf(letter);
     return chromatic[(index - 1 + 12) % 12];
