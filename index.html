@@ -1233,8 +1233,6 @@ function isMinorKeyName(key) {
 }
 
 function getChordFromFunction(chordFunction, key = 'C') {
-    // Helper function to get note from scale degree
-    
     // Initialize scales
     const majorScale = [0, 2, 4, 5, 7, 9, 11];
     const minorScale = [0, 2, 3, 5, 7, 8, 10];
@@ -1248,11 +1246,10 @@ function getChordFromFunction(chordFunction, key = 'C') {
     if (!chordFunction) return null;
 
     // Parse the chord function
-    // Updated regex to handle more chord variations
-    let match = chordFunction.match(/^(b?[ivIV]+)([°ø]|maj|m|M)?([679]|11|13)?([b#]5|[b#]9|[b#]11|[b#]13)?(\([b#]5\)|\([b#]9\)|\([b#]11\)|\([b#]13\))?$/);
+    const match = chordFunction.match(/^(b?[ivIV]+)([°ø]|maj|m|M)?([679]|11|13)?([b#]5|[b#]9|[b#]11|[b#]13)?(\([b#]5\)|\([b#]9\)|\([b#]11\)|\([b#]13\))?$/);
     if (!match) return null;
 
-    let [_, roman, quality, extension, alteration, parenthesizedAlteration] = match;
+    let [_, roman, quality = '', extension = '', alteration = '', parenthesizedAlteration = ''] = match;
     
     // Handle flattened degrees
     const isFlat = roman.startsWith('b');
@@ -1279,18 +1276,12 @@ function getChordFromFunction(chordFunction, key = 'C') {
     const rootNote = getNoteFromScaleDegree(degree, actualKey, scale);
     if (!rootNote) return null;
 
-    // Determine chord quality
-   function getChordFromFunction(chordFunction, key = 'C') {
-    // [Previous code remains the same until the chord quality determination]
-
-    // Determine chord quality
+    // Initialize chord quality
     let chordQuality = '';
-    let chordExtension = '';
-    let chordAlteration = '';
 
     // Special case for V7 in any key (major or minor)
     if (chordFunction.toUpperCase() === 'V7') {
-        return getNoteFromScaleDegree(4, actualKey, scale) + '7';
+        return rootNote + '7';
     }
 
     // First check if there's an explicit quality specified
@@ -1345,10 +1336,8 @@ function getChordFromFunction(chordFunction, key = 'C') {
         }
     }
 
-    // [Rest of the code remains the same]
-}
-
     // Handle alterations
+    let chordAlteration = '';
     if (alteration) {
         chordAlteration = alteration;
     }
