@@ -1279,9 +1279,18 @@ function getChordFromFunction(chordFunction, key = 'C') {
     if (!rootNote) return null;
 
     // Determine chord quality
+   function getChordFromFunction(chordFunction, key = 'C') {
+    // [Previous code remains the same until the chord quality determination]
+
+    // Determine chord quality
     let chordQuality = '';
     let chordExtension = '';
     let chordAlteration = '';
+
+    // Special case for V7 in any key (major or minor)
+    if (chordFunction.toUpperCase() === 'V7') {
+        return getNoteFromScaleDegree(4, actualKey, scale) + '7';
+    }
 
     // First check if there's an explicit quality specified
     if (quality === '°') {
@@ -1293,18 +1302,15 @@ function getChordFromFunction(chordFunction, key = 'C') {
     } else if (quality === 'm') {
         chordQuality = 'm';
     } else {
-        // If no explicit quality, check if it's lowercase (should be minor in major key)
-        if (!isMinorKey && isLowerCase) {
-            chordQuality = 'm';
+        // If no explicit quality, determine based on context
+        if (isMinorKey) {
+            // Minor key default qualities
+            const minorDefaultQualities = ['m', 'dim', 'maj', 'm', 'maj', 'maj', 'maj'];
+            chordQuality = minorDefaultQualities[degree];
         } else {
-            // Use default qualities based on scale degree and mode
-            if (isMinorKey) {
-                const minorDefaultQualities = ['m', 'dim', 'maj', 'm', 'm', 'maj', 'maj'];
-                chordQuality = minorDefaultQualities[degree];
-            } else {
-                const majorDefaultQualities = ['maj', 'm', 'm', 'maj', 'maj', 'm', 'dim'];
-                chordQuality = majorDefaultQualities[degree];
-            }
+            // Major key default qualities
+            const majorDefaultQualities = ['maj', 'm', 'm', 'maj', 'maj', 'm', 'dim'];
+            chordQuality = majorDefaultQualities[degree];
         }
     }
 
@@ -1312,15 +1318,22 @@ function getChordFromFunction(chordFunction, key = 'C') {
     if (extension) {
         if (extension === '7') {
             // Special handling for dominant 7th
-            if (chordQuality === 'maj' && (degree === 4 || chordFunction.toUpperCase().includes('V7'))) {
+            if (degree === 4 || chordFunction.toUpperCase().includes('V7')) {
+                // V7 is always dominant in both major and minor keys
                 chordQuality = '7';
             } else if (chordQuality === 'm') {
                 chordQuality = 'm7';
-            } else {
-                chordQuality += '7';
+            } else if (chordQuality === 'maj') {
+                // Check if it should be maj7 or dominant 7
+                if (chordFunction.includes('maj7') || 
+                    (degree === 0 && !chordFunction.includes('7'))) {
+                    chordQuality = 'maj7';
+                } else {
+                    chordQuality = '7';
+                }
             }
         } else {
-            // Handle 9, 11, 13 extensions
+            // Handle other extensions (9, 11, 13)
             if (chordQuality === 'maj') {
                 chordQuality = 'maj' + extension;
             } else if (chordQuality === 'm') {
@@ -1330,6 +1343,9 @@ function getChordFromFunction(chordFunction, key = 'C') {
             }
         }
     }
+
+    // [Rest of the code remains the same]
+}
 
     // Handle alterations
     if (alteration) {
