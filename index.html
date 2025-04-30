@@ -1334,7 +1334,6 @@ function getChordFromFunction(chordFunction, key = 'C') {
     // Helper: get note from scale degree
     function getNoteFromScaleDegree(degree, key, scale, accidental = 0) {
         const chromatic = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
-        // Find the root index for the key
         let keyIndex = chromatic.findIndex(n => n.replace('b', '♭').replace('#', '♯') === key.replace('b', '♭').replace('#', '♯'));
         if (keyIndex === -1) keyIndex = 0;
         let noteIndex = (keyIndex + scale[degree] + accidental + 12) % 12;
@@ -1365,8 +1364,14 @@ function getChordFromFunction(chordFunction, key = 'C') {
     if (!chordFunction) return null;
 
     // Regex for secondary dominants and main chord
-    // e.g. V7/ii, bVII, IV#, etc.
-    const secDomMatch = chordFunction.match(/^([b#]*[ivIV]+[#b]*)(maj7|m7b5|m6|6|°|ø|maj|m|M)?(7|9|11|13)?([b#]5|[b#]9|[b#]11|[b#]13)?(\([b#]5\)|\([b#]9\)|\([b#]11\)|\([b#]13\))?(?:\/([b#]*[ivIV]+[#b]*))?$/);
+    // Handles: bVI7, V7#9, V7/ii, etc.
+    const secDomMatch = chordFunction.match(
+        /^([b#]*[ivIV]+[#b]*)(maj7|m7b5|m6|6|°|ø|maj|m|M)?(7|9|11|13)?([b#]5|[b#]9|[b#]11|[b#]13|#9|b9|#5|b5)?(\([b#]5\)|\([b#]9\)|\([b#]11\)|\([b#]13\))?(?:\/([b#]*[ivIV]+[#b]*))?$/
+    );
+    if (!secDomMatch) {
+        console.warn("Chord regex failed, using fallback:", chordFunction);
+        return "C7"; // fallback
+    }
 
     let [
         _,
@@ -1381,7 +1386,6 @@ function getChordFromFunction(chordFunction, key = 'C') {
     // Handle secondary dominants (e.g., V7/ii)
     if (secRoman) {
         // Find the root of the secondary key
-        // For now, assume secondary is always major
         const romanToNumber = {
             'I': 0, 'II': 1, 'III': 2, 'IV': 3, 'V': 4, 'VI': 5, 'VII': 6,
             'i': 0, 'ii': 1, 'iii': 2, 'iv': 3, 'v': 4, 'vi': 5, 'vii': 6
@@ -1394,9 +1398,12 @@ function getChordFromFunction(chordFunction, key = 'C') {
             secBase = secAccMatch[2];
         }
         let secDegree = romanToNumber[secBase];
-        if (secDegree === undefined) return null;
+        if (secDegree === undefined) {
+            console.warn("Secondary dominant degree failed, using fallback:", chordFunction);
+            return "C7";
+        }
         let secRoot = getNoteFromScaleDegree(secDegree, actualKey, scale, secAcc);
-        // Now, treat the main roman as a dominant chord built on the secondary root
+        // Always dominant 7th for secondary dominants
         return secRoot + '7';
     }
 
@@ -1414,11 +1421,17 @@ function getChordFromFunction(chordFunction, key = 'C') {
         'i': 0, 'ii': 1, 'iii': 2, 'iv': 3, 'v': 4, 'vi': 5, 'vii': 6
     };
     let degree = romanToNumber[baseRoman];
-    if (degree === undefined) return null;
+    if (degree === undefined) {
+        console.warn("Degree mapping failed, using fallback:", chordFunction);
+        return "C7";
+    }
 
     // Get the root note
     const rootNote = getNoteFromScaleDegree(degree, actualKey, scale, accidental);
-    if (!rootNote) return null;
+    if (!rootNote) {
+        console.warn("Root note failed, using fallback:", chordFunction);
+        return "C7";
+    }
 
     // Determine if minor (lowercase roman)
     const isLowerCase = /^[iv]+$/.test(baseRoman);
@@ -1433,6 +1446,8 @@ function getChordFromFunction(chordFunction, key = 'C') {
     // Override with explicit quality
     if (quality === '°') chordQuality = extension === '7' ? 'dim7' : 'dim';
     else if (quality === 'ø') chordQuality = 'm7b5';
+    else if (quality === 'maj7') chordQuality = 'maj7';
+    else if (quality === 'm7b5') chordQuality = 'm7b5';
     else if (quality === 'maj' || quality === 'M') chordQuality = extension === '7' ? 'maj7' : 'maj';
     else if (quality === 'm') chordQuality = extension === '7' ? 'm7' : 'm';
     else if (quality === '6' || quality === 'm6') chordQuality = isLowerCase ? 'm6' : '6';
@@ -1465,6 +1480,12 @@ function getChordFromFunction(chordFunction, key = 'C') {
 
     // Build the final chord symbol for UI
     let chordSymbol = rootNote + chordQuality + chordAlteration;
+
+    // Fallback: never return null or just root
+    if (!chordSymbol || chordSymbol === rootNote) {
+        console.warn("Chord could not be parsed, using fallback:", chordFunction);
+        return rootNote + "7";
+    }
 
     return chordSymbol;
 }
