@@ -1077,14 +1077,13 @@ class AudioContextManager {
 
   
     
-    async loadSample(url, targetBuffer, key) {
+    async loadSample() {
         try {
             const response = await fetch(url);
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             
             const arrayBuffer = await response.arrayBuffer();
             const audioBuffer = await this.context.decodeAudioData(arrayBuffer);
-            targetBuffer[key] = audioBuffer;
             return audioBuffer;
         } catch (error) {
             console.error(`Failed to load sample ${key} from ${url}:`, error);
