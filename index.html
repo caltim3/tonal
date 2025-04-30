@@ -1065,22 +1065,21 @@ const AudioContextManager = {
 }
     
 setupReverb: async function() {
-        if (!this.reverbNode) {
-            this.reverbNode = this.context.createConvolver();
-            const sampleRate = this.context.sampleRate;
-            const length = sampleRate * 2.5;
-            const impulse = this.context.createBuffer(2, length, sampleRate);
-            for (let channel = 0; channel < 2; channel++) {
-                const channelData = impulse.getChannelData(channel);
-                for (let i = 0; i < length; i++) {
-                    channelData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2);
-                }
+    if (!this.reverbNode) {
+        this.reverbNode = this.context.createConvolver();
+        const sampleRate = this.context.sampleRate;
+        const length = sampleRate * 2.5;
+        const impulse = this.context.createBuffer(2, length, sampleRate);
+        for (let channel = 0; channel < 2; channel++) {
+            const channelData = impulse.getChannelData(channel);
+            for (let i = 0; i < length; i++) {
+                channelData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2);
             }
-            this.reverbNode.buffer = impulse;
-            this.reverbNode.connect(this.context.destination);
         }
+        this.reverbNode.buffer = impulse;
+        this.reverbNode.connect(this.context.destination);
     }
-};
+},  
         
 async function ensureAudioInitialized() {
     if (!AudioContextManager.context || AudioContextManager.context.state === 'suspended') {
