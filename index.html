@@ -1614,7 +1614,10 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
     }
     if (!UI.elements.chordsEnabled.classList.contains('active')) return;
 
+    // Get chord notes and log them for debugging
     const chordNotes = getChordNotes(root, quality);
+    console.log('Playing chord:', root, quality, 'Notes:', chordNotes);
+
     const chordVolume = parseFloat(UI.elements.chordVolume.value);
     if (chordVolume <= 0) return;
 
@@ -1623,7 +1626,7 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
     gainNode.gain.value = chordVolume;
     gainNode.connect(AudioContextManager.context.destination);
 
-    // Fade out previous chord if this isn't a continuation
+    // Handle previous chord
     if (!isContinuation && AudioContextManager.currentChordGain) {
         AudioContextManager.currentChordGain.gain.setValueAtTime(
             AudioContextManager.currentChordGain.gain.value, 
@@ -1637,51 +1640,39 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
 
     AudioContextManager.currentChordGain = gainNode;
 
-    // Handle inversions based on continuation
-    let finalChordNotes;
+    // Prepare notes for either root position or inversion
+    let finalChordNotes = [...chordNotes];
     if (isContinuation) {
-        // For the second instance, create an inversion
-        // Rotate the chord notes and ensure root is not in the bass
-        const rotatedNotes = [...chordNotes];
-        rotatedNotes.push(rotatedNotes.shift()); // Move first note to end
-        finalChordNotes = rotatedNotes;
-    } else {
-        // First instance - root position
-        finalChordNotes = chordNotes;
+        // Create inversion by moving the root to the top
+        finalChordNotes.push(finalChordNotes.shift());
     }
 
-    // Distribute notes across octaves
+    // Play each note in the chord
     finalChordNotes.forEach((note, index) => {
-        // Base octave selection on position in chord and whether it's an inversion
-        let octave;
-        if (isContinuation) {
-            // For inversions, spread notes across higher octaves
-            octave = 3 + Math.floor(index / 2);
-        } else {
-            // For root position, start lower and spread up
-            octave = (index === 0) ? 2 : (3 + Math.floor((index - 1) / 2));
+        // Determine octave based on position and inversion
+        const baseOctave = isContinuation ? 3 : 2;
+        const octave = baseOctave + Math.floor(index / 3);
+
+        // Convert note name to sample format
+        const sampleNote = SAMPLE_NOTE_MAP[note];
+        if (!sampleNote) {
+            console.error(`No sample mapping for note: ${note}`);
+            return;
         }
-        
-        // Ensure octave is within valid range
-        octave = Math.max(2, Math.min(5, octave));
-        
-        const { sampleKey, semitoneDiff } = getPitchShiftedNote(note, octave);
-        if (!AudioContextManager.pianoSampleBuffers[sampleKey]) {
+
+        const sampleKey = `${sampleNote}${octave}`;
+        console.log(`Playing note: ${note} as ${sampleKey}`);
+
+        // Get the buffer for this note
+        const buffer = AudioContextManager.pianoSampleBuffers[sampleKey];
+        if (!buffer) {
             console.warn(`No sample found for ${sampleKey}`);
             return;
         }
 
+        // Create and configure source
         const source = AudioContextManager.context.createBufferSource();
-        source.buffer = AudioContextManager.pianoSampleBuffers[sampleKey];
-        
-        // Calculate and verify playback rate
-        const playbackRate = Math.pow(2, semitoneDiff / 12);
-        if (!isFinite(playbackRate) || playbackRate <= 0) {
-            console.warn(`Invalid playback rate ${playbackRate} for note ${note}`);
-            return;
-        }
-        
-        source.playbackRate.value = playbackRate;
+        source.buffer = buffer;
         source.connect(gainNode);
 
         // Add reverb
@@ -1692,12 +1683,15 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
 
         // Add slight timing variation for more natural sound
         const timeVariation = isContinuation ? Math.random() * 0.02 : 0;
+        
+        // Start and stop the note
         source.start(startTime + timeVariation);
         source.stop(startTime + duration);
     });
 }
 
 function getChordNotes(root, quality) {
+    // Define chord intervals (semitones from root)
     const CHORD_INTERVALS = {
         'maj': [0, 4, 7],
         'min': [0, 3, 7],
@@ -1718,40 +1712,25 @@ function getChordNotes(root, quality) {
         'min7b5': [0, 3, 6, 10],
         'sus2': [0, 2, 7],
         'sus4': [0, 5, 7],
-        '9': [0, 4, 7, 10, 14],
-        'maj9': [0, 4, 7, 11, 14],
-        'm9': [0, 3, 7, 10, 14],
-        '13': [0, 4, 7, 10, 14, 21],
-        'maj13': [0, 4, 7, 11, 14, 21],
-        'm13': [0, 3, 7, 10, 14, 21],
         'add9': [0, 4, 7, 14]
     };
 
-    // Standardize the chromatic scale
-    const CHROMATIC = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-
     // Standardize the root note
     const standardizedRoot = standardizeNoteName(root);
-    let rootIndex = CHROMATIC.indexOf(standardizedRoot);
-
+    const rootIndex = NOTES.indexOf(standardizedRoot);
+    
     if (rootIndex === -1) {
-        console.warn(`Invalid root note: ${root}`);
-        rootIndex = 0; // Default to C if invalid root
+        console.error(`Invalid root note: ${root}`);
+        return [root]; // Return at least the root if something goes wrong
     }
 
-    // Normalize the quality
-    const normQuality = quality?.toLowerCase() || 'maj';
-    let intervals = CHORD_INTERVALS[normQuality];
+    // Get the intervals for the specified quality
+    const intervals = CHORD_INTERVALS[quality] || CHORD_INTERVALS['major'];
 
-    if (!intervals) {
-        console.warn(`Unknown chord quality "${quality}", defaulting to major`);
-        intervals = CHORD_INTERVALS['maj'];
-    }
-
-    // Generate chord notes
+    // Generate the chord notes
     return intervals.map(interval => {
         const noteIndex = (rootIndex + interval) % 12;
-        return CHROMATIC[noteIndex];
+        return NOTES[noteIndex];
     });
 }
 
