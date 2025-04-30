@@ -2053,7 +2053,8 @@ function createFretboard(container, tuning) {
     });
 }
         
-function updateFretboardNotes(container, rootNote, scale, tuning) {
+function updateFretboardNotes(container, rootNote, scaleInput, tuning) {
+    // Input validation
     if (!(container instanceof HTMLElement)) {
         console.error('Invalid container element');
         return;
@@ -2062,15 +2063,26 @@ function updateFretboardNotes(container, rootNote, scale, tuning) {
         console.error(`Invalid root note: ${rootNote}`);
         return;
     }
-    if (!SCALES[scale]) {
-        console.error(`Invalid scale: ${scale}`);
-        return;
-    }
     if (!Array.isArray(tuning) || tuning.length !== 6) {
         console.error('Invalid tuning');
         return;
     }
+
+    // Handle both scale names and interval arrays
+    let scaleIntervals;
+    if (Array.isArray(scaleInput)) {
+        scaleIntervals = scaleInput;
+    } else if (typeof scaleInput === 'string' && SCALES[scaleInput]) {
+        scaleIntervals = SCALES[scaleInput];
+    } else {
+        console.error(`Invalid scale: ${scaleInput}`);
+        return;
+    }
+
+    // Clear existing notes
     container.querySelectorAll('.note').forEach(note => note.remove());
+
+    // Handle chord fretboard special case
     if (container.id === 'chord-fretboard') {
         const measures = UI.elements.measures.children;
         if (measures.length > 0 && AppState.currentMeasure < measures.length) {
@@ -2079,6 +2091,7 @@ function updateFretboardNotes(container, rootNote, scale, tuning) {
             const chordQuality = currentMeasureElement.querySelector('.chord-controls .chord-quality')?.value;
             const scaleRoot = currentMeasureElement.querySelector('.scale-controls .second-key')?.value;
             const scaleType = currentMeasureElement.querySelector('.scale-controls .scale-select')?.value;
+            
             if (chordRoot && chordQuality && scaleRoot && scaleType) {
                 let displayQuality = chordQuality;
                 switch (chordQuality) {
@@ -2094,27 +2107,38 @@ function updateFretboardNotes(container, rootNote, scale, tuning) {
             }
         }
     }
-    const scaleIntervals = SCALES[scale];
+
+    // Generate scale notes
     const standardizedRoot = standardizeNoteName(rootNote);
     const rootIndex = NOTES.indexOf(standardizedRoot);
     const scaleNotes = scaleIntervals.map(interval => {
         const noteIndex = (rootIndex + interval) % 12;
         return NOTES[noteIndex];
     });
-    console.log(`[updateFretboardNotes] scaleNotes for ${rootNote} ${scale}: ${scaleNotes.join(',')}`);
+
+    // Log for debugging
+    console.log(`[updateFretboardNotes] scaleNotes for ${rootNote} ${Array.isArray(scaleInput) ? 'scale' : scaleInput}: ${scaleNotes.join(',')}`);
+
+    // Create notes on fretboard
     for (let string = 0; string < 6; string++) {
         const openNote = tuning[string];
         const openNoteIndex = NOTES.indexOf(openNote);
+        
         for (let fret = 0; fret <= 12; fret++) {
             const noteIndex = (openNoteIndex + fret) % 12;
             const currentNote = NOTES[noteIndex];
+            
             if (scaleNotes.includes(currentNote)) {
                 const noteElement = document.createElement('div');
                 noteElement.className = 'note';
                 noteElement.textContent = currentNote;
+                
+                // Position the note
                 const fretOffset = fret === 0 ? 0 : ((fret - 0.5) / 12) * 100;
                 noteElement.style.left = `${fretOffset}%`;
                 noteElement.style.top = `${(string / 5) * 100}%`;
+
+                // Color coding
                 const degree = scaleNotes.indexOf(currentNote);
                 if (currentNote === standardizedRoot) {
                     noteElement.style.backgroundColor = '#BD2031';
@@ -2123,6 +2147,8 @@ function updateFretboardNotes(container, rootNote, scale, tuning) {
                 } else {
                     noteElement.style.backgroundColor = '#4CAF50';
                 }
+
+                // Click handler
                 noteElement.addEventListener('click', async () => {
                     try {
                         await AudioContextManager.ensureAudioContext();
@@ -2130,7 +2156,7 @@ function updateFretboardNotes(container, rootNote, scale, tuning) {
                         const isAccent = volume >= 1 && ['kick', 'snare'].includes(currentBeatElement.dataset.sound);
                         const accentBoost = parseFloat(UI.elements.accentIntensity?.value || 1);
                         if (isAccent) {
-                            volume = Math.min(volume * accentBoost, 1); // cap at 1.0
+                            volume = Math.min(volume * accentBoost, 1);
                         }
                         await playNote(`string${6 - string}`, fret, volume);
                         noteElement.style.transform = 'translate(-50%, -50%) scale(1.2)';
@@ -2141,17 +2167,21 @@ function updateFretboardNotes(container, rootNote, scale, tuning) {
                         console.error('Error playing note:', error);
                     }
                 });
+
+                // Hover effects
                 noteElement.addEventListener('mouseenter', () => {
                     noteElement.style.transform = 'translate(-50%, -50%) scale(1.1)';
                 });
                 noteElement.addEventListener('mouseleave', () => {
                     noteElement.style.transform = 'translate(-50%, -50%) scale(1)';
                 });
+
                 container.appendChild(noteElement);
             }
         }
     }
-    log(`Fretboard updated with ${rootNote} ${scale} scale`);
+
+    log(`Fretboard updated with ${rootNote} ${Array.isArray(scaleInput) ? 'scale' : scaleInput}`);
 }
         
 function createBeats() {
