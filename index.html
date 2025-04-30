@@ -2362,7 +2362,7 @@ function loadProgression(progressionName, overrideKey = null) {
         
         // Get the proper quality value and suggested scale
         const qualityValue = getQualityValue(quality);
-        const suggestedScale = suggestScaleForQuality(qualityValue);
+        const suggestedScale = suggestScaleForQuality(quality); // Use raw quality here
 
         const measure = document.createElement('div');
         measure.className = 'measure';
@@ -2381,18 +2381,30 @@ function loadProgression(progressionName, overrideKey = null) {
 
         UI.elements.measures.appendChild(measure);
         
-        // Explicitly set the correct scale based on chord quality
+        // Set the correct chord quality in the dropdown
+        const qualitySelect = measure.querySelector('.chord-quality');
+        if (qualitySelect) {
+            if (quality === 'maj7') {
+                qualitySelect.value = 'maj7';
+            } else if (quality === '7' || quality === 'dom7') {
+                qualitySelect.value = 'dom7';
+            } else if (quality === 'min7' || quality === 'm7') {
+                qualitySelect.value = 'min7';
+            } else if (quality === 'min7b5') {
+                qualitySelect.value = 'min7b5';
+            } else if (quality === 'm' || quality === 'min') {
+                qualitySelect.value = 'minor';
+            } else if (quality === '6') {
+                qualitySelect.value = 'major';
+            } else if (quality === 'm6') {
+                qualitySelect.value = 'minor';
+            }
+        }
+        
+        // Set the correct scale based on chord quality
         const scaleSelect = measure.querySelector('.scale-select');
-        if (quality === '7' || quality === 'dom7') {
-            scaleSelect.value = 'mixolydian';
-        } else if (quality === 'min7' || quality === 'm7') {
-            scaleSelect.value = 'dorian';
-        } else if (quality === 'maj7') {
-            scaleSelect.value = 'major';
-        } else if (quality === 'min7b5') {
-            scaleSelect.value = 'locrian';
-        } else if (quality === 'm' || quality === 'minor') {
-            scaleSelect.value = 'minor';
+        if (scaleSelect) {
+            scaleSelect.value = suggestedScale;
         }
         
         // Add drag events
@@ -2416,7 +2428,6 @@ function loadProgression(progressionName, overrideKey = null) {
 
     log(`Loaded progression "${progressionName}" in key: ${selectedKey}`);
 }
-
 function updateProgressionKey(newKey) {
     const selectedProgression = UI.elements.progressionSelect.value;
     if (!selectedProgression) return;
