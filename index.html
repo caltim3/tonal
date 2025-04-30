@@ -2689,24 +2689,21 @@ function initializeFretFlow() {
     }
 }
     
-    function attachNoteClickHandlers(fretboard) {
-        const notes = fretboard.getElementsByClassName('note');
-        Array.from(notes).forEach(note => {
-            note.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const noteName = this.dataset.note;
-                if (noteName) {
-                    const fretboardVolume = parseFloat(UI.elements.fretboardVolume.value) || 1.0;
-                    playNote(noteName, fretboardVolume, 500);
-                    log(`Playing note: ${noteName}`);
-                }
-            });
+function attachNoteClickHandlers(fretboard) {
+    const notes = fretboard.getElementsByClassName('note');
+    Array.from(notes).forEach(note => {
+        note.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const noteName = this.dataset.note;
+            if (noteName) {
+                const fretboardVolume = parseFloat(UI.elements.fretboardVolume.value) || 1.0;
+                playNote(noteName, fretboardVolume, 500);
+                log(`Playing note: ${noteName}`);
+            }
         });
-    }
-    
-    log("FretFlow initialized with 4 independent fretboards");
+    });
 }
-
+        
 // Event Listeners
 function addFirstChordListener() {
     const firstMeasure = UI.elements.measures.firstElementChild;
