@@ -1245,8 +1245,8 @@ function getChordFromFunction(chordFunction, key = 'C') {
     // Handle empty or invalid input
     if (!chordFunction) return null;
 
-    // Parse the chord function
-    const match = chordFunction.match(/^(b?[ivIV]+)([°ø]|maj|m|M)?([679]|11|13)?([b#]5|[b#]9|[b#]11|[b#]13)?(\([b#]5\)|\([b#]9\)|\([b#]11\)|\([b#]13\))?$/);
+    // Parse the chord function - updated regex to better handle 6 and m6
+    const match = chordFunction.match(/^(b?[ivIV]+)(m6|6|°|ø|maj|m|M)?([679]|11|13)?([b#]5|[b#]9|[b#]11|[b#]13)?(\([b#]5\)|\([b#]9\)|\([b#]11\)|\([b#]13\))?$/);
     if (!match) return null;
 
     let [_, roman, quality = '', extension = '', alteration = '', parenthesizedAlteration = ''] = match;
@@ -1282,6 +1282,12 @@ function getChordFromFunction(chordFunction, key = 'C') {
     // Special case for V7 in any key (major or minor)
     if (chordFunction.toUpperCase() === 'V7') {
         return rootNote + '7';
+    }
+
+    // Handle explicit sixth chords first
+    if (quality === '6' || quality === 'm6') {
+        chordQuality = isLowerCase ? 'm6' : '6';
+        return rootNote + chordQuality;
     }
 
     // First check if there's an explicit quality specified
@@ -1334,6 +1340,11 @@ function getChordFromFunction(chordFunction, key = 'C') {
                 chordQuality += extension;
             }
         }
+    }
+
+    // Special case for I chord without explicit quality
+    if (chordFunction === 'I') {
+        return rootNote + 'maj7';
     }
 
     // Handle alterations
