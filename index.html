@@ -683,137 +683,114 @@
     </main>
 
     <script>
-const log = console.log.bind(console);        
+const log = console.log.bind(console);
+
 // Utility Functions
 function noteNameToSampleName(note) {
   // Converts "F#" to "Fs", "D#" to "Ds", etc.
   return note.replace('#', 's');
 }
+
 // Musical Constants
-// Define chromatic notes using 's' notation for consistency
 const NOTES = ['C', 'Cs', 'D', 'Ds', 'E', 'F', 'Fs', 'G', 'Gs', 'A', 'As', 'B'];
+const SAMPLED_NOTES = NOTES;
 
-// Define sampled notes for AudioContextManager (matches loadPianoSamples)
-const SAMPLED_NOTES = NOTES; // Same as NOTES, used for sample lookup
-
-// Add near NOTES constant
 const SAMPLE_NOTE_MAP = {
   'Cs': 'Db', 'Ds': 'Eb', 'Fs': 'Gb', 
   'Gs': 'Ab', 'As': 'Bb'
 };
-        
+
 const PIANO_OCTAVES = {
   'C': [3,4], 'Cs': [3,4], 'D': [3,4], 'Ds': [3,4], 
   'E': [3,4], 'F': [3,4], 'Fs': [3,4], 'G': [3,4], 
   'Gs': [3,4], 'A': [3,4], 'As': [3,4], 'B': [3,4]
 };
-// Add this near NOTES constant
+
 const ENHARMONIC_MAP = {
   'Db': 'Cs', 'Eb': 'Ds', 'Gb': 'Fs', 'Ab': 'Gs', 'Bb': 'As',
   'C#': 'Db', 'D#': 'Eb', 'F#': 'Gb', 'G#': 'Ab', 'A#': 'Bb'
 };
-// Note frequency mappings (for pitch calculations, if needed)
+
 const NOTE_FREQUENCIES = {
-    'A2': 110.00, 'As2': 116.54, 'B2': 123.47,
-    'C3': 130.81, 'Cs3': 138.59, 'D3': 146.83, 'Ds3': 155.56, 'E3': 164.81, 'F3': 174.61,
-    'Fs3': 185.00, 'G3': 196.00, 'Gs3': 207.65, 'A3': 220.00, 'As3': 233.08, 'B3': 246.94,
-    'C4': 261.63, 'Cs4': 277.18, 'D4': 293.66, 'Ds4': 311.13, 'E4': 329.63
+  'A2': 110.00, 'As2': 116.54, 'B2': 123.47,
+  'C3': 130.81, 'Cs3': 138.59, 'D3': 146.83, 'Ds3': 155.56, 'E3': 164.81, 'F3': 174.61,
+  'Fs3': 185.00, 'G3': 196.00, 'Gs3': 207.65, 'A3': 220.00, 'As3': 233.08, 'B3': 246.94,
+  'C4': 261.63, 'Cs4': 277.18, 'D4': 293.66, 'Ds4': 311.13, 'E4': 329.63
 };
-  function updateLoadingStatus(message) {
-    const indicator = document.getElementById('loading-indicator');
-    if (indicator) {
-        indicator.textContent = message;
-    }
-    // Optional: Keep logging to console for debugging
-    console.log(`Loading Status: ${message}`);
+
+function updateLoadingStatus(message) {
+  const indicator = document.getElementById('loading-indicator');
+  if (indicator) {
+    indicator.textContent = message;
+  }
+  console.log(`Loading Status: ${message}`);
 }
+
 // Convert note names to sample format (e.g., A# → As, Bb → As, C3 → C3)
 function toSampleNoteName(note) {
-    if (!note) {
-        console.warn('toSampleNoteName: Empty note provided');
-        return '';
-    }
-
-    // Handle notes with octave (e.g., C3, A#3)
-    let noteBase = note;
-    let octave = '';
-    const octaveMatch = note.match(/([A-G][b#s]?)(\d)/);
-    if (octaveMatch) {
-        noteBase = octaveMatch[1]; // e.g., C, A#, Bb
-        octave = octaveMatch[2]; // e.g., 3
-    }
-
-    // Conversion map for sharps and flats to 's' notation
-    const noteMap = {
-        'C#': 'Cs', 'Db': 'Cs', 'Cb': 'B',
-        'D#': 'Ds', 'Eb': 'Ds',
-        'E#': 'F', 'Fb': 'E',
-        'F#': 'Fs', 'Gb': 'Fs',
-        'G#': 'Gs', 'Ab': 'Gs',
-        'A#': 'As', 'Bb': 'As', 'B#': 'C'
-    };
-
-    // Convert note to sample format
-    let convertedNote = noteMap[noteBase] || noteBase;
-    if (noteBase.includes('#') && !noteMap[noteBase]) {
-        convertedNote = noteBase.replace('#', 's');
-    }
-
-    // Reattach octave if present
-    const result = octave ? `${convertedNote}${octave}` : convertedNote;
-    if (!NOTES.includes(convertedNote)) {
-        console.warn(`toSampleNoteName: Invalid note ${note}, converted to ${result}`);
-    }
-    return result;
+  if (!note) {
+    console.warn('toSampleNoteName: Empty note provided');
+    return '';
+  }
+  let noteBase = note;
+  let octave = '';
+  const octaveMatch = note.match(/([A-G][b#s]?)(\d)/);
+  if (octaveMatch) {
+    noteBase = octaveMatch[1];
+    octave = octaveMatch[2];
+  }
+  const noteMap = {
+    'C#': 'Cs', 'Db': 'Cs', 'Cb': 'B',
+    'D#': 'Ds', 'Eb': 'Ds',
+    'E#': 'F', 'Fb': 'E',
+    'F#': 'Fs', 'Gb': 'Fs',
+    'G#': 'Gs', 'Ab': 'Gs',
+    'A#': 'As', 'Bb': 'As', 'B#': 'C'
+  };
+  let convertedNote = noteMap[noteBase] || noteBase;
+  if (noteBase.includes('#') && !noteMap[noteBase]) {
+    convertedNote = noteBase.replace('#', 's');
+  }
+  const result = octave ? `${convertedNote}${octave}` : convertedNote;
+  if (!NOTES.includes(convertedNote)) {
+    console.warn(`toSampleNoteName: Invalid note ${note}, converted to ${result}`);
+  }
+  return result;
 }
 
-const SCALES = {
-    // Basic Scales
-    major: [0, 2, 4, 5, 7, 9, 11],
-    minor: [0, 2, 3, 5, 7, 8, 10],
-    harmonicMinor: [0, 2, 3, 5, 7, 8, 11],
-    melodicMinor: [0, 2, 3, 5, 7, 9, 11],
-    
-    // Modes
-    dorian: [0, 2, 3, 5, 7, 9, 10],
-    phrygian: [0, 1, 3, 5, 7, 8, 10],
-    lydian: [0, 2, 4, 6, 7, 9, 11],
-    mixolydian: [0, 2, 4, 5, 7, 9, 10],
-    locrian: [0, 1, 3, 5, 6, 8, 10],
-    
-    // Jazz Scales
-    bebopDominant: [0, 2, 4, 5, 7, 9, 10, 11],
-    bebopMajor: [0, 2, 4, 5, 7, 8, 9, 11],
-    bebopDorian: [0, 2, 3, 4, 5, 7, 9, 10],
-    bebopPhrygian: [0, 1, 2, 3, 5, 7, 8, 10], // Added Bebop Phrygian
-    altered: [0, 1, 3, 4, 6, 8, 10],      // Super Locrian
-    lydianDominant: [0, 2, 4, 6, 7, 9, 10],
-    
-    // Symmetric Scales
-    diminishedWH: [0, 2, 3, 5, 6, 8, 9, 11],  // Diminished (Whole-Half)
-    diminishedHW: [0, 1, 3, 4, 6, 7, 9, 10],  // Diminished (Half-Whole)
-    wholeHalf: [0, 2, 4, 6, 8, 10],           // Whole Tone
-    
-    // Pentatonic Scales
-    pentatonicMajor: [0, 2, 4, 7, 9],
-    pentatonicMinor: [0, 3, 5, 7, 10],
-    
-    // Blues Scales
-    blues: [0, 3, 5, 6, 7, 10],
-    majorBlues: [0, 2, 3, 4, 7, 9],
-    
-    // Additional Modern Jazz Scales
-    altered: [0, 1, 3, 4, 6, 8, 10],
-    halfWhole: [0, 1, 3, 4, 6, 7, 9, 10],
-    harmonicMajor: [0, 2, 4, 5, 7, 8, 11],
-    doubleHarmonic: [0, 1, 4, 5, 7, 8, 11],
+// ... (rest of your code remains unchanged, but with the following fixes applied below)
 
-    'enigmatic': [0, 1, 4, 6, 8, 10, 11],
-    'persian': [0, 1, 4, 5, 6, 8, 11],
-    'arabic': [0, 2, 4, 5, 6, 8, 10],
-    'japanese': [0, 2, 5, 7, 8],
-    'egyptian': [0, 2, 5, 7, 10]
-    
+const SCALES = {
+  major: [0, 2, 4, 5, 7, 9, 11],
+  minor: [0, 2, 3, 5, 7, 8, 10],
+  harmonicMinor: [0, 2, 3, 5, 7, 8, 11],
+  melodicMinor: [0, 2, 3, 5, 7, 9, 11],
+  dorian: [0, 2, 3, 5, 7, 9, 10],
+  phrygian: [0, 1, 3, 5, 7, 8, 10],
+  lydian: [0, 2, 4, 6, 7, 9, 11],
+  mixolydian: [0, 2, 4, 5, 7, 9, 10],
+  locrian: [0, 1, 3, 5, 6, 8, 10],
+  bebopDominant: [0, 2, 4, 5, 7, 9, 10, 11],
+  bebopMajor: [0, 2, 4, 5, 7, 8, 9, 11],
+  bebopDorian: [0, 2, 3, 4, 5, 7, 9, 10],
+  bebopPhrygian: [0, 1, 2, 3, 5, 7, 8, 10],
+  altered: [0, 1, 3, 4, 6, 8, 10], // Only one 'altered' key!
+  lydianDominant: [0, 2, 4, 6, 7, 9, 10],
+  diminishedWH: [0, 2, 3, 5, 6, 8, 9, 11],
+  diminishedHW: [0, 1, 3, 4, 6, 7, 9, 10],
+  wholeHalf: [0, 2, 4, 6, 8, 10],
+  pentatonicMajor: [0, 2, 4, 7, 9],
+  pentatonicMinor: [0, 3, 5, 7, 10],
+  blues: [0, 3, 5, 6, 7, 10],
+  majorBlues: [0, 2, 3, 4, 7, 9],
+  halfWhole: [0, 1, 3, 4, 6, 7, 9, 10],
+  harmonicMajor: [0, 2, 4, 5, 7, 8, 11],
+  doubleHarmonic: [0, 1, 4, 5, 7, 8, 11],
+  enigmatic: [0, 1, 4, 6, 8, 10, 11],
+  persian: [0, 1, 4, 5, 6, 8, 11],
+  arabic: [0, 2, 4, 5, 6, 8, 10],
+  japanese: [0, 2, 5, 7, 8],
+  egyptian: [0, 2, 5, 7, 10]
 };
 
 const TUNINGS = {
@@ -1013,7 +990,9 @@ class UIManager {
         this.setupDefaultValues();
         return this.elementRefs;
     }
-
+    
+    const UI = UIManager;
+    
     static initializeElements() {
         for (const [key, config] of Object.entries(this.elements)) {
             const element = config.selector ? 
@@ -1369,8 +1348,8 @@ function standardizeNoteName(note) {
   let [, letter, accidental, octave] = match;
   letter = letter.toUpperCase();
   if (accidental === 'b') {
-    const index = no.indexOf(letter);
-    return NOTES [(index - 1 + 12) % 12];
+    const index = NOTES.indexOf(letter);
+    return NOTES[(index - 1 + 12) % 12];
   } else if (accidental === '#') {
     const index = NOTES.indexOf(letter);
     return NOTES[(index + 1) % 12];
