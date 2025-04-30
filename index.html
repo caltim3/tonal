@@ -1366,8 +1366,7 @@ function getChordFromFunction(chordFunction, key = 'C') {
 
     // Regex for secondary dominants and main chord
     // e.g. V7/ii, bVII, IV#, etc.
-    const secDomMatch = chordFunction.match(/^([b#]*[ivIV]+[#b]*)(m6|6|°|ø|maj|m|M)?([679]|11|13)?([b#]5|[b#]9|[b#]11|[b#]13)?(\([b#]5\)|\([b#]9\)|\([b#]11\)|\([b#]13\))?(?:\/([b#]*[ivIV]+[#b]*))?$/);
-    if (!secDomMatch) return null;
+    const secDomMatch = chordFunction.match(/^([b#]*[ivIV]+[#b]*)(maj7|m7b5|m6|6|°|ø|maj|m|M)?(7|9|11|13)?([b#]5|[b#]9|[b#]11|[b#]13)?(\([b#]5\)|\([b#]9\)|\([b#]11\)|\([b#]13\))?(?:\/([b#]*[ivIV]+[#b]*))?$/);
 
     let [
         _,
