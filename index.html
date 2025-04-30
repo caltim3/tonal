@@ -2054,29 +2054,62 @@ function createFretboard(container, tuning) {
 }
         
 function updateFretboardNotes(container, rootNote, scaleInput, tuning) {
-    // Input validation
+    // Enhanced input validation with debugging
+    console.log('Received inputs:', {
+        container: container?.id || 'no container',
+        rootNote,
+        scaleInput,
+        tuning
+    });
+
     if (!(container instanceof HTMLElement)) {
         console.error('Invalid container element');
         return;
     }
-    if (!NOTES.includes(standardizeNoteName(rootNote))) {
+
+    if (!rootNote || !NOTES.includes(standardizeNoteName(rootNote))) {
         console.error(`Invalid root note: ${rootNote}`);
         return;
     }
+
     if (!Array.isArray(tuning) || tuning.length !== 6) {
         console.error('Invalid tuning');
         return;
     }
 
+    // Enhanced scale input validation
+    if (!scaleInput) {
+        console.error('Scale input is missing');
+        scaleInput = "Major (Ionian)"; // Default to major scale if none provided
+    }
+
     // Handle both scale names and interval arrays
     let scaleIntervals;
     if (Array.isArray(scaleInput)) {
+        if (scaleInput.length === 0) {
+            console.error('Empty scale intervals array');
+            scaleInput = SCALES["Major (Ionian)"]; // Default to major scale
+        }
         scaleIntervals = scaleInput;
-    } else if (typeof scaleInput === 'string' && SCALES[scaleInput]) {
-        scaleIntervals = SCALES[scaleInput];
+    } else if (typeof scaleInput === 'string') {
+        // Try to match the scale name with or without formatting
+        const exactMatch = SCALES[scaleInput];
+        const formattedMatch = SCALES[Object.keys(SCALES).find(key => 
+            key.toLowerCase().replace(/[^a-z0-9]/g, '') === 
+            scaleInput.toLowerCase().replace(/[^a-z0-9]/g, '')
+        )];
+        
+        if (exactMatch) {
+            scaleIntervals = exactMatch;
+        } else if (formattedMatch) {
+            scaleIntervals = formattedMatch;
+        } else {
+            console.error(`Invalid scale name: ${scaleInput}, defaulting to Major`);
+            scaleIntervals = SCALES["Major (Ionian)"];
+        }
     } else {
-        console.error(`Invalid scale: ${scaleInput}`);
-        return;
+        console.error(`Invalid scale input type: ${typeof scaleInput}`);
+        scaleIntervals = SCALES["Major (Ionian)"];
     }
 
     // Clear existing notes
@@ -2084,8 +2117,8 @@ function updateFretboardNotes(container, rootNote, scaleInput, tuning) {
 
     // Handle chord fretboard special case
     if (container.id === 'chord-fretboard') {
-        const measures = UI.elements.measures.children;
-        if (measures.length > 0 && AppState.currentMeasure < measures.length) {
+        const measures = UI.elements.measures?.children;
+        if (measures?.length > 0 && AppState.currentMeasure < measures.length) {
             const currentMeasureElement = measures[AppState.currentMeasure];
             const chordRoot = currentMeasureElement.querySelector('.chord-controls .root-note')?.value;
             const chordQuality = currentMeasureElement.querySelector('.chord-controls .chord-quality')?.value;
@@ -2152,8 +2185,8 @@ function updateFretboardNotes(container, rootNote, scaleInput, tuning) {
                 noteElement.addEventListener('click', async () => {
                     try {
                         await AudioContextManager.ensureAudioContext();
-                        let volume = parseFloat(currentBeatElement.dataset.baseVolume) || 0;
-                        const isAccent = volume >= 1 && ['kick', 'snare'].includes(currentBeatElement.dataset.sound);
+                        let volume = parseFloat(currentBeatElement?.dataset?.baseVolume) || 0.5;
+                        const isAccent = volume >= 1 && ['kick', 'snare'].includes(currentBeatElement?.dataset?.sound);
                         const accentBoost = parseFloat(UI.elements.accentIntensity?.value || 1);
                         if (isAccent) {
                             volume = Math.min(volume * accentBoost, 1);
