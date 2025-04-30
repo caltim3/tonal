@@ -983,6 +983,13 @@ const scaleDegrees = {
         'V7/bIII': 7, 'V7/bVI': 7, 'V7/bVII': 7
     }
 };   
+
+const AppState = {
+    currentMeasure: 0,
+    isPlaying: false,
+    tempo: 120,
+    audioInitialized: false
+};
 // State Management
 const UI = {
     elements: {
@@ -1054,18 +1061,17 @@ const AudioContextManager = {
 
     async init() {
         try {
-            // Initialize AudioContext
+            if (this.context) {
+                return true; // Already initialized
+            }
+            
             this.context = new (window.AudioContext || window.webkitAudioContext)();
-            
-            // Create and configure reverb node
             this.reverbNode = this.context.createConvolver();
-            
-            // Initialize gain node for chord control
             this.currentChordGain = this.context.createGain();
             this.currentChordGain.connect(this.context.destination);
 
-            // Load all audio samples
             await this.loadSamples();
+            AppState.audioInitialized = true;
             return true;
         } catch (error) {
             console.error('Failed to initialize AudioContextManager:', error);
@@ -1112,14 +1118,30 @@ const AudioContextManager = {
         }
     },
 
-    async ensureAudioContext() {
-        if (!this.context) {
-            await this.init();
-        } else if (this.context.state === 'suspended') {
-            await this.context.resume();
+    async ensureAudioInitialized() {
+            if (!AppState.audioInitialized) {
+                await this.init();
+            }
+            if (this.context.state === 'suspended') {
+                await this.context.resume();
+            }
+            return true;
         }
-        return this.context;
-    },
+    };
+
+        // Add click handler initialization
+    function initializeClickHandlers() {
+        // Add click handler for audio initialization
+        document.addEventListener('click', async function initAudioOnFirstClick() {
+            try {
+                await AudioContextManager.ensureAudioInitialized();
+                // Remove the click listener after successful initialization
+                document.removeEventListener('click', initAudioOnFirstClick);
+            } catch (error) {
+                console.error('Failed to initialize audio on click:', error);
+            }
+        }, { once: true });
+    }
 
     async playSound(bufferName, time = 0, gain = 1.0) {
         try {
@@ -1148,24 +1170,6 @@ const AudioContextManager = {
     }
 };
 
-// Initialize everything when the document is ready
-document.addEventListener('DOMContentLoaded', async () => {
-    try {
-        // Initialize UI first
-        if (!UI.init()) {
-            console.warn('Some UI elements are missing, but continuing initialization');
-        }
-
-        // Initialize Audio
-        if (!await AudioContextManager.init()) {
-            console.error('Failed to initialize audio system');
-        }
-
-        console.log('Application initialized successfully');
-    } catch (error) {
-        console.error('Critical error during initialization:', error);
-    }
-});
 // Music Theory Utilities
 
 function getNoteFromScaleDegree(degree, key, scale) {
@@ -2047,53 +2051,40 @@ function createFretboard(container, tuning) {
 }
         
 function updateFretboardNotes(container, rootNote, scaleInput, tuning) {
-    // Initial logging for debugging
-    console.log('Received inputs:', {
-        container: container?.id || 'no container',
-        rootNote,
-        scaleInput,
-        tuning
-    });
+    console.log('Received inputs:', { container, rootNote, scaleInput, tuning });
 
-    // Core validation with enhanced error handling
     try {
-        // Container validation
+        // Validate inputs
         if (!(container instanceof HTMLElement)) {
             throw new Error('Invalid container element');
         }
 
-        // Root note validation
         if (!rootNote || !NOTES.includes(standardizeNoteName(rootNote))) {
             throw new Error(`Invalid root note: ${rootNote}`);
         }
 
-        // Tuning validation
         if (!Array.isArray(tuning) || tuning.length !== 6) {
             throw new Error('Invalid tuning');
         }
 
-        // Scale input normalization and validation
-        let normalizedScaleInput = normalizeScaleInput(scaleInput, rootNote);
-        let scaleIntervals = getScaleIntervals(normalizedScaleInput);
-
+        // Handle scale input
+        let normalizedScale = normalizeScaleInput(scaleInput, rootNote);
+        
         // Clear existing notes
         container.querySelectorAll('.note').forEach(note => note.remove());
 
-        // Handle special case for chord fretboard
-        handleChordFretboardCase(container);
+        // Handle chord fretboard special case
+        if (container.id === 'chord-fretboard') {
+            handleChordFretboardCase(container);
+        }
 
         // Generate and apply scale notes
-        const scaleNotes = generateScaleNotes(rootNote, scaleIntervals);
-        
-        // Create fretboard visualization
+        const scaleNotes = generateScaleNotes(rootNote, normalizedScale);
         createFretboardVisualization(container, tuning, scaleNotes, rootNote);
 
-        // Final success log
-        log(`Fretboard updated with ${rootNote} ${Array.isArray(scaleInput) ? 'scale' : scaleInput}`);
-
+        console.log(`[FretFlow Debug] Fretboard updated with ${rootNote} scale`);
     } catch (error) {
-        console.error('Error in updateFretboardNotes:', error.message);
-        return;
+        console.error('Error in updateFretboardNotes:', error);
     }
 }
 
@@ -3020,12 +3011,23 @@ async function initializeApp() {
     log("Application initialized");
 }
 
-// Initial setup
-document.addEventListener('DOMContentLoaded', () => {
-    initializeApp().catch(error => {
-        console.error("Initialization failed:", error);
-        updateLoadingStatus("Initialization failed");
-    });
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        // Initialize UI
+        if (!UI.init()) {
+            console.warn('Some UI elements are missing, but continuing initialization');
+        }
+
+        // Initialize click handlers
+        initializeClickHandlers();
+
+        // Initialize Audio (but don't start it yet - wait for user interaction)
+        await AudioContextManager.init();
+
+        console.log('Application initialized successfully');
+    } catch (error) {
+        console.error('Critical error during initialization:', error);
+    }
 });
 
             </script>
