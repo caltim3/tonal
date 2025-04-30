@@ -193,6 +193,50 @@
         .chord-controls select, .scale-controls select {
             flex: 1;
         }
+
+        .fretboard-section {
+            border: 1px solid #ccc;
+            padding: 15px;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+        
+        .fretboard-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .control-group label {
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        
+        .control-group select {
+            padding: 4px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+        
+        .scale-display {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .fretboard {
+            width: 100%;
+            margin-top: 10px;
+        }
+        
         @media (max-width: 1200px) {
             #measures {
                 grid-template-columns: repeat(2, 1fr);
@@ -2566,51 +2610,97 @@ function dragEnd(e) {
 
 function initializeFretFlow() {
     const fretboardsGrid = UI.elements.fretboardsGrid;
-    const fretflowKey = document.getElementById('fretflow-key');
-    const fretflowScale = document.getElementById('fretflow-scale');
+    fretboardsGrid.innerHTML = ''; // Clear existing content
     
-    // Define the scales we want to show
-    const scales = ['major', 'minor', 'dorian', 'mixolydian'];
+    // Add CSS to make it a 2x2 grid
+    fretboardsGrid.style.display = 'grid';
+    fretboardsGrid.style.gridTemplateColumns = 'repeat(2, 1fr)';
+    fretboardsGrid.style.gap = '20px';
     
-    function updateAllFretboards() {
-        const selectedKey = fretflowKey.value;
-        const selectedScale = fretflowScale.value;
-        const tuning = TUNINGS[UI.elements.chordTuning.value];
+    // Create 4 independent fretboard sections
+    for (let i = 0; i < 4; i++) {
+        const fretboardSection = document.createElement('div');
+        fretboardSection.className = 'fretboard-section';
         
-        fretboardsGrid.innerHTML = '';
-        
-        // Create a fretboard for the selected scale
-        const container = document.createElement('div');
-        container.className = 'fretboard-container';
-        container.innerHTML = `
-            <div class="scale-display">${selectedKey} ${selectedScale.charAt(0).toUpperCase() + selectedScale.slice(1)}</div>
-            <div class="controls">
-                <select class="tuning-select" id="fretflow-tuning" aria-label="Select guitar tuning">
-                    <option value="standard">Standard (EADGBE)</option>
-                    <option value="dropD">Drop D (DADGBE)</option>
-                    <option value="openG">Open G (DGDGBD)</option>
-                    <option value="DADGAD">DADGAD</option>
-                    <option value="openE">Open E (EBEG#BE)</option>
-                </select>
+        // Create the HTML structure for each section
+        fretboardSection.innerHTML = `
+            <div class="fretboard-controls">
+                <div class="control-group">
+                    <label for="fretflow-key-${i}">Key:</label>
+                    <select id="fretflow-key-${i}" class="fretflow-key" aria-label="Select key">
+                        <option value="C">C</option>
+                        <option value="C#">C#</option>
+                        <option value="D">D</option>
+                        <option value="D#">D#</option>
+                        <option value="E">E</option>
+                        <option value="F">F</option>
+                        <option value="F#">F#</option>
+                        <option value="G">G</option>
+                        <option value="G#">G#</option>
+                        <option value="A">A</option>
+                        <option value="A#">A#</option>
+                        <option value="B">B</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="fretflow-scale-${i}">Scale:</label>
+                    <select id="fretflow-scale-${i}" class="fretflow-scale" aria-label="Select scale type">
+                        <option value="major">Major</option>
+                        <option value="minor">Minor</option>
+                        <option value="dorian">Dorian</option>
+                        <option value="mixolydian">Mixolydian</option>
+                        <option value="phrygian">Phrygian</option>
+                        <option value="lydian">Lydian</option>
+                        <option value="locrian">Locrian</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="fretflow-tuning-${i}">Tuning:</label>
+                    <select id="fretflow-tuning-${i}" class="tuning-select" aria-label="Select guitar tuning">
+                        <option value="standard">Standard (EADGBE)</option>
+                        <option value="dropD">Drop D (DADGBE)</option>
+                        <option value="openG">Open G (DGDGBD)</option>
+                        <option value="DADGAD">DADGAD</option>
+                        <option value="openE">Open E (EBEG#BE)</option>
+                    </select>
+                </div>
             </div>
-            <div id="fretflow-fretboard" class="fretboard"></div>
+            <div class="scale-display"></div>
+            <div id="fretflow-fretboard-${i}" class="fretboard"></div>
         `;
-        fretboardsGrid.appendChild(container);
         
-        const fretboard = container.querySelector('#fretflow-fretboard');
-        createFretboard(fretboard, tuning);
-        updateFretboardNotes(fretboard, selectedKey, selectedScale, tuning);
+        fretboardsGrid.appendChild(fretboardSection);
         
-        // Add tuning change handler
-        const tuningSelect = container.querySelector('#fretflow-tuning');
-        tuningSelect.addEventListener('change', () => {
-            const newTuning = TUNINGS[tuningSelect.value];
-            createFretboard(fretboard, newTuning);
-            updateFretboardNotes(fretboard, selectedKey, selectedScale, newTuning);
+        // Initialize this fretboard
+        const fretboard = fretboardSection.querySelector(`#fretflow-fretboard-${i}`);
+        const keySelect = fretboardSection.querySelector(`#fretflow-key-${i}`);
+        const scaleSelect = fretboardSection.querySelector(`#fretflow-scale-${i}`);
+        const tuningSelect = fretboardSection.querySelector(`#fretflow-tuning-${i}`);
+        const scaleDisplay = fretboardSection.querySelector('.scale-display');
+        
+        function updateFretboardDisplay() {
+            const selectedKey = keySelect.value;
+            const selectedScale = scaleSelect.value;
+            const selectedTuning = TUNINGS[tuningSelect.value];
             
-            // Reattach note click handlers
+            // Update the scale display
+            scaleDisplay.textContent = `${selectedKey} ${selectedScale.charAt(0).toUpperCase() + selectedScale.slice(1)}`;
+            
+            // Update the fretboard
+            createFretboard(fretboard, selectedTuning);
+            updateFretboardNotes(fretboard, selectedKey, selectedScale, selectedTuning);
+            
+            // Attach note click handlers
             attachNoteClickHandlers(fretboard);
-        });
+        }
+        
+        // Add event listeners for all controls
+        keySelect.addEventListener('change', updateFretboardDisplay);
+        scaleSelect.addEventListener('change', updateFretboardDisplay);
+        tuningSelect.addEventListener('change', updateFretboardDisplay);
+        
+        // Initial render
+        updateFretboardDisplay();
     }
     
     function attachNoteClickHandlers(fretboard) {
@@ -2628,14 +2718,7 @@ function initializeFretFlow() {
         });
     }
     
-    // Add event listeners for key and scale changes
-    fretflowKey.addEventListener('change', updateAllFretboards);
-    fretflowScale.addEventListener('change', updateAllFretboards);
-    
-    // Initial render
-    updateAllFretboards();
-    
-    log("FretFlow initialized");
+    log("FretFlow initialized with 4 independent fretboards");
 }
 
 // Event Listeners
