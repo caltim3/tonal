@@ -1027,7 +1027,7 @@ const AudioContextManager = {
         updateLoadingStatus("Drum sounds loaded");
     },
     
-   createDrumSound: async function(type) {
+    createDrumSound: async function(type) {
         const sampleRate = this.context.sampleRate;
         const duration = type === 'hihat' ? 0.05 : 0.2;
         const buffer = this.context.createBuffer(1, sampleRate * duration, sampleRate);
@@ -1061,43 +1061,44 @@ const AudioContextManager = {
         return buffer;
     },
     
-   loadPianoSamples: async function() {
-    // Use the new ALL_NOTES and OCTAVES arrays
-    this.pianoSampleBuffers = {}; // Reset
+    loadPianoSamples: async function() {
+        // Use the new ALL_NOTES and OCTAVES arrays
+        this.pianoSampleBuffers = {}; // Reset
 
-    for (const note of ALL_NOTES) {
-        for (const octave of OCTAVES) {
-            const fileName = getSampleFileName(note, octave); // e.g., 'ds4.wav'
-            const key = `${note}${octave}`; // e.g., 'ds4'
-            try {
-                const response = await fetch(fileName);
-                const arrayBuffer = await response.arrayBuffer();
-                const audioBuffer = await this.context.decodeAudioData(arrayBuffer);
-                this.pianoSampleBuffers[key] = audioBuffer;
-            } catch (e) {
-                console.error(`Failed to load sample: ${fileName}`, e);
+        for (const note of ALL_NOTES) {
+            for (const octave of OCTAVES) {
+                const fileName = getSampleFileName(note, octave); // e.g., 'ds4.wav'
+                const key = `${note}${octave}`; // e.g., 'ds4'
+                try {
+                    const response = await fetch(fileName);
+                    const arrayBuffer = await response.arrayBuffer();
+                    const audioBuffer = await this.context.decodeAudioData(arrayBuffer);
+                    this.pianoSampleBuffers[key] = audioBuffer;
+                } catch (e) {
+                    console.error(`Failed to load sample: ${fileName}`, e);
+                }
             }
         }
-    }
-    this.samplesLoaded = true;
-}
+        this.samplesLoaded = true;
+    },
     
-setupReverb: async function() {
-    if (!this.reverbNode) {
-        this.reverbNode = this.context.createConvolver();
-        const sampleRate = this.context.sampleRate;
-        const length = sampleRate * 2.5;
-        const impulse = this.context.createBuffer(2, length, sampleRate);
-        for (let channel = 0; channel < 2; channel++) {
-            const channelData = impulse.getChannelData(channel);
-            for (let i = 0; i < length; i++) {
-                channelData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2);
+    setupReverb: async function() {
+        if (!this.reverbNode) {
+            this.reverbNode = this.context.createConvolver();
+            const sampleRate = this.context.sampleRate;
+            const length = sampleRate * 2.5;
+            const impulse = this.context.createBuffer(2, length, sampleRate);
+            for (let channel = 0; channel < 2; channel++) {
+                const channelData = impulse.getChannelData(channel);
+                for (let i = 0; i < length; i++) {
+                    channelData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2);
+                }
             }
+            this.reverbNode.buffer = impulse;
+            this.reverbNode.connect(this.context.destination);
         }
-        this.reverbNode.buffer = impulse;
-        this.reverbNode.connect(this.context.destination);
     }
-},  
+};
         
 async function ensureAudioInitialized() {
     try {
