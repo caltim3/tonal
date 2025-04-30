@@ -945,39 +945,40 @@ const AppState = {
 };
 
 // UI Management
+// UI Management
 class UIManager {
     static elements = {
         // Fretboard Elements
         chordFretboard: { id: 'chord-fretboard', required: true },
         fretboardsGrid: { selector: '.fretboards-grid', required: true },
         fretboardVolume: { id: 'fretboard-volume', defaultValue: 0.7 },
-        
+
         // Chord Controls
         chordVolume: { id: 'chord-volume', defaultValue: 0.7 },
         chordsEnabled: { id: 'chords-enabled', isToggle: true },
         chordTuning: { id: 'chord-tuning', required: true },
-        
+
         // Music Controls
         measures: { id: 'measures', required: true },
         progressionSelect: { id: 'progression-select', required: true },
         keySelect: { id: 'key-select', required: true },
         scaleDisplay: { id: 'scale-display', required: true },
-        
+
         // Tempo Controls
         tempo: { id: 'tempo', required: true },
         tempoDisplay: { id: 'tempo-display', required: true },
         tapTempo: { id: 'tap-tempo', required: true },
-        
+
         // Playback Controls
         startStopButton: { id: 'start-stop', required: true },
         timeSignature: { id: 'time-signature', required: true },
         metronomeVolume: { id: 'metronome-volume', required: true },
-        
+
         // Sound Controls
         soundType: { id: 'sound-type', required: true },
         drumSetToggleBtn: { id: 'drumsettogglebtn', required: true },
         accentIntensity: { id: 'accent-intensity', required: true },
-        
+
         // UI Controls
         darkModeToggle: { id: 'dark-mode-toggle', required: false },
         loadingIndicator: { id: 'loading-indicator', required: false }
@@ -990,13 +991,11 @@ class UIManager {
         this.setupDefaultValues();
         return this.elementRefs;
     }
-    
-    const UI = UIManager;
-    
+
     static initializeElements() {
         for (const [key, config] of Object.entries(this.elements)) {
-            const element = config.selector ? 
-                document.querySelector(config.selector) : 
+            const element = config.selector ?
+                document.querySelector(config.selector) :
                 document.getElementById(config.id);
 
             if (!element && config.required) {
@@ -1027,6 +1026,11 @@ class UIManager {
         return this.elementRefs[key];
     }
 }
+
+// Place this line **after** the class definition, not inside it!
+const UI = UIManager;
+
+// AudioContextManager class (unchanged from your snippet)
 class AudioContextManager {
     static instance = null;
 
@@ -1068,6 +1072,8 @@ class AudioContextManager {
             throw new Error('Audio initialization failed');
         }
     }
+    // ... rest of your AudioContextManager methods ...
+}
 
   
     
