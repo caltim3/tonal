@@ -734,15 +734,7 @@
         </div>
         <div class="control-group">
             <label for="fretflow-scale">Scale Type:</label>
-            <select id="fretflow-scale" aria-label="Select scale type">
-                <option value="major">Major</option>
-                <option value="minor">Minor</option>
-                <option value="dorian">Dorian</option>
-                <option value="mixolydian">Mixolydian</option>
-                <option value="phrygian">Phrygian</option>
-                <option value="lydian">Lydian</option>
-                <option value="locrian">Locrian</option>
-            </select>
+                <select id="fretflow-scale-${i}" class="fretflow-scale" aria-label="Select scale type"></select>
         </div>
     </div>
     <div class="volume-control">
@@ -2619,17 +2611,17 @@ function dragEnd(e) {
 function initializeFretFlow() {
     const fretboardsGrid = UI.elements.fretboardsGrid;
     fretboardsGrid.innerHTML = ''; // Clear existing content
-    
+
     // Add CSS to make it a 2x2 grid
     fretboardsGrid.style.display = 'grid';
     fretboardsGrid.style.gridTemplateColumns = 'repeat(2, 1fr)';
     fretboardsGrid.style.gap = '20px';
-    
+
     // Create 4 independent fretboard sections
     for (let i = 0; i < 4; i++) {
         const fretboardSection = document.createElement('div');
         fretboardSection.className = 'fretboard-section';
-        
+
         // Create the HTML structure for each section
         fretboardSection.innerHTML = `
             <div class="fretboard-controls">
@@ -2652,15 +2644,7 @@ function initializeFretFlow() {
                 </div>
                 <div class="control-group">
                     <label for="fretflow-scale-${i}">Scale:</label>
-                    <select id="fretflow-scale-${i}" class="fretflow-scale" aria-label="Select scale type">
-                        <option value="major">Major</option>
-                        <option value="minor">Minor</option>
-                        <option value="dorian">Dorian</option>
-                        <option value="mixolydian">Mixolydian</option>
-                        <option value="phrygian">Phrygian</option>
-                        <option value="lydian">Lydian</option>
-                        <option value="locrian">Locrian</option>
-                    </select>
+                    <select id="fretflow-scale-${i}" class="fretflow-scale" aria-label="Select scale type"></select>
                 </div>
                 <div class="control-group">
                     <label for="fretflow-tuning-${i}">Tuning:</label>
@@ -2676,40 +2660,53 @@ function initializeFretFlow() {
             <div class="scale-display"></div>
             <div id="fretflow-fretboard-${i}" class="fretboard"></div>
         `;
-        
+
         fretboardsGrid.appendChild(fretboardSection);
-        
+
         // Initialize this fretboard
         const fretboard = fretboardSection.querySelector(`#fretflow-fretboard-${i}`);
         const keySelect = fretboardSection.querySelector(`#fretflow-key-${i}`);
         const scaleSelect = fretboardSection.querySelector(`#fretflow-scale-${i}`);
         const tuningSelect = fretboardSection.querySelector(`#fretflow-tuning-${i}`);
         const scaleDisplay = fretboardSection.querySelector('.scale-display');
-        
+
+        // Populate the scale dropdown with all scales
+        scaleSelect.innerHTML = "";
+        Object.keys(SCALES).forEach(scaleName => {
+            const option = document.createElement("option");
+            option.value = scaleName;
+            option.textContent = scaleName;
+            scaleSelect.appendChild(option);
+        });
+
         function updateFretboardDisplay() {
             const selectedKey = keySelect.value;
             const selectedScale = scaleSelect.value;
             const selectedTuning = TUNINGS[tuningSelect.value];
-            
+
+            // Get the intervals for the selected scale
+            const intervals = SCALES[selectedScale];
+
             // Update the scale display
-            scaleDisplay.textContent = `${selectedKey} ${selectedScale.charAt(0).toUpperCase() + selectedScale.slice(1)}`;
-            
+            scaleDisplay.textContent = `${selectedKey} ${selectedScale}`;
+
             // Update the fretboard
             createFretboard(fretboard, selectedTuning);
-            updateFretboardNotes(fretboard, selectedKey, selectedScale, selectedTuning);
-            
+            updateFretboardNotes(fretboard, selectedKey, intervals, selectedTuning);
+
             // Attach note click handlers
             attachNoteClickHandlers(fretboard);
         }
-        
+
         // Add event listeners for all controls
         keySelect.addEventListener('change', updateFretboardDisplay);
         scaleSelect.addEventListener('change', updateFretboardDisplay);
         tuningSelect.addEventListener('change', updateFretboardDisplay);
-        
+
         // Initial render
         updateFretboardDisplay();
     }
+}
     
     function attachNoteClickHandlers(fretboard) {
         const notes = fretboard.getElementsByClassName('note');
