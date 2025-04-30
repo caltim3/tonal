@@ -1443,53 +1443,36 @@ function flattenNote(note) {
 
 function getQualityValue(quality) {
     const qualityMap = {
-        '': 'major',
-        'm': 'minor',
-        '7': 'dom7',
-        'dom7': 'dom7',  // Add explicit mapping
-        'maj7': 'maj7',
-        'm7': 'min7',
-        'min7': 'min7',
-        'dim': 'dim',
-        'min7b5': 'min7b5'
+        '': 'maj7',           // Default to maj7
+        'maj': 'maj7',        // Major triad becomes maj7
+        'maj7': 'maj7',       // Keep maj7
+        '7': 'dom7',         // Dominant 7
+        'dom7': 'dom7',      // Dominant 7
+        'm': 'min7',         // Minor triad becomes min7
+        'min': 'min7',       // Minor triad becomes min7
+        'm7': 'min7',        // Minor 7
+        'min7': 'min7',      // Minor 7
+        'dim': 'min7b5',     // Diminished becomes half-diminished
+        'min7b5': 'min7b5',  // Half-diminished
+        '6': '6',            // Major 6
+        'm6': 'm6'          // Minor 6
     };
-    return qualityMap[quality] || 'major';
+    return qualityMap[quality] || 'maj7';  // Default to maj7 if not found
 }
+        
 function suggestScaleForQuality(quality) {
     const scaleMap = {
-        '': 'major',
-        'maj7': 'major',
-        'maj9': 'major',
-        'maj13': 'major',
-        'maj7#11': 'lydian',
-        'm': 'dorian',
-        'm7': 'dorian',
-        'm9': 'dorian',
-        'm11': 'dorian',
-        'm13': 'dorian',
-        'dom7': 'mixolydian',    // Ensure this mapping exists
-        '7': 'mixolydian',       // Add this explicit mapping
-        '9': 'mixolydian',
-        '13': 'mixolydian',
-        '7b9': 'bebopPhrygian',
-        '7#9': 'mixolydian',
-        '7#11': 'lydian',
-        '7b13': 'mixolydian',
-        '7#5': 'wholeHalf',
-        '7b5': 'mixolydian',
-        'dim7': 'diminished',
-        'dim': 'diminished',
-        'm7b5': 'locrian',
-        'aug7': 'wholeHalf',
-        'aug': 'wholeHalf',
-        '6': 'major',
-        'm6': 'melodicMinor',
-        'sus4': 'mixolydian',
-        'sus2': 'mixolydian',
-        'add9': 'major',
-        '7sus4': 'mixolydian',
-        'minMaj7': 'melodicMinor',
-        '7alt': 'altered'
+        'maj7': 'major',      // Ionian
+        'maj': 'major',       // Ionian
+        '7': 'mixolydian',    // Mixolydian
+        'dom7': 'mixolydian', // Mixolydian
+        'min7': 'dorian',     // Dorian
+        'm7': 'dorian',       // Dorian
+        'min7b5': 'locrian',  // Locrian
+        'min': 'minor',       // Natural minor
+        'm': 'minor',         // Natural minor
+        '6': 'major',         // Major
+        'm6': 'minor',        // Minor
     };
     return scaleMap[quality] || 'major';
 }
@@ -1551,13 +1534,16 @@ function createKeyOptions(selected = 'C') {
 
 function createQualityOptions(selected = 'major') {
     const qualities = [
-        { value: 'major', label: 'Major' },
-        { value: 'minor', label: 'Minor' },
-        { value: 'dom7', label: '7' },
         { value: 'maj7', label: 'Maj7' },
+        { value: 'dom7', label: '7' },
         { value: 'min7', label: 'Min7' },
-        { value: 'min7b5', label: 'Min7b5 (Half Diminished)' }
+        { value: 'min7b5', label: 'Min7b5' },
+        { value: '6', label: '6' },
+        { value: 'm6', label: 'Min6' },
+        { value: 'maj', label: 'Major' },
+        { value: 'min', label: 'Minor' }
     ];
+
     return qualities.map(q =>
         `<option value="${q.value}"${q.value === selected ? ' selected' : ''}>${q.label}</option>`
     ).join('');
