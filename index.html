@@ -2055,6 +2055,10 @@ function createFretboard(container, tuning) {
         
 function updateFretboardNotes(container, rootNote, scaleInput, tuning) {
     // Enhanced input validation with debugging
+    if (!scaleInput) {
+    console.warn("Scale input is missing, defaulting to C Major (Ionian)");
+    scaleInput = { root: "C", type: "major" }; // or whatever your default is
+  }
     console.log('Received inputs:', {
         container: container?.id || 'no container',
         rootNote,
