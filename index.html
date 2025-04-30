@@ -966,7 +966,8 @@ const AudioContextManager = {
     reverbNode: null,
     samplesLoaded: false,
     currentChordGain: null,
-    async initialize() {
+
+    initialize: async function() {
         if (!this.context) {
             this.context = new (window.AudioContext || window.webkitAudioContext)();
             await this.loadSounds();
@@ -979,10 +980,12 @@ const AudioContextManager = {
         AppState.updateState({ audioInitialized: true });
         return this.context;
     },
-    async ensureAudioContext() {
+
+    ensureAudioContext: async function() {
         return await this.initialize();
     },
-    async loadSounds() {
+    
+    loadSounds: async function() {
         const soundFiles = {
             'click': 'Click.wav',
             'hihat': 'HiHat.wav',
@@ -1005,7 +1008,8 @@ const AudioContextManager = {
         }
         updateLoadingStatus("Drum sounds loaded");
     },
-    async createDrumSound(type) {
+    
+   createDrumSound: async function(type) {
         const sampleRate = this.context.sampleRate;
         const duration = type === 'hihat' ? 0.05 : 0.2;
         const buffer = this.context.createBuffer(1, sampleRate * duration, sampleRate);
@@ -1038,7 +1042,8 @@ const AudioContextManager = {
         }
         return buffer;
     },
-    async loadPianoSamples() {
+    
+   loadPianoSamples: async function() {
     // Use the new ALL_NOTES and OCTAVES arrays
     this.pianoSampleBuffers = {}; // Reset
 
@@ -1059,7 +1064,7 @@ const AudioContextManager = {
     this.samplesLoaded = true;
 }
     
-    setupReverb: async function() {
+setupReverb: async function() {
         if (!this.reverbNode) {
             this.reverbNode = this.context.createConvolver();
             const sampleRate = this.context.sampleRate;
@@ -1076,6 +1081,7 @@ const AudioContextManager = {
         }
     }
 };
+        
 async function ensureAudioInitialized() {
     if (!AudioContextManager.context || AudioContextManager.context.state === 'suspended') {
         try {
