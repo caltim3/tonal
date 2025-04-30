@@ -984,58 +984,66 @@ const scaleDegrees = {
     }
 };   
 // State Management
-const AppState = {
-    isPlaying: false,
-    currentBeat: 0,
-    currentMeasure: 0,
-    tempo: 120,
-    audioInitialized: false,
-    darkMode: false,
-    listeners: [],
-    updateState(newState) {
-        Object.assign(this, newState);
-        this.notifyListeners();
-    },
-    addListener(callback) {
-        this.listeners.push(callback);
-    },
-    notifyListeners() {
-        this.listeners.forEach(callback => callback(this));
-    }
-};
-
-// UI Management
 const UI = {
     elements: {
+        // Playback Controls
+        startStopButton: document.getElementById('start-stop'),
+        tempo: document.getElementById('tempo'),
+        tempoDisplay: document.getElementById('tempo-display'),
+        tapTempo: document.getElementById('tap-tempo'),
+        timeSignature: document.getElementById('time-signature'),
+        
+        // Musical Elements
         chordFretboard: document.getElementById('chord-fretboard'),
         measures: document.getElementById('measures'),
-        tempoDisplay: document.getElementById('tempo-display'),
-        startStopButton: document.getElementById('start-stop'),
         progressionSelect: document.getElementById('progression-select'),
         keySelect: document.getElementById('keySelect'),
         scaleDisplay: document.getElementById('scale-display'),
+        
+        // Tuning and Sound Settings
         chordTuning: document.getElementById('chord-tuning'),
-        timeSignature: document.getElementById('time-signature'),
         soundType: document.getElementById('sound-type'),
+        
+        // Volume Controls
         metronomeVolume: document.getElementById('metronome-volume'),
-        tempo: document.getElementById('tempo'),
-        tapTempo: document.getElementById('tap-tempo'),
         chordFretboardVolume: document.getElementById('chord-fretboard-volume'),
         chordVolume: document.getElementById('chord-volume'),
-        chordsEnabled: document.getElementById('chordsEnabled'),
         fretboardVolume: document.getElementById('fretboard-volume'),
-        fretboardsGrid: document.querySelector('.fretboards-grid'),
+        
+        // Feature Toggles
+        chordsEnabled: document.getElementById('chordsEnabled'),
         darkModeToggle: document.getElementById('dark-mode-toggle'),
-        accentIntensity: document.getElementById('accent-intensity')
+        accentIntensity: document.getElementById('accent-intensity'),
+        
+        // Layout
+        fretboardsGrid: document.querySelector('.fretboards-grid')
     },
+
     init() {
-        Object.entries(this.elements).forEach(([key, el]) => {
-            if (!el) console.warn(`Missing DOM element: ${key}`);
+        const missingElements = [];
+        Object.entries(this.elements).forEach(([key, element]) => {
+            if (!element) {
+                missingElements.push(key);
+                console.warn(`Missing DOM element: ${key}`);
+            }
         });
+
+        // Initialize dark mode if toggle exists
+        if (this.elements.darkModeToggle) {
+            const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+            this.elements.darkModeToggle.checked = savedDarkMode;
+            document.body.classList.toggle('dark-mode', savedDarkMode);
+            
+            this.elements.darkModeToggle.addEventListener('change', (e) => {
+                document.body.classList.toggle('dark-mode', e.target.checked);
+                localStorage.setItem('darkMode', e.target.checked);
+            });
+        }
+
+        return missingElements.length === 0;
     }
 };
 
-// Audio Management
 const AudioContextManager = {
     context: null,
     soundBuffers: {},
@@ -1044,135 +1052,120 @@ const AudioContextManager = {
     samplesLoaded: false,
     currentChordGain: null,
 
-    initialize: async function() {
-        if (!this.context) {
+    async init() {
+        try {
+            // Initialize AudioContext
             this.context = new (window.AudioContext || window.webkitAudioContext)();
-            await this.loadSounds();
-            await this.loadPianoSamples();
-            await this.setupReverb();
+            
+            // Create and configure reverb node
+            this.reverbNode = this.context.createConvolver();
+            
+            // Initialize gain node for chord control
+            this.currentChordGain = this.context.createGain();
+            this.currentChordGain.connect(this.context.destination);
+
+            // Load all audio samples
+            await this.loadSamples();
+            return true;
+        } catch (error) {
+            console.error('Failed to initialize AudioContextManager:', error);
+            return false;
         }
-        if (this.context.state === 'suspended') {
+    },
+
+    async loadSamples() {
+        const sampleFiles = {
+            click: 'Click.wav',
+            hihat: 'HiHat.wav',
+            kick: 'Kick.wav',
+            snare: 'Snare.wav',
+            woodblock: 'woodblock.wav'
+        };
+
+        try {
+            const loadPromises = Object.entries(sampleFiles).map(([name, filename]) => 
+                this.loadSample(name, filename)
+            );
+
+            await Promise.all(loadPromises);
+            this.samplesLoaded = true;
+            console.log('All audio samples loaded successfully');
+        } catch (error) {
+            console.error('Error loading audio samples:', error);
+            throw error;
+        }
+    },
+
+    async loadSample(name, filename) {
+        try {
+            const response = await fetch(filename);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const arrayBuffer = await response.arrayBuffer();
+            const audioBuffer = await this.context.decodeAudioData(arrayBuffer);
+            this.soundBuffers[name] = audioBuffer;
+            console.log(`Loaded audio sample: ${name}`);
+        } catch (error) {
+            console.error(`Error loading sample ${name}:`, error);
+            throw error;
+        }
+    },
+
+    async ensureAudioContext() {
+        if (!this.context) {
+            await this.init();
+        } else if (this.context.state === 'suspended') {
             await this.context.resume();
         }
-        AppState.updateState({ audioInitialized: true });
         return this.context;
     },
 
-    ensureAudioContext: async function() {
-        return await this.initialize();
-    },
-    
-    loadSounds: async function() {
-        const soundFiles = {
-            'click': 'Click.wav',
-            'hihat': 'HiHat.wav',
-            'kick': 'Kick.wav',
-            'snare': 'Snare.wav',
-            'woodblock': 'woodblock.wav'
-        };
-        for (let [type, filename] of Object.entries(soundFiles)) {
-            try {
-                const response = await fetch(`./${filename}`);
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                const arrayBuffer = await response.arrayBuffer();
-                this.soundBuffers[type] = await this.context.decodeAudioData(arrayBuffer);
-                log(`Loaded ${type} sound from ${filename}`);
-            } catch (error) {
-                console.error(`Failed to load ${filename}:`, error);
-                this.soundBuffers[type] = await this.createDrumSound(type);
-                log(`Using fallback synthetic sound for ${type}`);
+    async playSound(bufferName, time = 0, gain = 1.0) {
+        try {
+            const context = await this.ensureAudioContext();
+            const buffer = this.soundBuffers[bufferName];
+            
+            if (!buffer) {
+                throw new Error(`Sound buffer not found: ${bufferName}`);
             }
-        }
-        updateLoadingStatus("Drum sounds loaded");
-    },
-    
-    createDrumSound: async function(type) {
-        const sampleRate = this.context.sampleRate;
-        const duration = type === 'hihat' ? 0.05 : 0.2;
-        const buffer = this.context.createBuffer(1, sampleRate * duration, sampleRate);
-        const data = buffer.getChannelData(0);
-        switch (type) {
-            case 'click':
-                for (let i = 0; i < data.length; i++) data[i] = Math.sin(i * 0.05) * Math.exp(-i * 0.01);
-                break;
-            case 'hihat':
-                for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (sampleRate * 0.01));
-                break;
-            case 'kick':
-                for (let i = 0; i < data.length; i++) {
-                    const t = i / sampleRate;
-                    data[i] = Math.sin(2 * Math.PI * 100 * t) * Math.exp(-t * 10) * 2;
-                }
-                break;
-            case 'snare':
-                for (let i = 0; i < data.length; i++) {
-                    const t = i / sampleRate;
-                    data[i] = ((Math.random() * 2 - 1) + Math.sin(2 * Math.PI * 200 * t)) * Math.exp(-t * 10) * 2;
-                }
-                break;
-            case 'woodblock':
-                for (let i = 0; i < data.length; i++) {
-                    const t = i / sampleRate;
-                    data[i] = Math.sin(2 * Math.PI * 800 * t) * Math.exp(-t * 20);
-                }
-                break;
-        }
-        return buffer;
-    },
-    
-    loadPianoSamples: async function() {
-        // Use the new ALL_NOTES and OCTAVES arrays
-        this.pianoSampleBuffers = {}; // Reset
 
-        for (const note of ALL_NOTES) {
-            for (const octave of OCTAVES) {
-                const fileName = getSampleFileName(note, octave); // e.g., 'ds4.wav'
-                const key = `${note}${octave}`; // e.g., 'ds4'
-                try {
-                    const response = await fetch(fileName);
-                    const arrayBuffer = await response.arrayBuffer();
-                    const audioBuffer = await this.context.decodeAudioData(arrayBuffer);
-                    this.pianoSampleBuffers[key] = audioBuffer;
-                } catch (e) {
-                    console.error(`Failed to load sample: ${fileName}`, e);
-                }
-            }
-        }
-        this.samplesLoaded = true;
-    },
-    
-    setupReverb: async function() {
-        if (!this.reverbNode) {
-            this.reverbNode = this.context.createConvolver();
-            const sampleRate = this.context.sampleRate;
-            const length = sampleRate * 2.5;
-            const impulse = this.context.createBuffer(2, length, sampleRate);
-            for (let channel = 0; channel < 2; channel++) {
-                const channelData = impulse.getChannelData(channel);
-                for (let i = 0; i < length; i++) {
-                    channelData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2);
-                }
-            }
-            this.reverbNode.buffer = impulse;
-            this.reverbNode.connect(this.context.destination);
+            const source = context.createBufferSource();
+            const gainNode = context.createGain();
+            
+            source.buffer = buffer;
+            gainNode.gain.value = Math.min(Math.max(gain, 0), 1); // Clamp gain between 0 and 1
+
+            source.connect(gainNode);
+            gainNode.connect(this.reverbNode || context.destination);
+            
+            source.start(time);
+            return source;
+        } catch (error) {
+            console.error('Error playing sound:', error);
+            throw error;
         }
     }
 };
-        
-async function ensureAudioInitialized() {
+
+// Initialize everything when the document is ready
+document.addEventListener('DOMContentLoaded', async () => {
     try {
-        if (!AudioContextManager.context || AudioContextManager.context.state === 'suspended') {
-            await AudioContextManager.initialize();
-            if (AudioContextManager.context.state === 'suspended') {
-                await AudioContextManager.context.resume();
-            }
+        // Initialize UI first
+        if (!UI.init()) {
+            console.warn('Some UI elements are missing, but continuing initialization');
         }
+
+        // Initialize Audio
+        if (!await AudioContextManager.init()) {
+            console.error('Failed to initialize audio system');
+        }
+
+        console.log('Application initialized successfully');
     } catch (error) {
-        console.error('Audio initialization failed:', error);
-        alert('Audio playback requires user interaction. Please click anywhere on the page to enable audio.');
-        throw error;
+        console.error('Critical error during initialization:', error);
     }
-}
+});
 // Music Theory Utilities
 
 function getNoteFromScaleDegree(degree, key, scale) {
@@ -2054,11 +2047,7 @@ function createFretboard(container, tuning) {
 }
         
 function updateFretboardNotes(container, rootNote, scaleInput, tuning) {
-    // Enhanced input validation with debugging
-    if (!scaleInput) {
-    console.warn("Scale input is missing, defaulting to C Major (Ionian)");
-    scaleInput = { root: "C", type: "major" }; // or whatever your default is
-  }
+    // Initial logging for debugging
     console.log('Received inputs:', {
         container: container?.id || 'no container',
         rootNote,
@@ -2066,97 +2055,135 @@ function updateFretboardNotes(container, rootNote, scaleInput, tuning) {
         tuning
     });
 
-    if (!(container instanceof HTMLElement)) {
-        console.error('Invalid container element');
-        return;
-    }
-
-    if (!rootNote || !NOTES.includes(standardizeNoteName(rootNote))) {
-        console.error(`Invalid root note: ${rootNote}`);
-        return;
-    }
-
-    if (!Array.isArray(tuning) || tuning.length !== 6) {
-        console.error('Invalid tuning');
-        return;
-    }
-
-    // Enhanced scale input validation
-    if (!scaleInput) {
-        console.error('Scale input is missing');
-        scaleInput = "Major (Ionian)"; // Default to major scale if none provided
-    }
-
-    // Handle both scale names and interval arrays
-    let scaleIntervals;
-    if (Array.isArray(scaleInput)) {
-        if (scaleInput.length === 0) {
-            console.error('Empty scale intervals array');
-            scaleInput = SCALES["Major (Ionian)"]; // Default to major scale
+    // Core validation with enhanced error handling
+    try {
+        // Container validation
+        if (!(container instanceof HTMLElement)) {
+            throw new Error('Invalid container element');
         }
-        scaleIntervals = scaleInput;
-    } else if (typeof scaleInput === 'string') {
-        // Try to match the scale name with or without formatting
+
+        // Root note validation
+        if (!rootNote || !NOTES.includes(standardizeNoteName(rootNote))) {
+            throw new Error(`Invalid root note: ${rootNote}`);
+        }
+
+        // Tuning validation
+        if (!Array.isArray(tuning) || tuning.length !== 6) {
+            throw new Error('Invalid tuning');
+        }
+
+        // Scale input normalization and validation
+        let normalizedScaleInput = normalizeScaleInput(scaleInput, rootNote);
+        let scaleIntervals = getScaleIntervals(normalizedScaleInput);
+
+        // Clear existing notes
+        container.querySelectorAll('.note').forEach(note => note.remove());
+
+        // Handle special case for chord fretboard
+        handleChordFretboardCase(container);
+
+        // Generate and apply scale notes
+        const scaleNotes = generateScaleNotes(rootNote, scaleIntervals);
+        
+        // Create fretboard visualization
+        createFretboardVisualization(container, tuning, scaleNotes, rootNote);
+
+        // Final success log
+        log(`Fretboard updated with ${rootNote} ${Array.isArray(scaleInput) ? 'scale' : scaleInput}`);
+
+    } catch (error) {
+        console.error('Error in updateFretboardNotes:', error.message);
+        return;
+    }
+}
+
+// Helper Functions
+
+function normalizeScaleInput(scaleInput, defaultRoot) {
+    if (!scaleInput) {
+        console.warn("Scale input is missing, defaulting to C Major (Ionian)");
+        return { root: defaultRoot || "C", type: "Major (Ionian)" };
+    }
+
+    if (Array.isArray(scaleInput)) {
+        return scaleInput.length > 0 ? scaleInput : SCALES["Major (Ionian)"];
+    }
+
+    if (typeof scaleInput === 'string') {
         const exactMatch = SCALES[scaleInput];
         const formattedMatch = SCALES[Object.keys(SCALES).find(key => 
             key.toLowerCase().replace(/[^a-z0-9]/g, '') === 
             scaleInput.toLowerCase().replace(/[^a-z0-9]/g, '')
         )];
         
-        if (exactMatch) {
-            scaleIntervals = exactMatch;
-        } else if (formattedMatch) {
-            scaleIntervals = formattedMatch;
-        } else {
-            console.error(`Invalid scale name: ${scaleInput}, defaulting to Major`);
-            scaleIntervals = SCALES["Major (Ionian)"];
-        }
-    } else {
-        console.error(`Invalid scale input type: ${typeof scaleInput}`);
-        scaleIntervals = SCALES["Major (Ionian)"];
+        return exactMatch || formattedMatch || SCALES["Major (Ionian)"];
     }
 
-    // Clear existing notes
-    container.querySelectorAll('.note').forEach(note => note.remove());
-
-    // Handle chord fretboard special case
-    if (container.id === 'chord-fretboard') {
-        const measures = UI.elements.measures?.children;
-        if (measures?.length > 0 && AppState.currentMeasure < measures.length) {
-            const currentMeasureElement = measures[AppState.currentMeasure];
-            const chordRoot = currentMeasureElement.querySelector('.chord-controls .root-note')?.value;
-            const chordQuality = currentMeasureElement.querySelector('.chord-controls .chord-quality')?.value;
-            const scaleRoot = currentMeasureElement.querySelector('.scale-controls .second-key')?.value;
-            const scaleType = currentMeasureElement.querySelector('.scale-controls .scale-select')?.value;
-            
-            if (chordRoot && chordQuality && scaleRoot && scaleType) {
-                let displayQuality = chordQuality;
-                switch (chordQuality) {
-                    case 'dom7': displayQuality = '7'; break;
-                    case 'maj7': displayQuality = 'Maj7'; break;
-                    case 'min7': displayQuality = 'm7'; break;
-                    case 'min7b5': displayQuality = 'm7b5'; break;
-                    case 'minor': displayQuality = 'm'; break;
-                }
-                let displayScale = scaleType.charAt(0).toUpperCase() + scaleType.slice(1);
-                displayScale = displayScale.replace(/([A-Z])/g, ' $1').trim();
-                UI.elements.scaleDisplay.textContent = `${scaleRoot} ${displayScale} over ${chordRoot} ${displayQuality}`;
-            }
-        }
+    if (typeof scaleInput === 'object' && scaleInput.type) {
+        return SCALES[scaleInput.type] || SCALES["Major (Ionian)"];
     }
 
-    // Generate scale notes
+    console.warn(`Invalid scale input type: ${typeof scaleInput}, defaulting to Major`);
+    return SCALES["Major (Ionian)"];
+}
+
+function getScaleIntervals(normalizedInput) {
+    return Array.isArray(normalizedInput) ? normalizedInput : SCALES["Major (Ionian)"];
+}
+
+function generateScaleNotes(rootNote, intervals) {
     const standardizedRoot = standardizeNoteName(rootNote);
     const rootIndex = NOTES.indexOf(standardizedRoot);
-    const scaleNotes = scaleIntervals.map(interval => {
+    return intervals.map(interval => {
         const noteIndex = (rootIndex + interval) % 12;
         return NOTES[noteIndex];
     });
+}
 
-    // Log for debugging
-    console.log(`[updateFretboardNotes] scaleNotes for ${rootNote} ${Array.isArray(scaleInput) ? 'scale' : scaleInput}: ${scaleNotes.join(',')}`);
+function handleChordFretboardCase(container) {
+    if (container.id !== 'chord-fretboard') return;
 
-    // Create notes on fretboard
+    const measures = UI.elements.measures?.children;
+    if (!measures?.length || AppState.currentMeasure >= measures.length) return;
+
+    const currentMeasure = measures[AppState.currentMeasure];
+    const controls = {
+        chordRoot: currentMeasure.querySelector('.chord-controls .root-note')?.value,
+        chordQuality: currentMeasure.querySelector('.chord-controls .chord-quality')?.value,
+        scaleRoot: currentMeasure.querySelector('.scale-controls .second-key')?.value,
+        scaleType: currentMeasure.querySelector('.scale-controls .scale-select')?.value
+    };
+
+    if (Object.values(controls).every(Boolean)) {
+        const displayQuality = formatChordQuality(controls.chordQuality);
+        const displayScale = formatScaleType(controls.scaleType);
+        UI.elements.scaleDisplay.textContent = 
+            `${controls.scaleRoot} ${displayScale} over ${controls.chordRoot} ${displayQuality}`;
+    }
+}
+
+function formatChordQuality(quality) {
+    const qualityMap = {
+        'dom7': '7',
+        'maj7': 'Maj7',
+        'min7': 'm7',
+        'min7b5': 'm7b5',
+        'minor': 'm'
+    };
+    return qualityMap[quality] || quality;
+}
+
+function formatScaleType(type) {
+    return type
+        .charAt(0).toUpperCase() + 
+        type.slice(1)
+        .replace(/([A-Z])/g, ' $1')
+        .trim();
+}
+
+function createFretboardVisualization(container, tuning, scaleNotes, rootNote) {
+    const standardizedRoot = standardizeNoteName(rootNote);
+
     for (let string = 0; string < 6; string++) {
         const openNote = tuning[string];
         const openNoteIndex = NOTES.indexOf(openNote);
@@ -2166,59 +2193,79 @@ function updateFretboardNotes(container, rootNote, scaleInput, tuning) {
             const currentNote = NOTES[noteIndex];
             
             if (scaleNotes.includes(currentNote)) {
-                const noteElement = document.createElement('div');
-                noteElement.className = 'note';
-                noteElement.textContent = currentNote;
-                
-                // Position the note
-                const fretOffset = fret === 0 ? 0 : ((fret - 0.5) / 12) * 100;
-                noteElement.style.left = `${fretOffset}%`;
-                noteElement.style.top = `${(string / 5) * 100}%`;
-
-                // Color coding
-                const degree = scaleNotes.indexOf(currentNote);
-                if (currentNote === standardizedRoot) {
-                    noteElement.style.backgroundColor = '#BD2031';
-                } else if ([2, 4, 6].includes(degree)) {
-                    noteElement.style.backgroundColor = '#006400';
-                } else {
-                    noteElement.style.backgroundColor = '#4CAF50';
-                }
-
-                // Click handler
-                noteElement.addEventListener('click', async () => {
-                    try {
-                        await AudioContextManager.ensureAudioContext();
-                        let volume = parseFloat(currentBeatElement?.dataset?.baseVolume) || 0.5;
-                        const isAccent = volume >= 1 && ['kick', 'snare'].includes(currentBeatElement?.dataset?.sound);
-                        const accentBoost = parseFloat(UI.elements.accentIntensity?.value || 1);
-                        if (isAccent) {
-                            volume = Math.min(volume * accentBoost, 1);
-                        }
-                        await playNote(`string${6 - string}`, fret, volume);
-                        noteElement.style.transform = 'translate(-50%, -50%) scale(1.2)';
-                        setTimeout(() => {
-                            noteElement.style.transform = 'translate(-50%, -50%) scale(1)';
-                        }, 100);
-                    } catch (error) {
-                        console.error('Error playing note:', error);
-                    }
-                });
-
-                // Hover effects
-                noteElement.addEventListener('mouseenter', () => {
-                    noteElement.style.transform = 'translate(-50%, -50%) scale(1.1)';
-                });
-                noteElement.addEventListener('mouseleave', () => {
-                    noteElement.style.transform = 'translate(-50%, -50%) scale(1)';
-                });
-
-                container.appendChild(noteElement);
+                createNoteElement(container, string, fret, currentNote, standardizedRoot, scaleNotes);
             }
         }
     }
+}
 
-    log(`Fretboard updated with ${rootNote} ${Array.isArray(scaleInput) ? 'scale' : scaleInput}`);
+function createNoteElement(container, string, fret, currentNote, rootNote, scaleNotes) {
+    const noteElement = document.createElement('div');
+    noteElement.className = 'note';
+    noteElement.textContent = currentNote;
+
+    // Position
+    const fretOffset = fret === 0 ? 0 : ((fret - 0.5) / 12) * 100;
+    noteElement.style.left = `${fretOffset}%`;
+    noteElement.style.top = `${(string / 5) * 100}%`;
+
+    // Styling
+    styleNoteElement(noteElement, currentNote, rootNote, scaleNotes);
+
+    // Event Handlers
+    attachNoteEventHandlers(noteElement, string, fret);
+
+    container.appendChild(noteElement);
+}
+
+function styleNoteElement(element, currentNote, rootNote, scaleNotes) {
+    const degree = scaleNotes.indexOf(currentNote);
+    if (currentNote === rootNote) {
+        element.style.backgroundColor = '#BD2031';
+    } else if ([2, 4, 6].includes(degree)) {
+        element.style.backgroundColor = '#006400';
+    } else {
+        element.style.backgroundColor = '#4CAF50';
+    }
+}
+
+async function attachNoteEventHandlers(element, string, fret) {
+    // Click handler
+    element.addEventListener('click', async () => {
+        try {
+            await AudioContextManager.ensureAudioContext();
+            const volume = calculateNoteVolume();
+            await playNote(`string${6 - string}`, fret, volume);
+            animateNoteClick(element);
+        } catch (error) {
+            console.error('Error playing note:', error);
+        }
+    });
+
+    // Hover effects
+    element.addEventListener('mouseenter', () => {
+        element.style.transform = 'translate(-50%, -50%) scale(1.1)';
+    });
+    element.addEventListener('mouseleave', () => {
+        element.style.transform = 'translate(-50%, -50%) scale(1)';
+    });
+}
+
+function calculateNoteVolume() {
+    let volume = parseFloat(currentBeatElement?.dataset?.baseVolume) || 0.5;
+    const isAccent = volume >= 1 && ['kick', 'snare'].includes(currentBeatElement?.dataset?.sound);
+    if (isAccent) {
+        const accentBoost = parseFloat(UI.elements.accentIntensity?.value || 1);
+        volume = Math.min(volume * accentBoost, 1);
+    }
+    return volume;
+}
+
+function animateNoteClick(element) {
+    element.style.transform = 'translate(-50%, -50%) scale(1.2)';
+    setTimeout(() => {
+        element.style.transform = 'translate(-50%, -50%) scale(1)';
+    }, 100);
 }
         
 function createBeats() {
