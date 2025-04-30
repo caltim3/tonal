@@ -1091,7 +1091,7 @@ async function ensureAudioInitialized() {
             }
         } catch (error) {
             console.error('Audio initialization failed:', error);
-            alert('Please click anywhere on the page to enable audio playback');
+            alert('Audio playback requires user interaction. Please click anywhere on the page to enable audio.');
             throw error;
         }
     }
