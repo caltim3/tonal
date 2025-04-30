@@ -2209,7 +2209,6 @@ function toggleBeatState(beat, timeSignature, soundType) {
 async function playBeat() {
     const beats = document.querySelectorAll('.beat');
     const currentBeatElement = beats[AppState.currentBeat];
-    const currentBeatElement = beats[AppState.currentBeat];
     if (currentBeatElement) {
         currentBeatElement.classList.add('active');
         const volume = parseFloat(currentBeatElement.dataset.volume) || 0;
