@@ -1640,13 +1640,7 @@ function createScaleOptions(selected = 'major') {
     ).join('');
 }
 
-for (let chordFn of progression) {
-    const chord = getChordFromFunction(chordFn, key);
-    if (!chord) {
-        console.error("Failed to parse chord:", chordFn);
-    }
-}
-        
+       
 // Audio Playback
 function playNote(noteName, volume = 1.0, duration = 1000) {
     if (!AudioContextManager.context || !noteName) return;
