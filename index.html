@@ -1649,12 +1649,14 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
 
     // Play each note in the chord
     finalChordNotes.forEach((note, index) => {
-        // Determine octave based on position and inversion
-        const baseOctave = isContinuation ? 3 : 2;
-        const octave = baseOctave + Math.floor(index / 3);
+        // Determine octave - alternating between 2 and 3 only
+        const octave = isContinuation ? 3 : (index === 0 ? 2 : 3);
 
-        // Convert note name to sample format
-        const sampleNote = SAMPLE_NOTE_MAP[note];
+        // Convert note name to sample format, handling any accidentals
+        const sampleNote = note.includes('#') ? 
+            SAMPLE_NOTE_MAP[note.replace('#', '')] + '#' : 
+            SAMPLE_NOTE_MAP[note];
+
         if (!sampleNote) {
             console.error(`No sample mapping for note: ${note}`);
             return;
@@ -1715,13 +1717,13 @@ function getChordNotes(root, quality) {
         'add9': [0, 4, 7, 14]
     };
 
-    // Standardize the root note
-    const standardizedRoot = standardizeNoteName(root);
+   // Standardize the root note and remove any accidentals for lookup
+    const standardizedRoot = standardizeNoteName(root).replace('#', '').replace('b', '');
     const rootIndex = NOTES.indexOf(standardizedRoot);
     
     if (rootIndex === -1) {
         console.error(`Invalid root note: ${root}`);
-        return [root]; // Return at least the root if something goes wrong
+        return [root];
     }
 
     // Get the intervals for the specified quality
