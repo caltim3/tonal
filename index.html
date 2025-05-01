@@ -1821,9 +1821,20 @@ function getChordNotes(root, quality) {
         'add9': [0, 4, 7, 14]
     };
 
-   // Standardize the root note and remove any accidentals for lookup
-    const standardizedRoot = standardizeNoteName(root).replace('#', '').replace('b', '');
-    const rootIndex = NOTES.indexOf(standardizedRoot);
+    // Handle sharps and flats in the root note
+    let rootNote = root;
+    if (root.includes('#')) {
+        const baseNote = root.replace('#', '');
+        const baseIndex = NOTES.indexOf(baseNote);
+        rootNote = NOTES[(baseIndex + 1) % 12];
+    } else if (root.includes('b')) {
+        const baseNote = root.replace('b', '');
+        const baseIndex = NOTES.indexOf(baseNote);
+        rootNote = NOTES[(baseIndex + 11) % 12];
+    }
+
+    // Get the root note index
+    const rootIndex = NOTES.indexOf(rootNote);
     
     if (rootIndex === -1) {
         console.error(`Invalid root note: ${root}`);
@@ -1834,12 +1845,14 @@ function getChordNotes(root, quality) {
     const intervals = CHORD_INTERVALS[quality] || CHORD_INTERVALS['major'];
 
     // Generate the chord notes
-    return intervals.map(interval => {
+    const chordNotes = intervals.map(interval => {
         const noteIndex = (rootIndex + interval) % 12;
         return NOTES[noteIndex];
     });
-}
 
+    console.log(`Generated chord notes for ${root} ${quality}:`, chordNotes);
+    return chordNotes;
+}
 async function playMetronomeSound(baseVolume) {
     if (!AudioContextManager.context) return;
 
