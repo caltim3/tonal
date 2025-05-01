@@ -732,17 +732,11 @@
                 <option value="B">B</option>
             </select>
         </div>
-        <div class="control-group">
+       <div class="control-group">
             <label for="fretflow-scale">Scale Type:</label>
-            <select id="fretflow-scale" aria-label="Select scale type">
-                <option value="major">Major</option>
-                <option value="minor">Minor</option>
-                <option value="dorian">Dorian</option>
-                <option value="mixolydian">Mixolydian</option>
-                <option value="phrygian">Phrygian</option>
-                <option value="lydian">Lydian</option>
-                <option value="locrian">Locrian</option>
-            </select>
+                <select id="fretflow-scale" aria-label="Select scale type">
+                <!-- This will be populated dynamically with all scales -->
+                </select>
         </div>
     </div>
     <div class="volume-control">
@@ -1074,7 +1068,29 @@ const UI = {
         });
     }
 };
+function initializeScaleSelects() {
+    // Get all scale options
+    const scaleOptions = Object.keys(SCALES).map(scale => {
+        const displayName = scale
+            .replace(/([A-Z])/g, ' $1') // Add space before capital letters
+            .toLowerCase()
+            .replace(/\b\w/g, c => c.toUpperCase()); // Capitalize first letter of each word
+        return `<option value="${scale}">${displayName}</option>`;
+    }).join('');
 
+    // Update FretFlow scale select
+    const fretflowScale = document.getElementById('fretflow-scale');
+    if (fretflowScale) {
+        fretflowScale.innerHTML = scaleOptions;
+    }
+
+    // Update all measure scale selects
+    const measureScaleSelects = document.querySelectorAll('.scale-select');
+    measureScaleSelects.forEach(select => {
+        select.innerHTML = scaleOptions;
+    });
+}
+        
 // Audio Management
 const AudioContextManager = {
     context: null,
@@ -1562,15 +1578,9 @@ function suggestScaleForQuality(quality) {
     return scaleMap[quality] || 'major';
 }
 
-        function getCompatibleScales(chord, quality) {
-    const scaleChoices = {
-        'major': ['major', 'lydian', 'mixolydian'],
-        'minor': ['dorian', 'phrygian', 'aeolian'],
-        'dominant': ['mixolydian', 'lydianDominant', 'altered', 'bebopDominant'],
-        'halfDiminished': ['locrian', 'locrian#2'],
-        'diminished': ['diminishedWH', 'diminishedHW'],
-        'altered': ['altered', 'diminishedWH']
-    };
+    function getCompatibleScales(chord, quality) {
+        return Object.keys(SCALES);
+        }
     
     // Determine chord category
     let category = 'major';
@@ -2534,6 +2544,13 @@ function addMeasure(chord = 'C', quality = 'major', scaleRoot = 'C', scaleType =
     measure.className = 'measure';
     measure.draggable = true;
     const measureCount = UI.elements.measures.children.length + 1;
+    
+    // Create scale options from all available scales
+    const scaleOptionsHtml = Object.keys(scales).map(scale => {
+        const selected = scale === scaleType ? 'selected' : '';
+        return `<option value="${scale}" ${selected}>${scale}</option>`;
+    }).join('');
+
     measure.innerHTML = `
         <span class="measure-number">${measureCount}</span>
         <div class="chord-controls">
@@ -2542,7 +2559,7 @@ function addMeasure(chord = 'C', quality = 'major', scaleRoot = 'C', scaleType =
         </div>
         <div class="scale-controls">
             <select class="second-key">${createKeyOptions(scaleRoot)}</select>
-            <select class="scale-select">${createScaleOptions(scaleType)}</select>
+            <select class="scale-select">${scaleOptionsHtml}</select>
         </div>
     `;
     UI.elements.measures.appendChild(measure);
@@ -2929,6 +2946,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeApp().catch(error => {
         console.error("Initialization failed:", error);
         updateLoadingStatus("Initialization failed");
+        initializeScaleSelects();
     });
 });
 
