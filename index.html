@@ -1118,17 +1118,42 @@ const AudioContextManager = {
         }
     },
 
-    async ensureAudioInitialized() {
-            if (!AppState.audioInitialized) {
-                await this.init();
-            }
-            if (this.context.state === 'suspended') {
-                await this.context.resume();
-            }
-            return true;
+    async ensureAudioContext() {
+        if (!this.context) {
+            await this.init();
         }
-    };
+        if (this.context.state === 'suspended') {
+            await this.context.resume();
+        }
+        return this.context;
+    },
 
+    async playSound(bufferName, time = 0, gain = 1.0) {
+        try {
+            const context = await this.ensureAudioContext();
+            const buffer = this.soundBuffers[bufferName];
+            
+            if (!buffer) {
+                throw new Error(`Sound buffer not found: ${bufferName}`);
+            }
+
+            const source = context.createBufferSource();
+            const gainNode = context.createGain();
+            
+            source.buffer = buffer;
+            gainNode.gain.value = Math.min(Math.max(gain, 0), 1); // Clamp gain between 0 and 1
+
+            source.connect(gainNode);
+            gainNode.connect(this.reverbNode || context.destination);
+            
+            source.start(time);
+            return source;
+        } catch (error) {
+            console.error('Error playing sound:', error);
+            throw error;
+        }
+    }
+};
         // Add click handler initialization
     function initializeClickHandlers() {
         // Add click handler for audio initialization
