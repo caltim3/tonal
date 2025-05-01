@@ -1578,22 +1578,11 @@ function suggestScaleForQuality(quality) {
     return scaleMap[quality] || 'major';
 }
 
-    function getCompatibleScales(chord, quality) {
-        return Object.keys(SCALES);
-        }
-    
-    // Determine chord category
-    let category = 'major';
-    if (quality.includes('m7b5')) category = 'halfDiminished';
-    else if (quality.includes('dim')) category = 'diminished';
-    else if (quality.includes('m')) category = 'minor';
-    else if (quality.includes('7')) category = 'dominant';
-    else if (quality.includes('alt')) category = 'altered';
-    
-    return scaleChoices[category] || ['major'];
+function getCompatibleScales(chord, quality) {
+    return Object.keys(SCALES);
 }
 
-    function updateChordProgression(measure) {
+function updateChordProgression(measure) {
     const rootSelect = measure.querySelector('.root-note');
     const qualitySelect = measure.querySelector('.chord-quality');
     const scaleSelect = measure.querySelector('.scale-select');
@@ -1620,6 +1609,7 @@ function suggestScaleForQuality(quality) {
         updateFretboardNotes(UI.elements.chordFretboard, root, scaleSelect.value, tuning);
     }
 }
+
 // DOM Utilities
 function createKeyOptions(selected = 'C') {
     return NOTES.map(note =>
@@ -1649,7 +1639,6 @@ function createScaleOptions(selected = 'major') {
         `<option value="${scale}"${scale === selected ? ' selected' : ''}>${scale.charAt(0).toUpperCase() + scale.slice(1)}</option>`
     ).join('');
 }
-
        
 // Audio Playback
 function playNote(noteName, volume = 1.0, duration = 1000) {
