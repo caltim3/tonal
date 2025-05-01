@@ -467,6 +467,23 @@
             background-color: #034078;
             transform: translateY(-5px);
         }
+
+        /* Add these to your existing dark mode CSS sections */
+        .dark-mode #fretflow-section {
+            background: linear-gradient(145deg, #283618, #606c38);
+            color: #fefae0;
+        }
+        
+        .dark-mode-2 #fretflow-section {
+            background: linear-gradient(145deg, #001f54, #034078);
+            color: #fefcfb;
+        }
+        
+        .dark-mode-3 #fretflow-section {
+            background: linear-gradient(145deg, #6b705c, #a5a58d);
+            color: #ffe8d6;
+        }
+        
                 .toggle-button {
             padding: 10px 20px;
             border: none;
@@ -1728,23 +1745,33 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
 
     AudioContextManager.currentChordGain = gainNode;
 
-    // Create inversion for continuation
+    // Prepare notes for either root position or inversion
     let finalChordNotes = [...chordNotes];
     if (isContinuation) {
-        // Move the root note up an octave for the inversion
-        finalChordNotes = [...chordNotes.slice(1), chordNotes[0]];
+        // For inversion, move the root note up an octave
+        const rootNote = finalChordNotes[0];
+        finalChordNotes.shift(); // Remove root from beginning
+        finalChordNotes.push(rootNote); // Add root to end
     }
 
     // Play each note in the chord
     finalChordNotes.forEach((note, index) => {
         // Determine octave based on position and inversion
         const octave = isContinuation ? 
-            (index === finalChordNotes.length - 1 ? 4 : 3) : // Higher octave for inverted root
-            (index === 0 ? 3 : 4); // Normal voicing
+            (index === finalChordNotes.length - 1 ? 4 : 3) : // In inversion, last note (root) goes up to octave 4
+            (index === 0 ? 3 : (index < 3 ? 3 : 4)); // In root position, spread across octaves 3 and 4
 
-        const sampleNote = SAMPLE_NOTE_MAP[note] || note.toLowerCase();
+        // Convert note name to sample format
+        const sampleNote = standardizeNoteNameForSamples(note);
+        if (!sampleNote) {
+            console.error(`Invalid note: ${note}`);
+            return;
+        }
+
         const sampleKey = `${sampleNote}${octave}`;
+        console.log(`Playing note: ${note} as ${sampleKey}`);
 
+        // Get and play the buffer
         const buffer = AudioContextManager.pianoSampleBuffers[sampleKey];
         if (!buffer) {
             console.warn(`No sample found for ${sampleKey}`);
@@ -1762,13 +1789,13 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
         reverbGain.connect(AudioContextManager.reverbNode);
 
         // Add slight timing variation for more natural sound
-        const timeVariation = isContinuation ? Math.random() * 0.02 : 0;
+        const timeVariation = Math.random() * 0.02;
         
+        // Start and stop the note
         source.start(startTime + timeVariation);
         source.stop(startTime + duration);
     });
 }
-
 function getChordNotes(root, quality) {
     // Define chord intervals (semitones from root)
     const CHORD_INTERVALS = {
@@ -2677,25 +2704,36 @@ function initializeFretFlow() {
         const scaleDisplay = fretboardSection.querySelector('.scale-display');
         
         function updateFretboardDisplay() {
-            const selectedKey = keySelect.value;
-            const selectedScale = scaleSelect.value;
-            const selectedTuning = TUNINGS[tuningSelect.value];
-            
-            // Format the scale name for display
-            const displayScaleName = selectedScale
-                .split('_')
-                .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-                .join(' ');
-            
-            // Update the scale display
-            scaleDisplay.textContent = `${selectedKey} ${displayScaleName}`;
-            
-            // Update the fretboard
-            createFretboard(fretboard, selectedTuning);
-            updateFretboardNotes(fretboard, selectedKey, selectedScale, selectedTuning);
-            
-            // Attach note click handlers
-            attachNoteClickHandlers(fretboard);
+            try {
+                const selectedKey = keySelect.value;
+                const selectedScale = scaleSelect.value;
+                const selectedTuning = TUNINGS[tuningSelect.value];
+                
+                if (!selectedTuning) {
+                    console.error(`Invalid tuning selected: ${tuningSelect.value}`);
+                    return;
+                }
+                
+                // Format the scale name for display
+                const displayScaleName = selectedScale
+                    .split('_')
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                    .join(' ');
+                
+                // Update the scale display
+                scaleDisplay.textContent = `${selectedKey} ${displayScaleName}`;
+                
+                // Update the fretboard
+                createFretboard(fretboard, selectedTuning);
+                updateFretboardNotes(fretboard, selectedKey, selectedScale, selectedTuning);
+                
+                // Attach note click handlers
+                attachNoteClickHandlers(fretboard);
+                
+            } catch (error) {
+                console.error('Error updating fretboard display:', error);
+                log(`Error updating fretboard: ${error.message}`);
+            }
         }
         
         // Add event listeners for all controls
@@ -2706,24 +2744,44 @@ function initializeFretFlow() {
         // Initial render
         updateFretboardDisplay();
     }
-}    
-    function attachNoteClickHandlers(fretboard) {
-        const notes = fretboard.getElementsByClassName('note');
-        Array.from(notes).forEach(note => {
-            note.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const noteName = this.dataset.note;
-                if (noteName) {
+}
+
+function attachNoteClickHandlers(fretboard) {
+    if (!fretboard) {
+        console.error('Invalid fretboard element provided');
+        return;
+    }
+
+    // Remove existing event listeners to prevent duplicates
+    const oldNotes = fretboard.getElementsByClassName('note');
+    Array.from(oldNotes).forEach(note => {
+        const clone = note.cloneNode(true);
+        note.parentNode.replaceChild(clone, note);
+    });
+
+    // Attach new event listeners
+    const notes = fretboard.getElementsByClassName('note');
+    Array.from(notes).forEach(note => {
+        note.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const noteName = this.dataset.note;
+            if (noteName) {
+                try {
                     const fretboardVolume = parseFloat(UI.elements.fretboardVolume.value) || 1.0;
                     playNote(noteName, fretboardVolume, 500);
                     log(`Playing note: ${noteName}`);
+                } catch (error) {
+                    console.error('Error playing note:', error);pla
+                    log(`Error playing note ${noteName}: ${error.message}`);
                 }
-            });
+            }
         });
-    }
-    
-    log("FretFlow initialized with 4 independent fretboards");
-} 
+    });
+}
+
+// Log initialization
+log("FretFlow initialized with 4 independent fretboards");
+
         
     function addFirstChordListener() {
     const firstMeasure = UI.elements.measures.firstElementChild;
