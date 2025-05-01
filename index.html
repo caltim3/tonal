@@ -947,16 +947,31 @@ const DRUM_PATTERNS = {
 ];
 
 const progressions = {
-    "I V7": { defaultKey: "C", progression: ["Imaj7", "V7"] },
-    "jazz_blues": { defaultKey: "Bb", progression: ["I7", "IV7", "I7", "I7", "IV7", "IV7", "I7", "VI7", "IIm7", "V7", "I7", "V7"] },
-    "minor_blues": { defaultKey: "Am", progression: ["im7", "ivm7", "im7", "im7", "ivm7", "ivm7", "im7", "im7", "V7", "V7", "im7", "V7"] },
-    "rhythm_changes": { defaultKey: "Bb", progression: ["I6", "vim7", "iim7", "V7", "I6", "vim7", "iim7", "V7", "I6", "IV7", "I6", "I6", "iim7", "V7", "I6", "V7"] },
-    "2_5_1": { defaultKey: "C", progression: ["iim7", "V7", "Imaj7", "Imaj7"] },
-    "6_2_5_1": { defaultKey: "C", progression: ["vim7", "iim7", "V7", "Imaj7", "Imaj7"] },
-    "minor_2_5_1": { defaultKey: "Am", progression: ["iim7b5", "V7b9", "im7", "im7"] },
-    "dark_eyes": { defaultKey: "Dm", progression: ["V7", "V7", "im7", "im7", "V7", "V7", "VI6", "VI6", "ivm6", "ivm6", "im7", "im7", "V7", "V7", "im7", "im7"] },    
-    "ill_see_you_in_my_dreams": { defaultKey: "F", progression: ["IV6", "IV6", "ivm6", "ivm6", "Imaj7", "VII7", "Imaj7", "Imaj7", "VI7", "VI7", "VI7", "VI7", "II7", "II7", "iim7", "V7", "Imaj7"] },
-    "rose_room": {defaultKey: "Ab", progression: ["II7", "V7", "I6", "I7", "IV6", "ivm7", "bVII7", "I6", "VI7", "V7", "V7", "II7", "V7", "I6", "I7", "IV6", "ivm7", "bVII7", "I6", "VI7", "IV7", "V7", "I6", "VI7"] },
+    "I V7": { defaultKey: "C", progression: ["Imaj7", "V7"] }, // Good as is
+    "jazz_blues": { defaultKey: "Bb", progression: ["I7", "IV7", "I7", "I7", "IV7", "IV7", "I7", "VI7", "iim7", "V7", "I7", "V7"] }, // Good as is
+    "minor_blues": { defaultKey: "Am", progression: ["im7", "ivm7", "im7", "im7", "ivm7", "ivm7", "im7", "im7", "V7", "V7", "im7", "V7"] }, // Good as is
+    "rhythm_changes": { 
+        defaultKey: "Bb", 
+        progression: ["Imaj6", "vim7", "iim7", "V7", "Imaj6", "vim7", "iim7", "V7", "Imaj6", "IV7", "Imaj6", "Imaj6", "iim7", "V7", "Imaj6", "V7"]
+    },
+    "2_5_1": { defaultKey: "C", progression: ["iim7", "V7", "Imaj7", "Imaj7"] }, // Good as is
+    "6_2_5_1": { defaultKey: "C", progression: ["vim7", "iim7", "V7", "Imaj7", "Imaj7"] }, // Good as is
+    "minor_2_5_1": { defaultKey: "Am", progression: ["iim7b5", "V7b9", "im7", "im7"] }, // Good as is
+    "dark_eyes": { 
+        defaultKey: "Dm", 
+        progression: ["V7", "V7", "im7", "im7", "V7", "V7", "VImaj6", "VImaj6", "ivm6", "ivm6", "im7", "im7", "V7", "V7", "im7", "im7"]
+    },
+    
+    "ill_see_you_in_my_dreams": { 
+        defaultKey: "F", 
+        progression: ["IVmaj6", "IVmaj6", "ivm6", "ivm6", "Imaj7", "VII7", "Imaj7", "Imaj7", "VI7", "VI7", "VI7", "VI7", "II7", "II7", "iim7", "V7", "Imaj7"]
+    },
+    
+    "rose_room": {
+        defaultKey: "Ab", 
+        progression: ["II7", "V7", "Imaj6", "I7", "IVmaj6", "ivm7", "bVII7", "Imaj6", "VI7", "V7", "V7", "II7", "V7", "Imaj6", "I7", "IVmaj6", "ivm7", "bVII7", "Imaj6", "VI7", "IV7", "V7", "Imaj6", "VI7"]
+    },
+
     "black_orpheus": { defaultKey: "Am", progression: ["im7", "iim7b5", "V7b9", "im7", "ivm7", "VII7", "bIIImaj7", "bVImaj7", "iim7b5", "V7b9", "im7", "iim7b5", "V7b9", "im7", "ivm7", "VII7"] },
     "all_the_things_you_are": { defaultKey: "Ab", progression: ["vim7", "iim7", "V7", "Imaj7", "IVmaj7", "iiim7", "VI7", "IImaj7", "iim7", "vm7", "I7", "IVmaj7", "Imaj7", "iim7", "V7", "Imaj7", "iim7", "V7", "Imaj7", "iim7", "vm7", "I7", "IVmaj7", "Imaj7"] },
     "all_of_me": { defaultKey: "C", progression: ["Imaj7", "III7", "VI7", "iim7", "III7", "vim7", "II7", "iim7", "V7", "Imaj7", "III7", "VI7", "iim7", "IVmaj7", "ivm7", "Imaj7", "V7"] },
@@ -976,8 +991,7 @@ const progressions = {
     "caravan": { defaultKey: "Eb", progression: ["im7", "IV7b5", "im7", "IV7b5", "im7", "IV7b5", "im7", "IV7b5", "bVII7", "bVII7", "Imaj7", "Imaj7", "V7", "V7", "im7", "im7"] },
     "nows_the_time": { defaultKey: "F", progression: ["I7", "I7", "I7", "I7", "IV7", "IV7", "I7", "I7", "V7", "IV7", "I7", "I7"] },
     "tenor_madness": { defaultKey: "Bb", progression: ["I7", "I7", "I7", "I7", "IV7", "IV7", "I7", "I7", "iim7", "V7", "I7", "I7"] }
-};
-        
+};        
 const scaleDegrees = {
     major: {
         // Basic triads (uppercase = major, lowercase = minor)
@@ -1367,7 +1381,6 @@ function getChordFromFunction(chordFunction, key = 'C') {
     // Helper: get note from scale degree
     function getNoteFromScaleDegree(degree, key, scale, accidental = 0) {
         const chromatic = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
-        // Find the root index for the key
         let keyIndex = chromatic.findIndex(n => n.replace('b', '♭').replace('#', '♯') === key.replace('b', '♭').replace('#', '♯'));
         if (keyIndex === -1) keyIndex = 0;
         let noteIndex = (keyIndex + scale[degree] + accidental + 12) % 12;
@@ -1377,12 +1390,7 @@ function getChordFromFunction(chordFunction, key = 'C') {
     // Helper: parse accidental (b, #, bb, x, etc.)
     function parseAccidental(str) {
         if (!str) return 0;
-        let acc = 0;
-        for (let i = 0; i < str.length; i++) {
-            if (str[i] === 'b') acc -= 1;
-            if (str[i] === '#') acc += 1;
-        }
-        return acc;
+        return (str.match(/b/g) || []).length * -1 + (str.match(/#/g) || []).length;
     }
 
     // Scales
@@ -1397,9 +1405,10 @@ function getChordFromFunction(chordFunction, key = 'C') {
     // Handle empty or invalid input
     if (!chordFunction) return null;
 
-    // Regex for secondary dominants and main chord
-    // e.g. V7/ii, bVII, IV#, etc.
-    const secDomMatch = chordFunction.match(/^([b#]*[ivIV]+[#b]*)(maj7|m7b5|m6|6|°|ø|maj|m|M)?(7|9|11|13)?([b#]5|[b#]9|[b#]11|[b#]13)?(\([b#]5\)|\([b#]9\)|\([b#]11\)|\([b#]13\))?(?:\/([b#]*[ivIV]+[#b]*))?$/);
+    // Updated regex to handle maj6 and additional cases
+    const secDomMatch = chordFunction.match(/^([b#]*[ivIV]+[#b]*)(maj7|maj6|m7b5|m6|6|°|ø|maj|m|M)?(7|9|11|13)?([b#]5|[b#]9|[b#]11|[b#]13)?(\([b#]5\)|\([b#]9\)|\([b#]11\)|\([b#]13\))?(?:\/([b#]*[ivIV]+[#b]*))?$/);
+
+    if (!secDomMatch) return null;
 
     let [
         _,
@@ -1413,13 +1422,10 @@ function getChordFromFunction(chordFunction, key = 'C') {
 
     // Handle secondary dominants (e.g., V7/ii)
     if (secRoman) {
-        // Find the root of the secondary key
-        // For now, assume secondary is always major
         const romanToNumber = {
             'I': 0, 'II': 1, 'III': 2, 'IV': 3, 'V': 4, 'VI': 5, 'VII': 6,
             'i': 0, 'ii': 1, 'iii': 2, 'iv': 3, 'v': 4, 'vi': 5, 'vii': 6
         };
-        // Parse accidental for secondary
         const secAccMatch = secRoman.match(/^([b#]*)([ivIV]+)([#b]*)$/);
         let secAcc = 0, secBase = secRoman;
         if (secAccMatch) {
@@ -1429,7 +1435,6 @@ function getChordFromFunction(chordFunction, key = 'C') {
         let secDegree = romanToNumber[secBase];
         if (secDegree === undefined) return null;
         let secRoot = getNoteFromScaleDegree(secDegree, actualKey, scale, secAcc);
-        // Now, treat the main roman as a dominant chord built on the secondary root
         return secRoot + '7';
     }
 
@@ -1441,7 +1446,6 @@ function getChordFromFunction(chordFunction, key = 'C') {
         baseRoman = accMatch[2];
     }
 
-    // Convert roman numeral to scale degree
     const romanToNumber = {
         'I': 0, 'II': 1, 'III': 2, 'IV': 3, 'V': 4, 'VI': 5, 'VII': 6,
         'i': 0, 'ii': 1, 'iii': 2, 'iv': 3, 'v': 4, 'vi': 5, 'vii': 6
@@ -1449,57 +1453,52 @@ function getChordFromFunction(chordFunction, key = 'C') {
     let degree = romanToNumber[baseRoman];
     if (degree === undefined) return null;
 
-    // Get the root note
     const rootNote = getNoteFromScaleDegree(degree, actualKey, scale, accidental);
     if (!rootNote) return null;
 
-    // Determine if minor (lowercase roman)
     const isLowerCase = /^[iv]+$/.test(baseRoman);
 
-    // Chord quality mapping for UI
+    // Updated default qualities
     const majorDefaultQualities = ['maj7', 'm7', 'm7', 'maj7', '7', 'm7', 'm7b5'];
     const minorDefaultQualities = ['m7', 'm7b5', 'maj7', 'm7', '7', 'maj7', '7'];
 
     // Start with default quality
     let chordQuality = isMinorKey ? minorDefaultQualities[degree] : majorDefaultQualities[degree];
 
-    // Override with explicit quality
-    if (quality === '°') chordQuality = extension === '7' ? 'dim7' : 'dim';
-    else if (quality === 'ø') chordQuality = 'm7b5';
-    else if (quality === 'maj' || quality === 'M') chordQuality = extension === '7' ? 'maj7' : 'maj';
-    else if (quality === 'm') chordQuality = extension === '7' ? 'm7' : 'm';
-    else if (quality === '6' || quality === 'm6') chordQuality = isLowerCase ? 'm6' : '6';
-
-    // Handle extensions
-    if (extension) {
-        if (extension === '7') {
-            // V7 is always dominant
-            if (degree === 4 && !isLowerCase) chordQuality = '7';
-            else if (chordQuality === 'maj') chordQuality = 'maj7';
-            else if (chordQuality === 'm') chordQuality = 'm7';
-            else if (chordQuality === 'dim') chordQuality = 'dim7';
-            else if (chordQuality === 'm7b5') chordQuality = 'm7b5';
-            else if (chordQuality === '6') chordQuality = '6';
-        } else if (['9', '11', '13'].includes(extension)) {
-            if (chordQuality === 'maj7') chordQuality = 'maj' + extension;
-            else if (chordQuality === 'm7') chordQuality = 'm' + extension;
-            else if (chordQuality === '7') chordQuality = '7' + extension;
-            else chordQuality += extension;
-        }
+    // Improved quality handling
+    if (quality) {
+        if (quality === 'maj6' || quality === '6') chordQuality = isLowerCase ? 'm6' : 'maj6';
+        else if (quality === '°') chordQuality = extension === '7' ? 'dim7' : 'dim';
+        else if (quality === 'ø') chordQuality = 'm7b5';
+        else if (quality === 'maj' || quality === 'M') chordQuality = extension === '7' ? 'maj7' : 'maj';
+        else if (quality === 'm') chordQuality = extension === '7' ? 'm7' : 'm';
+        else if (quality.includes('maj')) chordQuality = quality;
     }
 
-    // Special case: I chord with no explicit quality in major key
-    if (chordFunction === 'I' && !isMinorKey) chordQuality = 'maj7';
+    // Enhanced extension handling
+    if (extension) {
+        if (extension === '7') {
+            if (degree === 4 && !isLowerCase) chordQuality = '7';
+            else if (!quality) {
+                if (isLowerCase) chordQuality = 'm7';
+                else if (degree === 4) chordQuality = '7';
+                else chordQuality = 'maj7';
+            }
+        } else if (['9', '11', '13'].includes(extension)) {
+            if (!quality) {
+                if (isLowerCase) chordQuality = 'm' + extension;
+                else if (degree === 4) chordQuality = '7' + extension;
+                else chordQuality = 'maj' + extension;
+            }
+        }
+    }
 
     // Handle alterations
     let chordAlteration = '';
     if (alteration) chordAlteration += alteration.replace(/[()]/g, '');
     if (parenthesizedAlteration) chordAlteration += parenthesizedAlteration.replace(/[()]/g, '');
 
-    // Build the final chord symbol for UI
-    let chordSymbol = rootNote + chordQuality + chordAlteration;
-
-    return chordSymbol;
+    return rootNote + chordQuality + chordAlteration;
 }
         
     function parseChord(chord) {
@@ -2527,71 +2526,150 @@ function loadProgression(progressionName, overrideKey = null) {
     // Clear existing measures
     UI.elements.measures.innerHTML = '';
 
+    // Helper function to standardize chord quality mapping
+    function standardizeQuality(rawQuality) {
+        const qualityMap = {
+            'maj7': 'maj7',
+            'maj6': 'maj6',
+            '7': 'dom7',
+            'm7': 'min7',
+            'm6': 'min6',
+            'm7b5': 'min7b5',
+            'dim7': 'dim7',
+            'dim': 'dim',
+            '°7': 'dim7',
+            '°': 'dim',
+            'ø': 'min7b5',
+            '7b9': 'dom7b9',
+            '7#9': 'dom7#9',
+            '7b5': 'dom7b5',
+            '7#5': 'dom7#5',
+            '7#11': 'dom7#11',
+            '9': 'dom9',
+            '13': 'dom13',
+            'maj9': 'maj9',
+            'maj13': 'maj13',
+            'm9': 'min9',
+            'm13': 'min13'
+        };
+        return qualityMap[rawQuality] || 'maj7'; // Default to maj7 if unknown
+    }
+
     progression.progression.forEach((chordFunction, index) => {
-        // Parse chord from progression function
-        const chordSymbol = getChordFromFunction(chordFunction, selectedKey);   // e.g., "D7"
-        const [root, rawQuality] = parseChord(chordSymbol);                    // e.g., ["D", "7"]
-        const qualityValue = getQualityValue(rawQuality);                      // e.g., "dom7"
-        const suggestedScale = suggestScaleForQuality(rawQuality);            // e.g., "mixolydian"
-
-        // Create the visual measure block
-        const measure = document.createElement('div');
-        measure.className = 'measure';
-        measure.draggable = true;
-        measure.innerHTML = `
-            <span class="measure-number">${index + 1}</span>
-            <div class="chord-controls">
-                <select class="root-note">${createKeyOptions(root)}</select>
-                <select class="chord-quality">${createQualityOptions(qualityValue)}</select>
-            </div>
-            <div class="scale-controls">
-                <select class="second-key">${createKeyOptions(root)}</select>
-                <select class="scale-select">${createScaleOptions(suggestedScale)}</select>
-            </div>
-        `;
-
-        UI.elements.measures.appendChild(measure);
-
-        // Validate the quality dropdown
-        const qualitySelect = measure.querySelector('.chord-quality');
-        if (qualitySelect) {
-            if (qualitySelect.querySelector(`option[value="${qualityValue}"]`)) {
-                qualitySelect.value = qualityValue;
-            } else {
-                console.warn(`Chord quality "${qualityValue}" not found in dropdown. Falling back to maj7.`);
-                qualitySelect.value = 'maj7';
+        try {
+            // Parse chord from progression function
+            const chordSymbol = getChordFromFunction(chordFunction, selectedKey);
+            if (!chordSymbol) {
+                console.error(`Failed to parse chord function: ${chordFunction}`);
+                return;
             }
-        }
 
-        // Set the correct scale dropdown value
-        const scaleSelect = measure.querySelector('.scale-select');
-        if (scaleSelect) {
-            scaleSelect.value = suggestedScale;
-        }
+            // Enhanced chord parsing
+            const [root, ...qualityParts] = chordSymbol.split(/(?=[A-G])|(?=[maj|m|dim|aug|°|ø])/);
+            const rawQuality = qualityParts.join('');
+            const qualityValue = standardizeQuality(rawQuality);
+            const suggestedScale = suggestScaleForQuality(qualityValue);
 
-        // Enable drag-and-drop functionality
-        measure.addEventListener('dragstart', dragStart);
-        measure.addEventListener('dragover', dragOver);
-        measure.addEventListener('drop', drop);
-        measure.addEventListener('dragend', dragEnd);
+            // Create the visual measure block
+            const measure = document.createElement('div');
+            measure.className = 'measure';
+            measure.draggable = true;
+            measure.dataset.originalChord = chordSymbol; // Store original chord for reference
+            measure.dataset.chordFunction = chordFunction; // Store chord function
+
+            measure.innerHTML = `
+                <span class="measure-number">${index + 1}</span>
+                <div class="chord-controls">
+                    <select class="root-note">${createKeyOptions(root)}</select>
+                    <select class="chord-quality">${createQualityOptions(qualityValue)}</select>
+                </div>
+                <div class="scale-controls">
+                    <select class="second-key">${createKeyOptions(root)}</select>
+                    <select class="scale-select">${createScaleOptions(suggestedScale)}</select>
+                </div>
+            `;
+
+            UI.elements.measures.appendChild(measure);
+
+            // Set dropdown values
+            const rootSelect = measure.querySelector('.root-note');
+            const qualitySelect = measure.querySelector('.chord-quality');
+            const scaleRootSelect = measure.querySelector('.second-key');
+            const scaleSelect = measure.querySelector('.scale-select');
+
+            // Set values with validation
+            if (rootSelect) rootSelect.value = root;
+            if (qualitySelect) {
+                if (qualitySelect.querySelector(`option[value="${qualityValue}"]`)) {
+                    qualitySelect.value = qualityValue;
+                } else {
+                    console.warn(`Chord quality "${qualityValue}" not found in dropdown for chord ${chordSymbol}. Falling back to maj7.`);
+                    qualitySelect.value = 'maj7';
+                }
+            }
+            if (scaleRootSelect) scaleRootSelect.value = root;
+            if (scaleSelect) scaleSelect.value = suggestedScale;
+
+            // Add event listeners
+            measure.addEventListener('dragstart', dragStart);
+            measure.addEventListener('dragover', dragOver);
+            measure.addEventListener('drop', drop);
+            measure.addEventListener('dragend', dragEnd);
+
+            // Add change listeners for synchronization
+            measure.querySelectorAll('select').forEach(select => {
+                select.addEventListener('change', () => {
+                    updateMeasureState(measure);
+                });
+            });
+
+        } catch (error) {
+            console.error(`Error processing chord ${chordFunction}:`, error);
+        }
     });
 
-    // Renumber measures and attach any UI events
+    // Update UI state
     updateMeasureNumbers();
     addFirstChordListener();
 
     // Sync fretboard with first measure
     const firstMeasure = UI.elements.measures.firstElementChild;
     if (firstMeasure) {
-        const scaleRoot = firstMeasure.querySelector('.second-key').value;
-        const scaleType = firstMeasure.querySelector('.scale-select').value;
-        const tuning = TUNINGS[UI.elements.chordTuning.value];
-        updateFretboardNotes(UI.elements.chordFretboard, scaleRoot, scaleType, tuning);
+        syncFretboardWithMeasure(firstMeasure);
     }
 
     log(`Loaded progression "${progressionName}" in key: ${selectedKey}`);
 }
-        
+
+// Helper function to sync fretboard with measure
+function syncFretboardWithMeasure(measure) {
+    if (!measure) return;
+    
+    const scaleRoot = measure.querySelector('.second-key')?.value;
+    const scaleType = measure.querySelector('.scale-select')?.value;
+    const tuning = TUNINGS[UI.elements.chordTuning.value];
+    
+    if (scaleRoot && scaleType && tuning) {
+        updateFretboardNotes(UI.elements.chordFretboard, scaleRoot, scaleType, tuning);
+    }
+}
+
+// Helper function to update measure state
+function updateMeasureState(measure) {
+    const rootNote = measure.querySelector('.root-note').value;
+    const quality = measure.querySelector('.chord-quality').value;
+    const scaleRoot = measure.querySelector('.second-key').value;
+    const scaleType = measure.querySelector('.scale-select').value;
+
+    // Update chord symbol
+    const chordSymbol = `${rootNote}${quality}`;
+    measure.dataset.currentChord = chordSymbol;
+
+    // Trigger any necessary UI updates
+    if (measure === UI.elements.measures.firstElementChild) {
+        syncFretboardWithMeasure(measure);
+    }
+}        
 function updateProgressionKey(newKey) {
     const selectedProgression = UI.elements.progressionSelect.value;
     if (!selectedProgression) return;
