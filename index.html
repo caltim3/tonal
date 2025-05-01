@@ -2749,9 +2749,7 @@ function initializeFretFlow() {
             // Update the fretboard
             createFretboard(fretboard, selectedTuning);
             updateFretboardNotes(fretboard, selectedKey, intervals, selectedTuning);
-            
-            // Attach note click handlers
-            attachNoteClickHandlers(fretboard);
+
         }
         
         // Add event listeners for all controls
@@ -2766,20 +2764,6 @@ function initializeFretFlow() {
     log("FretFlow initialized with 4 independent fretboards");
 } // Only one closing brace here!
     
-function attachNoteClickHandlers(fretboard) {
-    const notes = fretboard.getElementsByClassName('note');
-    Array.from(notes).forEach(note => {
-        note.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const noteName = this.dataset.note;
-            if (noteName) {
-                const fretboardVolume = parseFloat(UI.elements.fretboardVolume.value) || 1.0;
-                playNote(noteName, fretboardVolume, 500);
-                log(`Playing note: ${noteName}`);
-            }
-        });
-    });
-}
         
 // Event Listeners
 function addFirstChordListener() {
@@ -3002,9 +2986,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!UI.init()) {
             console.warn('Some UI elements are missing, but continuing initialization');
         }
-
-        // Initialize click handlers
-        initializeClickHandlers();
 
         // Initialize Audio (but don't start it yet - wait for user interaction)
         await AudioContextManager.init();
