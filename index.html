@@ -1728,39 +1728,29 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
 
     AudioContextManager.currentChordGain = gainNode;
 
-    // Prepare notes for either root position or inversion
+    // Create inversion for continuation
     let finalChordNotes = [...chordNotes];
     if (isContinuation) {
-        // Create inversion by moving the root to the top
-        finalChordNotes.push(finalChordNotes.shift());
+        // Move the root note up an octave for the inversion
+        finalChordNotes = [...chordNotes.slice(1), chordNotes[0]];
     }
 
     // Play each note in the chord
     finalChordNotes.forEach((note, index) => {
-        // Determine octave - alternating between 2 and 3 only
-        const octave = isContinuation ? 3 : (index === 0 ? 2 : 3);
+        // Determine octave based on position and inversion
+        const octave = isContinuation ? 
+            (index === finalChordNotes.length - 1 ? 4 : 3) : // Higher octave for inverted root
+            (index === 0 ? 3 : 4); // Normal voicing
 
-        // Convert note name to sample format, handling any accidentals
-        const sampleNote = note.includes('#') ? 
-            SAMPLE_NOTE_MAP[note.replace('#', '')] + '#' : 
-            SAMPLE_NOTE_MAP[note];
-
-        if (!sampleNote) {
-            console.error(`No sample mapping for note: ${note}`);
-            return;
-        }
-
+        const sampleNote = SAMPLE_NOTE_MAP[note] || note.toLowerCase();
         const sampleKey = `${sampleNote}${octave}`;
-        console.log(`Playing note: ${note} as ${sampleKey}`);
 
-        // Get the buffer for this note
         const buffer = AudioContextManager.pianoSampleBuffers[sampleKey];
         if (!buffer) {
             console.warn(`No sample found for ${sampleKey}`);
             return;
         }
 
-        // Create and configure source
         const source = AudioContextManager.context.createBufferSource();
         source.buffer = buffer;
         source.connect(gainNode);
@@ -1774,7 +1764,6 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
         // Add slight timing variation for more natural sound
         const timeVariation = isContinuation ? Math.random() * 0.02 : 0;
         
-        // Start and stop the note
         source.start(startTime + timeVariation);
         source.stop(startTime + duration);
     });
@@ -2535,7 +2524,7 @@ function addMeasure(chord = 'C', quality = 'major', scaleRoot = 'C', scaleType =
     const measureCount = UI.elements.measures.children.length + 1;
     
     // Create scale options from all available scales
-    const scaleOptionsHtml = Object.keys(scales).map(scale => {
+    const scaleOptionsHtml = Object.keys(SCALES).map(scale => {
         const selected = scale === scaleType ? 'selected' : '';
         return `<option value="${scale}" ${selected}>${scale}</option>`;
     }).join('');
@@ -2551,15 +2540,24 @@ function addMeasure(chord = 'C', quality = 'major', scaleRoot = 'C', scaleType =
             <select class="scale-select">${scaleOptionsHtml}</select>
         </div>
     `;
+    
     UI.elements.measures.appendChild(measure);
+    
+    // Add event listeners
     measure.addEventListener('dragstart', dragStart);
     measure.addEventListener('dragover', dragOver);
     measure.addEventListener('drop', drop);
     measure.addEventListener('dragend', dragEnd);
+    
+    // Add change listeners for controls
+    const controls = measure.querySelectorAll('select');
+    controls.forEach(control => {
+        control.addEventListener('change', () => updateChordProgression(measure));
+    });
+    
     updateMeasureNumbers();
     log(`Added measure ${measureCount}`);
 }
-
 function removeMeasure() {
     const measures = UI.elements.measures.children;
     if (measures.length > 0) {
@@ -2616,6 +2614,18 @@ function initializeFretFlow() {
         const fretboardSection = document.createElement('div');
         fretboardSection.className = 'fretboard-section';
         
+        // Generate scale options from SCALES constant
+        const scaleOptions = Object.entries(SCALES)
+            .map(([scaleName, intervals]) => {
+                // Capitalize first letter and format the scale name
+                const displayName = scaleName
+                    .split('_')
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                    .join(' ');
+                return `<option value="${scaleName}">${displayName}</option>`;
+            })
+            .join('');
+        
         // Create the HTML structure for each section
         fretboardSection.innerHTML = `
             <div class="fretboard-controls">
@@ -2639,13 +2649,7 @@ function initializeFretFlow() {
                 <div class="control-group">
                     <label for="fretflow-scale-${i}">Scale:</label>
                     <select id="fretflow-scale-${i}" class="fretflow-scale" aria-label="Select scale type">
-                        <option value="major">Major</option>
-                        <option value="minor">Minor</option>
-                        <option value="dorian">Dorian</option>
-                        <option value="mixolydian">Mixolydian</option>
-                        <option value="phrygian">Phrygian</option>
-                        <option value="lydian">Lydian</option>
-                        <option value="locrian">Locrian</option>
+                        ${scaleOptions}
                     </select>
                 </div>
                 <div class="control-group">
@@ -2677,8 +2681,14 @@ function initializeFretFlow() {
             const selectedScale = scaleSelect.value;
             const selectedTuning = TUNINGS[tuningSelect.value];
             
+            // Format the scale name for display
+            const displayScaleName = selectedScale
+                .split('_')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                .join(' ');
+            
             // Update the scale display
-            scaleDisplay.textContent = `${selectedKey} ${selectedScale.charAt(0).toUpperCase() + selectedScale.slice(1)}`;
+            scaleDisplay.textContent = `${selectedKey} ${displayScaleName}`;
             
             // Update the fretboard
             createFretboard(fretboard, selectedTuning);
@@ -2696,7 +2706,7 @@ function initializeFretFlow() {
         // Initial render
         updateFretboardDisplay();
     }
-    
+}    
     function attachNoteClickHandlers(fretboard) {
         const notes = fretboard.getElementsByClassName('note');
         Array.from(notes).forEach(note => {
