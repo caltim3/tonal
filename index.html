@@ -1503,52 +1503,63 @@ function getChordFromFunction(chordFunction, key = 'C') {
 }
         
     function parseChord(chord) {
-            if (!chord) return ['C', 'maj'];
-        
-            // Updated regex to catch more qualities, including dom7, m7b5, and alt chords
-            const regex = /^([A-Ga-g][b#]?)(maj7|m7b5|min7|m7|maj|min|dim7|dim|aug|sus2|sus4|add9|7b9|7#9|7b13|7#11|7|6|9|11|13|°|ø)?$/;
-            const match = chord.match(regex);
-        
-            if (!match) {
-                console.warn(`Unable to parse chord: ${chord}`);
-                return [standardizeNoteName(chord), 'maj'];
-            }
-        
-            let [, root, quality] = match;
-            root = standardizeNoteName(root);
-        
-            if (!quality) quality = 'maj';
-        
-            switch (quality.toLowerCase()) {
-                case 'min':
-                case 'm':
-                    quality = 'min';
-                    break;
-                case 'min7':
-                case 'm7':
-                    quality = 'min7';
-                    break;
-                case 'maj7':
-                case 'maj':
-                    quality = 'maj7';
-                    break;
-                case 'dim7':
-                case '°':
-                    quality = 'dim7';
-                    break;
-                case 'ø':
-                case 'm7b5':
-                    quality = 'm7b5';
-                    break;
-                case '7':
-                    quality = '7';
-                    break;
-                default:
-                    break; // leave as-is (e.g., add9, 9, 13, etc.)
-            }
-        
-            return [root, quality];
-        }
+    if (!chord) return ['C', 'maj'];
+
+    // More inclusive regex for chord parsing
+    const regex = /^([A-Ga-g][b#]?)(maj7|M7|maj|min7|m7|m7b5|min6|m6|min|m|dim7|dim|aug|sus2|sus4|add9|7b9|7#9|7b5|7#5|7alt|7|6|9|11|13|°|ø7|ø)?$/;
+    const match = chord.match(regex);
+
+    if (!match) {
+        console.warn(`Unable to parse chord: ${chord}`);
+        return [standardizeNoteName(chord), 'maj'];
+    }
+
+    let [, root, quality] = match;
+    root = standardizeNoteName(root);
+    if (!quality) quality = 'maj';
+
+    switch (quality.toLowerCase()) {
+        case 'min':
+        case 'm':
+            quality = 'min';
+            break;
+        case 'min7':
+        case 'm7':
+            quality = 'min7';
+            break;
+        case 'maj':
+        case 'maj7':
+        case 'mM7':
+        case 'M':
+        case 'M7':
+            quality = 'maj7';
+            break;
+        case 'dim':
+            quality = 'dim';
+            break;
+        case 'dim7':
+        case '°':
+            quality = 'dim7';
+            break;
+        case 'ø':
+        case 'ø7':
+        case 'm7b5':
+            quality = 'm7b5';
+            break;
+        case 'dom7':
+            quality = '7';
+            break;
+        case 'min6':
+        case 'm6':
+            quality = 'm6';
+            break;
+        default:
+            // Leave add9, sus2, sus4, 7b9, etc. as-is
+            break;
+    }
+
+    return [root, quality];
+}
 
 
 // Helper function for flat notes
@@ -1561,21 +1572,36 @@ function flattenNote(note) {
 
 function getQualityValue(quality) {
     const qualityMap = {
-        '': 'maj7',           // Default to maj7
-        'maj': 'maj7',        // Major triad becomes maj7
-        'maj7': 'maj7',       // Keep maj7
-        '7': 'dom7',         // Dominant 7
-        'dom7': 'dom7',      // Dominant 7
-        'm': 'min7',         // Minor triad becomes min7
-        'min': 'min7',       // Minor triad becomes min7
-        'm7': 'min7',        // Minor 7
-        'min7': 'min7',      // Minor 7
-        'dim': 'min7b5',     // Diminished becomes half-diminished
-        'min7b5': 'min7b5',  // Half-diminished
-        '6': '6',            // Major 6
-        'm6': 'm6'          // Minor 6
-    };
-    return qualityMap[quality] || 'maj7';  // Default to maj7 if not found
+    '': 'maj7',
+    'maj': 'maj7',
+    'maj7': 'maj7',
+    'M': 'maj7',
+    'M7': 'maj7',
+    '7': 'dom7',
+    'dom7': 'dom7',
+    'm': 'min7',
+    'min': 'min7',
+    'm7': 'min7',
+    'min7': 'min7',
+    'dim': 'min7b5',
+    'dim7': 'dim7',
+    'ø': 'min7b5',
+    'ø7': 'min7b5',
+    'm7b5': 'min7b5',
+    '6': '6',
+    'm6': 'm6',
+    'min6': 'm6',
+    '7b9': '7b9',
+    '7#9': '7#9',
+    '7b5': '7b5',
+    '7#5': '7#5',
+    '7alt': '7alt',
+    'add9': 'add9',
+    'sus2': 'sus2',
+    'sus4': 'sus4'
+};
+
+    return qualityMap[quality] || 'maj7';
 }
         
 function suggestScaleForQuality(quality) {
