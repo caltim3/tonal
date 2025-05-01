@@ -1686,13 +1686,6 @@ function createQualityOptions(selected = 'maj7') {
     ).join('');
 }
 
-
-
-    return qualities.map(q =>
-        `<option value="${q.value}"${q.value === selected ? ' selected' : ''}>${q.label}</option>`
-    ).join('');
-}
-
 function createScaleOptions(selected = 'major') {
     return Object.keys(SCALES).map(scale =>
         `<option value="${scale}"${scale === selected ? ' selected' : ''}>${scale.charAt(0).toUpperCase() + scale.slice(1)}</option>`
