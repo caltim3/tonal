@@ -2723,10 +2723,9 @@ function initializeFretFlow() {
     }
     
     log("FretFlow initialized with 4 independent fretboards");
-}
-
-// Event Listeners
-function addFirstChordListener() {
+} 
+        
+    function addFirstChordListener() {
     const firstMeasure = UI.elements.measures.firstElementChild;
     if (firstMeasure) {
         const scaleRoot = firstMeasure.querySelector('.second-key');
