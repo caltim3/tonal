@@ -1821,6 +1821,39 @@ function getChordNotes(root, quality) {
         'add9': [0, 4, 7, 14]
     };
 
+    function normalizeChordQuality(quality) {
+    const map = {
+        'maj': 'maj',
+        'major': 'maj',
+        'M': 'maj',
+        'min': 'm',
+        'minor': 'm',
+        'm': 'm',
+        'min6': 'm6',
+        'min7': 'm7',
+        'm7b5': 'm7b5',
+        'ø7': 'm7b5',
+        'dim': 'dim',
+        'dim7': 'dim7',
+        'dom7': '7',
+        '7': '7',
+        'maj7': 'maj7',
+        'M7': 'maj7',
+        'sus2': 'sus2',
+        'sus4': 'sus4',
+        'add9': 'add9',
+        '': '', // fallback for no quality suffix
+        // Altered chords
+        '7b9': '7b9',
+        '7#9': '7#9',
+        '7b5': '7b5',
+        '7#5': '7#5',
+        '7alt': '7alt'
+    };
+    return map[quality] || quality; // fallback to raw if not in map
+}
+
+    
     // Handle sharps and flats in the root note
     let rootNote = root;
     if (root.includes('#')) {
@@ -1842,7 +1875,9 @@ function getChordNotes(root, quality) {
     }
 
     // Get the intervals for the specified quality
-    const intervals = CHORD_INTERVALS[quality] || CHORD_INTERVALS['major'];
+    const normalizedQuality = normalizeChordQuality(quality);
+    const intervals = CHORD_INTERVALS[normalizedQuality] || CHORD_INTERVALS['maj'];
+
 
     // Generate the chord notes
     const chordNotes = intervals.map(interval => {
