@@ -1660,17 +1660,33 @@ function createKeyOptions(selected = 'C') {
     ).join('');
 }
 
-function createQualityOptions(selected = 'major') {
+function createQualityOptions(selected = 'maj7') {
     const qualities = [
         { value: 'maj7', label: 'Maj7' },
-        { value: 'dom7', label: '7' },
+        { value: '7', label: '7' },
         { value: 'min7', label: 'Min7' },
-        { value: 'min7b5', label: 'Min7b5' },
+        { value: 'm7b5', label: 'm7b5 (Half-Dim)' },
+        { value: 'dim7', label: 'Dim7' },
         { value: '6', label: '6' },
-        { value: 'm6', label: 'Min6' },
+        { value: 'm6', label: 'm6' },
         { value: 'maj', label: 'Major' },
-        { value: 'min', label: 'Minor' }
+        { value: 'min', label: 'Minor' },
+        { value: 'sus2', label: 'Sus2' },
+        { value: 'sus4', label: 'Sus4' },
+        { value: 'add9', label: 'Add9' },
+        { value: '7b9', label: '7♭9' },
+        { value: '7#9', label: '7♯9' },
+        { value: '7b5', label: '7♭5' },
+        { value: '7#5', label: '7♯5' },
+        { value: '7alt', label: '7alt' }
     ];
+
+    return qualities.map(q =>
+        `<option value="${q.value}"${q.value === selected ? ' selected' : ''}>${q.label}</option>`
+    ).join('');
+}
+
+
 
     return qualities.map(q =>
         `<option value="${q.value}"${q.value === selected ? ' selected' : ''}>${q.label}</option>`
@@ -2515,16 +2531,17 @@ function loadProgression(progressionName, overrideKey = null) {
     const selectedKey = overrideKey || progression.defaultKey || "C";
     UI.elements.keySelect.value = selectedKey;
 
+    // Clear existing measures
     UI.elements.measures.innerHTML = '';
 
     progression.progression.forEach((chordFunction, index) => {
-        const chord = getChordFromFunction(chordFunction, selectedKey);
-        const [root, quality] = parseChord(chord);
-        
-        // Get the proper quality value and suggested scale
-        const qualityValue = getQualityValue(quality);
-        const suggestedScale = suggestScaleForQuality(quality); // Use raw quality here
+        // Parse chord from progression function
+        const chordSymbol = getChordFromFunction(chordFunction, selectedKey);   // e.g., "D7"
+        const [root, rawQuality] = parseChord(chordSymbol);                    // e.g., ["D", "7"]
+        const qualityValue = getQualityValue(rawQuality);                      // e.g., "dom7"
+        const suggestedScale = suggestScaleForQuality(rawQuality);            // e.g., "mixolydian"
 
+        // Create the visual measure block
         const measure = document.createElement('div');
         measure.className = 'measure';
         measure.draggable = true;
@@ -2541,44 +2558,36 @@ function loadProgression(progressionName, overrideKey = null) {
         `;
 
         UI.elements.measures.appendChild(measure);
-        
-        // Set the correct chord quality in the dropdown
+
+        // Validate the quality dropdown
         const qualitySelect = measure.querySelector('.chord-quality');
         if (qualitySelect) {
-            if (quality === 'maj7') {
+            if (qualitySelect.querySelector(`option[value="${qualityValue}"]`)) {
+                qualitySelect.value = qualityValue;
+            } else {
+                console.warn(`Chord quality "${qualityValue}" not found in dropdown. Falling back to maj7.`);
                 qualitySelect.value = 'maj7';
-            } else if (quality === '7' || quality === 'dom7') {
-                qualitySelect.value = 'dom7';
-            } else if (quality === 'min7' || quality === 'm7') {
-                qualitySelect.value = 'min7';
-            } else if (quality === 'min7b5') {
-                qualitySelect.value = 'min7b5';
-            } else if (quality === 'm' || quality === 'min') {
-                qualitySelect.value = 'minor';
-            } else if (quality === '6') {
-                qualitySelect.value = 'major';
-            } else if (quality === 'm6') {
-                qualitySelect.value = 'minor';
             }
         }
-        
-        // Set the correct scale based on chord quality
+
+        // Set the correct scale dropdown value
         const scaleSelect = measure.querySelector('.scale-select');
         if (scaleSelect) {
             scaleSelect.value = suggestedScale;
         }
-        
-        // Add drag events
+
+        // Enable drag-and-drop functionality
         measure.addEventListener('dragstart', dragStart);
         measure.addEventListener('dragover', dragOver);
         measure.addEventListener('drop', drop);
         measure.addEventListener('dragend', dragEnd);
     });
 
+    // Renumber measures and attach any UI events
     updateMeasureNumbers();
     addFirstChordListener();
 
-    // Update the fretboard with the first measure's scale
+    // Sync fretboard with first measure
     const firstMeasure = UI.elements.measures.firstElementChild;
     if (firstMeasure) {
         const scaleRoot = firstMeasure.querySelector('.second-key').value;
@@ -2589,6 +2598,7 @@ function loadProgression(progressionName, overrideKey = null) {
 
     log(`Loaded progression "${progressionName}" in key: ${selectedKey}`);
 }
+        
 function updateProgressionKey(newKey) {
     const selectedProgression = UI.elements.progressionSelect.value;
     if (!selectedProgression) return;
