@@ -784,7 +784,7 @@ function debounce(func, wait) {
     let timeout;
     return function (...args) {
         clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(this, args), wait);
+        timeout = 
     };
 }
         
@@ -1088,7 +1088,7 @@ const AudioContextManager = {
             this.context = new (window.AudioContext || window.webkitAudioContext)();
             await this.loadSounds();
             await this.loadPianoSamples();
-            await this.setupReverb();
+            await this.
         }
         if (this.context.state === 'suspended') {
             await this.context.resume();
@@ -1503,11 +1503,7 @@ const progressions = {
 };
 
   // Load audio samples
-  useEffect(() => {
-    const loadSamples = async () => {
-      try {
-        // Initialize the audio context
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  
         
         // For each note in octaves 2-5
         for (let octave = 2; octave <= 5; octave++) {
@@ -1536,9 +1532,9 @@ const progressions = {
                 gain.gain.value = 0.15; // Lower volume for chord notes
                 
                 // Add some attack and release
-                gain.gain.setValueAtTime(0, audioContext.currentTime);
+                gain.gain.
                 gain.gain.linearRampToValueAtTime(0.15, audioContext.currentTime + 0.02);
-                gain.gain.setValueAtTime(0.15, audioContext.currentTime + duration - 0.05);
+                gain.gain.
                 gain.gain.linearRampToValueAtTime(0, audioContext.currentTime + duration);
                 
                 osc.connect(gain);
@@ -1551,7 +1547,7 @@ const progressions = {
           }
         }
         audioBuffersLoaded.current = true;
-        setSamplesLoaded(true);
+        
       } catch (error) {
         console.error("Failed to load audio samples:", error);
       }
@@ -1559,9 +1555,7 @@ const progressions = {
 
     loadSamples();
     
-    return () => {
-      // Cleanup
-      clearInterval(timerRef.current);
+    
     };
   }, []);
 
@@ -1702,16 +1696,11 @@ const progressions = {
   };
   
   // Update parsed chords when progression or key changes
-  useEffect(() => {
-    if (progressions[selectedProgression] && progressions[selectedProgression].progression) {
-      const chords = parseProgression(
-        progressions[selectedProgression].progression,
-        currentKey
-      );
-      setParsedChords(chords);
+  
+      
     } else {
       // Set empty array to avoid undefined errors
-      setParsedChords([]);
+      
     }
   }, [selectedProgression, currentKey]);
   
@@ -1769,27 +1758,27 @@ const progressions = {
     }
     
     try {
-      setIsPlaying(true);
+      
       let index = 0;
-      setCurrentChordIndex(0);
+      
       
       const playNextChord = () => {
         if (index < parsedChords.length) {
           try {
             const duration = playChord(parsedChords[index]);
             index++;
-            setCurrentChordIndex(index);
+            
             
             // Schedule next chord
-            timerRef.current = setTimeout(playNextChord, duration * 1000);
+            timerRef.current = 
           } catch (error) {
             console.error("Error playing chord:", error);
-            setIsPlaying(false);
-            setCurrentChordIndex(-1);
+            
+            
           }
         } else {
-          setIsPlaying(false);
-          setCurrentChordIndex(-1);
+          
+          
         }
       };
       
@@ -1797,16 +1786,16 @@ const progressions = {
       playNextChord();
     } catch (error) {
       console.error("Error in playProgression:", error);
-      setIsPlaying(false);
-      setCurrentChordIndex(-1);
+      
+      
     }
   };
   
   // Stop playing
   const stopPlaying = () => {
     clearTimeout(timerRef.current);
-    setIsPlaying(false);
-    setCurrentChordIndex(-1);
+    
+    
   };
   
   // Format the chord symbols for display
@@ -1840,23 +1829,7 @@ const progressions = {
     return keys;
   };
 
-  return (
-    <div className="p-6 max-w-4xl mx-auto bg-gray-100 rounded-lg shadow-lg">
-      <h1 className="text-3xl font-bold mb-6 text-center text-blue-800">Jazz Chord Progression Player</h1>
-      
-      <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-gray-700 font-bold mb-2">Progression:</label>
-          <select 
-            className="block w-full p-2 border rounded"
-            value={selectedProgression}
-            onChange={(e) => {
-              setSelectedProgression(e.target.value);
-              // Set the default key for this progression
-              if (progressions[e.target.value]) {
-                setCurrentKey(progressions[e.target.value].defaultKey);
-              }
-              stopPlaying();
+  
             }}
           >
             {Object.keys(progressions).map(prog => (
@@ -1868,12 +1841,12 @@ const progressions = {
         </div>
         
         <div>
-          <label className="block text-gray-700 font-bold mb-2">Key:</label>
+          Key:</label>
           <select 
             className="block w-full p-2 border rounded"
             value={currentKey}
             onChange={(e) => {
-              setCurrentKey(e.target.value);
+              
               stopPlaying();
             }}
           >
@@ -1886,61 +1859,19 @@ const progressions = {
         </div>
       </div>
       
-      <div className="mb-6">
-        <label className="block text-gray-700 font-bold mb-2">Tempo: {tempo} BPM</label>
-        <input 
-          type="range" 
-          min="60" 
-          max="240" 
-          step="1"
-          className="w-full" 
-          value={tempo} 
-          onChange={(e) => setTempo(parseInt(e.target.value))}
-        />
-      </div>
       
-      <div className="mb-6 flex justify-center space-x-4">
-        <button
-          className={`px-6 py-2 rounded ${isPlaying ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-500 hover:bg-blue-600'} text-white font-bold`}
-          onClick={isPlaying ? stopPlaying : playProgression}
-          disabled={!samplesLoaded}
-        >
-          {isPlaying ? 'Stop' : 'Play'}
-        </button>
-      </div>
       
-      <div className="my-8">
-        <h2 className="text-xl font-bold mb-4 text-center">Chord Chart</h2>
-        <div className="flex flex-wrap justify-center gap-2">
-          {parsedChords && parsedChords.length > 0 ? (
-            parsedChords.map((chord, index) => (
-              <div 
-                key={index}
-                className={`p-3 min-w-16 text-center border ${
-                  currentChordIndex - 1 === index 
-                    ? 'bg-blue-500 text-white' 
-                    : 'bg-white'
-                } rounded shadow`}
-              >
-                {formatChord(chord)}
-              </div>
+      
+      
+      
             ))
           ) : (
-            <div className="p-3 text-center border bg-white rounded shadow">
-              No chords available
-            </div>
+            
           )}
         </div>
       </div>
       
-      <div className="mt-6">
-        <h3 className="text-lg font-bold mb-2">Chord Details:</h3>
-        <div className="bg-white p-4 rounded shadow">
-          {parsedChords && parsedChords.length > 0 ? (
-            parsedChords.map((chord, index) => (
-              <div key={index} className="mb-2">
-                <span className="font-bold">{formatChord(chord)}:</span> {chord && chord.notes ? chord.notes.join(' - ') : 'No notes'}
-              </div>
+      
             ))
           ) : (
             <div>No chord details available</div>
@@ -1948,9 +1879,7 @@ const progressions = {
         </div>
       </div>
       
-      <div className="mt-6 text-sm text-gray-600 text-center">
-        <p>Note: This player uses synthesized audio instead of the actual piano samples for demonstration.</p>
-      </div>
+      
     </div>
   );
 }
@@ -2689,7 +2618,7 @@ async function startPlayback() {
             }
         }
         
-        AppState.intervalId = setInterval(playBeat, interval);
+        AppState.intervalId = 
         AppState.updateState({ isPlaying: true });
         UI.elements.startStopButton.textContent = 'Stop';
         log("Playback started");
@@ -2711,7 +2640,7 @@ function stopPlayback() {
     const measures = UI.elements.measures.children;
     Array.from(measures).forEach(measure => measure.classList.remove('active'));
     if (AudioContextManager.currentChordGain) {
-        AudioContextManager.currentChordGain.gain.setValueAtTime(AudioContextManager.currentChordGain.gain.value, AudioContextManager.context.currentTime);
+        AudioContextManager.currentChordGain.gain.
         AudioContextManager.currentChordGain.gain.exponentialRampToValueAtTime(0.001, AudioContextManager.context.currentTime + 0.1);
         AudioContextManager.currentChordGain = null;
     }
@@ -2965,8 +2894,8 @@ function updateMeasureNumbers() {
 
 // Drag and Drop Handlers
 function dragStart(e) {
-    e.dataTransfer.setData('text/plain', Array.from(UI.elements.measures.children).indexOf(e.target));
-    setTimeout(() => e.target.classList.add('dragging'), 0);
+    e.dataTransfer.
+    
 }
 
 function dragOver(e) {
@@ -3350,7 +3279,7 @@ async function initializeApp() {
     createFretboard(UI.elements.chordFretboard, TUNINGS.standard);
     loadProgression(UI.elements.progressionSelect.value);
     initializeFretFlow();
-    setupEventListeners();
+    
     updateLoadingStatus("Application initialized");
     setTimeout(() => {
         const indicator = document.getElementById('loading-indicator');
@@ -3368,6 +3297,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-            </script>
+            
+// --- New Chord Parsing Logic from chordprogressionCL.js ---
+function parseChord(romanNumeral, key) {
+    // (Insert your new parseChord logic here, as previously provided)
+    // ...
+}
+function parseProgression(progression, key) {
+    return progression.map(roman => parseChord(roman, key));
+}
+
+</script>
         </body>
         </html>
