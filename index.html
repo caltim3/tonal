@@ -1503,62 +1503,7 @@ const progressions = {
 
   // Load audio samples
   
-        
-        // For each note in octaves 2-5
-        for (let octave = 2; octave <= 5; octave++) {
-          for (let noteIndex = 0; noteIndex < NOTES.length; noteIndex++) {
-            const note = NOTES[noteIndex];
-            const noteId = note.replace('#', 's').toLowerCase() + octave;
-            
-            // Create a simulated audio buffer since we don't have actual files
-            const oscillator = audioContext.createOscillator();
-            oscillator.type = 'sine';
-            oscillator.frequency.value = 440 * Math.pow(2, (noteIndex + (octave - 4) * 12) / 12);
-            
-            const gainNode = audioContext.createGain();
-            gainNode.gain.value = 0;
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            
-            AUDIO_FILES[noteId] = {
-              play: (duration = 1) => {
-                const osc = audioContext.createOscillator();
-                osc.type = 'sine';
-                osc.frequency.value = oscillator.frequency.value;
-                
-                const gain = audioContext.createGain();
-                gain.gain.value = 0.15; // Lower volume for chord notes
-                
-                // Add some attack and release
-                gain.gain.
-                gain.gain.linearRampToValueAtTime(0.15, audioContext.currentTime + 0.02);
-                gain.gain.
-                gain.gain.linearRampToValueAtTime(0, audioContext.currentTime + duration);
-                
-                osc.connect(gain);
-                gain.connect(audioContext.destination);
-                
-                osc.start();
-                osc.stop(audioContext.currentTime + duration);
-              }
-            };
-          }
-        }
-        audioBuffersLoaded.current = true;
-        
-      } catch (error) {
-        console.error("Failed to load audio samples:", error);
-      }
-    };
-
-    loadSamples();
-    
-    
-    };
-  }, []);
-
-  // Parse Roman numeral chords
+        // Parse Roman numeral chords
   const parseChord = (romanNumeral, key) => {
     try {
       // Handle invalid inputs
