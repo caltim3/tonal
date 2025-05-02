@@ -1502,17 +1502,6 @@ const progressions = {
     "tenor_madness": { defaultKey: "Bb", progression: ["I7", "I7", "I7", "I7", "IV7", "IV7", "I7", "I7", "iim7", "V7", "I7", "I7"] }
 };
 
-export default function JazzChordPlayer() {
-  const [selectedProgression, setSelectedProgression] = useState("2_5_1");
-  const [currentKey, setCurrentKey] = useState("C");
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [parsedChords, setParsedChords] = useState([]);
-  const [samplesLoaded, setSamplesLoaded] = useState(false);
-  const [tempo, setTempo] = useState(120);
-  const [currentChordIndex, setCurrentChordIndex] = useState(-1);
-  const timerRef = useRef(null);
-  const audioBuffersLoaded = useRef(false);
-
   // Load audio samples
   useEffect(() => {
     const loadSamples = async () => {
