@@ -780,14 +780,13 @@ function updateLoadingStatus(message) {
     indicator.textContent = message;
 }
 
-function debounce(func, wait) {
+        function debounce(func, wait) {
     let timeout;
     return function (...args) {
         clearTimeout(timeout);
-        timeout = 
+        timeout = setTimeout(() => func.apply(this, args), wait);
     };
-}
-        
+}        
 const ALL_NOTES = [
   'a', 'as', 'b', 'c', 'cs', 'd', 'ds', 'e', 'f', 'fs', 'g', 'gs'
 ];
