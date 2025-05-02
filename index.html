@@ -1087,8 +1087,8 @@ const AudioContextManager = {
             this.context = new (window.AudioContext || window.webkitAudioContext)();
             await this.loadSounds();
             await this.loadPianoSamples();
-            await this.
-        }
+            await this.setupReverb();
+            }
         if (this.context.state === 'suspended') {
             await this.context.resume();
         }
