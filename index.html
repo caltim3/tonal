@@ -495,6 +495,31 @@
         <button id="tap-tempo" aria-label="Tap tempo">Tap</button>
         <button id="start-stop" aria-label="Start or stop metronome">Start</button>
     </div>
+        <!-- Add these inside the div with class="controls-section" -->
+    <div>
+        <label for="rhythm-pattern">Rhythm:</label>
+        <select id="rhythm-pattern">
+            <option value="downbeats">Downbeats</option>
+            <option value="beats13">Beats 1 & 3</option>
+            <option value="charleston">Charleston</option>
+            <!-- Add more patterns later -->
+        </select>
+    </div>
+    <div>
+        <label for="two-chords">Two Chords/Measure:</label>
+        <input type="checkbox" id="two-chords">
+    </div>
+    <div>
+        <label for="voicing-type">Voicing Type:</label>
+        <select id="voicing-type">
+            <option value="standard">Standard</option>
+            <option value="drop2">Drop 2</option>
+            <option value="drop3">Drop 3</option>
+            <option value="drop24">Drop 2 & 4</option>
+            <!-- Add Rootless, Quartal later if needed -->
+        </select>
+    </div>
+    <!-- End of new controls -->
      <div class="volume-control">
         <label for="metronome-volume">Metronome Vol:</label>
         <input type="range" id="metronome-volume" min="0" max="1" step="0.05" value="0.25" aria-label="Metronome volume">
@@ -656,13 +681,24 @@ const CHORD_QUALITIES = { // Maps internal value to display name and intervals (
     // '7alt': { name: '7alt', intervals: [0, 4, 10] } // Alt chords are complex, often imply b9, #9, b5, #5 - handle via scale choice
 };
 
-const drumSoundSets = [
-    { name: "Drums", snare: "Snare.wav", hihat: "HiHat.wav", kick: "Kick.wav" },
-    { name: "Makaya", snare: "Snare2.wav", hihat: "HiHat2.wav", kick: "Kick2.wav" },
-    { name: "PhillyJoe", kick: 'jazzkick.wav', snare: 'jazzsnare.wav', hihat: 'jazzhat.wav' }
-];
-let currentDrumSetIndex = 0;
+    const drumSoundSets = [
+        { name: "Drums", snare: "Snare.wav", hihat: "HiHat.wav", kick: "Kick.wav" },
+        { name: "Makaya", snare: "Snare2.wav", hihat: "HiHat2.wav", kick: "Kick2.wav" },
+        { name: "PhillyJoe", kick: 'jazzkick.wav', snare: 'jazzsnare.wav', hihat: 'jazzhat.wav' }
+    ];
+    let currentDrumSetIndex = 0;
+    let selectedRhythmPattern = 'downbeats';
+    let twoChordsPerMeasureEnabled = false;
+    let selectedVoicingType = 'standard';
+    let currentPlaybackIntervalId = null; // Keep track of the interval
 
+        const rhythmPatterns = {
+    'downbeats': [1],
+    'beats13': [1, 3],
+    'charleston': [1, 3.5], // Beat 1 and the '&' of 3 - requires finer timing resolution
+    // Add more patterns here
+};
+        
 const progressions = {
     "I V7": { defaultKey: "C", progression: ["Imaj7", "V7"] }, // Using Maj7 for I
     "jazz_blues": { defaultKey: "Bb", progression: ["I7", "IV7", "I7", "I7", "IV7", "IV7", "I7", "VI7", "IIm7", "V7", "I7", "V7"] },
@@ -880,7 +916,202 @@ const AudioContextManager = {
         log(`Loaded ${loadedCount} of ${totalSounds} metronome/drum sounds.`);
         updateLoadingStatus("Drum sounds loaded.");
     },
+/**
+ * Gets the specific notes for a chord based on root, quality, and voicing rules.
+ * TODO: Implement octave constraints and selected voicing types.
+ * @param {string} rootNote - e.g., "C", "F#".
+ * @param {string} quality - e.g., "maj7", "m7", "7", "m7b5".
+ * @param {string} voicingType - 'standard', 'drop2', 'drop3', 'drop24'.
+ * @param {number} targetOctaveStart - Preferred starting octave (e.g., 3).
+ * @returns {string[]} Array of note names with octaves (e.g., ["C3", "E3", "G3", "B3"]).
+ */
+function getChordVoicing(rootNote, quality, voicingType = 'standard', targetOctaveStart = 3) {
+    console.log(`Getting voicing for: ${rootNote}${quality}, Type: ${voicingType}`);
+    const chordTones = getChordTones(rootNote, quality); // Use existing function
+    if (!chordTones || chordTones.length === 0) {
+        console.error(`Could not get tones for ${rootNote}${quality}`);
+        return [];
+    }
 
+    // 1. Create a basic close voicing starting near the target octave
+    let octave = targetOctaveStart;
+    let previousNoteMidi = -1;
+    let closeVoicing = chordTones.map((noteName, index) => {
+        let currentNoteMidi = noteNameToMidi(noteName + octave);
+        // If this note is lower than the previous, bump the octave
+        if (index > 0 && currentNoteMidi < previousNoteMidi) {
+            octave++;
+            currentNoteMidi = noteNameToMidi(noteName + octave);
+        }
+        previousNoteMidi = currentNoteMidi;
+        return noteName + octave;
+    });
+
+    // Ensure it's mostly within octaves 2 and 3 (MIDI ~36 to ~60) - Rough adjustment
+    // Calculate average MIDI note
+    let avgMidi = closeVoicing.reduce((sum, note) => sum + noteNameToMidi(note), 0) / closeVoicing.length;
+    let targetAvgMidi = (noteNameToMidi("C2") + noteNameToMidi("C4")) / 2; // Middle of octave 2 & 3
+
+    // Shift octave if needed (simple whole chord shift for now)
+    let octaveShift = Math.round((targetAvgMidi - avgMidi) / 12);
+    if (octaveShift !== 0) {
+         console.log(`Shifting octave by ${octaveShift}`);
+         closeVoicing = closeVoicing.map(note => {
+             let midi = noteNameToMidi(note);
+             return midiToNoteName(midi + octaveShift * 12);
+         });
+    }
+
+
+    // 2. Apply Drop Voicings if requested (requires 4 notes)
+    if (closeVoicing.length === 4 && (voicingType === 'drop2' || voicingType === 'drop3' || voicingType === 'drop24')) {
+        return applyDropVoicing(closeVoicing, voicingType);
+    } else if (closeVoicing.length !== 4 && voicingType !== 'standard') {
+         console.warn(`Cannot apply drop voicing to ${closeVoicing.length}-note chord. Using standard voicing.`);
+    }
+
+    // Return the adjusted close voicing if no drop voicing applied
+    console.log(`Final voicing for ${rootNote}${quality}: ${closeVoicing.join(', ')}`);
+    return closeVoicing;
+}
+
+/**
+ * Applies Drop 2, Drop 3, or Drop 2&4 voicing to a 4-note close voicing.
+ * Assumes input notes are sorted lowest to highest.
+ * @param {string[]} closeVoicing - Array of 4 note names with octaves, sorted low to high.
+ * @param {string} type - 'drop2', 'drop3', or 'drop24'.
+ * @returns {string[]} The rearranged notes for the drop voicing.
+ */
+function applyDropVoicing(closeVoicing, type) {
+    if (closeVoicing.length !== 4) {
+        console.error("Drop voicings require exactly 4 notes.");
+        return closeVoicing; // Return original if not 4 notes
+    }
+
+    let notes = [...closeVoicing]; // Copy the array
+    let noteToDrop;
+
+    switch (type) {
+        case 'drop2':
+            // Drop the 2nd note from the top (index 2) down an octave
+            noteToDrop = notes.splice(2, 1)[0]; // Remove 2nd note from top
+            notes.unshift(adjustOctave(noteToDrop, -1)); // Add to bottom, down octave
+            break;
+        case 'drop3':
+             // Drop the 3rd note from the top (index 1) down an octave
+            noteToDrop = notes.splice(1, 1)[0]; // Remove 3rd note from top
+            notes.unshift(adjustOctave(noteToDrop, -1)); // Add to bottom, down octave
+            break;
+        case 'drop24':
+            // Drop the 2nd (index 2) and 4th (index 0) notes from the top down an octave
+            let note2 = notes.splice(2, 1)[0]; // 2nd from top
+            let note4 = notes.splice(0, 1)[0]; // 4th from top (original lowest)
+            notes.unshift(adjustOctave(note2, -1)); // Add 2nd to bottom, down octave
+            notes.unshift(adjustOctave(note4, -1)); // Add 4th to bottom, down octave
+            break;
+        default:
+            console.warn(`Unknown drop voicing type: ${type}`);
+            return closeVoicing; // Return original if type is unknown
+    }
+
+    // Sort the resulting notes by MIDI value to ensure correct order for playback/analysis
+    notes.sort((a, b) => noteNameToMidi(a) - noteNameToMidi(b));
+    console.log(`Applied ${type} voicing: ${notes.join(', ')}`);
+    return notes;
+}
+
+/**
+ * Adjusts the octave of a note name.
+ * @param {string} noteName - e.g., "C#4".
+ * @param {number} octaveChange - e.g., -1, 1.
+ * @returns {string} Note name with adjusted octave.
+ */
+function adjustOctave(noteName, octaveChange) {
+    const midi = noteNameToMidi(noteName);
+    if (midi === -1) return noteName; // Invalid note
+    return midiToNoteName(midi + octaveChange * 12);
+}
+
+// --- Helper function to get MIDI (can reuse existing if available) ---
+// Ensure you have noteNameToMidi and midiToNoteName functions defined correctly.
+// Example stubs if missing:
+/*
+function noteNameToMidi(noteName) {
+    // Basic implementation - needs refinement for sharps/flats and octave parsing
+    const noteMap = { 'C': 0, 'C#': 1, 'Db': 1, 'D': 2, 'D#': 3, 'Eb': 3, 'E': 4, 'F': 5, 'F#': 6, 'Gb': 6, 'G': 7, 'G#': 8, 'Ab': 8, 'A': 9, 'A#': 10, 'Bb': 10, 'B': 11 };
+    const match = noteName.match(/([A-G][#b]?)(-?\d+)/);
+    if (!match) return -1;
+    const note = match[1];
+    const octave = parseInt(match[2], 10);
+    return noteMap[note] + (octave + 1) * 12; // MIDI C4 is 60
+}
+
+function midiToNoteName(midi) {
+    // Basic implementation
+    if (midi < 0 || midi > 127) return "Invalid";
+    const noteNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+    const octave = Math.floor(midi / 12) - 1;
+    const noteIndex = midi % 12;
+    return noteNames[noteIndex] + octave;
+}
+*/
+
+// --- Modify playChord ---
+/**
+ * Plays a chord using pre-loaded piano samples.
+ * Accepts an array of specific note names with octaves.
+ * @param {string[]} notes - Array of note names (e.g., ["C3", "E3", "G3", "Bb3"]).
+ * @param {number} duration - Duration in seconds.
+ * @param {number} [startTime] - Optional AudioContext time to schedule playback.
+ */
+async function playChord(notes, duration, startTime) {
+    const now = AudioContextManager.context.currentTime;
+    const playAt = startTime !== undefined ? startTime : now;
+    const volume = parseFloat(document.getElementById('chord-volume').value);
+
+    console.log(`Playing chord: ${notes.join(', ')} at time ${playAt.toFixed(2)} for ${duration}s`);
+
+    if (!notes || notes.length === 0) {
+        console.warn("playChord called with empty notes array.");
+        return;
+    }
+
+    notes.forEach(noteName => {
+        // Find the corresponding buffer
+        const buffer = AudioContextManager.pianoSampleBuffers[noteName];
+        if (buffer) {
+            const source = AudioContextManager.context.createBufferSource();
+            source.buffer = buffer;
+
+            const gainNode = AudioContextManager.context.createGain();
+            gainNode.gain.setValueAtTime(volume, playAt);
+            // Fade out quickly at the end
+            gainNode.gain.linearRampToValueAtTime(0.0001, playAt + duration);
+
+            source.connect(gainNode);
+            gainNode.connect(AudioContextManager.context.destination);
+            source.start(playAt);
+            // Optional: Stop the source slightly after the fade ends to release resources
+            source.stop(playAt + duration + 0.1);
+        } else {
+            console.warn(`Piano sample buffer not found for note: ${noteName}`);
+        }
+    });
+}
+
+// --- Modify getChordTones (if needed) ---
+// Ensure getChordTones returns an array of note names *without* octaves,
+// e.g., ["C", "E", "G", "B"] for Cmaj7. The getChordVoicing function adds the octaves.
+// Example structure:
+/*
+function getChordTones(root, quality) {
+    const rootIndex = noteNames.indexOf(standardizeNoteName(root));
+    if (rootIndex === -1) return null;
+    const intervals = chordFormulas[quality];
+    if (!intervals) return null;
+    return intervals.map(interval => noteNames[(rootIndex + interval) % 12]);
+}
+*/
     createSynthSound: async function(type) {
         // Simple synth sounds as fallback
         const sampleRate = this.context.sampleRate;
