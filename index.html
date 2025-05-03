@@ -707,7 +707,19 @@ const rhythmPatterns = {
     'charleston': [1, 3.5], // Play on beat 1 and the '&' of 3
     // Add more patterns here (e.g., bossa, swing comping)
 };
+const DRUM_PATTERNS = { /* Copy the full object from version 41 */
+    '2': { kick: [1, 0], snare: [0, 1], hihat: [1, 1] },
+    '3': { kick: [1, 0, 0], snare: [0, 1, 0], hihat: [1, 1, 1] },
+    '4': { kick: [1, 0, 1, 0], snare: [0, 1, 0, 1], hihat: [1, 1, 1, 1] }, // Example 4/4
+    '6': { kick: [1, 0, 0, 1, 0, 0], snare: [0, 0, 1, 0, 0, 1], hihat: [1, 1, 1, 1, 1, 1] }, // Example 6/8
+    '7': { kick: [1, 0, 0, 1, 0, 0, 0], snare: [0, 0, 1, 0, 0, 1, 0], hihat: [1, 1, 1, 1, 1, 1, 1] }, // Example 7/8
+    '8': { kick: [1, 0, 0, 0, 1, 0, 0, 0], snare: [0, 0, 1, 0, 0, 0, 1, 0], hihat: [1, 1, 1, 1, 1, 1, 1, 1] }, // Example 8/8
+    '12': { kick: [1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0], snare: [0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1], hihat: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1] } // Example 12/8
+};
 
+
+
+let currentDrumSetIndex = 0; // Initialize drum set index
 const progressions = {
     "I V7": { defaultKey: "C", progression: ["Imaj7", "V7"] }, // Using Maj7 for I
     "jazz_blues": { defaultKey: "Bb", progression: ["I7", "IV7", "I7", "I7", "IV7", "IV7", "I7", "VI7", "IIm7", "V7", "I7", "V7"] },
@@ -925,38 +937,110 @@ const AudioContextManager = {
         return this.context;
     },
 
-    loadSounds: async function() {
-        const soundFiles = {
-            'click': 'Click.wav', 'hihat': 'HiHat.wav', 'kick': 'Kick.wav',
-            'snare': 'Snare.wav', 'woodblock': 'woodblock.wav'
-        };
-        for (const set of drumSoundSets) {
-            soundFiles[`kick_${set.name}`] = set.kick;
-            soundFiles[`snare_${set.name}`] = set.snare;
-            soundFiles[`hihat_${set.name}`] = set.hihat;
+// Inside the AudioContextManager object:
+loadSounds: async function() {
+    const baseSoundFiles = {
+        'click': 'Click.wav',
+        'woodblock': 'woodblock.wav'
+        // Base drum sounds will be loaded via drumSoundSets
+    };
+    updateLoadingStatus("Loading base sounds...");
+    log("Starting to load base sounds..."); // Added log
+
+    // Load base click/woodblock
+    for (let [type, filename] of Object.entries(baseSoundFiles)) {
+        try {
+            const response = await fetch(`./${filename}`); // Assuming sounds are in the root directory
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status} for ${filename}`);
+            const arrayBuffer = await response.arrayBuffer();
+            this.soundBuffers[type] = await this.context.decodeAudioData(arrayBuffer);
+            log(`Loaded base sound ${type} from ${filename}`);
+        } catch (error) {
+            console.error(`Failed to load ${filename}:`, error);
+            // Optionally create fallback synthetic sound if needed for click/woodblock
+            // this.soundBuffers[type] = await this.createDrumSound(type);
+            // log(`Using fallback synthetic sound for ${type}`);
         }
-        let loadedCount = 0;
-        const totalSounds = Object.keys(soundFiles).length;
-        const loadPromises = Object.entries(soundFiles).map(async ([type, filename]) => {
-            try {
-                const response = await fetch(`./${filename}`);
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status} for ${filename}`);
-                const arrayBuffer = await response.arrayBuffer();
-                this.soundBuffers[type] = await this.context.decodeAudioData(arrayBuffer);
-                loadedCount++;
-                updateLoadingStatus(`Loading sounds... (${loadedCount}/${totalSounds})`);
-            } catch (error) {
-                console.error(`Failed to load ${filename}:`, error);
-                if (['click', 'woodblock', 'kick', 'snare', 'hihat'].includes(type)) {
-                    this.soundBuffers[type] = await this.createSynthSound(type);
-                    log(`Using fallback synthetic sound for ${type}`);
-                }
+    }
+
+    updateLoadingStatus("Loading drum kits...");
+    log("Starting to load drum kits..."); // Added log
+
+    // Load all drum kit sounds
+    for (let i = 0; i < drumSoundSets.length; i++) {
+        const kit = drumSoundSets[i];
+        log(`Loading kit: ${kit.name}`); // Added log
+        for (const soundType of ['kick', 'snare', 'hihat']) {
+            const filename = kit[soundType];
+            const bufferKey = `${soundType}_${i}`; // Unique key, e.g., kick_0, snare_1
+            if (!filename) {
+                log(`Skipping missing sound ${soundType} in kit ${kit.name}`);
+                continue;
             }
-        });
-        await Promise.all(loadPromises);
-        log(`Loaded ${loadedCount} of ${totalSounds} metronome/drum sounds.`);
-        updateLoadingStatus("Drum sounds loaded.");
-    },
+            try {
+                const response = await fetch(`./${filename}`); // Assuming sounds are in the root directory
+                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status} for ${filename}`);
+                const arrayBuffer = await response.arrayBuffer();
+                this.soundBuffers[bufferKey] = await this.context.decodeAudioData(arrayBuffer);
+                log(`Loaded ${bufferKey} from ${filename} for kit ${kit.name}`);
+            } catch (error) {
+                console.error(`Failed to load ${filename} for kit ${kit.name}:`, error);
+                // Optionally use fallback for drum sounds too
+                // this.soundBuffers[bufferKey] = await this.createDrumSound(soundType);
+                // log(`Using fallback synthetic sound for ${bufferKey}`);
+            }
+        }
+    }
+    updateLoadingStatus("All sounds loaded.");
+    log("Finished loading sounds."); // Added log
+},
+
+// Ensure createDrumSound is also present in AudioContextManager (copy from v41 if missing)
+createDrumSound: async function(type) {
+    // If this function is missing in v55, copy it from v41.
+    // Make sure it uses this.context, not a separate audioCtx.
+    const sampleRate = this.context.sampleRate;
+    const duration = type === 'hihat' ? 0.05 : (type === 'snare' ? 0.15 : 0.2); // Adjusted durations
+    const buffer = this.context.createBuffer(1, Math.floor(sampleRate * duration), sampleRate);
+    const data = buffer.getChannelData(0);
+    const freq = type === 'kick' ? 60 : (type === 'snare' ? 180 : 6000); // Base frequencies
+    const decay = type === 'kick' ? 20 : (type === 'snare' ? 15 : 80); // Decay rates
+
+    switch (type) {
+        case 'click': // Simple impulse for click
+             for (let i = 0; i < 5; i++) data[i] = 1;
+             for (let i = 5; i < data.length; i++) data[i] = 0;
+            break;
+        case 'hihat': // White noise burst
+            for (let i = 0; i < data.length; i++) {
+                data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (sampleRate * (duration / 2)));
+            }
+            break;
+        case 'kick': // Sine wave sweep down
+            for (let i = 0; i < data.length; i++) {
+                const t = i / sampleRate;
+                const currentFreq = freq + 40 * Math.exp(-t * 30); // Pitch envelope
+                data[i] = Math.sin(2 * Math.PI * currentFreq * t) * Math.exp(-t * decay);
+            }
+            break;
+        case 'snare': // Noise + sine tone
+             for (let i = 0; i < data.length; i++) {
+                 const t = i / sampleRate;
+                 const noise = (Math.random() * 2 - 1) * Math.exp(-t * (decay * 1.5));
+                 const tone = Math.sin(2 * Math.PI * freq * t) * Math.exp(-t * decay);
+                 data[i] = (noise * 0.8 + tone * 0.2);
+             }
+            break;
+        case 'woodblock': // Simple decaying sine
+            for (let i = 0; i < data.length; i++) {
+                const t = i / sampleRate;
+                data[i] = Math.sin(2 * Math.PI * 800 * t) * Math.exp(-t * 30);
+            }
+            break;
+    }
+    log(`Created fallback synthetic sound for ${type}`);
+    return buffer;
+},
 
     createSynthSound: async function(type) {
         const sampleRate = this.context.sampleRate;
@@ -1748,13 +1832,171 @@ function toggleBeatState(beat, soundType, subdivision) {
 }
 
 // --- Main Playback Loop (OLD - Remove or Comment Out) ---
-/*
-async function playBeat() {
-    // This entire function is replaced by the new startPlayback/scheduler logic
-    // ... (old code that used AppState.currentBeat, AppState.currentMeasure, etc.) ...
-}
-*/
+async function playBeat(time) {
+    await AudioContextManager.ensureAudioContext(); // Ensure context is ready
 
+    const beatsPerMeasure = parseInt(UI.elements.timeSignature.value);
+    const soundType = UI.elements.soundType.value;
+    const metronomeVolume = parseFloat(UI.elements.metronomeVolume.value);
+    const accentIntensity = parseFloat(UI.elements.accentIntensity.value) || 1.5; // Get accent intensity
+
+    // --- Metronome/Drum Sound Logic START ---
+    let buffer = null;
+    let volume = metronomeVolume;
+    const isStrongBeat = AppState.currentBeat % beatsPerMeasure === 0; // Beat 1 is strong
+
+    if (soundType === 'drums' && drumSetToggleBtn.classList.contains('active')) {
+        // Play drums based on pattern
+        const patternKey = String(beatsPerMeasure); // Use beatsPerMeasure as key for DRUM_PATTERNS
+        const pattern = DRUM_PATTERNS[patternKey] || DRUM_PATTERNS['4']; // Fallback to 4/4 pattern
+        const beatIndexInPattern = AppState.currentBeat % pattern.kick.length; // Cycle through pattern
+
+        const kit = drumSoundSets[currentDrumSetIndex];
+        let soundPlayed = false;
+
+        // Determine volume (accent strong beats slightly more even for drums)
+        volume = isStrongBeat ? metronomeVolume * 1.1 : metronomeVolume * 0.9; // Subtle accent for drums
+
+        // Play Kick
+        if (pattern.kick[beatIndexInPattern] === 1) {
+            const bufferKey = `kick_${currentDrumSetIndex}`;
+            buffer = AudioContextManager.soundBuffers[bufferKey];
+            if (buffer) {
+                playSound(buffer, time, volume);
+                soundPlayed = true;
+                // log(`Played kick_${currentDrumSetIndex} at time ${time}`);
+            } else {
+                 console.warn(`Buffer not found for ${bufferKey}`);
+            }
+        }
+        // Play Snare
+        if (pattern.snare[beatIndexInPattern] === 1) {
+            const bufferKey = `snare_${currentDrumSetIndex}`;
+            buffer = AudioContextManager.soundBuffers[bufferKey];
+             if (buffer) {
+                playSound(buffer, time, volume); // Play snare slightly offset? time + 0.01?
+                soundPlayed = true;
+                // log(`Played snare_${currentDrumSetIndex} at time ${time}`);
+            } else {
+                 console.warn(`Buffer not found for ${bufferKey}`);
+            }
+        }
+        // Play HiHat (often plays even if kick/snare do)
+        if (pattern.hihat[beatIndexInPattern] === 1) {
+             const bufferKey = `hihat_${currentDrumSetIndex}`;
+             buffer = AudioContextManager.soundBuffers[bufferKey];
+             if (buffer) {
+                 // Play hi-hat slightly quieter?
+                 playSound(buffer, time, volume * 0.7);
+                 soundPlayed = true;
+                 // log(`Played hihat_${currentDrumSetIndex} at time ${time}`);
+             } else {
+                 console.warn(`Buffer not found for ${bufferKey}`);
+             }
+        }
+
+        if (!soundPlayed) {
+             // If pattern had 0 for everything on this beat, maybe play a light hihat as default? Optional.
+             // buffer = AudioContextManager.soundBuffers[`hihat_${currentDrumSetIndex}`];
+             // if (buffer) playSound(buffer, time, volume * 0.5);
+        }
+
+    } else if (soundType === 'click' || soundType === 'woodblock') {
+        // Play click or woodblock
+        buffer = AudioContextManager.soundBuffers[soundType];
+        volume = isStrongBeat ? metronomeVolume * accentIntensity : metronomeVolume; // Apply accent intensity
+         if (buffer) {
+            playSound(buffer, time, volume);
+            // log(`Played ${soundType} at time ${time}`);
+        } else {
+             console.warn(`Buffer not found for ${soundType}`);
+        }
+    }
+    // --- Metronome/Drum Sound Logic END ---
+
+
+    // --- Existing Chord Logic START ---
+    // (Keep your existing logic for determining current measure, chord symbol,
+    // calling playChord, updating fretboard, etc. here)
+
+    const measures = document.querySelectorAll('#measures .measure');
+    if (measures.length === 0) return; // No measures to play
+
+    const currentMeasureIndex = AppState.currentMeasure % measures.length;
+    const currentMeasureElement = measures[currentMeasureIndex];
+
+    // Highlight active measure (do this regardless of chord playing)
+    document.querySelectorAll('#measures .measure.active').forEach(m => m.classList.remove('active'));
+    currentMeasureElement.classList.add('active');
+
+    // Determine if it's time to play a chord
+    const beatsPerChord = beatsPerMeasure / 2; // Assuming 2 chords per measure for now
+    const isFirstChordBeat = AppState.currentBeat % beatsPerMeasure === 0;
+    const isSecondChordBeat = AppState.currentBeat % beatsPerMeasure === Math.floor(beatsPerChord); // Play on the middle beat
+
+    if (UI.elements.chordsEnabled.classList.contains('active') && (isFirstChordBeat || isSecondChordBeat)) {
+        const chordSelect = currentMeasureElement.querySelector('.chord-select');
+        const scaleSelect = currentMeasureElement.querySelector('.scale-select'); // Get scale for the measure
+        const key = UI.elements.keySelect.value; // Get global key
+
+        if (chordSelect && scaleSelect) {
+            const chordFunction = chordSelect.value;
+            const chordSymbol = getChordFromFunction(chordFunction, key); // Get the actual chord symbol (e.g., "Cm7")
+            const measureScale = scaleSelect.value; // Get the selected scale for this measure
+
+            if (chordSymbol) {
+                const duration = (60 / AppState.tempo) * beatsPerChord; // Duration for half a measure
+                const isSecondChord = isSecondChordBeat; // Flag if it's the second chord
+
+                // Choose a random voicing type for the second chord if it's enabled
+                let voicingType = 'close'; // Default
+                 if (isSecondChord) {
+                     const voicings = ['drop2', 'drop3', 'drop2and4', 'close']; // Add 'close' as an option too
+                     voicingType = voicings[Math.floor(Math.random() * voicings.length)];
+                     log(`Using random inversion for second chord: ${voicingType}`);
+                 }
+
+                // Schedule the chord playback
+                playChord(chordSymbol, time, duration, voicingType, isSecondChord); // Pass voicingType and isSecondChord flag
+
+                // Update the dynamic fretboard ONLY on the first beat of the measure
+                if (isFirstChordBeat) {
+                    updateChordFretboard(chordSymbol, measureScale); // Update fretboard with measure's scale
+                }
+            } else {
+                 log(`Could not determine chord symbol for function ${chordFunction} in key ${key}`);
+            }
+        }
+    }
+    // --- Existing Chord Logic END ---
+function playSound(buffer, time, volume) {
+    if (!buffer || !AudioContextManager.context) return;
+    try {
+        const source = AudioContextManager.context.createBufferSource();
+        source.buffer = buffer;
+        const gainNode = AudioContextManager.context.createGain();
+        gainNode.gain.setValueAtTime(volume, time); // Set volume at the scheduled time
+        source.connect(gainNode);
+        gainNode.connect(AudioContextManager.context.destination);
+        source.start(time);
+        // No need to schedule stop for short percussion sounds, they play fully.
+    } catch (error) {
+        console.error('Error playing sound:', error);
+    }
+}
+
+    // --- Beat Highlighting Logic START ---
+    // (Keep your existing logic for highlighting the visual beat indicators)
+    const beatElements = document.querySelectorAll('.beats-container .beat');
+    beatElements.forEach((beat, index) => {
+        if (index === AppState.currentBeat % beatsPerMeasure) {
+            beat.classList.add('active');
+        } else {
+            beat.classList.remove('active');
+        }
+    });
+    // --- Beat Highlighting Logic END ---
+}
 // --- NEW Playback Loop Functions ---
 
 function startPlayback() {
@@ -2180,119 +2422,210 @@ function initializeFretFlow() {
 function setupEventListeners() {
     log("Setting up event listeners...");
     const initializeAudioInteraction = async () => {
-        try { await AudioContextManager.ensureAudioContext();
+        try {
+            await AudioContextManager.ensureAudioContext();
+            // Remove listeners after first interaction to prevent repeated context resumes
             document.body.removeEventListener('click', initializeAudioInteraction);
             document.body.removeEventListener('touchstart', initializeAudioInteraction);
-            log("Audio interaction listener removed.");
-        } catch (error) { console.error('Failed to initialize audio on interaction:', error); }
+            log("Audio interaction listener removed after successful context resume.");
+        } catch (error) {
+            console.error('Failed to initialize audio on interaction:', error);
+            // Keep listeners active if initialization fails, allowing user to try again
+        }
     };
+    // Use { once: false } initially, as the listener removes itself upon success.
     document.body.addEventListener('click', initializeAudioInteraction, { once: false });
     document.body.addEventListener('touchstart', initializeAudioInteraction, { once: false });
 
-    // Main Play/Stop Button (assuming ID 'start-stop')
+    // Main Play/Stop Button (Handles toggling between start and stop)
     if (UI.elements.startStopButton) {
-        // Initial setup for the button
-        UI.elements.startStopButton.textContent = 'Play';
-        UI.elements.startStopButton.removeEventListener('click', startPlayback); // Remove potential old listeners
-        UI.elements.startStopButton.removeEventListener('click', stopPlayback);
-        UI.elements.startStopButton.addEventListener('click', startPlayback); // Add listener for starting
+        const handlePlayStopClick = () => {
+            if (AppState.isPlaying) {
+                stopPlayback(); // If playing, stop it
+            } else {
+                startPlayback(); // If stopped, start it
+            }
+        };
+        // Ensure only one listener is attached
+        UI.elements.startStopButton.removeEventListener('click', handlePlayStopClick); // Remove potential duplicates
+        UI.elements.startStopButton.addEventListener('click', handlePlayStopClick);
+        // Initial text is set in startPlayback/stopPlayback based on state
     } else {
         console.warn("Main Play/Stop button (#start-stop) not found.");
     }
 
 
-    if(UI.elements.drumSetToggleBtn) UI.elements.drumSetToggleBtn.addEventListener('click', () => {
-        currentDrumSetIndex = (currentDrumSetIndex + 1) % drumSoundSets.length;
-        UI.elements.drumSetToggleBtn.textContent = drumSoundSets[currentDrumSetIndex].name;
-        log(`Switched to drum set: ${drumSoundSets[currentDrumSetIndex].name}`);
-    });
+    // --- Drum Controls Integration START ---
+    const drumSetToggleBtn = UI.elements.drumSetToggleBtn;
+    const soundTypeSelect = UI.elements.soundType;
 
-    if(UI.elements.soundType) UI.elements.soundType.addEventListener('change', (e) => {
-        const isDrums = e.target.value === 'drums';
-        if(UI.elements.drumSetToggleBtn) UI.elements.drumSetToggleBtn.style.display = isDrums ? 'inline-block' : 'none';
-        if (isDrums && UI.elements.drumSetToggleBtn) { UI.elements.drumSetToggleBtn.textContent = drumSoundSets[currentDrumSetIndex].name; }
-        createBeats(); log(`Metronome sound type changed to: ${e.target.value}`);
-    });
+    if (drumSetToggleBtn && soundTypeSelect) {
+        // Listener for the Drum Kit Toggle Button
+        drumSetToggleBtn.addEventListener('click', () => {
+            currentDrumSetIndex = (currentDrumSetIndex + 1) % drumSoundSets.length;
+            drumSetToggleBtn.textContent = drumSoundSets[currentDrumSetIndex].name;
+            log(`Switched drum kit to: ${drumSoundSets[currentDrumSetIndex].name}`);
 
+            // --- NEW: Ensure sound type is 'drums' and button is active/enabled ---
+            soundTypeSelect.value = 'drums'; // Force select to 'drums'
+            drumSetToggleBtn.classList.add('active');
+            drumSetToggleBtn.disabled = false;
+            drumSetToggleBtn.style.display = 'inline-block'; // Ensure visible
+            // --- END NEW ---
+        });
+
+        // Listener for the Sound Type Dropdown
+        soundTypeSelect.addEventListener('change', (e) => {
+            const isDrums = e.target.value === 'drums';
+            log(`Metronome sound type changed to: ${e.target.value}`);
+
+            // --- REVISED: Update toggle button state based on dropdown ---
+            if (isDrums) {
+                drumSetToggleBtn.textContent = drumSoundSets[currentDrumSetIndex].name; // Set text to current kit
+                drumSetToggleBtn.classList.add('active');
+                drumSetToggleBtn.disabled = false;
+                drumSetToggleBtn.style.display = 'inline-block'; // Show button
+            } else {
+                drumSetToggleBtn.textContent = 'Drums'; // Reset text
+                drumSetToggleBtn.classList.remove('active');
+                drumSetToggleBtn.disabled = true; // Disable button
+                drumSetToggleBtn.style.display = 'none'; // Hide button
+            }
+            // --- END REVISED ---
+
+            // Removed createBeats() call here - likely not needed just for sound change.
+        });
+
+        // --- Set Initial State after listeners are attached ---
+        // This makes setupEventListeners self-contained for these controls.
+        const initialIsDrums = soundTypeSelect.value === 'drums';
+        if (initialIsDrums) {
+            drumSetToggleBtn.textContent = drumSoundSets[currentDrumSetIndex].name;
+            drumSetToggleBtn.classList.add('active');
+            drumSetToggleBtn.disabled = false;
+            drumSetToggleBtn.style.display = 'inline-block';
+        } else {
+            drumSetToggleBtn.textContent = 'Drums';
+            drumSetToggleBtn.classList.remove('active');
+            drumSetToggleBtn.disabled = true;
+            drumSetToggleBtn.style.display = 'none';
+        }
+        // --- END INITIAL STATE ---
+
+    } else {
+        if (!drumSetToggleBtn) console.warn("Drum Set Toggle Button (#drumSetToggleBtn) not found.");
+        if (!soundTypeSelect) console.warn("Sound Type Select (#sound-type) not found.");
+    }
+    // --- Drum Controls Integration END ---
+
+
+    // Dark Mode Toggle
     if(UI.elements.darkModeToggle) UI.elements.darkModeToggle.addEventListener('click', () => {
-        AppState.darkMode = (AppState.darkMode + 1) % 4;
+        AppState.darkMode = (AppState.darkMode + 1) % 4; // Cycle through 0, 1, 2, 3
         document.body.className = ''; // Clear all classes first
-        UI.elements.darkModeToggle.className = 'button'; // Reset button class
-        UI.elements.darkModeToggle.textContent = "Theme";
+        UI.elements.darkModeToggle.className = 'toggle-button'; // Reset button class (use a consistent base class)
         const themes = ['', 'dark-mode', 'dark-mode-2', 'dark-mode-3'];
-        const buttonClasses = ['', 'active', 'active-2', 'active-3'];
+        const buttonClasses = ['', 'active', 'active-2', 'active-3']; // Specific classes for button state
         const buttonTexts = ['Light Mode', 'Theme 1', 'Theme 2', 'Theme 3'];
-        if (AppState.darkMode > 0) document.body.classList.add(themes[AppState.darkMode]);
-        UI.elements.darkModeToggle.classList.add(buttonClasses[AppState.darkMode]);
+        if (AppState.darkMode > 0) {
+            document.body.classList.add(themes[AppState.darkMode]);
+        }
+        UI.elements.darkModeToggle.classList.add(buttonClasses[AppState.darkMode]); // Add specific active class
         UI.elements.darkModeToggle.textContent = buttonTexts[AppState.darkMode];
         log(`${buttonTexts[AppState.darkMode]} enabled`);
     });
 
+    // Chords Enabled Toggle Button
     if(UI.elements.chordsEnabled) UI.elements.chordsEnabled.addEventListener('click', () => {
+        // Assuming AppState.chordsPlaybackEnabled exists and is boolean
         AppState.chordsPlaybackEnabled = !AppState.chordsPlaybackEnabled;
         UI.elements.chordsEnabled.textContent = AppState.chordsPlaybackEnabled ? 'Chords ON' : 'Chords OFF';
         UI.elements.chordsEnabled.classList.toggle('active', AppState.chordsPlaybackEnabled);
         log(`Chords playback ${AppState.chordsPlaybackEnabled ? 'enabled' : 'disabled'}`);
     });
 
+    // Tempo Slider
     const tempoUpdateDebounced = debounce(() => { log("Tempo changed."); }, 200);
     if(UI.elements.tempo) UI.elements.tempo.addEventListener('input', () => {
         AppState.tempo = parseInt(UI.elements.tempo.value);
         if(UI.elements.tempoDisplay) UI.elements.tempoDisplay.textContent = `${AppState.tempo} BPM`;
-        tempoUpdateDebounced();
+        // If playback is active, update the interval immediately
+        if (AppState.isPlaying && playbackInterval) {
+            stopPlayback(); // Stop the old interval
+            startPlayback(); // Start a new one with the updated tempo
+        }
+        tempoUpdateDebounced(); // Log debounced change
     });
 
+    // Tap Tempo Button
     let tapTimestamps = [];
     if(UI.elements.tapTempo) UI.elements.tapTempo.addEventListener('click', () => {
         const now = performance.now(); tapTimestamps.push(now);
-        tapTimestamps = tapTimestamps.filter(ts => now - ts < 5000);
-        if (tapTimestamps.length > 4) { tapTimestamps.shift(); }
+        tapTimestamps = tapTimestamps.filter(ts => now - ts < 5000); // Keep taps within 5 seconds
+        if (tapTimestamps.length > 4) { tapTimestamps.shift(); } // Limit to last 4 taps for calculation
         if (tapTimestamps.length >= 2) {
             let totalInterval = 0;
             for (let i = 1; i < tapTimestamps.length; i++) { totalInterval += tapTimestamps[i] - tapTimestamps[i - 1]; }
             const avgInterval = totalInterval / (tapTimestamps.length - 1);
             if (avgInterval > 0) {
                 const bpm = Math.round(60000 / avgInterval);
-                AppState.tempo = Math.max(40, Math.min(240, bpm));
+                AppState.tempo = Math.max(40, Math.min(240, bpm)); // Clamp tempo
                 if(UI.elements.tempo) UI.elements.tempo.value = AppState.tempo;
                 if(UI.elements.tempoDisplay) UI.elements.tempoDisplay.textContent = `${AppState.tempo} BPM`;
                 log(`Tap tempo calculated: ${AppState.tempo} BPM`);
+                // If playback is active, update the interval immediately
+                if (AppState.isPlaying && playbackInterval) {
+                    stopPlayback();
+                    startPlayback();
+                }
                 tempoUpdateDebounced();
             }
         }
+        // Visual feedback for tap
         UI.elements.tapTempo.style.transform = 'scale(1.1)';
-        setTimeout(() => UI.elements.tapTempo.style.transform = 'scale(1)', 100);
+        setTimeout(() => { if(UI.elements.tapTempo) UI.elements.tapTempo.style.transform = 'scale(1)'; }, 100);
     });
 
+    // Time Signature Select
     if(UI.elements.timeSignature) UI.elements.timeSignature.addEventListener('change', () => {
         log(`Time signature changed to: ${UI.elements.timeSignature.options[UI.elements.timeSignature.selectedIndex].text}`);
-        createBeats();
-        if (AppState.isPlaying) { stopPlayback(); startPlayback(); }
+        createBeats(); // Update visual beats
+        if (AppState.isPlaying) { // Restart playback if running
+            stopPlayback();
+            startPlayback();
+        }
     });
 
-    // Volume controls (optional logging)
-    // ['metronomeVolume', 'chordFretboardVolume', 'chordVolume', 'fretboardVolume', 'accentIntensity'].forEach(id => {
-    //     if (UI.elements[id]) UI.elements[id].addEventListener('input', () => log(`${id}: ${UI.elements[id].value}`));
-    // });
-
+    // Progression Select
     if(UI.elements.progressionSelect) UI.elements.progressionSelect.addEventListener('change', () => {
         loadProgression(UI.elements.progressionSelect.value);
     });
 
+    // Key Select
     if(UI.elements.keySelect) UI.elements.keySelect.addEventListener('change', () => {
         updateProgressionKey(UI.elements.keySelect.value);
+        // Optionally update fretboard immediately if needed
+        syncFretboardWithMeasure(UI.elements.progressionContainer?.querySelector('.measure'));
     });
 
+    // Chord Fretboard Tuning Select
     if(UI.elements.chordTuning) UI.elements.chordTuning.addEventListener('change', () => {
         log(`Main fretboard tuning changed to: ${UI.elements.chordTuning.value}`);
-        syncFretboardWithMeasure(UI.elements.progressionContainer?.firstElementChild);
+        // Update the main fretboard display based on the current measure/chord/scale
+        syncFretboardWithMeasure(UI.elements.progressionContainer?.querySelector('.measure.active') || UI.elements.progressionContainer?.querySelector('.measure'));
     });
 
-    // Event delegation for measure control changes
+    // Event delegation for measure control changes (Chord/Scale selects within measures)
     if(UI.elements.progressionContainer) UI.elements.progressionContainer.addEventListener('change', (e) => {
-        if (e.target.tagName === 'SELECT') {
+        if (e.target.matches('.chord-select, .scale-select')) { // Check if the changed element is a relevant select
             const measureElement = e.target.closest('.measure');
-            if (measureElement) { updateMeasureState(measureElement); }
+            if (measureElement) {
+                updateMeasureState(measureElement); // Update internal state if needed
+                // Update the main fretboard if the active measure's scale/chord changes
+                if (measureElement.classList.contains('active')) {
+                    syncFretboardWithMeasure(measureElement);
+                }
+            }
         }
     });
 
@@ -2300,7 +2633,6 @@ function setupEventListeners() {
     if(UI.elements.rhythmPatternSelect) UI.elements.rhythmPatternSelect.addEventListener('change', (e) => {
         selectedRhythmPattern = e.target.value;
         log(`Rhythm pattern changed to: ${selectedRhythmPattern}`);
-        // If playing, the loop will pick up the change. No restart needed.
     });
     if(UI.elements.twoChordsCheckbox) UI.elements.twoChordsCheckbox.addEventListener('change', (e) => {
         twoChordsPerMeasureEnabled = e.target.checked;
@@ -2314,56 +2646,6 @@ function setupEventListeners() {
 
     log("Event listeners set up complete.");
 }
-
-// --- Initialization ---
-async function initializeApp() {
-    log("Initializing Bebop Blueprint...");
-    updateLoadingStatus("Initializing UI...", true);
-    UI.init();
-
-    if(UI.elements.keySelect) UI.elements.keySelect.innerHTML = createAllKeyOptions('C');
-    // Add default measure container if missing
-    if (!UI.elements.progressionContainer && UI.elements.measures) {
-        UI.elements.progressionContainer = UI.elements.measures; // Use 'measures' as container if 'progression-container' missing
-        log("Using #measures as progression container.");
-    } else if (!UI.elements.progressionContainer) {
-         console.error("Cannot initialize: Progression container not found (#progression-container or #measures).");
-         updateLoadingStatus("Error: Missing progression container!", true);
-         return;
-    }
-
-
-    updateLoadingStatus("Creating initial UI components...");
-    createBeats();
-    const initialTuning = TUNINGS[UI.elements.chordTuning?.value || 'standard']?.notes || TUNINGS.standard.notes;
-    if(UI.elements.chordFretboard) createFretboard(UI.elements.chordFretboard, initialTuning);
-
-    updateLoadingStatus("Loading default progression...");
-    loadProgression(UI.elements.progressionSelect?.value || "2_5_1");
-
-    updateLoadingStatus("Initializing FretFlow...");
-    initializeFretFlow();
-
-    updateLoadingStatus("Setting up interactions...");
-    setupEventListeners();
-
-    if(UI.elements.drumSetToggleBtn) {
-        UI.elements.drumSetToggleBtn.style.display = UI.elements.soundType?.value === 'drums' ? 'inline-block' : 'none';
-        if (UI.elements.soundType?.value === 'drums') { UI.elements.drumSetToggleBtn.textContent = drumSoundSets[currentDrumSetIndex].name; }
-    }
-    // Set initial state for chord toggle button
-    if(UI.elements.chordsEnabled) {
-        UI.elements.chordsEnabled.textContent = AppState.chordsPlaybackEnabled ? 'Chords ON' : 'Chords OFF';
-        UI.elements.chordsEnabled.classList.toggle('active', AppState.chordsPlaybackEnabled);
-    }
-
-
-    setTimeout(() => {
-        updateLoadingStatus("Ready!", false);
-        log("Application initialized successfully.");
-    }, 200);
-}
-
 // --- Run Initialization ---
 document.addEventListener('DOMContentLoaded', () => {
     initializeApp().catch(error => {
@@ -2372,7 +2654,6 @@ document.addEventListener('DOMContentLoaded', () => {
         alert("Error initializing the application. Please check the console for details and try refreshing.");
     });
 });
-
 
     </script>
 </body>
