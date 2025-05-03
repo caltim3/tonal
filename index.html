@@ -766,6 +766,7 @@
     <script>
         
 // Utility Functions
+// Utility Functions
 function log(message) {
     console.log(`[FretFlow Debug] ${message}`);
 }
@@ -780,13 +781,14 @@ function updateLoadingStatus(message) {
     indicator.textContent = message;
 }
 
-        function debounce(func, wait) {
+function debounce(func, wait) {
     let timeout;
     return function (...args) {
         clearTimeout(timeout);
         timeout = setTimeout(() => func.apply(this, args), wait);
     };
-}        
+}
+
 const ALL_NOTES = [
   'a', 'as', 'b', 'c', 'cs', 'd', 'ds', 'e', 'f', 'fs', 'g', 'gs'
 ];
@@ -796,21 +798,21 @@ const FILE_FORMAT = 'wav';
 function getSampleFileName(note, octave) {
   return `${note}${octave}.${FILE_FORMAT}`;
 }
-        
+
 const allSampleFiles = [];
 for (const note of ALL_NOTES) {
   for (const octave of OCTAVES) {
     allSampleFiles.push(getSampleFileName(note, octave));
   }
 }
-        
+
 const PIANO_CONFIG = {
   notes: ALL_NOTES,
   octaves: OCTAVES,
   velocities: [12],
   fileFormat: FILE_FORMAT
 };
-        
+
 const ENHARMONIC_MAP = {
     'C#': 'Db', 'Db': 'Db',
     'D#': 'Eb', 'Eb': 'Eb',
@@ -836,7 +838,7 @@ const SAMPLE_NOTE_MAP = {
     'A#': 'as',
     'Bb': 'as',
     'B': 'b'
-};        
+};
 const PIANO_NOTES = {
     'A2': 110.00, 'As2': 116.54, 'B2': 123.47,
     'C3': 130.81, 'Cs3': 138.59, 'D3': 146.83, 'Ds3': 155.56, 'E3': 164.81, 'F3': 174.61,
@@ -854,61 +856,47 @@ const FRETBOARD_FREQUENCIES = {
 };
 
 const SCALES = {
-    // Basic Scales
     major: [0, 2, 4, 5, 7, 9, 11],
     minor: [0, 2, 3, 5, 7, 8, 10],
     harmonicMinor: [0, 2, 3, 5, 7, 8, 11],
     melodicMinor: [0, 2, 3, 5, 7, 9, 11],
-    
-    // Modes
     dorian: [0, 2, 3, 5, 7, 9, 10],
     phrygian: [0, 1, 3, 5, 7, 8, 10],
     lydian: [0, 2, 4, 6, 7, 9, 11],
     mixolydian: [0, 2, 4, 5, 7, 9, 10],
     locrian: [0, 1, 3, 5, 6, 8, 10],
-    
-    // Jazz Scales
     bebopDominant: [0, 2, 4, 5, 7, 9, 10, 11],
     bebopMajor: [0, 2, 4, 5, 7, 8, 9, 11],
     bebopDorian: [0, 2, 3, 4, 5, 7, 9, 10],
-    bebopPhrygian: [0, 1, 2, 3, 5, 7, 8, 10], // Added Bebop Phrygian
-    altered: [0, 1, 3, 4, 6, 8, 10],      // Super Locrian
+    bebopPhrygian: [0, 1, 2, 3, 5, 7, 8, 10],
+    altered: [0, 1, 3, 4, 6, 8, 10],
     lydianDominant: [0, 2, 4, 6, 7, 9, 10],
-    
-    // Symmetric Scales
-    diminishedWH: [0, 2, 3, 5, 6, 8, 9, 11],  // Diminished (Whole-Half)
-    diminishedHW: [0, 1, 3, 4, 6, 7, 9, 10],  // Diminished (Half-Whole)
-    wholeHalf: [0, 2, 4, 6, 8, 10],           // Whole Tone
-    
-    // Pentatonic Scales
+    diminishedWH: [0, 2, 3, 5, 6, 8, 9, 11],
+    diminishedHW: [0, 1, 3, 4, 6, 7, 9, 10],
+    wholeHalf: [0, 2, 4, 6, 8, 10],
     pentatonicMajor: [0, 2, 4, 7, 9],
     pentatonicMinor: [0, 3, 5, 7, 10],
-    
-    // Blues Scales
     blues: [0, 3, 5, 6, 7, 10],
     majorBlues: [0, 2, 3, 4, 7, 9],
-    
-    // Additional Modern Jazz Scales
-    altered: [0, 1, 3, 4, 6, 8, 10],
     halfWhole: [0, 1, 3, 4, 6, 7, 9, 10],
     harmonicMajor: [0, 2, 4, 5, 7, 8, 11],
     doubleHarmonic: [0, 1, 4, 5, 7, 8, 11],
-
     'enigmatic': [0, 1, 4, 6, 8, 10, 11],
     'persian': [0, 1, 4, 5, 6, 8, 11],
     'arabic': [0, 2, 4, 5, 6, 8, 10],
     'japanese': [0, 2, 5, 7, 8],
     'egyptian': [0, 2, 5, 7, 10]
-    
 };
 
 const TUNINGS = {
-    standard: ['E', 'B', 'G', 'D', 'A', 'E'],  // Note the order change
+    standard: ['E', 'B', 'G', 'D', 'A', 'E'],
     dropD: ['E', 'B', 'G', 'D', 'A', 'D'],
     openG: ['D', 'B', 'G', 'D', 'G', 'D'],
     DADGAD: ['D', 'A', 'G', 'D', 'A', 'D'],
     openE: ['E', 'B', 'E', 'Ab', 'B', 'E']
 };
+
+// ... (Continue with the rest of your constants, state, and functions)
 
         
 const DRUM_PATTERNS = {
@@ -1501,507 +1489,199 @@ const progressions = {
     "tenor_madness": { defaultKey: "Bb", progression: ["I7", "I7", "I7", "I7", "IV7", "IV7", "I7", "I7", "iim7", "V7", "I7", "I7"] }
 };
 
-  // Load audio samples
-  
-        // Parse Roman numeral chords
-  const parseChord = (romanNumeral, key) => {
+// --- Chord and Progression Parsing Utilities ---
+
+const NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+function parseChord(romanNumeral, key) {
     try {
-      // Handle invalid inputs
-      if (!romanNumeral || !key) {
-        return { symbol: "?", notes: ["C"] };
-      }
-      
-      const isMinor = key.includes('m');
-      let rootKey = key.replace('m', '');
-      const rootKeyIndex = NOTES.indexOf(rootKey);
-      
-      // If key is invalid, default to C
-      if (rootKeyIndex === -1) {
-        rootKey = 'C';
-        rootKeyIndex = 0;
-      }
-      
-      // Define scale degrees based on major/minor key
-      const majorScale = [0, 2, 4, 5, 7, 9, 11];
-      const minorScale = [0, 2, 3, 5, 7, 8, 10];
-      const scale = isMinor ? minorScale : majorScale;
-      
-      // Parse Roman numeral to get scale degree and chord type
-      let degree = 0;
-      let chordType = '';
-      let flattenDegree = false;
-      let sharpDegree = false;
-      let roman = romanNumeral;
-      
-      // Check for flattened or sharpened degrees
-      if (roman.startsWith('b')) {
-        flattenDegree = true;
-        roman = roman.substring(1);
-      } else if (roman.startsWith('#')) {
-        sharpDegree = true;
-        roman = roman.substring(1);
-      }
-      
-      // Identify scale degree from Roman numeral
-      if (roman.startsWith('I')) {
-        if (roman.startsWith('IV')) degree = 4;
-        else if (roman.startsWith('III')) degree = 3;
-        else if (roman.startsWith('II')) degree = 2;
-        else degree = 1;
-      } else if (roman.startsWith('V')) {
-        if (roman.startsWith('VII')) degree = 7;
-        else if (roman.startsWith('VI')) degree = 6;
-        else degree = 5;
-      }
-      
-      // Default to I if we couldn't parse the degree
-      if (degree === 0) degree = 1;
-      
-      // Remove the Roman numeral part to extract the chord type
-      const degreeStr = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'][degree - 1];
-      chordType = roman.substring(degreeStr ? degreeStr.length : 0);
-      
-      // Determine if the chord is uppercase (major) or lowercase (minor)
-      const isMajor = roman[0] === roman[0].toUpperCase();
-      
-      // Get the root note of the chord
-      let degreeIndex = degree - 1;
-      let rootNote;
-      
-      if (flattenDegree) {
-        // Flatten the scale degree
-        rootNote = (rootKeyIndex + scale[degreeIndex] - 1 + 12) % 12;
-      } else if (sharpDegree) {
-        // Sharpen the scale degree
-        rootNote = (rootKeyIndex + scale[degreeIndex] + 1) % 12;
-      } else {
-        rootNote = (rootKeyIndex + scale[degreeIndex]) % 12;
-      }
-      
-      // Determine chord notes based on chord type
-      let chordNotes = [];
-      const root = NOTES[rootNote];
-      
-      // Basic triad (major or minor)
-      if (isMajor) {
-        // Major triad
-        chordNotes = [root, NOTES[(rootNote + 4) % 12], NOTES[(rootNote + 7) % 12]];
-      } else {
-        // Minor triad
-        chordNotes = [root, NOTES[(rootNote + 3) % 12], NOTES[(rootNote + 7) % 12]];
-      }
-      
-      // Add extensions based on chord type
-      if (chordType.includes('7')) {
-        if (chordType.includes('maj7')) {
-          // Major 7th
-          chordNotes.push(NOTES[(rootNote + 11) % 12]);
-        } else {
-          // Dominant 7th
-          chordNotes.push(NOTES[(rootNote + 10) % 12]);
+        if (!romanNumeral || !key) {
+            return { symbol: "?", notes: ["C"] };
         }
-      } else if (chordType.includes('6')) {
-        // 6th chord
-        chordNotes.push(NOTES[(rootNote + 9) % 12]);
-      }
-      
-      // Handle special alterations
-      if (chordType.includes('b5')) {
-        // Flat 5th
-        chordNotes[2] = NOTES[(rootNote + 6) % 12];
-      }
-      
-      if (chordType.includes('b9')) {
-        // Add flat 9th for altered dominants
-        chordNotes.push(NOTES[(rootNote + 13) % 12]);
-      }
-      
-      return {
-        symbol: root + chordType.replace('m', 'min').replace('maj', 'maj'),
-        notes: chordNotes
-      };
+
+        const isMinor = key.endsWith('m');
+        let rootKey = key.replace('m', '');
+        let rootKeyIndex = NOTES.indexOf(rootKey);
+
+        if (rootKeyIndex === -1) {
+            rootKey = 'C';
+            rootKeyIndex = 0;
+        }
+
+        const majorScale = [0, 2, 4, 5, 7, 9, 11];
+        const minorScale = [0, 2, 3, 5, 7, 8, 10];
+        const scale = isMinor ? minorScale : majorScale;
+
+        let degree = 0;
+        let chordType = '';
+        let flattenDegree = false;
+        let sharpDegree = false;
+        let roman = romanNumeral;
+
+        if (roman.startsWith('b')) {
+            flattenDegree = true;
+            roman = roman.substring(1);
+        } else if (roman.startsWith('#')) {
+            sharpDegree = true;
+            roman = roman.substring(1);
+        }
+
+        // Map Roman numerals to scale degrees
+        const romanMap = {
+            'I': 1, 'II': 2, 'III': 3, 'IV': 4, 'V': 5, 'VI': 6, 'VII': 7
+        };
+        for (let rn in romanMap) {
+            if (roman.startsWith(rn)) {
+                degree = romanMap[rn];
+                chordType = roman.substring(rn.length);
+                break;
+            }
+        }
+        if (degree === 0) degree = 1; // Default to I
+
+        const isMajor = roman[0] === roman[0].toUpperCase();
+
+        let degreeIndex = degree - 1;
+        let rootNoteIndex;
+        if (flattenDegree) {
+            rootNoteIndex = (rootKeyIndex + scale[degreeIndex] - 1 + 12) % 12;
+        } else if (sharpDegree) {
+            rootNoteIndex = (rootKeyIndex + scale[degreeIndex] + 1) % 12;
+        } else {
+            rootNoteIndex = (rootKeyIndex + scale[degreeIndex]) % 12;
+        }
+        const root = NOTES[rootNoteIndex];
+
+        // Build chord notes
+        let chordNotes = [];
+        if (isMajor) {
+            chordNotes = [root, NOTES[(rootNoteIndex + 4) % 12], NOTES[(rootNoteIndex + 7) % 12]];
+        } else {
+            chordNotes = [root, NOTES[(rootNoteIndex + 3) % 12], NOTES[(rootNoteIndex + 7) % 12]];
+        }
+
+        if (chordType.includes('7')) {
+            if (chordType.includes('maj7')) {
+                chordNotes.push(NOTES[(rootNoteIndex + 11) % 12]);
+            } else {
+                chordNotes.push(NOTES[(rootNoteIndex + 10) % 12]);
+            }
+        } else if (chordType.includes('6')) {
+            chordNotes.push(NOTES[(rootNoteIndex + 9) % 12]);
+        }
+        if (chordType.includes('b5')) {
+            chordNotes[2] = NOTES[(rootNoteIndex + 6) % 12];
+        }
+        if (chordType.includes('b9')) {
+            chordNotes.push(NOTES[(rootNoteIndex + 13) % 12]);
+        }
+
+        return {
+            symbol: root + chordType.replace('m', 'min').replace('maj', 'maj'),
+            notes: chordNotes
+        };
     } catch (error) {
-      console.error("Error parsing chord:", error, romanNumeral, key);
-      // Return a safe default if parsing fails
-      return { 
-        symbol: "?", 
-        notes: ["C", "E", "G"] 
-      };
+        console.error("Error parsing chord:", error, romanNumeral, key);
+        return { symbol: "?", notes: ["C", "E", "G"] };
     }
-  };
-  
-  // Convert all Roman numerals to actual chords
-  const parseProgression = (progression, key) => {
+}
+
+function parseProgression(progression, key) {
     if (!progression || !Array.isArray(progression)) {
-      console.error("Invalid progression:", progression);
-      return [];
+        console.error("Invalid progression:", progression);
+        return [];
     }
     return progression.map(roman => parseChord(roman, key));
-  };
-  
-  // Update parsed chords when progression or key changes
-  
-      
-    } else {
-      // Set empty array to avoid undefined errors
-      
+}
+
+function formatChord(chord) {
+    if (!chord || !chord.symbol) return "?";
+    try {
+        return chord.symbol.replace('min', 'm').replace('maj', 'Δ');
+    } catch (error) {
+        console.error("Error formatting chord:", error);
+        return "?";
     }
-  }, [selectedProgression, currentKey]);
-  
-  // Play a single chord
-  const playChord = (chord) => {
-    if (!samplesLoaded || !chord || !chord.notes) return 60 / tempo * 2; // Default duration if can't play
-    
-    // Decide which octaves to use for voicing the chord
+}
+
+function getAvailableKeys() {
+    const keys = [];
+    for (const note of NOTES) keys.push(note);
+    for (const note of NOTES) keys.push(`${note}m`);
+    return keys;
+}
+
+// --- Chord Playback Example ---
+
+function playChord(chord, tempo = 120) {
+    if (!chord || !chord.notes) return 60 / tempo * 2;
     const notes = chord.notes;
     const voicing = [];
-    
-    // Simple voicing strategy:
-    // Root in bass (octave 2 or 3)
-    // Other notes in middle register (octave 3 or 4)
     const rootOctave = 3;
     const upperOctave = 4;
-    
-    try {
-      // Root note
-      if (notes[0]) {
-        voicing.push(notes[0].toLowerCase().replace('#', 's') + rootOctave);
-      }
-      
-      // Other chord tones
-      for (let i = 1; i < notes.length; i++) {
-        if (notes[i]) {
-          voicing.push(notes[i].toLowerCase().replace('#', 's') + upperOctave);
-        }
-      }
-      
-      // Play each note in the chord
-      const noteDuration = 60 / tempo * 2; // 2 beats per chord
-      voicing.forEach(note => {
+
+    if (notes[0]) voicing.push(notes[0].replace('#', 's').toLowerCase() + rootOctave);
+    for (let i = 1; i < notes.length; i++) {
+        if (notes[i]) voicing.push(notes[i].replace('#', 's').toLowerCase() + upperOctave);
+    }
+
+    const noteDuration = 60 / tempo * 2;
+    voicing.forEach(note => {
         try {
-          if (AUDIO_FILES[note]) {
-            AUDIO_FILES[note].play(noteDuration);
-          }
+            playNote(note, 1.0, noteDuration * 1000); // playNote must be defined elsewhere
         } catch (e) {
-          console.error(`Error playing note ${note}:`, e);
+            console.error(`Error playing note ${note}:`, e);
         }
-      });
-      
-      return noteDuration;
-    } catch (error) {
-      console.error("Error in playChord:", error);
-      return 60 / tempo * 2; // Return default duration on error
-    }
-  };
-  
-  // Play the entire progression
-  const playProgression = () => {
-    if (!samplesLoaded || !parsedChords || parsedChords.length === 0) {
-      console.log("Can't play: samples not loaded or no parsed chords");
-      return;
-    }
-    
-    try {
-      
-      let index = 0;
-      
-      
-      const playNextChord = () => {
-        if (index < parsedChords.length) {
-          try {
-            const duration = playChord(parsedChords[index]);
-            index++;
-            
-            
-            // Schedule next chord
-            timerRef.current = 
-          } catch (error) {
-            console.error("Error playing chord:", error);
-            
-            
-          }
-        } else {
-          
-          
-        }
-      };
-      
-      // Start playing
-      playNextChord();
-    } catch (error) {
-      console.error("Error in playProgression:", error);
-      
-      
-    }
-  };
-  
-  // Stop playing
-  const stopPlaying = () => {
-    clearTimeout(timerRef.current);
-    
-    
-  };
-  
-  // Format the chord symbols for display
-  const formatChord = (chord) => {
-    if (!chord || !chord.symbol) return "?";
-    
-    try {
-      return chord.symbol
-        .replace('min', 'm')
-        .replace('maj', 'Δ');
-    } catch (error) {
-      console.error("Error formatting chord:", error);
-      return "?";
-    }
-  };
-  
-  // Get all available keys for transposition
-  const getAvailableKeys = () => {
-    const keys = [];
-    
-    // Major keys
-    for (const note of NOTES) {
-      keys.push(note);
-    }
-    
-    // Minor keys
-    for (const note of NOTES) {
-      keys.push(`${note}m`);
-    }
-    
-    return keys;
-  };
-
-  
-            }}
-          >
-            {Object.keys(progressions).map(prog => (
-              <option key={prog} value={prog}>
-                {prog.replace(/_/g, ' ')}
-              </option>
-            ))}
-          </select>
-        </div>
-        
-        <div>
-          Key:</label>
-          <select 
-            className="block w-full p-2 border rounded"
-            value={currentKey}
-            onChange={(e) => {
-              
-              stopPlaying();
-            }}
-          >
-            {getAvailableKeys().map(key => (
-              <option key={key} value={key}>
-                {key}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-      
-      
-      
-      
-      
-      
-            ))
-          ) : (
-            
-          )}
-        </div>
-      </div>
-      
-      
-            ))
-          ) : (
-            <div>No chord details available</div>
-          )}
-        </div>
-      </div>
-      
-      
-    </div>
-  );
+    });
+    return noteDuration;
 }
-// Audio Playback
+let audioCtx = null;
+function ensureAudioInitialized() {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+}
+
 function playNote(noteName, volume = 1.0, duration = 1000) {
-    if (!AudioContextManager.context || !noteName) return;
+    ensureAudioInitialized();
+    if (!noteName) return;
 
-    const fretboardVolumeControl = document.getElementById('fretboard-volume');
-    const fretboardVolume = parseFloat(fretboardVolumeControl?.value ?? 1);
-    const finalVolume = volume * fretboardVolume;
-
-    if (finalVolume <= 0) return;
-
-    // Extract the pitch class and octave from the note name
-    const match = noteName.match(/^([A-G][b#]?)(\d)$/);
+    // Normalize note name (e.g. "A#4" -> "as4")
+    let match = noteName.match(/^([a-g][s]?)(\d)$/i);
     if (!match) {
         console.warn(`Invalid note format: ${noteName}`);
         return;
     }
+    let [, base, octave] = match;
+    base = base.toLowerCase();
+    octave = parseInt(octave);
 
-    let [, rawNote, octaveStr] = match;
-    const baseNote = standardizeNoteName(rawNote).replace('m', '');
-    const mappedNote = SAMPLE_NOTE_MAP[baseNote] || baseNote;
-    const octave = Math.max(2, Math.min(6, parseInt(octaveStr)));
-
-    const sampleName = `${mappedNote}${octave}v12`;
-    const buffer = AudioContextManager.pianoSampleBuffers[sampleName];
-
+    const sampleKey = `${base}${octave}`;
+    const buffer = pianoSampleBuffers[sampleKey];
     if (!buffer) {
-        console.warn(`No piano sample found for ${sampleName}`);
+        console.warn(`No sample loaded for ${sampleKey}`);
         return;
     }
 
     try {
-        const source = AudioContextManager.context.createBufferSource();
+        const source = audioCtx.createBufferSource();
         source.buffer = buffer;
 
-        const gainNode = AudioContextManager.context.createGain();
-        gainNode.gain.value = finalVolume;
+        const gainNode = audioCtx.createGain();
+        gainNode.gain.value = volume;
 
         source.connect(gainNode);
-        gainNode.connect(AudioContextManager.context.destination);
+        gainNode.connect(audioCtx.destination);
 
         source.start(0);
         setTimeout(() => {
-            try {
-                source.stop();
-            } catch (e) {
-                // No-op on already stopped source
-            }
+            try { source.stop(); } catch (e) {}
         }, duration);
     } catch (error) {
         console.error('Error playing note:', error);
     }
 }
-
-
-async function playChord(root, quality, startTime = AudioContextManager.context.currentTime, duration = 2, isContinuation = false) {
-    await ensureAudioInitialized();
-    if (!AudioContextManager.samplesLoaded) {
-        console.warn('Piano samples not loaded yet');
-        return;
-    }
-    if (!UI.elements.chordsEnabled.classList.contains('active')) return;
-
-    // Get chord notes and log them for debugging
-    const chordNotes = getChordNotes(root, quality);
-    console.log('Playing chord:', root, quality, 'Notes:', chordNotes);
-
-    const chordVolume = parseFloat(UI.elements.chordVolume.value);
-    if (chordVolume <= 0) return;
-
-    // Create a new gain node for this chord
-    const gainNode = AudioContextManager.context.createGain();
-    gainNode.gain.value = chordVolume;
-    gainNode.connect(AudioContextManager.context.destination);
-
-    // Handle previous chord
-    if (!isContinuation && AudioContextManager.currentChordGain) {
-        AudioContextManager.currentChordGain.gain.setValueAtTime(
-            AudioContextManager.currentChordGain.gain.value, 
-            startTime
-        );
-        AudioContextManager.currentChordGain.gain.exponentialRampToValueAtTime(
-            0.001, 
-            startTime + 0.05
-        );
-    }
-
-    AudioContextManager.currentChordGain = gainNode;
-
-    // Prepare notes for either root position or inversion
-    let finalChordNotes = [...chordNotes];
-    if (isContinuation) {
-        // For inversion, move the root note up an octave
-        const rootNote = finalChordNotes[0];
-        finalChordNotes.shift(); // Remove root from beginning
-        finalChordNotes.push(rootNote); // Add root to end
-    }
-
-    // Play each note in the chord
-    finalChordNotes.forEach((note, index) => {
-        // Determine octave based on position and inversion
-        const octave = isContinuation ? 
-            (index === finalChordNotes.length - 1 ? 4 : 3) : // In inversion, last note (root) goes up to octave 4
-            (index === 0 ? 3 : (index < 3 ? 3 : 4)); // In root position, spread across octaves 3 and 4
-
-        // Convert note name to sample format
-        const sampleNote = standardizeNoteNameForSamples(note);
-        if (!sampleNote) {
-            console.error(`Invalid note: ${note}`);
-            return;
-        }
-
-        const sampleKey = `${sampleNote}${octave}`;
-        console.log(`Playing note: ${note} as ${sampleKey}`);
-
-        // Get and play the buffer
-        const buffer = AudioContextManager.pianoSampleBuffers[sampleKey];
-        if (!buffer) {
-            console.warn(`No sample found for ${sampleKey}`);
-            return;
-        }
-
-        const source = AudioContextManager.context.createBufferSource();
-        source.buffer = buffer;
-        source.connect(gainNode);
-
-        // Add reverb
-        const reverbGain = AudioContextManager.context.createGain();
-        reverbGain.gain.value = 0.2;
-        source.connect(reverbGain);
-        reverbGain.connect(AudioContextManager.reverbNode);
-
-        // Add slight timing variation for more natural sound
-        const timeVariation = Math.random() * 0.02;
         
-        // Start and stop the note
-        source.start(startTime + timeVariation);
-        source.stop(startTime + duration);
-    });
-}
-
-    
-    // Handle sharps and flats in the root note
-    let rootNote = root;
-    if (root.includes('#')) {
-        const baseNote = root.replace('#', '');
-        const baseIndex = NOTES.indexOf(baseNote);
-        rootNote = NOTES[(baseIndex + 1) % 12];
-    } else if (root.includes('b')) {
-        const baseNote = root.replace('b', '');
-        const baseIndex = NOTES.indexOf(baseNote);
-        rootNote = NOTES[(baseIndex + 11) % 12];
-    }
-
-    // Get the root note index
-    const rootIndex = NOTES.indexOf(rootNote);
-    
-    if (rootIndex === -1) {
-        console.error(`Invalid root note: ${root}`);
-        return [root];
-    }
-
-    // Get the intervals for the specified quality
-    const normalizedQuality = normalizeChordQuality(quality);
-    const intervals = CHORD_INTERVALS[normalizedQuality] || CHORD_INTERVALS['maj'];
-
-
-    // Generate the chord notes
-    const chordNotes = intervals.map(interval => {
-        const noteIndex = (rootIndex + interval) % 12;
-        return NOTES[noteIndex];
-    });
-
-    console.log(`Generated chord notes for ${root} ${quality}:`, chordNotes);
-    return chordNotes;
-}
 async function playMetronomeSound(baseVolume) {
     if (!AudioContextManager.context) return;
 
