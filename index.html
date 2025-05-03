@@ -1152,63 +1152,116 @@ function adjustOctave(noteName, octaveChange) {
  * @param {number} duration - Duration in seconds.
  * @param {number} [startTime] - Optional AudioContext time to schedule playback.
  */
-async function playChord(notes, duration, startTime) {
-    const context = await AudioContextManager.ensureAudioContext();
-    if (!context || !AudioContextManager.samplesLoaded || !AppState.chordsPlaybackEnabled) return;
-
-    const now = context.currentTime;
-    const playAt = startTime !== undefined ? startTime : now;
-    const volume = parseFloat(UI.elements.chordVolume.value); // Use the correct UI element ID
-
-    // console.log(`Playing chord: ${notes.join(', ')} at time ${playAt.toFixed(2)} for ${duration}s`);
-
-    if (!notes || notes.length === 0 || volume <= 0) {
-        // console.warn("playChord called with empty notes array or zero volume.");
-        return;
-    }
-
-    notes.forEach(noteName => {
-        // Map note name (e.g., C#3) to sample key (e.g., cs3)
-        const match = noteName.match(/^([A-G][#b]?)([0-9])$/);
-        if (!match) return;
-        const notePart = standardizeNoteName(match[1]);
-        const octavePart = match[2];
-        const sampleNote = SAMPLE_NOTE_MAP[notePart];
-        if (!sampleNote) return;
-        const sampleKey = `${sampleNote}${octavePart}`;
-
-        const buffer = AudioContextManager.pianoSampleBuffers[sampleKey];
-        if (buffer) {
-            try {
-                const source = context.createBufferSource();
-                source.buffer = buffer;
-
-                const gainNode = context.createGain();
-                gainNode.gain.setValueAtTime(volume, playAt);
-                // Fade out quickly at the end
-                gainNode.gain.linearRampToValueAtTime(0.0001, playAt + duration);
-
-                source.connect(gainNode);
-                // Optional: Connect through reverb
-                if (AudioContextManager.reverbNode) {
-                    const reverbGain = context.createGain();
-                    reverbGain.gain.value = 0.2; // Chord reverb amount
-                    gainNode.connect(reverbGain);
-                    reverbGain.connect(AudioContextManager.reverbNode);
-                } else {
-                    gainNode.connect(context.destination);
-                }
-
-                source.start(playAt);
-                // Stop the source slightly after the fade ends
-                source.stop(playAt + duration + 0.1);
-            } catch (e) {
-                 console.error(`Error playing chord note ${noteName}:`, e);
-            }
-        } else {
-            console.warn(`Piano sample buffer not found for note: ${noteName} (key: ${sampleKey})`);
+async function playChord(chordSymbol, startTime, duration, voicingType = 'close', isSecondChord = false) {
+    log(`playChord called: Symbol=${chordSymbol}, Time=${startTime}, Duration=${duration}, Voicing=${voicingType}, Second=${isSecondChord}`); // Added Log
+    try {
+        await AudioContextManager.ensureAudioContext();
+        if (!UI.elements.chordsEnabled.classList.contains('active')) {
+            log("Chords disabled, skipping playback."); // Added Log
+            return;
         }
-    });
+
+        const voicingNotes = getChordVoicing(chordSymbol, voicingType, isSecondChord);
+        log(`Generated Voicing Notes: ${voicingNotes.join(', ')}`); // Added Log
+
+        if (!voicingNotes || voicingNotes.length === 0) {
+            log("No notes generated for voicing, skipping playback."); // Added Log
+            return;
+        }
+
+        // Fade out previous chord sound smoothly
+        if (AudioContextManager.currentChordGain) {
+            const currentGain = AudioContextManager.currentChordGain.gain.value;
+            AudioContextManager.currentChordGain.gain.cancelScheduledValues(startTime);
+            AudioContextManager.currentChordGain.gain.setValueAtTime(currentGain, startTime);
+            AudioContextManager.currentChordGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.05); // Faster fade
+            log("Fading out previous chord gain."); // Added Log
+        }
+
+        const gainNode = AudioContextManager.context.createGain();
+        const chordVolume = parseFloat(UI.elements.chordVolume.value) || 0.75;
+        // Adjust volume based on number of notes to avoid clipping/loudness issues
+        const dynamicVolume = chordVolume / Math.sqrt(voicingNotes.length);
+        gainNode.gain.setValueAtTime(0.001, startTime); // Start silent
+        gainNode.gain.exponentialRampToValueAtTime(dynamicVolume, startTime + 0.02); // Quick fade-in
+        gainNode.connect(AudioContextManager.context.destination);
+
+        // Optional Reverb
+        if (AudioContextManager.reverbNode) {
+            const reverbGain = AudioContextManager.context.createGain();
+            reverbGain.gain.value = 0.2; // Adjust reverb level as needed
+            gainNode.connect(reverbGain);
+            reverbGain.connect(AudioContextManager.reverbNode);
+        }
+
+        AudioContextManager.currentChordGain = gainNode; // Store the new gain node
+
+        let notesPlayedCount = 0; // Keep track of notes actually played
+
+        voicingNotes.forEach(note => {
+            if (!note || typeof note !== 'string' || !note.match(/[A-Ga-g][#b]?\d/)) {
+                console.warn(`Invalid note format in voicing: ${note}`);
+                return; // Skip invalid note formats
+            }
+            const noteName = note.match(/[A-Ga-g][#b]?/)[0];
+            const octaveMatch = note.match(/\d/);
+            if (!octaveMatch) {
+                 console.warn(`Could not extract octave from note: ${note}`);
+                 return; // Skip if octave can't be determined
+            }
+            const octave = parseInt(octaveMatch[0]);
+
+            const sampleNote = SAMPLE_NOTE_MAP[standardizeNoteName(noteName)]; // Use standardizeNoteName here too
+            if (!sampleNote) {
+                console.warn(`No sample note mapping for ${noteName}`);
+                return; // Skip if no mapping
+            }
+
+            const sampleFile = getSampleFileName(sampleNote, octave);
+            const buffer = AudioContextManager.pianoSampleBuffers[sampleFile];
+
+            // *** CRITICAL CHECK ***
+            if (!buffer) {
+                console.warn(`Piano sample buffer not found for: ${sampleFile}. Skipping note.`); // Log missing buffer
+                // Optionally, you could try playing a fallback note (e.g., same note in octave 3 or 4)
+                // const fallbackFile = getSampleFileName(sampleNote, 3);
+                // buffer = AudioContextManager.pianoSampleBuffers[fallbackFile];
+                // if (!buffer) return; // Skip if fallback also fails
+            } else {
+                // Only play if the buffer exists
+                const source = AudioContextManager.context.createBufferSource();
+                source.buffer = buffer;
+                source.connect(gainNode);
+                source.start(startTime);
+                // Schedule stop - ensure duration is reasonable
+                const stopTime = startTime + Math.max(0.1, duration); // Play for at least 0.1s
+                source.stop(stopTime);
+                notesPlayedCount++;
+                // log(`Scheduled note: ${sampleFile} to play at ${startTime} and stop at ${stopTime}`); // Can be verbose
+            }
+        });
+
+        if (notesPlayedCount === 0 && voicingNotes.length > 0) {
+             log("Warning: No valid samples found for any notes in the generated voicing.");
+        } else {
+             log(`Scheduled ${notesPlayedCount} notes for chord ${chordSymbol}`);
+        }
+
+
+    } catch (error) {
+        console.error('Error playing chord:', error);
+        // Attempt to stop any lingering sound from the failed chord attempt
+        if (AudioContextManager.currentChordGain) {
+             try {
+                 const now = AudioContextManager.context.currentTime;
+                 AudioContextManager.currentChordGain.gain.cancelScheduledValues(now);
+                 AudioContextManager.currentChordGain.gain.setValueAtTime(AudioContextManager.currentChordGain.gain.value, now);
+                 AudioContextManager.currentChordGain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+             } catch (fadeError) {
+                 console.error("Error trying to fade out gain node after main error:", fadeError);
+             }
+        }
+    }
 }
 
 
