@@ -2088,64 +2088,227 @@ async function playBeat() {
 }
 
 
-async function startPlayback() {
-    try {
-        await AudioContextManager.ensureAudioContext(); // Ensure audio is ready
-        if (AppState.isPlaying) return; // Already playing
+// --- Replace existing startPlayback, stopPlayback, playBeat ---
 
-        const measures = UI.elements.measures.children;
-        if (measures.length === 0) {
-            alert('Please add at least one measure to the progression.');
-            return;
-        }
-
-        log("Starting playback...");
-        AppState.updateState({ isPlaying: true, currentBeat: 0, currentMeasure: 0 });
-        UI.elements.startStopButton.textContent = 'Stop';
-        UI.elements.startStopButton.style.backgroundColor = '#e74c3c'; // Red for stop
-
-        // Clear any previous visual states
-        document.querySelectorAll('.beat.active').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.measure.active').forEach(m => m.classList.remove('active'));
-
-        // Immediately trigger the first beat
-        await playBeat();
-
-    } catch (error) {
-        console.error('Failed to start playback:', error);
-        alert('Could not start playback. Please ensure audio is enabled and try again.');
-        stopPlayback(); // Reset state if start fails
+function startPlayback() {
+    if (AudioContextManager.context.state === 'suspended') {
+        AudioContextManager.context.resume();
     }
+    if (currentPlaybackIntervalId !== null) {
+        stopPlayback(); // Stop existing playback first
+    }
+    console.log("Starting playback...");
+
+    const bpm = parseInt(document.getElementById('tempo').value, 10);
+    const timeSignature = document.getElementById('time-signature').value; // e.g., "4/4"
+    const beatsPerMeasure = parseInt(timeSignature.split('/')[0], 10);
+    const subdivision = 8; // Use 8th note subdivision for timing flexibility
+    const intervalSeconds = (60 / bpm) / (subdivision / 4); // Time per subdivision (e.g., per 8th note if subdivision=8)
+
+    let currentMeasureIndex = 0;
+    let currentSubdivision = 0; // 0 to subdivision-1 (e.g., 0-7 for 8th notes in 4/4)
+    let nextNoteTime = AudioContextManager.context.currentTime + 0.1; // Start shortly after clicking play
+
+    // Get progression
+    const progressionDivs = document.querySelectorAll('#progression-container .measure');
+    const progression = Array.from(progressionDivs).map(div => {
+        const chordSymbol = div.dataset.chordSymbol || "N.C."; // Get chord like "Cmaj7", "Am7" etc.
+        const [root, quality] = parseChordSymbol(chordSymbol); // Need parseChordSymbol function
+        return { symbol: chordSymbol, root: root, quality: quality };
+    });
+
+    if (progression.length === 0) {
+        console.log("Progression is empty. Nothing to play.");
+        return;
+    }
+
+    // Get UI settings
+    selectedRhythmPattern = document.getElementById('rhythm-pattern').value;
+    twoChordsPerMeasureEnabled = document.getElementById('two-chords').checked;
+    selectedVoicingType = document.getElementById('voicing-type').value;
+    const metronomeVolume = parseFloat(document.getElementById('metronome-volume').value);
+
+    // Define the playback loop function
+    const scheduler = () => {
+        while (nextNoteTime < AudioContextManager.context.currentTime + 0.1) { // Schedule notes slightly ahead
+            // --- Calculate current beat position ---
+            const currentQuarterBeat = (currentSubdivision / (subdivision / 4)) + 1; // e.g., 1, 1.5, 2, 2.5...
+
+            // --- Metronome Click ---
+            if (currentSubdivision % (subdivision / 4) === 0 && metronomeVolume > 0) { // If it's a quarter note beat
+                 const isDownbeat = currentSubdivision === 0;
+                 playMetronomeClick(nextNoteTime, isDownbeat, metronomeVolume);
+            }
+
+            // --- Chord Playback ---
+            const measureData = progression[currentMeasureIndex];
+            if (measureData.root) { // Only play if it's a valid chord (not N.C.)
+                let playThisSubdivision = false;
+                let chordToPlay = { root: measureData.root, quality: measureData.quality };
+                let voicingTypeForThisChord = selectedVoicingType;
+                let isSecondChordInMeasure = false;
+
+                // Determine if the current rhythm pattern includes this beat
+                const pattern = rhythmPatterns[selectedRhythmPattern] || rhythmPatterns['downbeats'];
+
+                // Check if currentQuarterBeat matches a beat in the pattern
+                // Need to handle fractional beats like 3.5 for Charleston
+                if (pattern.includes(currentQuarterBeat)) {
+                     playThisSubdivision = true;
+                }
+
+                // Handle Two Chords Per Measure
+                if (twoChordsPerMeasureEnabled && beatsPerMeasure === 4) {
+                    const beatThreshold = 3; // Play second chord on beat 3
+                    if (currentQuarterBeat >= beatThreshold && pattern.includes(currentQuarterBeat)) {
+                         isSecondChordInMeasure = true;
+                         // Apply random inversion for the second chord
+                         const dropTypes = ['drop2', 'drop3', 'drop24'];
+                         voicingTypeForThisChord = dropTypes[Math.floor(Math.random() * dropTypes.length)];
+                         console.log(`Applying random inversion: ${voicingTypeForThisChord} for beat ${currentQuarterBeat}`);
+                    } else if (currentQuarterBeat < beatThreshold && pattern.includes(currentQuarterBeat)) {
+                         // First chord uses the globally selected voicing type
+                         voicingTypeForThisChord = selectedVoicingType;
+                    } else {
+                         // Don't play if the beat isn't in the pattern OR doesn't fit the 1st/2nd chord logic
+                         playThisSubdivision = false;
+                    }
+                } else {
+                     // If not two chords per measure, just use the selected voicing type
+                     voicingTypeForThisChord = selectedVoicingType;
+                }
+
+
+                // If this subdivision should trigger a chord
+                if (playThisSubdivision) {
+                    const voicing = getChordVoicing(chordToPlay.root, chordToPlay.quality, voicingTypeForThisChord);
+                    if (voicing && voicing.length > 0) {
+                        // Duration: make chords last until the next chord or end of measure?
+                        // Let's make it last roughly 2 beats for now, adjust as needed.
+                        const duration = (60 / bpm) * 1.8; // Slightly less than 2 beats
+                        playChord(voicing, duration, nextNoteTime);
+                    }
+                }
+            }
+
+            // --- Advance Time and Counters ---
+            nextNoteTime += intervalSeconds;
+            currentSubdivision++;
+            if (currentSubdivision >= beatsPerMeasure * (subdivision / 4)) {
+                currentSubdivision = 0;
+                currentMeasureIndex++;
+                if (currentMeasureIndex >= progression.length) {
+                    currentMeasureIndex = 0; // Loop progression
+                }
+                // Update visual indicator for the current measure
+                highlightCurrentMeasure(currentMeasureIndex);
+            }
+        }
+        // Schedule the next check
+        currentPlaybackIntervalId = setTimeout(scheduler, 25); // Check every 25ms
+    };
+
+    // --- Initial call to start the scheduler ---
+    scheduler();
+    document.getElementById('play-button').textContent = 'Stop';
+    document.getElementById('play-button').onclick = stopPlayback;
 }
 
 function stopPlayback() {
-    log("Stopping playback...");
-    clearTimeout(AppState.intervalId); // Use clearTimeout for setTimeout
-    AppState.intervalId = null;
-    AppState.updateState({ isPlaying: false }); // Keep currentBeat/Measure for visual reference? Resetting might be better.
-    // AppState.updateState({ isPlaying: false, currentBeat: 0, currentMeasure: 0 });
+    if (currentPlaybackIntervalId !== null) {
+        clearTimeout(currentPlaybackIntervalId);
+        currentPlaybackIntervalId = null;
+        console.log("Playback stopped.");
+        // Optional: Fade out any currently playing sounds quickly
+        // This requires tracking active sources, which adds complexity.
+        // For now, stopping the scheduler prevents new notes.
+    }
+    // Reset button
+    document.getElementById('play-button').textContent = 'Play';
+    document.getElementById('play-button').onclick = startPlayback;
+    // Remove measure highlight
+    highlightCurrentMeasure(-1); // Pass -1 or null to clear highlight
+}
 
-    // Fade out any lingering chord sound
-    if (AudioContextManager.context && AudioContextManager.currentChordGain) {
-        const now = AudioContextManager.context.currentTime;
-        AudioContextManager.currentChordGain.gain.cancelScheduledValues(now);
-        AudioContextManager.currentChordGain.gain.exponentialRampToValueAtTime(0.001, now + 0.1); // Quick fade
-        AudioContextManager.currentChordGain = null;
+// --- Helper function to parse chord symbols (ensure this exists) ---
+function parseChordSymbol(symbol) {
+    if (!symbol || symbol === "N.C.") return [null, null];
+    // Simple parser - improve as needed for complex chords (alt, slash chords etc.)
+    const match = symbol.match(/^([A-G][#b]?)(.*)/);
+    if (!match) return [null, null];
+    const root = standardizeNoteName(match[1]);
+    let quality = match[2].trim();
+    // Map common variations
+    if (quality === "m" || quality === "min") quality = "m7"; // Default minor to m7 for jazz context? Or handle separately? Let's assume m7 for now.
+    if (quality === "" || quality === "M") quality = "maj7"; // Default major to maj7? Assume maj7.
+    if (quality === "dom") quality = "7"; // Allow "dom" for dominant 7th
+    if (quality === "dim") quality = "dim7"; // Assume diminished 7th
+    if (quality === "ø" || quality === "m7b5") quality = "m7b5"; // Half-diminished
+
+    // Validate against known qualities
+    if (!chordFormulas[quality]) {
+         console.warn(`Unknown chord quality: ${quality} for root ${root}. Treating as N.C.`);
+         return [null, null];
     }
 
-    // Reset UI elements
-    UI.elements.startStopButton.textContent = 'Start';
-    UI.elements.startStopButton.style.backgroundColor = ''; // Reset to default button color
-
-    // Remove active classes after a short delay to let the last beat visual finish
-    setTimeout(() => {
-        document.querySelectorAll('.beat.active').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.measure.active').forEach(m => m.classList.remove('active'));
-         // Optionally reset fretboard to first measure state
-         // const firstMeasure = UI.elements.measures.firstElementChild;
-         // if (firstMeasure) syncFretboardWithMeasure(firstMeasure);
-    }, 100); // Adjust delay as needed
+    return [root, quality];
 }
+
+
+// --- Helper function to highlight the current measure ---
+function highlightCurrentMeasure(measureIndex) {
+    const measures = document.querySelectorAll('#progression-container .measure');
+    measures.forEach((measure, index) => {
+        if (index === measureIndex) {
+            measure.classList.add('playing');
+        } else {
+            measure.classList.remove('playing');
+        }
+    });
+}
+
+// --- Add CSS for highlighting ---
+/* Add this to your <style> block */
+/*
+.measure.playing {
+  background-color: rgba(255, 255, 0, 0.3); // Yellow highlight
+  box-shadow: 0 0 5px yellow;
+}
+*/
+
+// --- Update Event Listeners (in the initialization part of your script) ---
+// Make sure the new controls update the global variables if changed *during* playback
+// (Stopping and restarting playback is simpler for now)
+/*
+document.getElementById('rhythm-pattern').addEventListener('change', (e) => {
+    selectedRhythmPattern = e.target.value;
+    // Optional: If playing, stop and restart? Or just affects next play?
+});
+document.getElementById('two-chords').addEventListener('change', (e) => {
+    twoChordsPerMeasureEnabled = e.target.checked;
+});
+document.getElementById('voicing-type').addEventListener('change', (e) => {
+    selectedVoicingType = e.target.value;
+});
+*/
+
+// --- Ensure playMetronomeClick is defined ---
+/* Example:
+async function playMetronomeClick(time, isDownbeat, volume) {
+    // Use pre-loaded click sounds or generate simple tones
+    const osc = AudioContextManager.context.createOscillator();
+    const gain = AudioContextManager.context.createGain();
+    osc.frequency.setValueAtTime(isDownbeat ? 880 : 440, time); // Higher pitch for downbeat
+    osc.type = 'sine'; // Or 'triangle'
+    gain.gain.setValueAtTime(volume, time);
+    gain.gain.linearRampToValueAtTime(0.0001, time + 0.05); // Short click
+
+    osc.connect(gain);
+    gain.connect(AudioContextManager.context.destination);
+    osc.start(time);
+    osc.stop(time + 0.05);
+}
+*/
 
 
 // --- Chord Progression Management ---
