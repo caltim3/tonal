@@ -769,49 +769,86 @@ const UI = {
     elements: {}, // Populated in init
     init() {
         this.elements = {
-            // Existing elements...
-            chordFretboard: document.getElementById('chord-fretboard'),
-            measures: document.getElementById('measures'), // Container for progression measures
-            progressionContainer: document.getElementById('progression-container'), // Specific container for progression
+            // --- Core Playback & Progression ---
+            measures: document.getElementById('measures'), // Correct container for progression measures
+            playPauseButton: document.getElementById('playPauseButton'), // Correct main play/pause button ID
             tempoDisplay: document.getElementById('tempo-display'),
-            startStopButton: document.getElementById('start-stop'), // OLD button? Need new one? Assume this is the main play button.
-            playButton: document.getElementById('play-button'), // NEW button? Let's assume startStopButton is the one.
-            progressionSelect: document.getElementById('progression-select'),
-            keySelect: document.getElementById('keySelect'),
-            scaleDisplay: document.getElementById('scale-display'),
-            chordTuning: document.getElementById('chord-tuning'),
-            timeSignature: document.getElementById('time-signature'),
-            soundType: document.getElementById('sound-type'),
-            metronomeVolume: document.getElementById('metronome-volume'),
             tempo: document.getElementById('tempo'),
             tapTempo: document.getElementById('tap-tempo'),
-            chordFretboardVolume: document.getElementById('chord-fretboard-volume'),
-            chordVolume: document.getElementById('chord-volume'),
-            chordsEnabled: document.getElementById('chordsEnabled'),
-            fretboardVolume: document.getElementById('fretboard-volume'),
-            fretboardsGrid: document.querySelector('.fretboards-grid'),
-            darkModeToggle: document.getElementById('dark-mode-toggle'),
-            accentIntensity: document.getElementById('accent-intensity'),
-            loadingIndicator: document.getElementById('loading-indicator'),
-            drumSetToggleBtn: document.getElementById('drumSetToggleBtn'),
-            beatsContainer: document.querySelector('.beats-container'), // For old metronome display
-            fretflowSection: document.getElementById('fretflow-section'),
+            timeSignature: document.getElementById('time-signature'),
+            progressionSelect: document.getElementById('progression-select'),
+            keySelect: document.getElementById('keySelect'),
 
-            // New UI elements for playback control
+            // --- Sound & Volume Controls ---
+            soundType: document.getElementById('sound-type'), // Piano/Synth etc.
+            metronomeVolume: document.getElementById('metronome-volume'),
+            chordVolume: document.getElementById('chord-volume'), // Volume for progression chords
+            fretboardVolume: document.getElementById('fretboard-volume'), // Volume for interactive fretboard clicks
+            chordsEnabled: document.getElementById('chordsEnabled'), // Checkbox to enable/disable progression chords
+            accentIntensity: document.getElementById('accent-intensity'), // For metronome accent
+
+            // --- Fretboard Specific ---
+            chordFretboard: document.getElementById('chord-fretboard'), // The static display fretboard
+            chordTuning: document.getElementById('chord-tuning'), // Tuning for the static fretboard
+            fretboardsGrid: document.querySelector('.fretboards-grid'), // Container for interactive fretboards
+            fretflowSection: document.getElementById('fretflow-section'), // Main section for interactive fretboards
+
+            // --- Scale & Display ---
+            scaleDisplay: document.getElementById('scale-display'), // Where the current scale name is shown
+
+            // --- UI / Misc ---
+            darkModeToggle: document.getElementById('dark-mode-toggle'),
+            loadingIndicator: document.getElementById('loading-indicator'),
+            drumSetToggleBtn: document.getElementById('drumSetToggleBtn'), // If using drum sounds
+            beatsContainer: document.querySelector('.beats-container'), // Visual metronome beats (if used)
+
+            // --- New Feature Controls ---
             rhythmPatternSelect: document.getElementById('rhythm-pattern'),
             twoChordsCheckbox: document.getElementById('two-chords'),
             voicingTypeSelect: document.getElementById('voicing-type')
         };
-        // Check if all elements were found
+
+        // Check if essential elements were found
+        const essentialElements = [
+            'measures', 'playPauseButton', 'tempo', 'progressionSelect', 'keySelect',
+            'metronomeVolume', 'chordVolume', 'fretboardVolume' // Add other critical elements if needed
+        ];
+
+        let missingEssential = false;
         Object.entries(this.elements).forEach(([key, el]) => {
-            // Allow new elements to be null initially if they haven't been added to HTML yet
-            if (!el && !['rhythmPatternSelect', 'twoChordsCheckbox', 'voicingTypeSelect'].includes(key)) {
-                 console.warn(`[UI Init] Missing DOM element: ${key}`);
+            if (!el) {
+                if (essentialElements.includes(key)) {
+                    console.error(`[UI Init] CRITICAL Missing DOM element: ${key} (ID: ${this.elements[key]?.id || 'unknown'})`);
+                    missingEssential = true;
+                } else {
+                    // Log warning for non-essential or potentially optional elements (like new features)
+                    console.warn(`[UI Init] Missing DOM element: ${key} (ID: ${this.elements[key]?.id || 'unknown'})`);
+                }
             }
         });
+
+        if (missingEssential) {
+             console.error("[UI Init] Cannot proceed due to missing essential UI elements.");
+             // Optionally, display an error message to the user here
+             return; // Stop initialization if critical elements are missing
+        }
+
         log("[UI Init] Elements cached.");
+
+        // Example of using the cached elements (ensure this logic is elsewhere, like in initializeApp)
+        // if (this.elements.measures) {
+        //     log('[Bebop Blueprint] Using #measures as progression container.');
+        // }
     }
 };
+
+// --- IMPORTANT ---
+// Make sure your HTML actually has elements with these IDs:
+// - id="measures" (for the div containing the chord progression steps)
+// - id="playPauseButton" (for the button that starts/stops playback)
+//
+// If your HTML uses different IDs (like "start-stop" instead of "playPauseButton"),
+// update the 'document.getElementById(...)' calls above to match your HTML.
 
 // --- Utility Functions ---
 function log(message) {
