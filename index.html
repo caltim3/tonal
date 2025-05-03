@@ -606,10 +606,7 @@
     <script>
 
 // --- Constants ---
-const NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-const SAMPLE_NOTES = ['c', 'cs', 'd', 'ds', 'e', 'f', 'fs', 'g', 'gs', 'a', 'as', 'b']; // For audio file names
-const OCTAVES = [2, 3, 4, 5]; // Available sample octaves
-const FILE_FORMAT = 'wav'; // Assumed sample format
+
 
 const SCALES = {
     major: { name: "Major (Ionian)", intervals: [0, 2, 4, 5, 7, 9, 11] },
@@ -681,7 +678,8 @@ const CHORD_QUALITIES = { // Maps internal value to display name and intervals (
  * Author: [Your Name/AI Assistant]
  * Date: 2025-05-03
  */
-
+const NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+const SAMPLE_NOTES = ['c', 'cs', 'd', 'ds', 'e', 'f', 'fs', 'g', 'gs', 'a', 'as', 'b']; // For audio file names
 const SAMPLE_NOTE_MAP = NOTES.reduce((map, note, index) => {
     map[note] = SAMPLE_NOTES[index];
     return map;
