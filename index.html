@@ -687,14 +687,6 @@ const SAMPLE_NOTE_MAP = NOTES.reduce((map, note, index) => {
 const OCTAVES = [2, 3, 4, 5]; // Piano sample octaves available
 const FILE_FORMAT = 'wav'; // Assumed audio file format
 
-const TUNINGS = {
-    standard: { name: "Standard (EADGBE)", notes: ["E", "A", "D", "G", "B", "E"] },
-    dropD: { name: "Drop D (DADGBE)", notes: ["D", "A", "D", "G", "B", "E"] },
-    openG: { name: "Open G (DGDGBD)", notes: ["D", "G", "D", "G", "B", "D"] },
-    openD: { name: "Open D (DADF#AD)", notes: ["D", "A", "D", "F#", "A", "D"] }
-    // Add more tunings as needed
-};
-
 const SCALES = {
     major: { name: "Major (Ionian)", intervals: [0, 2, 4, 5, 7, 9, 11] },
     minor: { name: "Natural Minor (Aeolian)", intervals: [0, 2, 3, 5, 7, 8, 10] },
