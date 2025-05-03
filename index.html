@@ -771,7 +771,7 @@ const UI = {
         this.elements = {
             // --- Core Playback & Progression ---
             measures: document.getElementById('measures'), // Correct container for progression measures
-            playPauseButton: document.getElementById('playPauseButton'), // Correct main play/pause button ID
+            startStopButton: document.getElementById('start-stop'), // Correct main play/pause button ID
             tempoDisplay: document.getElementById('tempo-display'),
             tempo: document.getElementById('tempo'),
             tapTempo: document.getElementById('tap-tempo'),
@@ -809,8 +809,8 @@ const UI = {
         };
 
         // Check if essential elements were found
-        const essentialElements = [
-            'measures', 'playPauseButton', 'tempo', 'progressionSelect', 'keySelect',
+       const essentialElements = [
+            'measures', 'startStopButton', 'tempo', 'progressionSelect', 'keySelect', // Use startStopButton
             'metronomeVolume', 'chordVolume', 'fretboardVolume' // Add other critical elements if needed
         ];
 
