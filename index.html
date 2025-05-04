@@ -1332,16 +1332,7 @@ function isMinorKeyName(key) {
     return key && (key.endsWith('m') || key.endsWith('min'));
 }
 
-function getChordFromFunction(chordFunction, key = 'C') {
-    // Helper: get note from scale degree
-    function getNoteFromScaleDegree(degree, key, scale, accidental = 0) {
-        const chromatic = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
-        // Find the root index for the key
-        let keyIndex = chromatic.findIndex(n => n.replace('b', '♭').replace('#', '♯') === key.replace('b', '♭').replace('#', '♯'));
-        if (keyIndex === -1) keyIndex = 0;
-        let noteIndex = (keyIndex + scale[degree] + accidental + 12) % 12;
-        return chromatic[noteIndex];
-    }
+function getChordFromFunction(chordFunction, key) {
     // Helper: parse accidental (b, #, bb, x, etc.)
     function parseAccidental(str) {
         if (!str) return 0;
@@ -1352,18 +1343,25 @@ function getChordFromFunction(chordFunction, key = 'C') {
         }
         return acc;
     }
+
     // Scales
     const majorScale = [0, 2, 4, 5, 7, 9, 11];
     const minorScale = [0, 2, 3, 5, 7, 8, 10];
+
     // Key context
     const isMinorKey = key.toLowerCase().includes('m');
     const actualKey = isMinorKey ? key.replace('m', '') : key;
     const scale = isMinorKey ? minorScale : majorScale;
+
     // Handle empty or invalid input
     if (!chordFunction) return null;
+
     // Regex for secondary dominants and main chord
     // e.g. V7/ii, bVII, IV#, etc.
     const secDomMatch = chordFunction.match(/^([b#]*[ivIV]+[#b]*)(maj7|m7b5|m6|6|°|ø|maj|m|M)?(7|9|11|13)?([b#]5|[b#]9|[b#]11|[b#]13)?(\([b#]5\)|\([b#]9\)|\([b#]11\)|\([b#]13\))?(?:\/([b#]*[ivIV]+[#b]*))?$/);
+
+    if (!secDomMatch) return null;
+
     let [
         _,
         roman,
@@ -1373,6 +1371,7 @@ function getChordFromFunction(chordFunction, key = 'C') {
         parenthesizedAlteration = '',
         secRoman
     ] = secDomMatch;
+
     // Handle secondary dominants (e.g., V7/ii)
     if (secRoman) {
         // Find the root of the secondary key
@@ -1394,6 +1393,10 @@ function getChordFromFunction(chordFunction, key = 'C') {
         // Now, treat the main roman as a dominant chord built on the secondary root
         return secRoot + '7';
     }
+
+    // ...rest of your chord parsing logic here...
+
+    // Example fallback return (replace with your actual logic)
     // Parse accidental for main roman
     const accMatch = roman.match(/^([b#]*)([ivIV]+)([#b]*)$/);
     let accidental = 0, baseRoman = roman;
