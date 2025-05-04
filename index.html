@@ -2838,7 +2838,12 @@ function initializeFretFlow() {
         updateFretboardDisplay();
     }
 }
-
+if (UI.elements.chordReverbLevel) {
+    UI.elements.chordReverbLevel.addEventListener('input', function(e) {
+        const value = e.target.value;
+        e.target.nextElementSibling.textContent = `${value}%`;
+    });
+}
 function attachNoteClickHandlers(fretboard) {
     if (!fretboard) {
         console.error('Invalid fretboard element provided');
