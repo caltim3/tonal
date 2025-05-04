@@ -1737,18 +1737,42 @@ function toFlat(note) {
     return sharpToFlat[note] || note;
 }
 
-function incrementNoteOctave(note, inc = 1) {
-    const match = note.match(/^([A-G][b#]?)(\d)$/i);
-    if (!match) return note;
-    const [, pitch, octave] = match;
-    return pitch + (parseInt(octave) + inc);
-}
+function getDropVoicing(chordNotes, type) {
+    // Make a copy of the chord notes to manipulate
+    let notes = [...chordNotes];
+    
+    // Ensure we have at least 4 notes for drop voicings
+    while (notes.length < 4) {
+        notes.push(notes[0]); // Add root note if needed
+    }
 
-// Helper: Ensure note has an octave, randomly 2 or 3
-function ensureOctave(note) {
-    if (/^[A-G][b#]?\d$/.test(note)) return note;
-    const octave = Math.random() < 0.5 ? 2 : 3;
-    return note + octave;
+    switch(type) {
+        case 'drop2':
+            // Move the second highest note down an octave
+            const drop2Note = notes[notes.length - 2];
+            notes.splice(notes.length - 2, 1); // Remove the note
+            notes.unshift(drop2Note); // Add it at the bottom
+            break;
+            
+        case 'drop3':
+            // Move the third highest note down an octave
+            const drop3Note = notes[notes.length - 3];
+            notes.splice(notes.length - 3, 1);
+            notes.unshift(drop3Note);
+            break;
+            
+        case 'drop2and4':
+            // Move both the second and fourth highest notes down an octave
+            const drop4Note = notes[notes.length - 4];
+            const drop2Note2 = notes[notes.length - 2];
+            notes.splice(notes.length - 4, 1);
+            notes.splice(notes.length - 2, 1);
+            notes.unshift(drop4Note);
+            notes.unshift(drop2Note2);
+            break;
+    }
+    
+    return notes;
 }
 
 async function playChord(root, quality, startTime = AudioContextManager.context.currentTime, duration = 2, isContinuation = false) {
@@ -1759,8 +1783,17 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
     }
     if (!UI.elements.chordsEnabled.classList.contains('active')) return;
 
-    // Get chord notes
-    const chordNotes = getChordNotes(root, quality);
+    // Get chord notes and log them for debugging
+    let chordNotes = getChordNotes(root, quality);
+    console.log('Playing chord:', root, quality, 'Notes:', chordNotes);
+
+    // If this is the second chord in a measure, apply a random drop voicing
+    if (isContinuation) {
+        const voicingTypes = ['drop2', 'drop3', 'drop2and4'];
+        const randomVoicing = voicingTypes[Math.floor(Math.random() * voicingTypes.length)];
+        chordNotes = getDropVoicing(chordNotes, randomVoicing);
+        console.log(`Applied ${randomVoicing} voicing:`, chordNotes);
+    }
 
     const chordVolume = parseFloat(UI.elements.chordVolume.value);
     if (chordVolume <= 0) return;
@@ -1784,21 +1817,19 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
 
     AudioContextManager.currentChordGain = gainNode;
 
-    // Prepare notes for either root position or inversion
-    let finalChordNotes = [...chordNotes];
-    if (isContinuation) {
-        // For inversion, move the root note up an octave
-        const rootNote = finalChordNotes[0];
-        finalChordNotes.shift(); // Remove root from beginning
-        finalChordNotes.push(rootNote); // Add root to end
-    }
-
     // Play each note in the chord
-    finalChordNotes.forEach((note, index) => {
-        // Determine octave based on position and inversion
-        const octave = isContinuation ? 
-            (index === finalChordNotes.length - 1 ? 4 : 3) : // In inversion, last note (root) goes up to octave 4
-            (index === 0 ? 3 : (index < 3 ? 3 : 4)); // In root position, spread across octaves 3 and 4
+    chordNotes.forEach((note, index) => {
+        // Determine octave - alternating between 2 and 3
+        // For regular voicings (not continuation)
+        let octave;
+        if (!isContinuation) {
+            // Root and third in octave 2, fifth and seventh in octave 3
+            octave = index < 2 ? 2 : 3;
+        } else {
+            // For drop voicings (continuation)
+            // First note in octave 2, rest in octave 3
+            octave = index === 0 ? 2 : 3;
+        }
 
         // Convert note name to sample format
         const sampleNote = standardizeNoteNameForSamples(note);
@@ -1808,6 +1839,8 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
         }
 
         const sampleKey = `${sampleNote}${octave}`;
+        console.log(`Playing note: ${note} as ${sampleKey}`);
+
         // Get and play the buffer
         const buffer = AudioContextManager.pianoSampleBuffers[sampleKey];
         if (!buffer) {
@@ -1832,8 +1865,7 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
         source.start(startTime + timeVariation);
         source.stop(startTime + duration);
     });
-}
-        
+}        
         function getChordNotes(root, quality) {
     // Define chord intervals (semitones from root)
     const CHORD_INTERVALS = {
