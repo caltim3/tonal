@@ -1689,7 +1689,23 @@ function standardizeNoteNameForSamples(note) {
     return note[0];
 }
         
-// Helper: Convert any note name to your sample file format (e.g., Bb -> as, Eb -> ds, etc.)
+// Helper: Convert any note name to display as a flat (e.g., A# -> Bb)
+function toFlat(note) {
+    const sharpToFlat = {
+        'C#': 'Db', 'D#': 'Eb', 'F#': 'Gb', 'G#': 'Ab', 'A#': 'Bb',
+        'c#': 'Db', 'd#': 'Eb', 'f#': 'Gb', 'g#': 'Ab', 'a#': 'Bb'
+    };
+    return sharpToFlat[note] || note;
+}
+
+// Helper: Increment the octave of a note string like "Bb3" or "C3"
+function incrementNoteOctave(note, inc = 1) {
+    const match = note.match(/^([A-G][b#]?)(\d)$/i);
+    if (!match) return note;
+    const [, pitch, octave] = match;
+    return pitch + (parseInt(octave) + inc);
+}
+
 function standardizeNoteNameForSamples(note) {
     // Map flats and sharps to 's' notation, always prefer flats for display and lookup
     const flatToSharp = {
@@ -1719,7 +1735,6 @@ function standardizeNoteNameForSamples(note) {
     return note[0];
 }
 
-// Helper: Convert any note name to display as a flat (e.g., A# -> Bb)
 function toFlat(note) {
     const sharpToFlat = {
         'C#': 'Db', 'D#': 'Eb', 'F#': 'Gb', 'G#': 'Ab', 'A#': 'Bb',
@@ -1728,12 +1743,18 @@ function toFlat(note) {
     return sharpToFlat[note] || note;
 }
 
-// Helper: Increment the octave of a note string like "Bb3" or "C3"
 function incrementNoteOctave(note, inc = 1) {
     const match = note.match(/^([A-G][b#]?)(\d)$/i);
     if (!match) return note;
     const [, pitch, octave] = match;
     return pitch + (parseInt(octave) + inc);
+}
+
+// Helper: Ensure note has an octave, randomly 2 or 3
+function ensureOctave(note) {
+    if (/^[A-G][b#]?\d$/.test(note)) return note;
+    const octave = Math.random() < 0.5 ? 2 : 3;
+    return note + octave;
 }
 
 async function playChord(root, quality, startTime = AudioContextManager.context.currentTime, duration = 2, isContinuation = false) {
@@ -1774,7 +1795,7 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
     AudioContextManager.currentChordGain = gainNode;
 
     // --- RANDOM INVERSION LOGIC ---
-    let finalChordNotes = [...chordNotes];
+    let finalChordNotes = [...chordNotes].map(ensureOctave); // Ensure all notes have octave 2 or 3
     if (isContinuation) {
         // For continuation, do the old inversion logic
         const rootNote = finalChordNotes[0];
@@ -1828,8 +1849,7 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
         source.start(startTime + timeVariation);
         source.stop(startTime + duration);
     });
-}
-        
+}        
 function getChordNotes(root, quality) {
     // Define chord intervals (semitones from root)
     const CHORD_INTERVALS = {
