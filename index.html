@@ -1332,6 +1332,7 @@ function isMinorKeyName(key) {
     return key && (key.endsWith('m') || key.endsWith('min'));
 }
 
+
 function getChordFromFunction(chordFunction, key = 'C') {
     // Helper: get note from scale degree
     function getNoteFromScaleDegree(degree, key, scale, accidental = 0) {
@@ -1875,21 +1876,29 @@ function getChordNotes(root, quality) {
         'add9': [0, 4, 7, 14]
     };
 
-    // Handle sharps and flats in the root note
+    // Use the NOTES array for chromatic scale
+    const chromatic = NOTES;
+
+    // Find the root index, handling accidentals
+    let rootIndex = -1;
     let rootNote = root;
-    if (root.includes('#')) {
-        const baseNote = root.replace('#', '');
-        const baseIndex = NOTES.indexOf(baseNote);
-        rootNote = NOTES[(baseIndex + 1) % 12];
-    } else if (root.includes('b')) {
-        const baseNote = root.replace('b', '');
-        const baseIndex = NOTES.indexOf(baseNote);
-        rootNote = NOTES[(baseIndex + 11) % 12];
+
+    // Try direct match first
+    rootIndex = chromatic.indexOf(rootNote);
+
+    // If not found, try to standardize (e.g., flats to sharps)
+    if (rootIndex === -1) {
+        // Try to standardize flats to sharps
+        const flatToSharp = {
+            'Db': 'C#', 'Eb': 'D#', 'Gb': 'F#', 'Ab': 'G#', 'Bb': 'A#'
+        };
+        if (flatToSharp[rootNote]) {
+            rootNote = flatToSharp[rootNote];
+            rootIndex = chromatic.indexOf(rootNote);
+        }
     }
 
-    // Get the root note index
-    const rootIndex = NOTES.indexOf(rootNote);
-    
+    // If still not found, error
     if (rootIndex === -1) {
         console.error(`Invalid root note: ${root}`);
         return [root];
@@ -1901,13 +1910,13 @@ function getChordNotes(root, quality) {
     // Generate the chord notes
     const chordNotes = intervals.map(interval => {
         const noteIndex = (rootIndex + interval) % 12;
-        return NOTES[noteIndex];
+        return chromatic[noteIndex];
     });
 
     console.log(`Generated chord notes for ${root} ${quality}:`, chordNotes);
     return chordNotes;
 }
-async function playMetronomeSound(baseVolume) {
+        async function playMetronomeSound(baseVolume) {
     if (!AudioContextManager.context) return;
 
     // Get the metronome volume slider value and combine it with base volume
