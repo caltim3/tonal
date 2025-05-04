@@ -765,11 +765,6 @@
 
     <script>
         
-// Utility Functions
-function log(message) {
-    console.log(`[FretFlow Debug] ${message}`);
-}
-
 function updateLoadingStatus(message) {
     let indicator = document.getElementById('loading-indicator');
     if (!indicator) {
@@ -808,13 +803,7 @@ for (const note of ALL_NOTES) {
   }
 }
         
-const PIANO_CONFIG = {
-  notes: ALL_NOTES,
-  octaves: OCTAVES,
-  velocities: [12],
-  fileFormat: FILE_FORMAT
-};
-        
+       
 const ENHARMONIC_MAP = {
     'C#': 'Db', 'Db': 'Db',
     'D#': 'Eb', 'Eb': 'Eb',
@@ -841,21 +830,6 @@ const SAMPLE_NOTE_MAP = {
     'Bb': 'as',
     'B': 'b'
 };        
-const PIANO_NOTES = {
-    'A2': 110.00, 'As2': 116.54, 'B2': 123.47,
-    'C3': 130.81, 'Cs3': 138.59, 'D3': 146.83, 'Ds3': 155.56, 'E3': 164.81, 'F3': 174.61,
-    'Fs3': 185.00, 'G3': 196.00, 'Gs3': 207.65, 'A3': 220.00, 'As3': 233.08, 'B3': 246.94,
-    'C4': 261.63, 'Cs4': 277.18, 'D4': 293.66, 'Ds4': 311.13, 'E4': 329.63
-};
-
-const FRETBOARD_FREQUENCIES = {
-    'string6': [82.41, 87.31, 92.50, 98.00, 103.83, 110.00, 116.54, 123.47, 130.81, 138.59, 146.83, 155.56, 164.81],
-    'string5': [110.00, 116.54, 123.47, 130.81, 138.59, 146.83, 155.56, 164.81, 174.61, 185.00, 196.00, 207.65, 220.00],
-    'string4': [146.83, 155.56, 164.81, 174.61, 185.00, 196.00, 207.65, 220.00, 233.08, 246.94, 261.63, 277.18, 293.66],
-    'string3': [196.00, 207.65, 220.00, 233.08, 246.94, 261.63, 277.18, 293.66, 311.13, 329.63, 349.23, 369.99, 392.00],
-    'string2': [246.94, 261.63, 277.18, 293.66, 311.13, 329.63, 349.23, 369.99, 392.00, 415.30, 440.00, 466.16, 493.88],
-    'string1': [329.63, 349.23, 369.99, 392.00, 415.30, 440.00, 466.16, 493.88, 523.25, 554.37, 587.33, 622.25, 659.25]
-};
 
 const SCALES = {
     // Basic Scales
@@ -1284,23 +1258,6 @@ function standardizeNoteNameForSamples(note) {
 }
         
 // Remove this duplicate function
-function standardizeNoteName(note) {
-  if (!note) return 'C';
-  const match = note.match(/^([A-G])([b#])?(\d)?$/);
-  if (!match) return note.toUpperCase();
-  let [, letter, accidental, octave] = match;
-  letter = letter.toUpperCase();
-  const CHROMATIC = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
-  if (accidental === 'b') {
-    const index = chromatic.indexOf(letter);
-    return chromatic[(index - 1 + 12) % 12];
-  } else if (accidental === '#') {
-    const index = chromatic.indexOf(letter);
-    return chromatic[(index + 1) % 12];
-  }
-  return letter;
-}
-
 // 1. Get the index of a note in the NOTES array
 function getNoteIndex(note) {
     const standardizedNote = standardizeNoteName(note);
@@ -1550,14 +1507,6 @@ function getChordFromFunction(chordFunction, key = 'C') {
             return [root, quality];
         }
 
-
-// Helper function for flat notes
-function flattenNote(note) {
-    const sharpToFlat = {
-        'C#': 'Db', 'D#': 'Eb', 'F#': 'Gb', 'G#': 'Ab', 'A#': 'Bb'
-    };
-    return sharpToFlat[note] || note;
-}
 
 function getQualityValue(quality) {
     const qualityMap = {
