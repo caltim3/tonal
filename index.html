@@ -1682,10 +1682,13 @@ function playNote(noteName, volume = 1.0, duration = 1000) {
 }
 
 function standardizeNoteNameForSamples(note) {
-    // Convert note names like "C#", "Db" to "Csharp", "Dflat"
-    return note
-        .replace(/#/g, 'sharp')
-        .replace(/b/g, 'flat');
+    // Convert note names like "A#", "C#" to "as", "cs"
+    // and "A", "B", etc. to "a", "b", etc.
+    note = note.toLowerCase();
+    if (note.length === 2 && note[1] === '#') {
+        return note[0] + 's';
+    }
+    return note[0];
 }
         
 async function playChord(root, quality, startTime = AudioContextManager.context.currentTime, duration = 2, isContinuation = false) {
@@ -1740,20 +1743,19 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
 
         // Convert note name to sample format
         const sampleNote = standardizeNoteNameForSamples(note);
-        if (!sampleNote) {
-            console.error(`Invalid note: ${note}`);
-            return;
-        }
-
-        const sampleKey = `${sampleNote}${octave}`;
-        console.log(`Playing note: ${note} as ${sampleKey}`);
-
-        // Get and play the buffer
-        const buffer = AudioContextManager.pianoSampleBuffers[sampleKey];
-        if (!buffer) {
-            console.warn(`No sample found for ${sampleKey}`);
-            return;
-        }
+            if (!sampleNote) {
+                console.error(`Invalid note: ${note}`);
+                return;
+            }
+        
+            const sampleKey = `${sampleNote}${octave}`;
+            console.log(`Playing note: ${note} as ${sampleKey}`);
+        
+            const buffer = AudioContextManager.pianoSampleBuffers[sampleKey];
+            if (!buffer) {
+                console.warn(`No sample found for ${sampleKey}`);
+                return;
+            }
 
         const source = AudioContextManager.context.createBufferSource();
         source.buffer = buffer;
