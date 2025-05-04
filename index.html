@@ -809,7 +809,13 @@ for (const note of ALL_NOTES) {
   }
 }
         
-      
+const PIANO_CONFIG = {
+  notes: ALL_NOTES,
+  octaves: OCTAVES,
+  velocities: [12],
+  fileFormat: FILE_FORMAT
+};
+        
 const ENHARMONIC_MAP = {
     'C#': 'Db', 'Db': 'Db',
     'D#': 'Eb', 'Eb': 'Eb',
@@ -836,7 +842,21 @@ const SAMPLE_NOTE_MAP = {
     'Bb': 'as',
     'B': 'b'
 };        
+const PIANO_NOTES = {
+    'A2': 110.00, 'As2': 116.54, 'B2': 123.47,
+    'C3': 130.81, 'Cs3': 138.59, 'D3': 146.83, 'Ds3': 155.56, 'E3': 164.81, 'F3': 174.61,
+    'Fs3': 185.00, 'G3': 196.00, 'Gs3': 207.65, 'A3': 220.00, 'As3': 233.08, 'B3': 246.94,
+    'C4': 261.63, 'Cs4': 277.18, 'D4': 293.66, 'Ds4': 311.13, 'E4': 329.63
+};
 
+const FRETBOARD_FREQUENCIES = {
+    'string6': [82.41, 87.31, 92.50, 98.00, 103.83, 110.00, 116.54, 123.47, 130.81, 138.59, 146.83, 155.56, 164.81],
+    'string5': [110.00, 116.54, 123.47, 130.81, 138.59, 146.83, 155.56, 164.81, 174.61, 185.00, 196.00, 207.65, 220.00],
+    'string4': [146.83, 155.56, 164.81, 174.61, 185.00, 196.00, 207.65, 220.00, 233.08, 246.94, 261.63, 277.18, 293.66],
+    'string3': [196.00, 207.65, 220.00, 233.08, 246.94, 261.63, 277.18, 293.66, 311.13, 329.63, 349.23, 369.99, 392.00],
+    'string2': [246.94, 261.63, 277.18, 293.66, 311.13, 329.63, 349.23, 369.99, 392.00, 415.30, 440.00, 466.16, 493.88],
+    'string1': [329.63, 349.23, 369.99, 392.00, 415.30, 440.00, 466.16, 493.88, 523.25, 554.37, 587.33, 622.25, 659.25]
+};
 
 const SCALES = {
     // Basic Scales
@@ -1345,83 +1365,199 @@ function isMinorKeyName(key) {
 }
 
 function getChordFromFunction(chordFunction, key = 'C') {
-    // Regex for accidental, roman numeral, quality, extension, alteration, and optional secondary dominants
-    const regex = /^([b#]?)([IViv]+)(maj7|m7b5|m7|maj|min|dim7|dim|aug|sus2|sus4|add9|6|7|9|11|13)?((?:b|#)\d{1,2})?(?:\/([b#]?[IViv]+))?$/;
-    const match = chordFunction.match(regex);
+    // Helper: get note from scale degree
+    function getNoteFromScaleDegree(degree, key, scale, accidental = 0) {
+        const chromatic = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
+        // Find the root index for the key
+        let keyIndex = chromatic.findIndex(n => n.replace('b', '♭').replace('#', '♯') === key.replace('b', '♭').replace('#', '♯'));
+        if (keyIndex === -1) keyIndex = 0;
+        let noteIndex = (keyIndex + scale[degree] + accidental + 12) % 12;
+        return chromatic[noteIndex];
+    }
 
-    if (!match) return null;
+    // Helper: parse accidental (b, #, bb, x, etc.)
+    function parseAccidental(str) {
+        if (!str) return 0;
+        let acc = 0;
+        for (let i = 0; i < str.length; i++) {
+            if (str[i] === 'b') acc -= 1;
+            if (str[i] === '#') acc += 1;
+        }
+        return acc;
+    }
 
-    let [, accidental, roman, quality, alteration, secDom] = match;
+    // Scales
+    const majorScale = [0, 2, 4, 5, 7, 9, 11];
+    const minorScale = [0, 2, 3, 5, 7, 8, 10];
 
-    // Determine scale (major/minor)
-    const isMinor = key.toLowerCase().endsWith('m');
-    const scale = isMinor ? [0, 2, 3, 5, 7, 8, 10] : [0, 2, 4, 5, 7, 9, 11];
-    const romanToDegree = { 'I': 0, 'II': 1, 'III': 2, 'IV': 3, 'V': 4, 'VI': 5, 'VII': 6 };
+    // Key context
+    const isMinorKey = key.toLowerCase().includes('m');
+    const actualKey = isMinorKey ? key.replace('m', '') : key;
+    const scale = isMinorKey ? minorScale : majorScale;
 
-    // Remove case for roman
-    const romanUC = roman.toUpperCase();
-    let degree = romanToDegree[romanUC.replace(/[^I]/g, '')];
-    if (degree === undefined) return null;
+    // Handle empty or invalid input
+    if (!chordFunction) return null;
 
-    // Apply accidental
-    let accidentalOffset = 0;
-    if (accidental === 'b') accidentalOffset = -1;
-    if (accidental === '#') accidentalOffset = 1;
+    // Regex for secondary dominants and main chord
+    // e.g. V7/ii, bVII, IV#, etc.
+    const secDomMatch = chordFunction.match(/^([b#]*[ivIV]+[#b]*)(maj7|m7b5|m6|6|°|ø|maj|m|M)?(7|9|11|13)?([b#]5|[b#]9|[b#]11|[b#]13)?(\([b#]5\)|\([b#]9\)|\([b#]11\)|\([b#]13\))?(?:\/([b#]*[ivIV]+[#b]*))?$/);
 
-    // Get root note
-    const chromatic = NOTES;
-    let keyIndex = chromatic.indexOf(standardizeNoteName(key.replace(/m$/, '')));
-    let rootIndex = (keyIndex + scale[degree] + accidentalOffset + 12) % 12;
-    let rootNote = chromatic[rootIndex];
+    let [
+        _,
+        roman,
+        quality = '',
+        extension = '',
+        alteration = '',
+        parenthesizedAlteration = '',
+        secRoman
+    ] = secDomMatch;
 
     // Handle secondary dominants (e.g., V7/ii)
-    if (secDom) {
-        const secMatch = secDom.match(/^([b#]?)([IViv]+)/);
-        if (secMatch) {
-            let [, secAcc, secRoman] = secMatch;
-            let secDegree = romanToDegree[secRoman.toUpperCase().replace(/[^I]/g, '')];
-            let secAccOffset = 0;
-            if (secAcc === 'b') secAccOffset = -1;
-            if (secAcc === '#') secAccOffset = 1;
-            let secRootIndex = (keyIndex + scale[secDegree] + secAccOffset + 12) % 12;
-            rootNote = chromatic[secRootIndex];
-            quality = '7'; // Secondary dominants are always dominant 7th
+    if (secRoman) {
+        // Find the root of the secondary key
+        // For now, assume secondary is always major
+        const romanToNumber = {
+            'I': 0, 'II': 1, 'III': 2, 'IV': 3, 'V': 4, 'VI': 5, 'VII': 6,
+            'i': 0, 'ii': 1, 'iii': 2, 'iv': 3, 'v': 4, 'vi': 5, 'vii': 6
+        };
+        // Parse accidental for secondary
+        const secAccMatch = secRoman.match(/^([b#]*)([ivIV]+)([#b]*)$/);
+        let secAcc = 0, secBase = secRoman;
+        if (secAccMatch) {
+            secAcc = parseAccidental(secAccMatch[1] + secAccMatch[3]);
+            secBase = secAccMatch[2];
+        }
+        let secDegree = romanToNumber[secBase];
+        if (secDegree === undefined) return null;
+        let secRoot = getNoteFromScaleDegree(secDegree, actualKey, scale, secAcc);
+        // Now, treat the main roman as a dominant chord built on the secondary root
+        return secRoot + '7';
+    }
+
+    // Parse accidental for main roman
+    const accMatch = roman.match(/^([b#]*)([ivIV]+)([#b]*)$/);
+    let accidental = 0, baseRoman = roman;
+    if (accMatch) {
+        accidental = parseAccidental(accMatch[1] + accMatch[3]);
+        baseRoman = accMatch[2];
+    }
+
+    // Convert roman numeral to scale degree
+    const romanToNumber = {
+        'I': 0, 'II': 1, 'III': 2, 'IV': 3, 'V': 4, 'VI': 5, 'VII': 6,
+        'i': 0, 'ii': 1, 'iii': 2, 'iv': 3, 'v': 4, 'vi': 5, 'vii': 6
+    };
+    let degree = romanToNumber[baseRoman];
+    if (degree === undefined) return null;
+
+    // Get the root note
+    const rootNote = getNoteFromScaleDegree(degree, actualKey, scale, accidental);
+    if (!rootNote) return null;
+
+    // Determine if minor (lowercase roman)
+    const isLowerCase = /^[iv]+$/.test(baseRoman);
+
+    // Chord quality mapping for UI
+    const majorDefaultQualities = ['maj7', 'm7', 'm7', 'maj7', '7', 'm7', 'm7b5'];
+    const minorDefaultQualities = ['m7', 'm7b5', 'maj7', 'm7', '7', 'maj7', '7'];
+
+    // Start with default quality
+    let chordQuality = isMinorKey ? minorDefaultQualities[degree] : majorDefaultQualities[degree];
+
+    // Override with explicit quality
+    if (quality === '°') chordQuality = extension === '7' ? 'dim7' : 'dim';
+    else if (quality === 'ø') chordQuality = 'm7b5';
+    else if (quality === 'maj' || quality === 'M') chordQuality = extension === '7' ? 'maj7' : 'maj';
+    else if (quality === 'm') chordQuality = extension === '7' ? 'm7' : 'm';
+    else if (quality === '6' || quality === 'm6') chordQuality = isLowerCase ? 'm6' : '6';
+
+    // Handle extensions
+    if (extension) {
+        if (extension === '7') {
+            // V7 is always dominant
+            if (degree === 4 && !isLowerCase) chordQuality = '7';
+            else if (chordQuality === 'maj') chordQuality = 'maj7';
+            else if (chordQuality === 'm') chordQuality = 'm7';
+            else if (chordQuality === 'dim') chordQuality = 'dim7';
+            else if (chordQuality === 'm7b5') chordQuality = 'm7b5';
+            else if (chordQuality === '6') chordQuality = '6';
+        } else if (['9', '11', '13'].includes(extension)) {
+            if (chordQuality === 'maj7') chordQuality = 'maj' + extension;
+            else if (chordQuality === 'm7') chordQuality = 'm' + extension;
+            else if (chordQuality === '7') chordQuality = '7' + extension;
+            else chordQuality += extension;
         }
     }
 
-    // Build chord symbol
-    let chordSymbol = rootNote;
-    if (quality) chordSymbol += quality;
-    if (alteration) chordSymbol += alteration;
+    // Special case: I chord with no explicit quality in major key
+    if (chordFunction === 'I' && !isMinorKey) chordQuality = 'maj7';
+
+    // Handle alterations
+    let chordAlteration = '';
+    if (alteration) chordAlteration += alteration.replace(/[()]/g, '');
+    if (parenthesizedAlteration) chordAlteration += parenthesizedAlteration.replace(/[()]/g, '');
+
+    // Build the final chord symbol for UI
+    let chordSymbol = rootNote + chordQuality + chordAlteration;
 
     return chordSymbol;
 }
+        
+    function parseChord(chord) {
+            if (!chord) return ['C', 'maj'];
+        
+            // Updated regex to catch more qualities, including dom7, m7b5, and alt chords
+            const regex = /^([A-Ga-g][b#]?)(maj7|m7b5|min7|m7|maj|min|dim7|dim|aug|sus2|sus4|add9|7b9|7#9|7b13|7#11|7|6|9|11|13|°|ø)?$/;
+            const match = chord.match(regex);
+        
+            if (!match) {
+                console.warn(`Unable to parse chord: ${chord}`);
+                return [standardizeNoteName(chord), 'maj'];
+            }
+        
+            let [, root, quality] = match;
+            root = standardizeNoteName(root);
+        
+            if (!quality) quality = 'maj';
+        
+            switch (quality.toLowerCase()) {
+                case 'min':
+                case 'm':
+                    quality = 'min';
+                    break;
+                case 'min7':
+                case 'm7':
+                    quality = 'min7';
+                    break;
+                case 'maj7':
+                case 'maj':
+                    quality = 'maj7';
+                    break;
+                case 'dim7':
+                case '°':
+                    quality = 'dim7';
+                    break;
+                case 'ø':
+                case 'm7b5':
+                    quality = 'm7b5';
+                    break;
+                case '7':
+                    quality = '7';
+                    break;
+                default:
+                    break; // leave as-is (e.g., add9, 9, 13, etc.)
+            }
+        
+            return [root, quality];
+        }
 
-function parseChord(chord) {
-    if (!chord) return ['C', 'maj7'];
 
-    // Regex: root, quality, extension, alterations (e.g., Cmaj7, D#m7b5, Bb7#9, etc.)
-    const regex = /^([A-Ga-g][b#]?)(maj7|maj|min7b5|m7b5|m7|min7|m|min|dim7|dim|aug|sus2|sus4|add9|6|7|9|11|13)?((?:b|#)\d{1,2})?$/;
-    const match = chord.match(regex);
-
-    if (!match) {
-        console.warn(`Unable to parse chord: ${chord}`);
-        return [standardizeNoteName(chord), 'maj7'];
-    }
-
-    let [, root, quality, alteration] = match;
-    root = standardizeNoteName(root);
-
-    // Normalize quality
-    if (!quality) quality = 'maj7';
-    else if (quality === 'min') quality = 'm';
-    else if (quality === 'min7') quality = 'm7';
-    else if (quality === 'min7b5') quality = 'm7b5';
-
-    // Add alteration if present
-    if (alteration) quality += alteration;
-
-    return [root, quality];
+// Helper function for flat notes
+function flattenNote(note) {
+    const sharpToFlat = {
+        'C#': 'Db', 'D#': 'Eb', 'F#': 'Gb', 'G#': 'Ab', 'A#': 'Bb'
+    };
+    return sharpToFlat[note] || note;
 }
 
 function getQualityValue(quality) {
