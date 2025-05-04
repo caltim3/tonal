@@ -842,22 +842,15 @@ const SAMPLE_NOTE_MAP = {
     'Bb': 'as',
     'B': 'b'
 };        
-const PIANO_NOTES = {
-    'A2': 110.00, 'As2': 116.54, 'B2': 123.47,
-    'C3': 130.81, 'Cs3': 138.59, 'D3': 146.83, 'Ds3': 155.56, 'E3': 164.81, 'F3': 174.61,
-    'Fs3': 185.00, 'G3': 196.00, 'Gs3': 207.65, 'A3': 220.00, 'As3': 233.08, 'B3': 246.94,
-    'C4': 261.63, 'Cs4': 277.18, 'D4': 293.66, 'Ds4': 311.13, 'E4': 329.63
-};
 
-const FRETBOARD_FREQUENCIES = {
-    'string6': [82.41, 87.31, 92.50, 98.00, 103.83, 110.00, 116.54, 123.47, 130.81, 138.59, 146.83, 155.56, 164.81],
-    'string5': [110.00, 116.54, 123.47, 130.81, 138.59, 146.83, 155.56, 164.81, 174.61, 185.00, 196.00, 207.65, 220.00],
-    'string4': [146.83, 155.56, 164.81, 174.61, 185.00, 196.00, 207.65, 220.00, 233.08, 246.94, 261.63, 277.18, 293.66],
-    'string3': [196.00, 207.65, 220.00, 233.08, 246.94, 261.63, 277.18, 293.66, 311.13, 329.63, 349.23, 369.99, 392.00],
-    'string2': [246.94, 261.63, 277.18, 293.66, 311.13, 329.63, 349.23, 369.99, 392.00, 415.30, 440.00, 466.16, 493.88],
-    'string1': [329.63, 349.23, 369.99, 392.00, 415.30, 440.00, 466.16, 493.88, 523.25, 554.37, 587.33, 622.25, 659.25]
-};
-
+function toFlat(note) {
+    // Map sharps to flats
+    const sharpToFlat = {
+        'C#': 'Db', 'D#': 'Eb', 'F#': 'Gb', 'G#': 'Ab', 'A#': 'Bb',
+        'c#': 'Db', 'd#': 'Eb', 'f#': 'Gb', 'g#': 'Ab', 'a#': 'Bb'
+    };
+    return sharpToFlat[note] || note;
+}
 const SCALES = {
     // Basic Scales
     major: [0, 2, 4, 5, 7, 9, 11],
@@ -946,7 +939,12 @@ const DRUM_PATTERNS = {
         hihat: 'jazzhat.wav'
     }
 ];
-
+function createKeyOptions(selected = 'C') {
+    return NOTES.map(note => {
+        const flatNote = toFlat(note);
+        return `<option value="${flatNote}"${flatNote === selected ? ' selected' : ''}>${flatNote}</option>`;
+    }).join('');
+}
 const progressions = {
     "I V7": { defaultKey: "C", progression: ["Imaj7", "V7"] },
     "jazz_blues": { defaultKey: "Bb", progression: ["I7", "IV7", "I7", "I7", "IV7", "IV7", "I7", "VI7", "IIm7", "V7", "I7", "V7"] },
@@ -1691,6 +1689,53 @@ function standardizeNoteNameForSamples(note) {
     return note[0];
 }
         
+// Helper: Convert any note name to your sample file format (e.g., Bb -> as, Eb -> ds, etc.)
+function standardizeNoteNameForSamples(note) {
+    // Map flats and sharps to 's' notation, always prefer flats for display and lookup
+    const flatToSharp = {
+        'bb': 'as',
+        'cb': 'b',
+        'db': 'cs',
+        'eb': 'ds',
+        'fb': 'e',
+        'gb': 'fs',
+        'ab': 'gs'
+    };
+    note = note.toLowerCase();
+    if (note.length === 2 && note[1] === 'b') {
+        return flatToSharp[note] || note[0];
+    }
+    if (note.length === 2 && note[1] === '#') {
+        // Convert sharp to its enharmonic flat
+        const sharpToFlat = {
+            'a#': 'as',
+            'c#': 'cs',
+            'd#': 'ds',
+            'f#': 'fs',
+            'g#': 'gs'
+        };
+        return sharpToFlat[note] || note[0];
+    }
+    return note[0];
+}
+
+// Helper: Convert any note name to display as a flat (e.g., A# -> Bb)
+function toFlat(note) {
+    const sharpToFlat = {
+        'C#': 'Db', 'D#': 'Eb', 'F#': 'Gb', 'G#': 'Ab', 'A#': 'Bb',
+        'c#': 'Db', 'd#': 'Eb', 'f#': 'Gb', 'g#': 'Ab', 'a#': 'Bb'
+    };
+    return sharpToFlat[note] || note;
+}
+
+// Helper: Increment the octave of a note string like "Bb3" or "C3"
+function incrementNoteOctave(note, inc = 1) {
+    const match = note.match(/^([A-G][b#]?)(\d)$/i);
+    if (!match) return note;
+    const [, pitch, octave] = match;
+    return pitch + (parseInt(octave) + inc);
+}
+
 async function playChord(root, quality, startTime = AudioContextManager.context.currentTime, duration = 2, isContinuation = false) {
     await ensureAudioInitialized();
     if (!AudioContextManager.samplesLoaded) {
@@ -1700,8 +1745,11 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
     if (!UI.elements.chordsEnabled.classList.contains('active')) return;
 
     // Get chord notes and log them for debugging
-    const chordNotes = getChordNotes(root, quality);
-    console.log('Playing chord:', root, quality, 'Notes:', chordNotes);
+    let chordNotes = getChordNotes(root, quality);
+
+    // Always display chord notes as flats in logs/UI
+    const displayNotes = chordNotes.map(toFlat);
+    console.log('Playing chord:', toFlat(root), quality, 'Notes:', displayNotes);
 
     const chordVolume = parseFloat(UI.elements.chordVolume.value);
     if (chordVolume <= 0) return;
@@ -1725,37 +1773,43 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
 
     AudioContextManager.currentChordGain = gainNode;
 
-    // Prepare notes for either root position or inversion
+    // --- RANDOM INVERSION LOGIC ---
     let finalChordNotes = [...chordNotes];
     if (isContinuation) {
-        // For inversion, move the root note up an octave
+        // For continuation, do the old inversion logic
         const rootNote = finalChordNotes[0];
-        finalChordNotes.shift(); // Remove root from beginning
-        finalChordNotes.push(rootNote); // Add root to end
+        finalChordNotes.shift();
+        finalChordNotes.push(incrementNoteOctave(rootNote, 1));
+    } else {
+        // Random inversion: rotate the array by a random amount
+        const numNotes = finalChordNotes.length;
+        const inversion = Math.floor(Math.random() * numNotes); // 0 = root, 1 = 1st inv, etc.
+        for (let i = 0; i < inversion; i++) {
+            const note = finalChordNotes.shift();
+            finalChordNotes.push(incrementNoteOctave(note, 1));
+        }
     }
 
     // Play each note in the chord
     finalChordNotes.forEach((note, index) => {
-        // Determine octave based on position and inversion
-        const octave = isContinuation ? 
-            (index === finalChordNotes.length - 1 ? 4 : 3) : // In inversion, last note (root) goes up to octave 4
-            (index === 0 ? 3 : (index < 3 ? 3 : 4)); // In root position, spread across octaves 3 and 4
+        // Extract pitch and octave
+        const match = note.match(/^([A-G][b#]?)(\d)$/i);
+        if (!match) {
+            console.error(`Invalid note: ${note}`);
+            return;
+        }
+        const [, pitch, octaveStr] = match;
+        const sampleNote = standardizeNoteNameForSamples(pitch);
+        const octave = octaveStr;
 
-        // Convert note name to sample format
-        const sampleNote = standardizeNoteNameForSamples(note);
-            if (!sampleNote) {
-                console.error(`Invalid note: ${note}`);
-                return;
-            }
-        
-            const sampleKey = `${sampleNote}${octave}`;
-            console.log(`Playing note: ${note} as ${sampleKey}`);
-        
-            const buffer = AudioContextManager.pianoSampleBuffers[sampleKey];
-            if (!buffer) {
-                console.warn(`No sample found for ${sampleKey}`);
-                return;
-            }
+        const sampleKey = `${sampleNote}${octave}`;
+        console.log(`Playing note: ${toFlat(pitch)}${octave} as ${sampleKey}`);
+
+        const buffer = AudioContextManager.pianoSampleBuffers[sampleKey];
+        if (!buffer) {
+            console.warn(`No sample found for ${sampleKey}`);
+            return;
+        }
 
         const source = AudioContextManager.context.createBufferSource();
         source.buffer = buffer;
@@ -1775,6 +1829,7 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
         source.stop(startTime + duration);
     });
 }
+        
 function getChordNotes(root, quality) {
     // Define chord intervals (semitones from root)
     const CHORD_INTERVALS = {
