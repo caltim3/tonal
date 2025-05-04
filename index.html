@@ -1457,8 +1457,8 @@ function getChordFromFunction(chordFunction, key = 'C') {
     const isLowerCase = /^[iv]+$/.test(baseRoman);
 
     // Chord quality mapping for UI
-    const majorDefaultQualities = ['maj7', 'm7', 'm7', 'maj7', '7', 'm7', 'm7b5'];
-    const minorDefaultQualities = ['m7', 'm7b5', 'maj7', 'm7', '7', 'maj7', '7'];
+    const majorDefaultQualities = ['maj7', '7', '6'];
+    const minorDefaultQualities = ['m7', 'm7b5', 'm', 'm6'];
 
     // Start with default quality
     let chordQuality = isMinorKey ? minorDefaultQualities[degree] : majorDefaultQualities[degree];
