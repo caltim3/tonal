@@ -1681,7 +1681,13 @@ function playNote(noteName, volume = 1.0, duration = 1000) {
     }
 }
 
-
+function standardizeNoteNameForSamples(note) {
+    // Convert note names like "C#", "Db" to "Csharp", "Dflat"
+    return note
+        .replace(/#/g, 'sharp')
+        .replace(/b/g, 'flat');
+}
+        
 async function playChord(root, quality, startTime = AudioContextManager.context.currentTime, duration = 2, isContinuation = false) {
     await ensureAudioInitialized();
     if (!AudioContextManager.samplesLoaded) {
