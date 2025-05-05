@@ -1503,54 +1503,45 @@ function getChordFromFunction(chordFunction, key = 'C') {
     return chordSymbol;
 }
         
-    function parseChord(chord) {
-            if (!chord) return ['C', 'maj'];
-        
-            // Updated regex to catch more qualities, including dom7, m7b5, and alt chords
-            const regex = /^([A-Ga-g][b#]?)(maj7|m7b5|min7|m7|maj|min|dim7|dim|aug|sus2|sus4|add9|7b9|7#9|7b13|7#11|7|6|9|11|13|°|ø)?$/;
-            const match = chord.match(regex);
-        
-            if (!match) {
-                console.warn(`Unable to parse chord: ${chord}`);
-                return [standardizeNoteName(chord), 'maj'];
-            }
-        
-            let [, root, quality] = match;
-            root = standardizeNoteName(root);
-        
-            if (!quality) quality = 'maj';
-        
-            switch (quality.toLowerCase()) {
-                case 'min':
-                case 'm':
-                    quality = 'min';
-                    break;
-                case 'min7':
-                case 'm7':
-                    quality = 'min7';
-                    break;
-                case 'maj7':
-                case 'maj':
-                    quality = 'maj7';
-                    break;
-                case 'dim7':
-                case '°':
-                    quality = 'dim7';
-                    break;
-                case 'ø':
-                case 'm7b5':
-                    quality = 'm7b5';
-                    break;
-                case '7':
-                    quality = '7';
-                    break;
-                default:
-                    break; // leave as-is (e.g., add9, 9, 13, etc.)
-            }
-        
-            return [root, quality];
-        }
+function parseChord(chord) {
+    if (!chord) return ['C', 'maj'];
 
+    // Enhanced regex to handle more complex chord symbols
+    const regex = /^([A-Ga-g][b#]?)(?:(maj|min|m|dim|aug|sus|add)?(\d+)?(?:([b#])(\d+))?)?$/;
+    const match = chord.match(regex);
+
+    if (!match) {
+        console.warn(`Unable to parse chord: ${chord}`);
+        return [standardizeNoteName(chord), 'maj'];
+    }
+
+    let [, root, quality = '', extension = '', alteration = '', alterationNum = ''] = match;
+    
+    // Standardize the root note
+    root = standardizeNoteName(root);
+
+    // Map chord qualities to standardized forms
+    const qualityMap = {
+        '': 'maj7',
+        'maj': 'maj7',
+        'min': 'min7',
+        'm': 'min7',
+        'dim': 'dim7',
+        'aug': 'aug7',
+        'sus': 'sus4'
+    };
+
+    // Handle extensions and alterations
+    let finalQuality = qualityMap[quality] || 'maj7';
+    if (extension) {
+        if (extension === '7' && !quality) finalQuality = 'dom7';
+        else if (alteration) {
+            finalQuality = `${finalQuality}${alteration}${alterationNum}`;
+        }
+    }
+
+    return [root, finalQuality];
+}
 
 // Helper function for flat notes
 function flattenNote(note) {
@@ -1714,25 +1705,18 @@ function playNote(noteName, volume = 1.0, duration = 1000) {
 
 async function playChord(root, quality, startTime = AudioContextManager.context.currentTime, duration = 2, isContinuation = false) {
     await ensureAudioInitialized();
-    if (!AudioContextManager.samplesLoaded) {
-        console.warn('Piano samples not loaded yet');
-        return;
-    }
-    if (!UI.elements.chordsEnabled.classList.contains('active')) return;
+    if (!AudioContextManager.samplesLoaded || !UI.elements.chordsEnabled.classList.contains('active')) return;
 
-    // Get chord notes and log them for debugging
     const chordNotes = getChordNotes(root, quality);
-    console.log('Playing chord:', root, quality, 'Notes:', chordNotes);
-
     const chordVolume = parseFloat(UI.elements.chordVolume.value);
     if (chordVolume <= 0) return;
 
-    // Create a new gain node for this chord
+    // Create gain node for this chord
     const gainNode = AudioContextManager.context.createGain();
     gainNode.gain.value = chordVolume;
     gainNode.connect(AudioContextManager.context.destination);
 
-    // Handle previous chord
+    // Handle previous chord fadeout
     if (!isContinuation && AudioContextManager.currentChordGain) {
         AudioContextManager.currentChordGain.gain.setValueAtTime(
             AudioContextManager.currentChordGain.gain.value, 
@@ -1746,33 +1730,23 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
 
     AudioContextManager.currentChordGain = gainNode;
 
-    // Prepare notes for either root position or inversion
-    let finalChordNotes = [...chordNotes];
+    // Voice leading logic
+    let voicing = [...chordNotes];
     if (isContinuation) {
-        // For inversion, move the root note up an octave
-        const rootNote = finalChordNotes[0];
-        finalChordNotes.shift(); // Remove root from beginning
-        finalChordNotes.push(rootNote); // Add root to end
+        // Move the root note up an octave for inversions
+        const rootNote = voicing.shift();
+        voicing.push(rootNote);
     }
 
-    // Play each note in the chord
-    finalChordNotes.forEach((note, index) => {
-        // Determine octave based on position and inversion
+    // Play each note with slight timing variations for more natural sound
+    voicing.forEach((note, index) => {
         const octave = isContinuation ? 
-            (index === finalChordNotes.length - 1 ? 4 : 3) : // In inversion, last note (root) goes up to octave 4
-            (index === 0 ? 3 : (index < 3 ? 3 : 4)); // In root position, spread across octaves 3 and 4
+            (index === voicing.length - 1 ? 4 : 3) : 
+            (index === 0 ? 3 : (index < 3 ? 3 : 4));
 
-        // Convert note name to sample format
         const sampleNote = standardizeNoteNameForSamples(note);
-        if (!sampleNote) {
-            console.error(`Invalid note: ${note}`);
-            return;
-        }
-
         const sampleKey = `${sampleNote}${octave}`;
-        console.log(`Playing note: ${note} as ${sampleKey}`);
-
-        // Get and play the buffer
+        
         const buffer = AudioContextManager.pianoSampleBuffers[sampleKey];
         if (!buffer) {
             console.warn(`No sample found for ${sampleKey}`);
@@ -1789,71 +1763,62 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
         source.connect(reverbGain);
         reverbGain.connect(AudioContextManager.reverbNode);
 
-        // Add slight timing variation for more natural sound
+        // Humanize timing
         const timeVariation = Math.random() * 0.02;
-        
-        // Start and stop the note
         source.start(startTime + timeVariation);
         source.stop(startTime + duration);
     });
 }
+        
 function getChordNotes(root, quality) {
-    // Define chord intervals (semitones from root)
+    // Enhanced chord intervals with more voicings
     const CHORD_INTERVALS = {
         'maj': [0, 4, 7],
         'min': [0, 3, 7],
-        'minor': [0, 3, 7],
-        'major': [0, 4, 7],
         'dim': [0, 3, 6],
         'aug': [0, 4, 8],
-        '6': [0, 4, 7, 9],
-        'm6': [0, 3, 7, 9],
-        'min6': [0, 3, 7, 9],
-        '7': [0, 4, 7, 10],
-        'dom7': [0, 4, 7, 10],
+        'sus4': [0, 5, 7],
+        'sus2': [0, 2, 7],
         'maj7': [0, 4, 7, 11],
+        'dom7': [0, 4, 7, 10],
         'min7': [0, 3, 7, 10],
-        'm7': [0, 3, 7, 10],
         'dim7': [0, 3, 6, 9],
         'm7b5': [0, 3, 6, 10],
-        'min7b5': [0, 3, 6, 10],
-        'sus2': [0, 2, 7],
-        'sus4': [0, 5, 7],
-        'add9': [0, 4, 7, 14]
+        'aug7': [0, 4, 8, 10],
+        'maj9': [0, 4, 7, 11, 14],
+        'dom9': [0, 4, 7, 10, 14],
+        'min9': [0, 3, 7, 10, 14],
+        'maj7#11': [0, 4, 7, 11, 18],
+        'dom7b9': [0, 4, 7, 10, 13],
+        'dom7#9': [0, 4, 7, 10, 15],
+        'dom7b13': [0, 4, 7, 10, 20],
+        'min11': [0, 3, 7, 10, 14, 17]
     };
 
-    // Handle sharps and flats in the root note
-    let rootNote = root;
-    if (root.includes('#')) {
-        const baseNote = root.replace('#', '');
-        const baseIndex = NOTES.indexOf(baseNote);
-        rootNote = NOTES[(baseIndex + 1) % 12];
-    } else if (root.includes('b')) {
-        const baseNote = root.replace('b', '');
-        const baseIndex = NOTES.indexOf(baseNote);
-        rootNote = NOTES[(baseIndex + 11) % 12];
-    }
+    // Get base intervals
+    let intervals = CHORD_INTERVALS[quality] || CHORD_INTERVALS['maj'];
 
-    // Get the root note index
-    const rootIndex = NOTES.indexOf(rootNote);
-    
+    // Generate notes
+    const rootIndex = NOTES.indexOf(standardizeNoteName(root));
     if (rootIndex === -1) {
         console.error(`Invalid root note: ${root}`);
         return [root];
     }
 
-    // Get the intervals for the specified quality
-    const intervals = CHORD_INTERVALS[quality] || CHORD_INTERVALS['major'];
-
-    // Generate the chord notes
-    const chordNotes = intervals.map(interval => {
+    // Generate voicings with proper voice leading
+    const voicing = intervals.map(interval => {
         const noteIndex = (rootIndex + interval) % 12;
         return NOTES[noteIndex];
     });
 
-    console.log(`Generated chord notes for ${root} ${quality}:`, chordNotes);
-    return chordNotes;
+    // Add optional extensions based on quality
+    if (quality.includes('13')) {
+        voicing.push(NOTES[(rootIndex + 21) % 12]); // Add 13th
+    }
+
+    return voicing;
 }
+        
 async function playMetronomeSound(baseVolume) {
     if (!AudioContextManager.context) return;
 
