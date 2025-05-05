@@ -1278,58 +1278,87 @@ function standardizeNoteNameForSamples(note) {
 }
         
 function parseChord(chord) {
-    if (!chord) return ['C', 'maj'];
-
-    // First, check if it's a Roman numeral chord
-    if (/^[b#]?[IiVv]+[67]?$/.test(chord)) {
-        // Get the current key from the keySelect element
-        const currentKey = document.getElementById('keySelect').value;
-        const isMinorKey = currentKey.toLowerCase().includes('m');
-        
-        // Convert Roman numeral to actual chord
-        const actualChord = getChordFromFunction(chord, currentKey);
-        if (actualChord) {
-            return [actualChord.root, actualChord.quality];
-        }
+    // Type checking and safety
+    if (!chord || typeof chord !== 'string') {
+        console.error('Invalid chord input:', chord);
+        return null;
     }
 
-    // Enhanced regex to handle more complex chord symbols
-    const regex = /^([A-Ga-g][b#]?)(?:(6|maj|min|m|dim|aug|sus)?(\d+)?(?:([b#])(\d+))?)?$/;
-    const match = chord.match(regex);
+    // Trim whitespace
+    chord = chord.trim();
+
+    // Handle Roman numeral functional notation
+    if (/^[IiVv]+/.test(chord)) {
+        return parseRomanNumeralChord(chord);
+    }
+
+    // Regular expression for parsing chord symbols
+    const chordRegex = /^([A-G][#b]?)([mM]|min|maj|dim|aug|sus[24]|[Mm]aj7|\+|-|[Mm]7|7|6|9|11|13)?$/;
+    const match = chord.match(chordRegex);
 
     if (!match) {
-        console.warn(`Unable to parse chord: ${chord}`);
-        return [standardizeNoteName(chord), 'maj'];
+        console.warn('Could not parse chord:', chord);
+        return null;
     }
 
-    let [, root, quality = '', extension = '', alteration = '', alterationNum = ''] = match;
-    
-    // Standardize the root note
-    root = standardizeNoteName(root);
+    const root = match[1];
+    const quality = match[2] || '';
 
-    // Map chord qualities to standardized forms
-    const qualityMap = {
-        '': 'maj7',
-        'maj': 'maj7',
-        'min': 'min7',
-        'm': 'min7',
-        'dim': 'dim7',
-        'aug': 'aug7',
-        'sus': 'sus4',
-        '6': '6'  // Add support for sixth chords
+    return {
+        root: root,
+        quality: quality
+    };
+}
+
+function parseRomanNumeralChord(chord) {
+    // Roman numeral to scale degree mapping
+    const romanToNumber = {
+        'I': 1, 'II': 2, 'III': 3, 'IV': 4, 'V': 5, 'VI': 6, 'VII': 7,
+        'i': 1, 'ii': 2, 'iii': 3, 'iv': 4, 'v': 5, 'vi': 6, 'vii': 7
     };
 
-    // Handle extensions and alterations
-    let finalQuality = qualityMap[quality] || 'maj7';
-    if (extension) {
-        if (extension === '7' && !quality) finalQuality = 'dom7';
-        else if (extension === '6') finalQuality = '6';
-        else if (alteration) {
-            finalQuality = `${finalQuality}${alteration}${alterationNum}`;
-        }
+    // Parse the Roman numeral part
+    const romanRegex = /^(b?[IiVv]+)([mM]|min|maj|dim|aug|7|6|9|11|13)?$/;
+    const match = chord.match(romanRegex);
+
+    if (!match) {
+        console.warn('Could not parse Roman numeral chord:', chord);
+        return null;
     }
 
-    return [root, finalQuality];
+    const roman = match[1];
+    const quality = match[2] || '';
+    const isMinor = roman === roman.toLowerCase();
+    const hasFlatted = roman.startsWith('b');
+    let scaleDegree = romanToNumber[hasFlatted ? roman.slice(1) : roman];
+
+    if (hasFlatted) {
+        scaleDegree = (scaleDegree - 1 + 7) % 7 + 1; // Flatten the scale degree
+    }
+
+    // Convert scale degree to root note based on current key
+    const currentKey = getCurrentKey(); // You'll need to implement this function
+    const rootNote = getNoteFromScaleDegree(scaleDegree, currentKey);
+
+    return {
+        root: rootNote,
+        quality: quality || (isMinor ? 'm' : '')
+    };
+}
+
+// Helper function to get the current key
+function getCurrentKey() {
+    // Return the current key of the application
+    // This should be stored somewhere in your application state
+    return 'C'; // Default to C if not specified
+}
+
+// Helper function to get a note from a scale degree
+function getNoteFromScaleDegree(degree, key) {
+    const majorScale = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+    const keyIndex = majorScale.indexOf(key.toUpperCase().replace(/[#b]/, ''));
+    const targetIndex = (keyIndex + degree - 1) % 7;
+    return majorScale[targetIndex];
 }
 
 function getChordFromFunction(romanNumeral, key) {
@@ -2247,88 +2276,135 @@ function stopPlayback() {
 
 // Chord Progression Management
 function loadProgression(progressionName, overrideKey = null) {
+    // Validate progression exists
     if (!progressionName || !progressions[progressionName]) {
         console.error(`Invalid progression name: ${progressionName}`);
         return;
     }
 
-    const progression = progressions[progressionName];
-    const selectedKey = overrideKey || progression.defaultKey || "C";
-    UI.elements.keySelect.value = selectedKey;
-
-    UI.elements.measures.innerHTML = '';
-
-    progression.progression.forEach((chordFunction, index) => {
-        const chord = getChordFromFunction(chordFunction, selectedKey);
-        const [root, quality] = parseChord(chord);
+    try {
+        const progression = progressions[progressionName];
+        const selectedKey = overrideKey || progression.defaultKey || "C";
         
-        // Get the proper quality value and suggested scale
-        const qualityValue = getQualityValue(quality);
-        const suggestedScale = suggestScaleForQuality(quality); // Use raw quality here
+        // Update UI key selection
+        if (UI.elements.keySelect) {
+            UI.elements.keySelect.value = selectedKey;
+        }
 
-        const measure = document.createElement('div');
-        measure.className = 'measure';
-        measure.draggable = true;
-        measure.innerHTML = `
-            <span class="measure-number">${index + 1}</span>
-            <div class="chord-controls">
-                <select class="root-note">${createKeyOptions(root)}</select>
-                <select class="chord-quality">${createQualityOptions(qualityValue)}</select>
-            </div>
-            <div class="scale-controls">
-                <select class="second-key">${createKeyOptions(root)}</select>
-                <select class="scale-select">${createScaleOptions(suggestedScale)}</select>
-            </div>
-        `;
+        // Clear existing measures
+        if (UI.elements.measures) {
+            UI.elements.measures.innerHTML = '';
+        }
 
-        UI.elements.measures.appendChild(measure);
-        
-        // Set the correct chord quality in the dropdown
-        const qualitySelect = measure.querySelector('.chord-quality');
-        if (qualitySelect) {
-            if (quality === 'maj7') {
-                qualitySelect.value = 'maj7';
-            } else if (quality === '7' || quality === 'dom7') {
-                qualitySelect.value = 'dom7';
-            } else if (quality === 'min7' || quality === 'm7') {
-                qualitySelect.value = 'min7';
-            } else if (quality === 'min7b5') {
-                qualitySelect.value = 'min7b5';
-            } else if (quality === 'm' || quality === 'min') {
-                qualitySelect.value = 'minor';
-            } else if (quality === '6') {
-                qualitySelect.value = 'major';
-            } else if (quality === 'm6') {
-                qualitySelect.value = 'minor';
+        // Process each chord in the progression
+        progression.progression.forEach((chordFunction, index) => {
+            try {
+                // Get and parse the chord
+                const chord = getChordFromFunction(chordFunction, selectedKey);
+                const parsedChord = parseChord(chord);
+                
+                if (!parsedChord) {
+                    console.warn(`Could not parse chord: ${chord} at index ${index}`);
+                    return;
+                }
+
+                const root = parsedChord.root;
+                const quality = parsedChord.quality;
+
+                // Get quality value and suggested scale
+                const qualityValue = getQualityValue(quality);
+                const suggestedScale = suggestScaleForQuality(quality);
+
+                // Create measure element
+                const measure = document.createElement('div');
+                measure.className = 'measure';
+                measure.draggable = true;
+                measure.innerHTML = `
+                    <span class="measure-number">${index + 1}</span>
+                    <div class="chord-controls">
+                        <select class="root-note">${createKeyOptions(root)}</select>
+                        <select class="chord-quality">${createQualityOptions(qualityValue)}</select>
+                    </div>
+                    <div class="scale-controls">
+                        <select class="second-key">${createKeyOptions(root)}</select>
+                        <select class="scale-select">${createScaleOptions(suggestedScale)}</select>
+                    </div>
+                `;
+
+                UI.elements.measures.appendChild(measure);
+
+                // Set chord quality in dropdown
+                const qualitySelect = measure.querySelector('.chord-quality');
+                if (qualitySelect) {
+                    switch(quality.toLowerCase()) {
+                        case 'maj7':
+                            qualitySelect.value = 'maj7';
+                            break;
+                        case '7':
+                        case 'dom7':
+                            qualitySelect.value = 'dom7';
+                            break;
+                        case 'min7':
+                        case 'm7':
+                            qualitySelect.value = 'min7';
+                            break;
+                        case 'min7b5':
+                            qualitySelect.value = 'min7b5';
+                            break;
+                        case 'm':
+                        case 'min':
+                            qualitySelect.value = 'minor';
+                            break;
+                        case '6':
+                            qualitySelect.value = 'major';
+                            break;
+                        case 'm6':
+                            qualitySelect.value = 'minor';
+                            break;
+                        default:
+                            qualitySelect.value = qualityValue;
+                    }
+                }
+
+                // Set scale based on chord quality
+                const scaleSelect = measure.querySelector('.scale-select');
+                if (scaleSelect) {
+                    scaleSelect.value = suggestedScale;
+                }
+
+                // Add drag event listeners
+                measure.addEventListener('dragstart', dragStart);
+                measure.addEventListener('dragover', dragOver);
+                measure.addEventListener('drop', drop);
+                measure.addEventListener('dragend', dragEnd);
+
+            } catch (chordError) {
+                console.error(`Error processing chord at index ${index}:`, chordError);
+            }
+        });
+
+        // Update measure numbers and add first chord listener
+        updateMeasureNumbers();
+        addFirstChordListener();
+
+        // Update fretboard with first measure's scale
+        const firstMeasure = UI.elements.measures.firstElementChild;
+        if (firstMeasure) {
+            const scaleRoot = firstMeasure.querySelector('.second-key')?.value;
+            const scaleType = firstMeasure.querySelector('.scale-select')?.value;
+            const tuning = TUNINGS[UI.elements.chordTuning.value];
+            
+            if (scaleRoot && scaleType && tuning) {
+                updateFretboardNotes(UI.elements.chordFretboard, scaleRoot, scaleType, tuning);
             }
         }
-        
-        // Set the correct scale based on chord quality
-        const scaleSelect = measure.querySelector('.scale-select');
-        if (scaleSelect) {
-            scaleSelect.value = suggestedScale;
-        }
-        
-        // Add drag events
-        measure.addEventListener('dragstart', dragStart);
-        measure.addEventListener('dragover', dragOver);
-        measure.addEventListener('drop', drop);
-        measure.addEventListener('dragend', dragEnd);
-    });
 
-    updateMeasureNumbers();
-    addFirstChordListener();
+        log(`Loaded progression "${progressionName}" in key: ${selectedKey}`);
 
-    // Update the fretboard with the first measure's scale
-    const firstMeasure = UI.elements.measures.firstElementChild;
-    if (firstMeasure) {
-        const scaleRoot = firstMeasure.querySelector('.second-key').value;
-        const scaleType = firstMeasure.querySelector('.scale-select').value;
-        const tuning = TUNINGS[UI.elements.chordTuning.value];
-        updateFretboardNotes(UI.elements.chordFretboard, scaleRoot, scaleType, tuning);
+    } catch (error) {
+        console.error(`Error loading progression "${progressionName}":`, error);
+        log(`Failed to load progression "${progressionName}"`);
     }
-
-    log(`Loaded progression "${progressionName}" in key: ${selectedKey}`);
 }
 function updateProgressionKey(newKey) {
     const selectedProgression = UI.elements.progressionSelect.value;
