@@ -1591,9 +1591,19 @@ function playNote(noteName, volume = 1.0, duration = 1000) {
 }
 
 
-async function playChord(root, quality, startTime = AudioContextManager.context.currentTime, duration = 2, isContinuation = false) {
+async function playChord(
+    root,
+    quality,
+    startTime = AudioContextManager.context.currentTime,
+    duration = 2,
+    isContinuation = false
+) {
     await ensureAudioInitialized();
-    if (!AudioContextManager.samplesLoaded || !UI.elements.chordsEnabled.classList.contains('active')) return;
+    if (
+        !AudioContextManager.samplesLoaded ||
+        !UI.elements.chordsEnabled.classList.contains('active')
+    )
+        return;
 
     const chordNotes = getChordNotes(root, quality);
     const chordVolume = parseFloat(UI.elements.chordVolume.value);
@@ -1607,11 +1617,11 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
     // Handle previous chord fadeout
     if (!isContinuation && AudioContextManager.currentChordGain) {
         AudioContextManager.currentChordGain.gain.setValueAtTime(
-            AudioContextManager.currentChordGain.gain.value, 
+            AudioContextManager.currentChordGain.gain.value,
             startTime
         );
         AudioContextManager.currentChordGain.gain.exponentialRampToValueAtTime(
-            0.001, 
+            0.001,
             startTime + 0.05
         );
     }
@@ -1620,7 +1630,7 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
 
     // Generate random inversion (0 to length-1)
     const inversion = Math.floor(Math.random() * chordNotes.length);
-    
+
     // Create voicing with random inversion
     let voicing = [...chordNotes];
     for (let i = 0; i < inversion; i++) {
@@ -1634,21 +1644,27 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
         voicing.push(rootNote);
     }
 
-    // Play each note with slight timing and velocity variations
+    // --- SWING LOGIC START ---
+    // Get swing amount from slider (0-100), convert to 0-1
+    let swing = (typeof window.swingAmount === 'number' ? window.swingAmount : 0) / 100;
+    let baseDelay = 0.08; // 80ms between notes, adjust as needed
+    let timeOffset = 0;
+    // --- SWING LOGIC END ---
+
+    // Play each note with slight timing and velocity variations, with swing
     voicing.forEach((note, index) => {
         // Determine octave based on position and inversion
         let octave;
         if (isContinuation) {
             octave = index === voicing.length - 1 ? 4 : 3;
         } else {
-            // Adjust octave based on position in the chord and inversion
             const positionInChord = (index + inversion) % voicing.length;
-            octave = positionInChord === 0 ? 3 : (positionInChord < 3 ? 3 : 4);
+            octave = positionInChord === 0 ? 3 : positionInChord < 3 ? 3 : 4;
         }
 
         const sampleNote = standardizeNoteNameForSamples(note);
         const sampleKey = `${sampleNote}${octave}`;
-        
+
         const buffer = AudioContextManager.pianoSampleBuffers[sampleKey];
         if (!buffer) {
             console.warn(`No sample found for ${sampleKey}`);
@@ -1657,12 +1673,12 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
 
         const source = AudioContextManager.context.createBufferSource();
         source.buffer = buffer;
-        
+
         // Create individual gain node for note velocity variation
         const noteGain = AudioContextManager.context.createGain();
-        const velocityVariation = 0.85 + (Math.random() * 0.3); // Velocity varies between 85% and 115%
+        const velocityVariation = 0.85 + Math.random() * 0.3; // 85% to 115%
         noteGain.gain.value = velocityVariation;
-        
+
         source.connect(noteGain);
         noteGain.connect(gainNode);
 
@@ -1673,11 +1689,25 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
         reverbGain.connect(AudioContextManager.reverbNode);
 
         // Humanize timing with slightly larger variation range
-        const timeVariation = Math.random() * 0.03; // Increased from 0.02 to 0.03
-        source.start(startTime + timeVariation);
+        const timeVariation = Math.random() * 0.03;
+
+        // --- SWING LOGIC ---
+        // For swing, alternate delay between long and short
+        let swingDelay = 0;
+        if (index > 0) {
+            let swingFactor = swing * 0.5; // max 50% swing
+            if (index % 2 === 0) {
+                swingDelay = baseDelay * (1 + swingFactor);
+            } else {
+                swingDelay = baseDelay * (1 - swingFactor);
+            }
+            timeOffset += swingDelay;
+        }
+
+        source.start(startTime + timeOffset + timeVariation);
         source.stop(startTime + duration);
     });
-} 
+}
 function getChordNotes(root, quality) {
     // Enhanced chord intervals with more voicings
     const CHORD_INTERVALS = {
