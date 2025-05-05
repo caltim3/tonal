@@ -1073,7 +1073,6 @@ const UI = {
         chordFretboardVolume: document.getElementById('chord-fretboard-volume'),
         chordVolume: document.getElementById('chord-volume'),
         chordsEnabled: document.getElementById('chordsEnabled'),
-        fretboardVolume: document.getElementById('fretboard-volume'),
         fretboardsGrid: document.querySelector('.fretboards-grid'),
         darkModeToggle: document.getElementById('dark-mode-toggle'),
         accentIntensity: document.getElementById('accent-intensity')
@@ -1506,9 +1505,8 @@ function createScaleOptions(selected = 'major') {
 function playNote(noteName, volume = 1.0, duration = 1000) {
     if (!AudioContextManager.context || !noteName) return;
 
-    const fretboardVolumeControl = document.getElementById('fretboard-volume');
-    const fretboardVolume = parseFloat(fretboardVolumeControl?.value ?? 1);
-    const finalVolume = volume * fretboardVolume;
+    // Use the provided volume directly, since the fretboard-volume control is gone
+    const finalVolume = volume;
 
     if (finalVolume <= 0) return;
 
@@ -2780,10 +2778,6 @@ function setupEventListeners() {
         log(`Metronome volume set to ${volume}`);
     });
 
-    UI.elements.chordFretboardVolume.addEventListener('input', () => {
-        log(`Chord fretboard volume set to ${UI.elements.chordFretboardVolume.value}`);
-    });
-
     UI.elements.chordVolume.addEventListener('input', () => {
         log(`Chord volume set to ${UI.elements.chordVolume.value}`);
     });
@@ -2802,7 +2796,8 @@ function setupEventListeners() {
         initializeFretFlow();
     });
 
-    // Tuning controls
+  // Tuning controls
+if (UI.elements.chordTuning && UI.elements.chordFretboard && UI.elements.measures) {
     UI.elements.chordTuning.addEventListener('change', () => {
         const tuning = TUNINGS[UI.elements.chordTuning.value];
         const firstMeasure = UI.elements.measures.firstElementChild;
@@ -2831,24 +2826,6 @@ function setupEventListeners() {
             log(`Updated chord in measure to ${root} ${quality}`);
         }
     });
-
-    log("Event listeners set up");
-}
-
-// Initialize the application
-async function initializeApp() {
-    UI.init();
-    createBeats();
-    createFretboard(UI.elements.chordFretboard, TUNINGS.standard);
-    loadProgression(UI.elements.progressionSelect.value);
-    initializeFretFlow();
-    setupEventListeners();
-    updateLoadingStatus("Application initialized");
-    setTimeout(() => {
-        const indicator = document.getElementById('loading-indicator');
-        if (indicator) indicator.remove();
-    }, 1000);
-    log("Application initialized");
 }
 
 // Initial setup
