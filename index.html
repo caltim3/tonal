@@ -1081,8 +1081,8 @@ const UI = {
         fretboardVolume: document.getElementById('fretboard-volume'),
         fretboardsGrid: document.querySelector('.fretboards-grid'),
         darkModeToggle: document.getElementById('dark-mode-toggle'),
-        accentIntensity: document.getElementById('accent-intensity')
-        chordReverbLevel: document.getElementById('chordReverbLevel'),
+        accentIntensity: document.getElementById('accent-intensity'),
+        chordReverbLevel: document.getElementById('chordReverbLevel')  // Added comma
     },
     init() {
         Object.entries(this.elements).forEach(([key, el]) => {
@@ -1090,7 +1090,8 @@ const UI = {
         });
     }
 };
-function initializeScaleSelects() {
+        
+        function initializeScaleSelects() {
     // Get all scale options
     const scaleOptions = Object.keys(SCALES).map(scale => {
         const displayName = scale
@@ -1627,58 +1628,106 @@ function createScaleOptions(selected = 'major') {
 }
        
 // Audio Playback
-function playNote(noteName, volume = 1.0, duration = 1000) {
-    if (!AudioContextManager.context || !noteName) return;
-
-    const fretboardVolumeControl = document.getElementById('fretboard-volume');
-    const fretboardVolume = parseFloat(fretboardVolumeControl?.value ?? 1);
-    const finalVolume = volume * fretboardVolume;
-
-    if (finalVolume <= 0) return;
-
-    // Extract the pitch class and octave from the note name
-    const match = noteName.match(/^([A-G][b#]?)(\d)$/);
-    if (!match) {
-        console.warn(`Invalid note format: ${noteName}`);
-        return;
-    }
-
-    let [, rawNote, octaveStr] = match;
-    const baseNote = standardizeNoteName(rawNote).replace('m', '');
-    const mappedNote = SAMPLE_NOTE_MAP[baseNote] || baseNote;
-    const octave = Math.max(2, Math.min(6, parseInt(octaveStr)));
-
-    const sampleName = `${mappedNote}${octave}v12`;
-    const buffer = AudioContextManager.pianoSampleBuffers[sampleName];
-
-    if (!buffer) {
-        console.warn(`No piano sample found for ${sampleName}`);
+async function playNote(noteName, volume = 1.0, duration = 1000) {
+    // Early validation
+    if (!AudioContextManager.context || !noteName) {
+        console.warn('Audio context or note name missing');
         return;
     }
 
     try {
+        // Ensure audio is initialized and resumed
+        await ensureAudioInitialized();
+
+        // Get and validate volume settings
+        const fretboardVolumeControl = document.getElementById('fretboard-volume');
+        const fretboardVolume = parseFloat(fretboardVolumeControl?.value ?? 1);
+        const finalVolume = Math.max(0, Math.min(1, volume * fretboardVolume)); // Clamp between 0 and 1
+
+        if (finalVolume <= 0) {
+            console.debug('Volume too low, skipping playback');
+            return;
+        }
+
+        // Parse note name with improved regex
+        const notePattern = /^([A-G][b#]?)(\d+)$/;
+        const match = noteName.match(notePattern);
+        
+        if (!match) {
+            console.warn(`Invalid note format: ${noteName}. Expected format: C4, F#5, etc.`);
+            return;
+        }
+
+        const [, rawNote, octaveStr] = match;
+        
+        // Process note and octave with bounds checking
+        const baseNote = standardizeNoteName(rawNote).replace('m', '');
+        const mappedNote = SAMPLE_NOTE_MAP[baseNote] || baseNote;
+        const octave = Math.max(2, Math.min(6, parseInt(octaveStr))); // Clamp octave between 2 and 6
+        
+        // Construct sample name and verify buffer exists
+        const sampleName = `${mappedNote}${octave}v12`;
+        const buffer = AudioContextManager.pianoSampleBuffers[sampleName];
+
+        if (!buffer) {
+            console.warn(`No piano sample found for note: ${sampleName}`);
+            return;
+        }
+
+        // Create and configure audio nodes
         const source = AudioContextManager.context.createBufferSource();
-        source.buffer = buffer;
-
         const gainNode = AudioContextManager.context.createGain();
-        gainNode.gain.value = finalVolume;
-
+        
+        // Set up audio routing
+        source.buffer = buffer;
         source.connect(gainNode);
         gainNode.connect(AudioContextManager.context.destination);
 
-        source.start(0);
+        // Apply volume with ramping to avoid clicks
+        const currentTime = AudioContextManager.context.currentTime;
+        gainNode.gain.setValueAtTime(0, currentTime);
+        gainNode.gain.linearRampToValueAtTime(finalVolume, currentTime + 0.01);
+        gainNode.gain.linearRampToValueAtTime(0, currentTime + (duration / 1000));
+
+        // Play the note
+        source.start(currentTime);
+        
+        // Schedule cleanup
+        const stopTime = currentTime + (duration / 1000);
+        source.stop(stopTime);
+
+        // Clean up nodes after playback
         setTimeout(() => {
             try {
-                source.stop();
+                gainNode.disconnect();
+                source.disconnect();
             } catch (e) {
-                // No-op on already stopped source
+                console.debug('Cleanup error (normal if playback already stopped):', e.message);
             }
-        }, duration);
+        }, duration + 100); // Add small buffer to ensure playback is complete
+
+        return { source, gainNode }; // Return nodes for external control if needed
+
     } catch (error) {
-        console.error('Error playing note:', error);
+        console.error('Error in playNote:', error);
+        throw new Error(`Failed to play note ${noteName}: ${error.message}`);
     }
 }
 
+// Helper function to ensure audio is initialized
+async function ensureAudioInitialized() {
+    if (!AudioContextManager.context) {
+        throw new Error('Audio context not initialized');
+    }
+
+    if (AudioContextManager.context.state === 'suspended') {
+        try {
+            await AudioContextManager.context.resume();
+        } catch (error) {
+            throw new Error('Failed to resume audio context: ' + error.message);
+        }
+    }
+}
 function standardizeNoteNameForSamples(note) {
     // Convert note names like "A#", "C#" to "as", "cs"
     // and "A", "B", etc. to "a", "b", etc.
@@ -2380,32 +2429,33 @@ function createBeats() {
         
 function toggleBeatState(beat, timeSignature, soundType) {
     const isEighth = timeSignature === 4 && parseInt(beat.dataset.beat) % 2 === 1;
-    const states = soundType === 'drums' && timeSignature === 4 ? (
-        isEighth ? [
+    const states = soundType === 'drums' && timeSignature === 4 ? 
+        (isEighth ? [
             { volume: '1', sound: 'hihat', color: '#9E9E9E' },
             { volume: '1', sound: 'kick', color: '#1F618D' },
             { volume: '1', sound: 'snare', color: '#4CAF50' },
-            { volume: '0', sound: 'silent', color: '#6666' }
+            { volume: '0', sound: 'silent', color: '#666666' }
         ] : [
-            { volume: '1', sound: 'kick', color: '#1F618D' },
-            { volume: '1', sound: 'snare', color: '#4CAF50' },
+            { volume: '1', sound: 'kick,hihat', color: '#1F618D' },
+            { volume: '1', sound: 'snare,hihat', color: '#4CAF50' },
             { volume: '1', sound: 'hihat', color: '#9E9E9E' },
-            { volume: '0', sound: 'silent', color: '#6666' }
-        ]
-    ) : [
-        { volume: '1', sound: 'default', color: '#1F618D' },
-        { volume: '0.3', sound: 'default', color: '#4CAF50' },
-        { volume: '0', sound: 'default', color: '#9E9E9E' }
-    ];
+            { volume: '0', sound: 'silent', color: '#666666' }
+        ]) : [
+            { volume: '1', sound: soundType, color: '#1F618D' },
+            { volume: '0.3', sound: soundType, color: '#4CAF50' },
+            { volume: '0', sound: 'silent', color: '#9E9E9E' }
+        ];
+
     const currentIndex = states.findIndex(state =>
         state.volume === beat.dataset.volume && state.sound === beat.dataset.sound
     );
     const nextState = states[(currentIndex + 1) % states.length];
+    
     beat.dataset.volume = nextState.volume;
     beat.dataset.sound = nextState.sound;
     beat.style.backgroundColor = nextState.color;
 }
-
+        
 async function playBeat() {
     const beats = document.querySelectorAll('.beat');
     const currentBeatElement = beats[AppState.currentBeat];
@@ -2720,6 +2770,21 @@ function dragEnd(e) {
     e.target.classList.remove('dragging');
 }
 
+async function ensureAudioInitialized() {
+    try {
+        if (!AudioContextManager.context || AudioContextManager.context.state === 'suspended') {
+            await AudioContextManager.initialize();
+            if (AudioContextManager.context.state === 'suspended') {
+                await AudioContextManager.context.resume();
+            }
+        }
+    } catch (error) {
+        console.error('Audio initialization failed:', error);
+        alert('Please click anywhere on the page to enable audio playback.');
+        throw error;
+    }
+}
+        
 function initializeFretFlow() {
     const fretboardsGrid = UI.elements.fretboardsGrid;
     fretboardsGrid.innerHTML = ''; // Clear existing content
