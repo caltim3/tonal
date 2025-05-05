@@ -195,6 +195,7 @@
             flex: 1;
         }
 
+        /* Light mode (already present) */
         .fretboard-section {
             border: 1px solid #ccc;
             padding: 15px;
@@ -202,6 +203,26 @@
             background-color: #f9f9f9;
         }
         
+        /* Dark Mode 1 */
+        body.dark-mode .fretboard-section {
+            background-color: #23272e;
+            border-color: #444;
+            color: #fefae0;
+        }
+        
+        /* Dark Mode 2 */
+        body.dark-mode-2 .fretboard-section {
+            background-color: #001f54;
+            border-color: #1282a2;
+            color: #fefcfb;
+        }
+        
+        /* Dark Mode 3 */
+        body.dark-mode-3 .fretboard-section {
+            background-color: #a5a58d;
+            border-color: #cb997e;
+            color: #ffe8d6;
+        }
         .fretboard-controls {
             display: flex;
             flex-wrap: wrap;
