@@ -1370,35 +1370,29 @@ function getNoteFromScaleDegree(degree, key) {
     return majorScale[targetIndex];
 }
 
-function getChordFromFunction(roman, key = "C") {
+function getChordFromFunction(chordFunc, key = "C") {
+    // Match accidental (b/#), numeral, and quality (e.g. m7, 6, maj7, etc)
+    const match = chordFunc.match(/^([b#]?)([IViv]+)(.*)$/);
+    if (!match) return null;
+    let [, accidental, numeral, quality] = match;
     // Map Roman numerals to scale degrees
     const romanMap = {
         "I": 0, "II": 2, "III": 4, "IV": 5, "V": 7, "VI": 9, "VII": 11,
         "i": 0, "ii": 2, "iii": 4, "iv": 5, "v": 7, "vi": 9, "vii": 11,
     };
-    // Extract base and quality
-    const match = roman.match(/^([b#]?)([IViv]+)(.*)$/);
-    if (!match) return null;
-    let [, accidental, numeral, quality] = match;
     let semitone = romanMap[numeral];
     if (semitone === undefined) return null;
     if (accidental === "b") semitone -= 1;
     if (accidental === "#") semitone += 1;
     // Get root note from key
     const keyNotes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-    let keyIndex = keyNotes.indexOf(key);
+    let keyIndex = keyNotes.indexOf(key.replace('b', '♭').replace('#', '♯'));
     if (keyIndex === -1) keyIndex = 0;
     let rootIndex = (keyIndex + semitone + 12) % 12;
     let root = keyNotes[rootIndex];
+    // If key is minor, adjust for minor scale (optional, for more accuracy)
     // Determine chord quality
-    let chordQuality = "";
-    if (quality) {
-        chordQuality = quality;
-    } else if (numeral === numeral.toUpperCase()) {
-        chordQuality = "maj";
-    } else {
-        chordQuality = "m";
-    }
+    let chordQuality = quality || (numeral === numeral.toUpperCase() ? "maj" : "m");
     return { root, quality: chordQuality };
 }
         
@@ -2365,6 +2359,11 @@ function addMeasureWithChord(parsedChord, index) {
     UI.elements.measures.appendChild(measure);
     setupMeasureEventListeners(measure);
 }
+
+        function updateDisplay() {
+    updateMeasureNumbers();
+}
+        
 function updateProgressionKey(newKey) {
     const selectedProgression = UI.elements.progressionSelect.value;
     if (!selectedProgression) return;
@@ -2616,24 +2615,23 @@ function attachNoteClickHandlers(fretboard) {
     });
 
     // Attach new event listeners
-    const notes = fretboard.getElementsByClassName('note');
-    Array.from(notes).forEach(note => {
-        note.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const noteName = this.dataset.note;
-            if (noteName) {
-                try {
-                    const fretboardVolume = parseFloat(UI.elements.fretboardVolume.value) || 1.0;
-                    playNote(noteName, fretboardVolume, 500);
-                    log(`Playing note: ${noteName}`);
-                } catch (error) {
-                    console.error('Error playing note:', error);pla
-                    log(`Error playing note ${noteName}: ${error.message}`);
+        const notes = fretboard.getElementsByClassName('note');
+        Array.from(notes).forEach(note => {
+            note.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const noteName = this.dataset.note;
+                if (noteName) {
+                    try {
+                        const fretboardVolume = 1.0; // Default volume since the control is gone
+                        playNote(noteName, fretboardVolume, 500);
+                        log(`Playing note: ${noteName}`);
+                    } catch (error) {
+                        console.error('Error playing note:', error);
+                        log(`Error playing note ${noteName}: ${error.message}`);
+                    }
                 }
-            }
+            });
         });
-    });
-}
 
 // Log initialization
 log("FretFlow initialized with 4 independent fretboards");
