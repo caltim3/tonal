@@ -2530,140 +2530,142 @@ function dragEnd(e) {
 }
 
 function initializeFretFlow() {
-    const fretboardsGrid = UI.elements.fretboardsGrid;
-    fretboardsGrid.innerHTML = ''; // Clear existing content
-    
-    // Add CSS to make it a 2x2 grid
-    fretboardsGrid.style.display = 'grid';
-    fretboardsGrid.style.gridTemplateColumns = 'repeat(2, 1fr)';
-    fretboardsGrid.style.gap = '20px';
-    
-    // Create 4 independent fretboard sections
-    for (let i = 0; i < 4; i++) {
-        const fretboardSection = document.createElement('div');
-        fretboardSection.className = 'fretboard-section';
+    try {
+        const fretboardsGrid = UI.elements.fretboardsGrid;
+        if (!fretboardsGrid) {
+            throw new Error('Fretboards grid element not found');
+        }
+
+        fretboardsGrid.innerHTML = ''; // Clear existing content
         
-        // Generate scale options from SCALES constant
-        const scaleOptions = Object.entries(SCALES)
-            .map(([scaleName, intervals]) => {
-                // Capitalize first letter and format the scale name
-                const displayName = scaleName
-                    .split('_')
-                    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-                    .join(' ');
-                return `<option value="${scaleName}">${displayName}</option>`;
-            })
-            .join('');
+        Object.assign(fretboardsGrid.style, {
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, 1fr)',
+            gap: '20px'
+        });
         
-        // Create the HTML structure for each section
-        fretboardSection.innerHTML = `
-            <div class="fretboard-controls">
-                <div class="control-group">
-                    <label for="fretflow-key-${i}">Key:</label>
-                    <select id="fretflow-key-${i}" class="fretflow-key" aria-label="Select key">
-                        <option value="C">C</option>
-                        <option value="C#">C#</option>
-                        <option value="D">D</option>
-                        <option value="D#">D#</option>
-                        <option value="E">E</option>
-                        <option value="F">F</option>
-                        <option value="F#">F#</option>
-                        <option value="G">G</option>
-                        <option value="G#">G#</option>
-                        <option value="A">A</option>
-                        <option value="A#">A#</option>
-                        <option value="B">B</option>
-                    </select>
+        for (let i = 0; i < 4; i++) {
+            const fretboardSection = document.createElement('div');
+            fretboardSection.className = 'fretboard-section';
+            
+            const scaleOptions = Object.entries(SCALES || {})
+                .map(([scaleName, intervals]) => {
+                    const displayName = scaleName
+                        .split('_')
+                        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                        .join(' ');
+                    return `<option value="${scaleName}">${displayName}</option>`;
+                })
+                .join('');
+            
+            fretboardSection.innerHTML = `
+                <div class="fretboard-controls">
+                    <div class="control-group">
+                        <label for="fretflow-key-${i}">Key:</label>
+                        <select id="fretflow-key-${i}" class="fretflow-key" aria-label="Select key">
+                            ${['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+                                .map(note => `<option value="${note}">${note}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label for="fretflow-scale-${i}">Scale:</label>
+                        <select id="fretflow-scale-${i}" class="fretflow-scale" aria-label="Select scale type">
+                            ${scaleOptions}
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label for="fretflow-tuning-${i}">Tuning:</label>
+                        <select id="fretflow-tuning-${i}" class="tuning-select" aria-label="Select guitar tuning">
+                            ${Object.entries(TUNINGS || {}).map(([name, tuning]) => 
+                                `<option value="${name}">${name.charAt(0).toUpperCase() + 
+                                name.slice(1)} (${tuning.join('')})</option>`).join('')}
+                        </select>
+                    </div>
                 </div>
-                <div class="control-group">
-                    <label for="fretflow-scale-${i}">Scale:</label>
-                    <select id="fretflow-scale-${i}" class="fretflow-scale" aria-label="Select scale type">
-                        ${scaleOptions}
-                    </select>
-                </div>
-                <div class="control-group">
-                    <label for="fretflow-tuning-${i}">Tuning:</label>
-                    <select id="fretflow-tuning-${i}" class="tuning-select" aria-label="Select guitar tuning">
-                        <option value="standard">Standard (EADGBE)</option>
-                        <option value="dropD">Drop D (DADGBE)</option>
-                        <option value="openG">Open G (DGDGBD)</option>
-                        <option value="DADGAD">DADGAD</option>
-                        <option value="openE">Open E (EBEG#BE)</option>
-                    </select>
-                </div>
-            </div>
-            <div class="scale-display"></div>
-            <div id="fretflow-fretboard-${i}" class="fretboard"></div>
-        `;
-        
-        fretboardsGrid.appendChild(fretboardSection);
-        
-        // Initialize this fretboard
-        const fretboard = fretboardSection.querySelector(`#fretflow-fretboard-${i}`);
-        const keySelect = fretboardSection.querySelector(`#fretflow-key-${i}`);
-        const scaleSelect = fretboardSection.querySelector(`#fretflow-scale-${i}`);
-        const tuningSelect = fretboardSection.querySelector(`#fretflow-tuning-${i}`);
-        const scaleDisplay = fretboardSection.querySelector('.scale-display');
-        
-        function updateFretboardDisplay() {
+                <div class="scale-display"></div>
+                <div id="fretflow-fretboard-${i}" class="fretboard"></div>
+            `;
+            
+            fretboardsGrid.appendChild(fretboardSection);
+            
             try {
-                const selectedKey = keySelect.value;
-                const selectedScale = scaleSelect.value;
-                const selectedTuning = TUNINGS[tuningSelect.value];
+                const elements = {
+                    fretboard: fretboardSection.querySelector(`#fretflow-fretboard-${i}`),
+                    keySelect: fretboardSection.querySelector(`#fretflow-key-${i}`),
+                    scaleSelect: fretboardSection.querySelector(`#fretflow-scale-${i}`),
+                    tuningSelect: fretboardSection.querySelector(`#fretflow-tuning-${i}`),
+                    scaleDisplay: fretboardSection.querySelector('.scale-display')
+                };
+
+                Object.entries(elements).forEach(([name, element]) => {
+                    if (!element) throw new Error(`${name} element not found in fretboard section ${i}`);
+                });
+
+                const updateFretboardDisplay = () => {
+                    try {
+                        const selectedKey = elements.keySelect.value;
+                        const selectedScale = elements.scaleSelect.value;
+                        const selectedTuning = TUNINGS[elements.tuningSelect.value];
+                        
+                        if (!selectedTuning) {
+                            throw new Error(`Invalid tuning selected: ${elements.tuningSelect.value}`);
+                        }
+                        
+                        const displayScaleName = selectedScale
+                            .split('_')
+                            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                            .join(' ');
+                        
+                        elements.scaleDisplay.textContent = `${selectedKey} ${displayScaleName}`;
+                        
+                        createFretboard(elements.fretboard, selectedTuning);
+                        updateFretboardNotes(elements.fretboard, selectedKey, selectedScale, selectedTuning);
+                        attachNoteClickHandlers(elements.fretboard);
+                        
+                    } catch (error) {
+                        console.error(`Error updating fretboard ${i} display:`, error);
+                        log(`Error updating fretboard ${i}: ${error.message}`);
+                    }
+                };
                 
-                if (!selectedTuning) {
-                    console.error(`Invalid tuning selected: ${tuningSelect.value}`);
-                    return;
-                }
+                ['keySelect', 'scaleSelect', 'tuningSelect'].forEach(control => {
+                    elements[control].addEventListener('change', () => {
+                        try {
+                            updateFretboardDisplay();
+                        } catch (error) {
+                            console.error(`Error in ${control} change handler:`, error);
+                            log(`Error handling ${control} change: ${error.message}`);
+                        }
+                    });
+                });
                 
-                // Format the scale name for display
-                const displayScaleName = selectedScale
-                    .split('_')
-                    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-                    .join(' ');
-                
-                // Update the scale display
-                scaleDisplay.textContent = `${selectedKey} ${displayScaleName}`;
-                
-                // Update the fretboard
-                createFretboard(fretboard, selectedTuning);
-                updateFretboardNotes(fretboard, selectedKey, selectedScale, selectedTuning);
-                
-                // Attach note click handlers
-                attachNoteClickHandlers(fretboard);
+                updateFretboardDisplay();
                 
             } catch (error) {
-                console.error('Error updating fretboard display:', error);
-                log(`Error updating fretboard: ${error.message}`);
+                console.error(`Error initializing fretboard section ${i}:`, error);
+                log(`Failed to initialize fretboard section ${i}: ${error.message}`);
             }
         }
-        
-        // Add event listeners for all controls
-        keySelect.addEventListener('change', updateFretboardDisplay);
-        scaleSelect.addEventListener('change', updateFretboardDisplay);
-        tuningSelect.addEventListener('change', updateFretboardDisplay);
-        
-        // Initial render
-        updateFretboardDisplay();
+    } catch (error) {
+        console.error('Error in initializeFretFlow:', error);
+        log(`FretFlow initialization failed: ${error.message}`);
+        throw error;
     }
 }
-        
+
 function setupMeasureEventListeners(measure) {
     if (!measure) return;
 
-    // Add drag and drop listeners
     measure.addEventListener('dragstart', dragStart);
     measure.addEventListener('dragover', dragOver);
     measure.addEventListener('drop', drop);
     measure.addEventListener('dragend', dragEnd);
 
-    // Add change listeners for controls
     const controls = measure.querySelectorAll('select');
     controls.forEach(control => {
         control.addEventListener('change', () => updateChordProgression(measure));
     });
 
-    // Add click listener for measure selection
     measure.addEventListener('click', () => {
         document.querySelectorAll('.measure').forEach(m => m.classList.remove('selected'));
         measure.classList.add('selected');
@@ -2676,25 +2678,22 @@ function attachNoteClickHandlers(fretboard) {
         return;
     }
 
-    // Remove existing event listeners to prevent duplicates
     const oldNotes = fretboard.getElementsByClassName('note');
     Array.from(oldNotes).forEach(note => {
         const clone = note.cloneNode(true);
         note.parentNode.replaceChild(clone, note);
     });
 
-    // Attach new event listeners
     const notes = fretboard.getElementsByClassName('note');
     Array.from(notes).forEach(note => {
         note.addEventListener('click', async function(e) {
             e.stopPropagation();
-            const noteName = this.textContent; // Use textContent instead of dataset.note
+            const noteName = this.textContent;
             if (noteName) {
                 try {
-                    const fretboardVolume = 1.0; // Default volume since the control is gone
-                    await playNote(noteName + '4', fretboardVolume, 500); // Add octave number
+                    const fretboardVolume = 1.0;
+                    await playNote(noteName + '4', fretboardVolume, 500);
                     
-                    // Add visual feedback
                     this.classList.add('playing');
                     setTimeout(() => this.classList.remove('playing'), 200);
                     
@@ -2706,7 +2705,6 @@ function attachNoteClickHandlers(fretboard) {
             }
         });
 
-        // Add hover effects
         note.addEventListener('mouseenter', () => {
             note.classList.add('hover');
         });
@@ -2731,9 +2729,6 @@ function addFirstChordListener() {
 }
 
 function setupEventListeners() {
-    // Previous event listener code remains the same...
-
-    // Add proper closure for the tuning controls section
     if (UI.elements.chordTuning && UI.elements.chordFretboard && UI.elements.measures) {
         UI.elements.chordTuning.addEventListener('change', () => {
             const tuning = TUNINGS[UI.elements.chordTuning.value];
@@ -2746,7 +2741,6 @@ function setupEventListeners() {
             initializeFretFlow();
         });
 
-        // Measure changes
         UI.elements.measures.addEventListener('change', (e) => {
             if (e.target.classList.contains('root-note') || e.target.classList.contains('chord-quality')) {
                 const measure = e.target.closest('.measure');
@@ -2764,32 +2758,36 @@ function setupEventListeners() {
             }
         });
     }
-} // Close setupEventListeners function
+}
 
-// Add the initialization function
 async function initializeApp() {
     try {
         updateLoadingStatus("Initializing audio context...");
         await AudioContextManager.initialize();
         
         updateLoadingStatus("Creating UI elements...");
-        UI.init();
+        if (!UI.init()) {
+            throw new Error("UI initialization failed");
+        }
         
         updateLoadingStatus("Setting up event listeners...");
         setupEventListeners();
         
         updateLoadingStatus("Creating initial fretboard...");
         const tuning = TUNINGS['standard'];
+        if (!tuning) {
+            throw new Error("Standard tuning not found in TUNINGS");
+        }
         createFretboard(UI.elements.chordFretboard, tuning);
         
         updateLoadingStatus("Initializing FretFlow...");
-        initializeFretFlow();
+        await initializeFretFlow();
         
         updateLoadingStatus("Creating beats...");
-        createBeats();
+        await createBeats();
         
         updateLoadingStatus("Loading default progression...");
-        loadProgression('2_5_1');
+        await loadProgression('2_5_1');
         
         updateLoadingStatus("Initialization complete!");
         log("Application initialized successfully");
@@ -2802,12 +2800,16 @@ async function initializeApp() {
     }
 }
 
-// Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
     initializeApp().catch(error => {
         console.error("Initialization failed:", error);
-        updateLoadingStatus("Initialization failed");
-        initializeScaleSelects();
+        updateLoadingStatus("Initialization failed - check console for details");
+        try {
+            initializeScaleSelects();
+        } catch (fallbackError) {
+            console.error("Fallback initialization failed:", fallbackError);
+            updateLoadingStatus("Complete initialization failure");
+        }
     });
 });
 
