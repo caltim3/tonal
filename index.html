@@ -1398,53 +1398,38 @@ function getNoteFromScaleDegree(degree, key) {
     return majorScale[targetIndex];
 }
 
-function getChordFromFunction(romanNumeral, key) {
-    // Remove any existing accidentals from the key
-    const baseKey = key.replace(/[b#]/, '');
-    const isMinorKey = key.toLowerCase().includes('m');
-    
-    // Parse the Roman numeral
-    let degree = romanNumeral.replace(/[67]/, '');
-    let chordType = romanNumeral.match(/[67]/)?.[0] || '';
-    
-    // Handle flat/sharp modifiers
-    let accidental = 0;
-    if (degree.startsWith('b')) {
-        accidental = -1;
-        degree = degree.substring(1);
-    } else if (degree.startsWith('#')) {
-        accidental = 1;
-        degree = degree.substring(1);
-    }
-
-    // Convert Roman numeral to scale degree
-    const romanToNumber = {
-        'I': 0, 'II': 2, 'III': 4, 'IV': 5, 'V': 7, 'VI': 9, 'VII': 11,
-        'i': 0, 'ii': 2, 'iii': 4, 'iv': 5, 'v': 7, 'vi': 9, 'vii': 11
+function getChordFromFunction(roman, key = "C") {
+    // Map Roman numerals to scale degrees
+    const romanMap = {
+        "I": 0, "II": 2, "III": 4, "IV": 5, "V": 7, "VI": 9, "VII": 11,
+        "i": 0, "ii": 2, "iii": 4, "iv": 5, "v": 7, "vi": 9, "vii": 11,
     };
-
-    const degree_num = romanToNumber[degree];
-    if (degree_num === undefined) return null;
-
-    // Calculate root note
-    const scale = isMinorKey ? SCALES.minor : SCALES.major;
-    const keyIndex = NOTES.indexOf(baseKey);
-    const rootIndex = (keyIndex + degree_num + accidental + 12) % 12;
-    const root = NOTES[rootIndex];
-
-    // Determine quality based on case and chord type
-    let quality;
-    const isUpperCase = degree === degree.toUpperCase();
-    if (chordType === '6') {
-        quality = '6';
-    } else if (chordType === '7') {
-        quality = isUpperCase ? 'dom7' : 'min7';
+    // Extract base and quality
+    const match = roman.match(/^([b#]?)([IViv]+)(.*)$/);
+    if (!match) return null;
+    let [, accidental, numeral, quality] = match;
+    let semitone = romanMap[numeral];
+    if (semitone === undefined) return null;
+    if (accidental === "b") semitone -= 1;
+    if (accidental === "#") semitone += 1;
+    // Get root note from key
+    const keyNotes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+    let keyIndex = keyNotes.indexOf(key);
+    if (keyIndex === -1) keyIndex = 0;
+    let rootIndex = (keyIndex + semitone + 12) % 12;
+    let root = keyNotes[rootIndex];
+    // Determine chord quality
+    let chordQuality = "";
+    if (quality) {
+        chordQuality = quality;
+    } else if (numeral === numeral.toUpperCase()) {
+        chordQuality = "maj";
     } else {
-        quality = isUpperCase ? 'maj' : 'min';
+        chordQuality = "m";
     }
-
-    return { root, quality };
+    return { root, quality: chordQuality };
 }
+        
 // Helper function for flat notes
 function flattenNote(note) {
     const sharpToFlat = {
@@ -2618,7 +2603,13 @@ function initializeFretFlow() {
         updateFretboardDisplay();
     }
 }
-
+        
+function setupMeasureEventListeners() {
+    // TODO: Implement measure event listeners if needed
+}
+function updateDisplay() {
+    // TODO: Implement display update logic if needed
+}        
 function attachNoteClickHandlers(fretboard) {
     if (!fretboard) {
         console.error('Invalid fretboard element provided');
