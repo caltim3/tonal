@@ -1617,19 +1617,33 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
 
     AudioContextManager.currentChordGain = gainNode;
 
-    // Voice leading logic
+    // Generate random inversion (0 to length-1)
+    const inversion = Math.floor(Math.random() * chordNotes.length);
+    
+    // Create voicing with random inversion
     let voicing = [...chordNotes];
+    for (let i = 0; i < inversion; i++) {
+        const note = voicing.shift();
+        voicing.push(note);
+    }
+
+    // Additional voice leading for continuation
     if (isContinuation) {
-        // Move the root note up an octave for inversions
         const rootNote = voicing.shift();
         voicing.push(rootNote);
     }
 
-    // Play each note with slight timing variations for more natural sound
+    // Play each note with slight timing and velocity variations
     voicing.forEach((note, index) => {
-        const octave = isContinuation ? 
-            (index === voicing.length - 1 ? 4 : 3) : 
-            (index === 0 ? 3 : (index < 3 ? 3 : 4));
+        // Determine octave based on position and inversion
+        let octave;
+        if (isContinuation) {
+            octave = index === voicing.length - 1 ? 4 : 3;
+        } else {
+            // Adjust octave based on position in the chord and inversion
+            const positionInChord = (index + inversion) % voicing.length;
+            octave = positionInChord === 0 ? 3 : (positionInChord < 3 ? 3 : 4);
+        }
 
         const sampleNote = standardizeNoteNameForSamples(note);
         const sampleKey = `${sampleNote}${octave}`;
@@ -1642,7 +1656,14 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
 
         const source = AudioContextManager.context.createBufferSource();
         source.buffer = buffer;
-        source.connect(gainNode);
+        
+        // Create individual gain node for note velocity variation
+        const noteGain = AudioContextManager.context.createGain();
+        const velocityVariation = 0.85 + (Math.random() * 0.3); // Velocity varies between 85% and 115%
+        noteGain.gain.value = velocityVariation;
+        
+        source.connect(noteGain);
+        noteGain.connect(gainNode);
 
         // Add reverb
         const reverbGain = AudioContextManager.context.createGain();
@@ -1650,13 +1671,12 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
         source.connect(reverbGain);
         reverbGain.connect(AudioContextManager.reverbNode);
 
-        // Humanize timing
-        const timeVariation = Math.random() * 0.02;
+        // Humanize timing with slightly larger variation range
+        const timeVariation = Math.random() * 0.03; // Increased from 0.02 to 0.03
         source.start(startTime + timeVariation);
         source.stop(startTime + duration);
     });
-}
-        
+} 
 function getChordNotes(root, quality) {
     // Enhanced chord intervals with more voicings
     const CHORD_INTERVALS = {
