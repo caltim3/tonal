@@ -2613,29 +2613,30 @@ function attachNoteClickHandlers(fretboard) {
     });
 
     // Attach new event listeners
-        const notes = fretboard.getElementsByClassName('note');
-        Array.from(notes).forEach(note => {
-            note.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const noteName = this.dataset.note;
-                if (noteName) {
-                    try {
-                        const fretboardVolume = 1.0; // Default volume since the control is gone
-                        playNote(noteName, fretboardVolume, 500);
-                        log(`Playing note: ${noteName}`);
-                    } catch (error) {
-                        console.error('Error playing note:', error);
-                        log(`Error playing note ${noteName}: ${error.message}`);
-                    }
+    const notes = fretboard.getElementsByClassName('note');
+    Array.from(notes).forEach(note => {
+        note.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const noteName = this.dataset.note;
+            if (noteName) {
+                try {
+                    const fretboardVolume = 1.0; // Default volume since the control is gone
+                    playNote(noteName, fretboardVolume, 500);
+                    log(`Playing note: ${noteName}`);
+                } catch (error) {
+                    console.error('Error playing note:', error);
+                    log(`Error playing note ${noteName}: ${error.message}`);
                 }
-            });
+            }
         });
+    });
+} // Close attachNoteClickHandlers function
 
-// Log initialization
+// Log initialization (move outside the function)
 log("FretFlow initialized with 4 independent fretboards");
 
-        
-    function addFirstChordListener() {
+// Move this function outside
+function addFirstChordListener() {
     const firstMeasure = UI.elements.measures.firstElementChild;
     if (firstMeasure) {
         const scaleRoot = firstMeasure.querySelector('.second-key');
