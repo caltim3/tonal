@@ -1628,93 +1628,59 @@ function createScaleOptions(selected = 'major') {
 }
        
 // Audio Playback
-async function playNote(noteName, volume = 1.0, duration = 1000) {
-    // Early validation
-    if (!AudioContextManager.context || !noteName) {
-        console.warn('Audio context or note name missing');
-        return;
-    }
+async function playNote(stringNumber, fretNumber, volume = 1.0) {
+    if (!AudioContextManager.context) return;
+
+    const fretboardVolumeControl = document.getElementById('fretboard-volume');
+    const fretboardVolume = parseFloat(fretboardVolumeControl?.value ?? 1);
+    const finalVolume = volume * fretboardVolume;
+
+    if (finalVolume <= 0) return;
 
     try {
-        // Ensure audio is initialized and resumed
         await ensureAudioInitialized();
-
-        // Get and validate volume settings
-        const fretboardVolumeControl = document.getElementById('fretboard-volume');
-        const fretboardVolume = parseFloat(fretboardVolumeControl?.value ?? 1);
-        const finalVolume = Math.max(0, Math.min(1, volume * fretboardVolume)); // Clamp between 0 and 1
-
-        if (finalVolume <= 0) {
-            console.debug('Volume too low, skipping playback');
-            return;
-        }
-
-        // Parse note name with improved regex
-        const notePattern = /^([A-G][b#]?)(\d+)$/;
-        const match = noteName.match(notePattern);
+        const octave = Math.floor(fretNumber / 12) + 3;
+        const openNote = TUNINGS.standard[6 - stringNumber];
+        const noteIndex = (NOTES.indexOf(openNote) + fretNumber) % 12;
+        const noteName = NOTES[noteIndex];
         
-        if (!match) {
-            console.warn(`Invalid note format: ${noteName}. Expected format: C4, F#5, etc.`);
-            return;
-        }
-
-        const [, rawNote, octaveStr] = match;
+        // Convert to sample format
+        const mappedNote = SAMPLE_NOTE_MAP[noteName] || noteName.toLowerCase();
+        const sampleKey = `${mappedNote}${octave}v12`;
         
-        // Process note and octave with bounds checking
-        const baseNote = standardizeNoteName(rawNote).replace('m', '');
-        const mappedNote = SAMPLE_NOTE_MAP[baseNote] || baseNote;
-        const octave = Math.max(2, Math.min(6, parseInt(octaveStr))); // Clamp octave between 2 and 6
-        
-        // Construct sample name and verify buffer exists
-        const sampleName = `${mappedNote}${octave}v12`;
-        const buffer = AudioContextManager.pianoSampleBuffers[sampleName];
-
+        const buffer = AudioContextManager.pianoSampleBuffers[sampleKey];
         if (!buffer) {
-            console.warn(`No piano sample found for note: ${sampleName}`);
+            console.warn(`No piano sample found for ${sampleKey}`);
             return;
         }
 
-        // Create and configure audio nodes
         const source = AudioContextManager.context.createBufferSource();
         const gainNode = AudioContextManager.context.createGain();
         
-        // Set up audio routing
         source.buffer = buffer;
+        gainNode.gain.value = finalVolume;
+
         source.connect(gainNode);
         gainNode.connect(AudioContextManager.context.destination);
 
-        // Apply volume with ramping to avoid clicks
-        const currentTime = AudioContextManager.context.currentTime;
-        gainNode.gain.setValueAtTime(0, currentTime);
-        gainNode.gain.linearRampToValueAtTime(finalVolume, currentTime + 0.01);
-        gainNode.gain.linearRampToValueAtTime(0, currentTime + (duration / 1000));
-
-        // Play the note
-        source.start(currentTime);
+        source.start(0);
         
-        // Schedule cleanup
-        const stopTime = currentTime + (duration / 1000);
-        source.stop(stopTime);
-
-        // Clean up nodes after playback
+        // Stop after 1 second
         setTimeout(() => {
             try {
-                gainNode.disconnect();
+                source.stop();
                 source.disconnect();
+                gainNode.disconnect();
             } catch (e) {
-                console.debug('Cleanup error (normal if playback already stopped):', e.message);
+                // Ignore errors from already stopped sources
             }
-        }, duration + 100); // Add small buffer to ensure playback is complete
-
-        return { source, gainNode }; // Return nodes for external control if needed
+        }, 1000);
 
     } catch (error) {
-        console.error('Error in playNote:', error);
-        throw new Error(`Failed to play note ${noteName}: ${error.message}`);
+        console.error('Error playing note:', error);
     }
 }
-
-// Helper function to ensure audio is initialized
+        // Helper function to ensure audio is initialized
 async function ensureAudioInitialized() {
     if (!AudioContextManager.context) {
         throw new Error('Audio context not initialized');
