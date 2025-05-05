@@ -611,7 +611,12 @@
             color: #ffe8d6;
             border: 1px solid #6b705c;
         }
-        
+        .swing-control {
+          margin: 10px 0;
+        }
+        #swingSlider {
+          width: 150px;
+        }
     </style>
 </head>
 <body>
@@ -668,7 +673,10 @@
         </div>
         <div class="beats-container"></div>
     </div>
-
+        <div class="swing-control">
+          <label for="swingSlider">Swing: <span id="swingValue">0%</span></label>
+          <input type="range" id="swingSlider" min="0" max="100" value="0" step="1">
+        </div>
     <div class="volume-control">
         <label for="accent-intensity">Accent Intensity:</label>
         <input type="range" id="accent-intensity" min="1" max="2" step="0.1" value="1.5" aria-label="Accent intensity">
@@ -2360,7 +2368,23 @@ function loadProgression(progressionName, overrideKey = null) {
         console.error('Error loading progression:', error);
     }
 }
-
+    function playChordWithSwing(notes, baseDelay = 300) {
+      let time = 0;
+      for (let i = 0; i < notes.length; i++) {
+        // Calculate swing: odd notes get longer, even notes get shorter
+        let swingFactor = (swingAmount / 100) * 0.5; // 0 to 0.5
+        let delay = baseDelay;
+        if (i % 2 === 0) {
+          delay = baseDelay * (1 + swingFactor); // longer
+        } else {
+          delay = baseDelay * (1 - swingFactor); // shorter
+        }
+        setTimeout(() => {
+          playNote(notes[i]);
+        }, time);
+        time += delay;
+      }
+    }
 // Helper function to add a measure with a chord
 function addMeasureWithChord(parsedChord, index) {
     const root = parsedChord.root;
@@ -2899,11 +2923,28 @@ async function initializeApp() {
 
 // Initial setup
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize the app as before
     initializeApp().catch(error => {
         console.error("Initialization failed:", error);
         updateLoadingStatus("Initialization failed");
         initializeScaleSelects();
     });
+
+    // --- SWING SLIDER SETUP START ---
+    // Get swing slider elements
+    const swingSlider = document.getElementById('swingSlider');
+    const swingValue = document.getElementById('swingValue');
+    // Set default swing amount
+    window.swingAmount = 0; // Use window to make it accessible elsewhere
+
+    // Only add event listener if the slider exists
+    if (swingSlider && swingValue) {
+        swingSlider.addEventListener('input', function() {
+            window.swingAmount = parseInt(this.value, 10);
+            swingValue.textContent = window.swingAmount + '%';
+        });
+    }
+    // --- SWING SLIDER SETUP END ---
 });
 
             </script>
