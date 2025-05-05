@@ -195,12 +195,32 @@
             flex: 1;
         }
 
-        /* Light mode (already present) */
         .fretboard-section {
             border: 1px solid #ccc;
             padding: 15px;
             border-radius: 8px;
             background-color: #f9f9f9;
+        }
+        
+        /* Dark Mode 1 */
+        body.dark-mode .fretboard-section {
+            background-color: #23272e;
+            border-color: #444;
+            color: #fefae0;
+        }
+        
+        /* Dark Mode 2 */
+        body.dark-mode-2 .fretboard-section {
+            background-color: #001f54;
+            border-color: #1282a2;
+            color: #fefcfb;
+        }
+        
+        /* Dark Mode 3 */
+        body.dark-mode-3 .fretboard-section {
+            background-color: #a5a58d;
+            border-color: #cb997e;
+            color: #ffe8d6;
         }
         
         /* Dark Mode 1 */
@@ -611,12 +631,7 @@
             color: #ffe8d6;
             border: 1px solid #6b705c;
         }
-        .swing-control {
-          margin: 10px 0;
-        }
-        #swingSlider {
-          width: 150px;
-        }
+        
     </style>
 </head>
 <body>
@@ -673,10 +688,7 @@
         </div>
         <div class="beats-container"></div>
     </div>
-        <div class="swing-control">
-          <label for="swingSlider">Swing: <span id="swingValue">0%</span></label>
-          <input type="range" id="swingSlider" min="0" max="100" value="0" step="1">
-        </div>
+
     <div class="volume-control">
         <label for="accent-intensity">Accent Intensity:</label>
         <input type="range" id="accent-intensity" min="1" max="2" step="0.1" value="1.5" aria-label="Accent intensity">
@@ -1634,21 +1646,14 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
         voicing.push(rootNote);
     }
 
-    // Get swing amount (0-1)
-    const swingSlider = document.getElementById('swingSlider');
-    const swingAmount = swingSlider ? (parseInt(swingSlider.value) / 100) : 0;
-    
-    // Base timing parameters
-    const baseDelay = 0.12; // 120ms between notes
-    let timeOffset = 0;
-
-    // Play each note with timing variations
+    // Play each note with slight timing and velocity variations
     voicing.forEach((note, index) => {
         // Determine octave based on position and inversion
         let octave;
         if (isContinuation) {
             octave = index === voicing.length - 1 ? 4 : 3;
         } else {
+            // Adjust octave based on position in the chord and inversion
             const positionInChord = (index + inversion) % voicing.length;
             octave = positionInChord === 0 ? 3 : (positionInChord < 3 ? 3 : 4);
         }
@@ -1679,24 +1684,12 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
         source.connect(reverbGain);
         reverbGain.connect(AudioContextManager.reverbNode);
 
-        // Calculate swing timing
-        if (index > 0) {
-            // Apply swing to every other note
-            const swingOffset = (index % 2 === 1) ? 
-                baseDelay * (1 - (swingAmount * 0.33)) : // shorter for off-beats
-                baseDelay * (1 + (swingAmount * 0.33));  // longer for on-beats
-            timeOffset += swingOffset;
-        }
-
-        // Add subtle random timing variation
-        const humanize = (Math.random() * 0.02) - 0.01; // ±10ms variation
-
-        // Start the note
-        source.start(startTime + timeOffset + humanize);
+        // Humanize timing with slightly larger variation range
+        const timeVariation = Math.random() * 0.03; // Increased from 0.02 to 0.03
+        source.start(startTime + timeVariation);
         source.stop(startTime + duration);
     });
-}
-        
+} 
 function getChordNotes(root, quality) {
     // Enhanced chord intervals with more voicings
     const CHORD_INTERVALS = {
@@ -2387,23 +2380,7 @@ function loadProgression(progressionName, overrideKey = null) {
         console.error('Error loading progression:', error);
     }
 }
-    function playChordWithSwing(notes, baseDelay = 300) {
-      let time = 0;
-      for (let i = 0; i < notes.length; i++) {
-        // Calculate swing: odd notes get longer, even notes get shorter
-        let swingFactor = (swingAmount / 100) * 0.5; // 0 to 0.5
-        let delay = baseDelay;
-        if (i % 2 === 0) {
-          delay = baseDelay * (1 + swingFactor); // longer
-        } else {
-          delay = baseDelay * (1 - swingFactor); // shorter
-        }
-        setTimeout(() => {
-          playNote(notes[i]);
-        }, time);
-        time += delay;
-      }
-    }
+
 // Helper function to add a measure with a chord
 function addMeasureWithChord(parsedChord, index) {
     const root = parsedChord.root;
@@ -2726,17 +2703,15 @@ function setupEventListeners() {
             console.error('Failed to initialize audio on click:', error);
         }
     }, { once: true });
-
+    
     // Start/Stop button
-    if (UI.elements.startStopButton) {
-        UI.elements.startStopButton.addEventListener('click', () => {
-            if (AppState.isPlaying) {
-                stopPlayback();
-            } else {
-                startPlayback();
-            }
-        });
-    }
+    UI.elements.startStopButton.addEventListener('click', () => {
+        if (AppState.isPlaying) {
+            stopPlayback();
+        } else {
+            startPlayback();
+        }
+    });
 
     // Drum set controls
     const drumSetToggleBtn = document.getElementById('drumSetToggleBtn');
@@ -2761,6 +2736,7 @@ function setupEventListeners() {
         });
 
         // Initial visibility setup
+        const drumSetToggleBtn = document.getElementById('drumSetToggleBtn');
         if (drumSetToggleBtn) {
             drumSetToggleBtn.style.display = soundTypeSelect.value === 'drums' ? 'inline-block' : 'none';
         }
@@ -2768,158 +2744,136 @@ function setupEventListeners() {
 
     // Dark mode toggle
     let colorMode = 0;
-    if (UI.elements.darkModeToggle) {
-        UI.elements.darkModeToggle.addEventListener('click', () => {
-            colorMode = (colorMode + 1) % 4;
-            document.body.classList.remove('dark-mode', 'dark-mode-2', 'dark-mode-3');
-            UI.elements.darkModeToggle.classList.remove('active', 'active-2', 'active-3');
-
-            switch (colorMode) {
-                case 1:
-                    document.body.classList.add('dark-mode');
-                    UI.elements.darkModeToggle.classList.add('active');
-                    log('Dark mode 1 enabled');
-                    break;
-                case 2:
-                    document.body.classList.add('dark-mode-2');
-                    UI.elements.darkModeToggle.classList.add('active-2');
-                    log('Dark mode 2 enabled');
-                    break;
-                case 3:
-                    document.body.classList.add('dark-mode-3');
-                    UI.elements.darkModeToggle.classList.add('active-3');
-                    log('Dark mode 3 enabled');
-                    break;
-                default:
-                    log('Light mode enabled');
-                    break;
-            }
-        });
-    }
+    UI.elements.darkModeToggle.addEventListener('click', () => {
+        colorMode = (colorMode + 1) % 4;
+        document.body.classList.remove('dark-mode', 'dark-mode-2', 'dark-mode-3');
+        UI.elements.darkModeToggle.classList.remove('active', 'active-2', 'active-3');
+        
+        switch(colorMode) {
+            case 1:
+                document.body.classList.add('dark-mode');
+                UI.elements.darkModeToggle.classList.add('active');
+                log('Dark mode 1 enabled');
+                break;
+            case 2:
+                document.body.classList.add('dark-mode-2');
+                UI.elements.darkModeToggle.classList.add('active-2');
+                log('Dark mode 2 enabled');
+                break;
+            case 3:
+                document.body.classList.add('dark-mode-3');
+                UI.elements.darkModeToggle.classList.add('active-3');
+                log('Dark mode 3 enabled');
+                break;
+            default:
+                log('Light mode enabled');
+                break;
+        }
+    });
 
     // Chords toggle
     const chordsButton = UI.elements.chordsEnabled;
     let chordsEnabled = true;
-    if (chordsButton) {
-        chordsButton.addEventListener('click', () => {
-            chordsEnabled = !chordsEnabled;
-            chordsButton.textContent = chordsEnabled ? 'Chords Enabled' : 'Chords Disabled';
-            chordsButton.classList.toggle('active', chordsEnabled);
-            log(`Chords ${chordsEnabled ? 'enabled' : 'disabled'}`);
-        });
-    }
+    chordsButton.addEventListener('click', () => {
+        chordsEnabled = !chordsEnabled;
+        chordsButton.textContent = chordsEnabled ? 'Chords Enabled' : 'Chords Disabled';
+        chordsButton.classList.toggle('active', chordsEnabled);
+        log(`Chords ${chordsEnabled ? 'enabled' : 'disabled'}`);
+    });
 
     // Tempo controls
-    if (UI.elements.tempo && UI.elements.tempoDisplay) {
-        UI.elements.tempo.addEventListener('input', () => {
-            AppState.tempo = parseInt(UI.elements.tempo.value);
+    UI.elements.tempo.addEventListener('input', () => {
+        AppState.tempo = parseInt(UI.elements.tempo.value);
+        UI.elements.tempoDisplay.textContent = `${AppState.tempo} BPM`;
+        if (AppState.isPlaying) {
+            stopPlayback();
+            startPlayback();
+        }
+    });
+
+    UI.elements.tapTempo.addEventListener('click', () => {
+        const now = Date.now();
+        if (!AppState.lastTap) AppState.lastTap = now;
+        const interval = now - AppState.lastTap;
+        if (interval < 2000) {
+            const bpm = Math.round(60000 / interval);
+            AppState.tempo = Math.max(40, Math.min(220, bpm));
+            UI.elements.tempo.value = AppState.tempo;
             UI.elements.tempoDisplay.textContent = `${AppState.tempo} BPM`;
             if (AppState.isPlaying) {
                 stopPlayback();
                 startPlayback();
             }
-        });
-    }
-
-    if (UI.elements.tapTempo && UI.elements.tempo && UI.elements.tempoDisplay) {
-        UI.elements.tapTempo.addEventListener('click', () => {
-            const now = Date.now();
-            if (!AppState.lastTap) AppState.lastTap = now;
-            const interval = now - AppState.lastTap;
-            if (interval < 2000) {
-                const bpm = Math.round(60000 / interval);
-                AppState.tempo = Math.max(40, Math.min(220, bpm));
-                UI.elements.tempo.value = AppState.tempo;
-                UI.elements.tempoDisplay.textContent = `${AppState.tempo} BPM`;
-                if (AppState.isPlaying) {
-                    stopPlayback();
-                    startPlayback();
-                }
-            }
-            AppState.lastTap = now;
-        });
-    }
+        }
+        AppState.lastTap = now;
+    });
 
     // Time signature
-    if (UI.elements.timeSignature) {
-        UI.elements.timeSignature.addEventListener('change', () => {
-            createBeats();
-            if (AppState.isPlaying) {
-                stopPlayback();
-                startPlayback();
-            }
-        });
-    }
+    UI.elements.timeSignature.addEventListener('change', () => {
+        createBeats();
+        if (AppState.isPlaying) {
+            stopPlayback();
+            startPlayback();
+        }
+    });
 
     // Volume controls
-    if (UI.elements.metronomeVolume) {
-        UI.elements.metronomeVolume.addEventListener('input', () => {
-            const volume = parseFloat(UI.elements.metronomeVolume.value);
-            log(`Metronome volume set to ${volume}`);
-        });
-    }
-    if (UI.elements.chordFretboardVolume) {
-        UI.elements.chordFretboardVolume.addEventListener('input', () => {
-            log(`Chord fretboard volume set to ${UI.elements.chordFretboardVolume.value}`);
-        });
-    }
-    if (UI.elements.chordVolume) {
-        UI.elements.chordVolume.addEventListener('input', () => {
-            log(`Chord volume set to ${UI.elements.chordVolume.value}`);
-        });
-    }
-    if (UI.elements.fretboardVolume) {
-        UI.elements.fretboardVolume.addEventListener('input', () => {
-            log(`Fretboard volume set to ${UI.elements.fretboardVolume.value}`);
-        });
-    }
+    UI.elements.metronomeVolume.addEventListener('input', () => {
+        const volume = parseFloat(UI.elements.metronomeVolume.value);
+        log(`Metronome volume set to ${volume}`);
+    });
+
+    UI.elements.chordFretboardVolume.addEventListener('input', () => {
+        log(`Chord fretboard volume set to ${UI.elements.chordFretboardVolume.value}`);
+    });
+
+    UI.elements.chordVolume.addEventListener('input', () => {
+        log(`Chord volume set to ${UI.elements.chordVolume.value}`);
+    });
+
+    UI.elements.fretboardVolume.addEventListener('input', () => {
+        log(`Fretboard volume set to ${UI.elements.fretboardVolume.value}`);
+    });
 
     // Progression controls
-    if (UI.elements.progressionSelect) {
-        UI.elements.progressionSelect.addEventListener('change', () => {
-            loadProgression(UI.elements.progressionSelect.value);
-        });
-    }
-    if (UI.elements.keySelect) {
-        UI.elements.keySelect.addEventListener('change', () => {
-            updateProgressionKey(UI.elements.keySelect.value);
-            initializeFretFlow();
-        });
-    }
+    UI.elements.progressionSelect.addEventListener('change', () => {
+        loadProgression(UI.elements.progressionSelect.value);
+    });
+
+    UI.elements.keySelect.addEventListener('change', () => {
+        updateProgressionKey(UI.elements.keySelect.value);
+        initializeFretFlow();
+    });
 
     // Tuning controls
-    if (UI.elements.chordTuning && UI.elements.measures && UI.elements.chordFretboard) {
-        UI.elements.chordTuning.addEventListener('change', () => {
-            const tuning = TUNINGS[UI.elements.chordTuning.value];
-            const firstMeasure = UI.elements.measures.firstElementChild;
-            if (firstMeasure) {
-                const scaleRoot = firstMeasure.querySelector('.second-key').value;
-                const scaleType = firstMeasure.querySelector('.scale-select').value;
-                updateFretboardNotes(UI.elements.chordFretboard, scaleRoot, scaleType, tuning);
-            }
-            initializeFretFlow();
-        });
-    }
+    UI.elements.chordTuning.addEventListener('change', () => {
+        const tuning = TUNINGS[UI.elements.chordTuning.value];
+        const firstMeasure = UI.elements.measures.firstElementChild;
+        if (firstMeasure) {
+            const scaleRoot = firstMeasure.querySelector('.second-key').value;
+            const scaleType = firstMeasure.querySelector('.scale-select').value;
+            updateFretboardNotes(UI.elements.chordFretboard, scaleRoot, scaleType, tuning);
+        }
+        initializeFretFlow();
+    });
 
     // Measure changes
-    if (UI.elements.measures) {
-        UI.elements.measures.addEventListener('change', (e) => {
-            if (e.target.classList.contains('root-note') || e.target.classList.contains('chord-quality')) {
-                const measure = e.target.closest('.measure');
-                const root = measure.querySelector('.root-note').value;
-                const quality = measure.querySelector('.chord-quality').value;
-                const secondKeySelect = measure.querySelector('.second-key');
-                const scaleSelect = measure.querySelector('.scale-select');
-                secondKeySelect.value = root;
-                scaleSelect.value = suggestScaleForQuality(quality);
-                if (measure === UI.elements.measures.firstElementChild) {
-                    const tuning = TUNINGS[UI.elements.chordTuning.value];
-                    updateFretboardNotes(UI.elements.chordFretboard, root, scaleSelect.value, tuning);
-                }
-                log(`Updated chord in measure to ${root} ${quality}`);
+    UI.elements.measures.addEventListener('change', (e) => {
+        if (e.target.classList.contains('root-note') || e.target.classList.contains('chord-quality')) {
+            const measure = e.target.closest('.measure');
+            const root = measure.querySelector('.root-note').value;
+            const quality = measure.querySelector('.chord-quality').value;
+            const secondKeySelect = measure.querySelector('.second-key');
+            const scaleSelect = measure.querySelector('.scale-select');
+            secondKeySelect.value = root;
+            scaleSelect.value = suggestScaleForQuality(quality);
+            if (measure === UI.elements.measures.firstElementChild) {
+                const tuning = TUNINGS[UI.elements.chordTuning.value];
+                updateFretboardNotes(UI.elements.chordFretboard, root, scaleSelect.value, tuning);
             }
-        });
-    }
+            log(`Updated chord in measure to ${root} ${quality}`);
+        }
+    });
 
     log("Event listeners set up");
 }
@@ -2942,28 +2896,11 @@ async function initializeApp() {
 
 // Initial setup
 document.addEventListener('DOMContentLoaded', () => {
-    // Initialize the app as before
     initializeApp().catch(error => {
         console.error("Initialization failed:", error);
         updateLoadingStatus("Initialization failed");
         initializeScaleSelects();
     });
-
-    // --- SWING SLIDER SETUP START ---
-    // Get swing slider elements
-    const swingSlider = document.getElementById('swingSlider');
-    const swingValue = document.getElementById('swingValue');
-    // Set default swing amount
-    window.swingAmount = 0; // Use window to make it accessible elsewhere
-
-    // Only add event listener if the slider exists
-    if (swingSlider && swingValue) {
-        swingSlider.addEventListener('input', function() {
-            window.swingAmount = parseInt(this.value, 10);
-            swingValue.textContent = window.swingAmount + '%';
-        });
-    }
-    // --- SWING SLIDER SETUP END ---
 });
 
             </script>
