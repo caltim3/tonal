@@ -1364,144 +1364,57 @@ function isMinorKeyName(key) {
     return key && (key.endsWith('m') || key.endsWith('min'));
 }
 
-function getChordFromFunction(chordFunction, key = 'C') {
-    // Helper: get note from scale degree
-    function getNoteFromScaleDegree(degree, key, scale, accidental = 0) {
-        const chromatic = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
-        // Find the root index for the key
-        let keyIndex = chromatic.findIndex(n => n.replace('b', '♭').replace('#', '♯') === key.replace('b', '♭').replace('#', '♯'));
-        if (keyIndex === -1) keyIndex = 0;
-        let noteIndex = (keyIndex + scale[degree] + accidental + 12) % 12;
-        return chromatic[noteIndex];
-    }
+function getPlayableChordVoicing(chordNotes) {
+  const voicingTypes = ["drop2", "drop3", "drop2and4"];
+  const octaveRange = [2, 3];
+  const noteToFile = note => note.toLowerCase().replace("#", "s");
 
-    // Helper: parse accidental (b, #, bb, x, etc.)
-    function parseAccidental(str) {
-        if (!str) return 0;
-        let acc = 0;
-        for (let i = 0; i < str.length; i++) {
-            if (str[i] === 'b') acc -= 1;
-            if (str[i] === '#') acc += 1;
-        }
-        return acc;
-    }
+  // Convert note names to semitone values for manipulation
+  const noteToMidi = {
+    "C": 0, "C#": 1, "D": 2, "D#": 3, "E": 4, "F": 5,
+    "F#": 6, "G": 7, "G#": 8, "A": 9, "A#": 10, "B": 11
+  };
+  const midiToNote = Object.entries(noteToMidi).reduce((obj, [note, val]) => {
+    obj[val] = note;
+    return obj;
+  }, {});
 
-    // Scales
-    const majorScale = [0, 2, 4, 5, 7, 9, 11];
-    const minorScale = [0, 2, 3, 5, 7, 8, 10];
+  // Map chord to MIDI values for easier voicing math
+  let baseOctave = 3; // Start with octave 3 for upper voices
+  const midiChord = chordNotes.map((n, i) => {
+    const semitone = noteToMidi[n];
+    const octave = i === 0 ? 2 : baseOctave; // Root in octave 2, others start at 3
+    return semitone + 12 * octave;
+  });
 
-    // Key context
-    const isMinorKey = key.toLowerCase().includes('m');
-    const actualKey = isMinorKey ? key.replace('m', '') : key;
-    const scale = isMinorKey ? minorScale : majorScale;
+  // Apply random voicing
+  const chosen = voicingTypes[Math.floor(Math.random() * voicingTypes.length)];
+  let voiced = [...midiChord];
 
-    // Handle empty or invalid input
-    if (!chordFunction) return null;
+  if (chosen === "drop2" && midiChord.length >= 4) {
+    voiced[2] -= 12; // Drop 2nd highest
+  } else if (chosen === "drop3" && midiChord.length >= 4) {
+    voiced[1] -= 12; // Drop 3rd highest
+  } else if (chosen === "drop2and4" && midiChord.length >= 4) {
+    voiced[2] -= 12; // Drop 2
+    voiced[0] -= 12; // Drop 4 (in this context, top and bottom swapped)
+  }
 
-    // Regex for secondary dominants and main chord
-    // e.g. V7/ii, bVII, IV#, etc.
-    const secDomMatch = chordFunction.match(/^([b#]*[ivIV]+[#b]*)(maj7|m7b5|m6|6|°|ø|maj|m|M)?(7|9|11|13)?([b#]5|[b#]9|[b#]11|[b#]13)?(\([b#]5\)|\([b#]9\)|\([b#]11\)|\([b#]13\))?(?:\/([b#]*[ivIV]+[#b]*))?$/);
+  // Clamp to octaves 2 and 3
+  voiced = voiced.map(pitch => {
+    if (pitch < 24) return 24; // C2
+    if (pitch > 47) return 47; // B3
+    return pitch;
+  });
 
-    let [
-        _,
-        roman,
-        quality = '',
-        extension = '',
-        alteration = '',
-        parenthesizedAlteration = '',
-        secRoman
-    ] = secDomMatch;
-
-    // Handle secondary dominants (e.g., V7/ii)
-    if (secRoman) {
-        // Find the root of the secondary key
-        // For now, assume secondary is always major
-        const romanToNumber = {
-            'I': 0, 'II': 1, 'III': 2, 'IV': 3, 'V': 4, 'VI': 5, 'VII': 6,
-            'i': 0, 'ii': 1, 'iii': 2, 'iv': 3, 'v': 4, 'vi': 5, 'vii': 6
-        };
-        // Parse accidental for secondary
-        const secAccMatch = secRoman.match(/^([b#]*)([ivIV]+)([#b]*)$/);
-        let secAcc = 0, secBase = secRoman;
-        if (secAccMatch) {
-            secAcc = parseAccidental(secAccMatch[1] + secAccMatch[3]);
-            secBase = secAccMatch[2];
-        }
-        let secDegree = romanToNumber[secBase];
-        if (secDegree === undefined) return null;
-        let secRoot = getNoteFromScaleDegree(secDegree, actualKey, scale, secAcc);
-        // Now, treat the main roman as a dominant chord built on the secondary root
-        return secRoot + '7';
-    }
-
-    // Parse accidental for main roman
-    const accMatch = roman.match(/^([b#]*)([ivIV]+)([#b]*)$/);
-    let accidental = 0, baseRoman = roman;
-    if (accMatch) {
-        accidental = parseAccidental(accMatch[1] + accMatch[3]);
-        baseRoman = accMatch[2];
-    }
-
-    // Convert roman numeral to scale degree
-    const romanToNumber = {
-        'I': 0, 'II': 1, 'III': 2, 'IV': 3, 'V': 4, 'VI': 5, 'VII': 6,
-        'i': 0, 'ii': 1, 'iii': 2, 'iv': 3, 'v': 4, 'vi': 5, 'vii': 6
-    };
-    let degree = romanToNumber[baseRoman];
-    if (degree === undefined) return null;
-
-    // Get the root note
-    const rootNote = getNoteFromScaleDegree(degree, actualKey, scale, accidental);
-    if (!rootNote) return null;
-
-    // Determine if minor (lowercase roman)
-    const isLowerCase = /^[iv]+$/.test(baseRoman);
-
-    // Chord quality mapping for UI
-    const majorDefaultQualities = ['maj7', 'm7', 'm7', 'maj7', '7', 'm7', 'm7b5'];
-    const minorDefaultQualities = ['m7', 'm7b5', 'maj7', 'm7', '7', 'maj7', '7'];
-
-    // Start with default quality
-    let chordQuality = isMinorKey ? minorDefaultQualities[degree] : majorDefaultQualities[degree];
-
-    // Override with explicit quality
-    if (quality === '°') chordQuality = extension === '7' ? 'dim7' : 'dim';
-    else if (quality === 'ø') chordQuality = 'm7b5';
-    else if (quality === 'maj' || quality === 'M') chordQuality = extension === '7' ? 'maj7' : 'maj';
-    else if (quality === 'm') chordQuality = extension === '7' ? 'm7' : 'm';
-    else if (quality === '6' || quality === 'm6') chordQuality = isLowerCase ? 'm6' : '6';
-
-    // Handle extensions
-    if (extension) {
-        if (extension === '7') {
-            // V7 is always dominant
-            if (degree === 4 && !isLowerCase) chordQuality = '7';
-            else if (chordQuality === 'maj') chordQuality = 'maj7';
-            else if (chordQuality === 'm') chordQuality = 'm7';
-            else if (chordQuality === 'dim') chordQuality = 'dim7';
-            else if (chordQuality === 'm7b5') chordQuality = 'm7b5';
-            else if (chordQuality === '6') chordQuality = '6';
-        } else if (['9', '11', '13'].includes(extension)) {
-            if (chordQuality === 'maj7') chordQuality = 'maj' + extension;
-            else if (chordQuality === 'm7') chordQuality = 'm' + extension;
-            else if (chordQuality === '7') chordQuality = '7' + extension;
-            else chordQuality += extension;
-        }
-    }
-
-    // Special case: I chord with no explicit quality in major key
-    if (chordFunction === 'I' && !isMinorKey) chordQuality = 'maj7';
-
-    // Handle alterations
-    let chordAlteration = '';
-    if (alteration) chordAlteration += alteration.replace(/[()]/g, '');
-    if (parenthesizedAlteration) chordAlteration += parenthesizedAlteration.replace(/[()]/g, '');
-
-    // Build the final chord symbol for UI
-    let chordSymbol = rootNote + chordQuality + chordAlteration;
-
-    return chordSymbol;
+  // Convert back to note file names
+  return voiced.map(midi => {
+    const note = midiToNote[midi % 12];
+    const octave = Math.floor(midi / 12);
+    return `${noteToFile(note)}${octave}.wav`;
+  });
 }
+
         
     function parseChord(chord) {
             if (!chord) return ['C', 'maj'];
