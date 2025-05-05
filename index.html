@@ -848,7 +848,33 @@ const PIANO_NOTES = {
     'Fs3': 185.00, 'G3': 196.00, 'Gs3': 207.65, 'A3': 220.00, 'As3': 233.08, 'B3': 246.94,
     'C4': 261.63, 'Cs4': 277.18, 'D4': 293.66, 'Ds4': 311.13, 'E4': 329.63
 };
-
+        
+function standardizeNoteName(note) {
+    if (!note) return '';
+    
+    // Convert to uppercase and handle basic formatting
+    note = note.toUpperCase().trim();
+    
+    // Handle flats
+    const flatToSharp = {
+        'BB': 'A#',
+        'DB': 'C#',
+        'EB': 'D#',
+        'GB': 'F#',
+        'AB': 'G#'
+    };
+    
+    // Replace ♭ with b and ♯ with #
+    note = note.replace('♭', 'b').replace('♯', '#');
+    
+    // Convert flats to sharps
+    if (note.includes('b')) {
+        const flatNote = note.replace('b', 'B');
+        return flatToSharp[flatNote] || note;
+    }
+    
+    return note;
+}
 const FRETBOARD_FREQUENCIES = {
     'string6': [82.41, 87.31, 92.50, 98.00, 103.83, 110.00, 116.54, 123.47, 130.81, 138.59, 146.83, 155.56, 164.81],
     'string5': [110.00, 116.54, 123.47, 130.81, 138.59, 146.83, 155.56, 164.81, 174.61, 185.00, 196.00, 207.65, 220.00],
@@ -1278,13 +1304,24 @@ function standardizeNoteNameForSamples(note) {
 }
         
 function parseChord(chord) {
-    // Type checking and safety
-    if (!chord || typeof chord !== 'string') {
+    // Handle null or undefined input
+    if (!chord) {
         console.error('Invalid chord input:', chord);
         return null;
     }
 
-    // Trim whitespace
+    // If chord is already an object with root and quality, return it
+    if (typeof chord === 'object' && chord !== null && chord.root && chord.quality) {
+        return chord;
+    }
+
+    // Ensure chord is a string
+    if (typeof chord !== 'string') {
+        console.error('Invalid chord input:', chord);
+        return null;
+    }
+
+    // Rest of your existing parseChord function...
     chord = chord.trim();
 
     // Handle Roman numeral functional notation
@@ -2301,110 +2338,55 @@ function loadProgression(progressionName, overrideKey = null) {
             try {
                 // Get and parse the chord
                 const chord = getChordFromFunction(chordFunction, selectedKey);
+                if (!chord) {
+                    console.warn(`Could not get chord from function: ${chordFunction} at index ${index}`);
+                    return;
+                }
+
                 const parsedChord = parseChord(chord);
-                
                 if (!parsedChord) {
                     console.warn(`Could not parse chord: ${chord} at index ${index}`);
                     return;
                 }
 
-                const root = parsedChord.root;
-                const quality = parsedChord.quality;
-
-                // Get quality value and suggested scale
-                const qualityValue = getQualityValue(quality);
-                const suggestedScale = suggestScaleForQuality(quality);
-
-                // Create measure element
-                const measure = document.createElement('div');
-                measure.className = 'measure';
-                measure.draggable = true;
-                measure.innerHTML = `
-                    <span class="measure-number">${index + 1}</span>
-                    <div class="chord-controls">
-                        <select class="root-note">${createKeyOptions(root)}</select>
-                        <select class="chord-quality">${createQualityOptions(qualityValue)}</select>
-                    </div>
-                    <div class="scale-controls">
-                        <select class="second-key">${createKeyOptions(root)}</select>
-                        <select class="scale-select">${createScaleOptions(suggestedScale)}</select>
-                    </div>
-                `;
-
-                UI.elements.measures.appendChild(measure);
-
-                // Set chord quality in dropdown
-                const qualitySelect = measure.querySelector('.chord-quality');
-                if (qualitySelect) {
-                    switch(quality.toLowerCase()) {
-                        case 'maj7':
-                            qualitySelect.value = 'maj7';
-                            break;
-                        case '7':
-                        case 'dom7':
-                            qualitySelect.value = 'dom7';
-                            break;
-                        case 'min7':
-                        case 'm7':
-                            qualitySelect.value = 'min7';
-                            break;
-                        case 'min7b5':
-                            qualitySelect.value = 'min7b5';
-                            break;
-                        case 'm':
-                        case 'min':
-                            qualitySelect.value = 'minor';
-                            break;
-                        case '6':
-                            qualitySelect.value = 'major';
-                            break;
-                        case 'm6':
-                            qualitySelect.value = 'minor';
-                            break;
-                        default:
-                            qualitySelect.value = qualityValue;
-                    }
-                }
-
-                // Set scale based on chord quality
-                const scaleSelect = measure.querySelector('.scale-select');
-                if (scaleSelect) {
-                    scaleSelect.value = suggestedScale;
-                }
-
-                // Add drag event listeners
-                measure.addEventListener('dragstart', dragStart);
-                measure.addEventListener('dragover', dragOver);
-                measure.addEventListener('drop', drop);
-                measure.addEventListener('dragend', dragEnd);
-
-            } catch (chordError) {
-                console.error(`Error processing chord at index ${index}:`, chordError);
+                // Create measure with the chord
+                addMeasureWithChord(parsedChord, index);
+            } catch (error) {
+                console.error(`Error processing chord at index ${index}:`, error);
             }
         });
 
-        // Update measure numbers and add first chord listener
-        updateMeasureNumbers();
-        addFirstChordListener();
-
-        // Update fretboard with first measure's scale
-        const firstMeasure = UI.elements.measures.firstElementChild;
-        if (firstMeasure) {
-            const scaleRoot = firstMeasure.querySelector('.second-key')?.value;
-            const scaleType = firstMeasure.querySelector('.scale-select')?.value;
-            const tuning = TUNINGS[UI.elements.chordTuning.value];
-            
-            if (scaleRoot && scaleType && tuning) {
-                updateFretboardNotes(UI.elements.chordFretboard, scaleRoot, scaleType, tuning);
-            }
-        }
-
-        log(`Loaded progression "${progressionName}" in key: ${selectedKey}`);
-
+        // Update the display
+        updateDisplay();
     } catch (error) {
-        console.error(`Error loading progression "${progressionName}":`, error);
-        log(`Failed to load progression "${progressionName}"`);
+        console.error('Error loading progression:', error);
     }
+}
+
+// Helper function to add a measure with a chord
+function addMeasureWithChord(parsedChord, index) {
+    const root = parsedChord.root;
+    const quality = parsedChord.quality;
+    const qualityValue = getQualityValue(quality);
+    const suggestedScale = suggestScaleForQuality(quality);
+
+    const measure = document.createElement('div');
+    measure.className = 'measure';
+    measure.draggable = true;
+    measure.innerHTML = `
+        <span class="measure-number">${index + 1}</span>
+        <div class="chord-controls">
+            <select class="root-note">${createKeyOptions(root)}</select>
+            <select class="chord-quality">${createQualityOptions(qualityValue)}</select>
+        </div>
+        <div class="scale-controls">
+            <select class="second-key">${createKeyOptions(root)}</select>
+            <select class="scale-select">${createScaleOptions(suggestedScale)}</select>
+        </div>
+    `;
+
+    UI.elements.measures.appendChild(measure);
+    setupMeasureEventListeners(measure);
 }
 function updateProgressionKey(newKey) {
     const selectedProgression = UI.elements.progressionSelect.value;
