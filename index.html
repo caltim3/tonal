@@ -768,6 +768,11 @@
             <label for="chord-volume">Chord Volume:</label>
             <input type="range" id="chord-volume" min="0" max="1" step="0.1" value="0.75" aria-label="Chord volume">
         </div>
+        <div class="control-group">
+              <label for="reverb-dial">Reverb</label>
+              <input type="range" id="reverb-dial" min="0" max="100" value="20" style="width: 120px;">
+              <span id="reverb-dial-value">20</span>%
+         </div>
     </div>
 
 <div class="app-section" id="fretflow-section">
@@ -1147,6 +1152,7 @@ const AudioContextManager = {
     pianoSampleBuffers: {},
     reverbNode: null,
     samplesLoaded: false,
+    reverbAmount: 0.2, 
     currentChordGain: null,
 
     initialize: async function() {
@@ -1594,7 +1600,7 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
     await ensureAudioInitialized();
 
     const chordNotes = getChordNotes(root, quality);
-    const chordVolume = parseFloat(UI.elements.chordVolume.value);
+    const chordVolume = parseFloat(UI.elements.chordVolume.value) * 0.7;
     if (chordVolume <= 0) return;
 
     // Create gain node for this chord
@@ -1666,7 +1672,7 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
 
         // Add reverb
         const reverbGain = AudioContextManager.context.createGain();
-        reverbGain.gain.value = 0.1;
+        reverbGain.gain.value = AudioContextManager.reverbAmount;
         source.connect(reverbGain);
         reverbGain.connect(AudioContextManager.reverbNode);
 
@@ -2877,7 +2883,15 @@ async function initializeApp() {
     }, 1000);
     log("Application initialized");
 }
-
+const reverbDial = document.getElementById('reverb-dial');
+const reverbDialValue = document.getElementById('reverb-dial-value');
+if (reverbDial) {
+    reverbDial.addEventListener('input', function(e) {
+        const value = parseInt(e.target.value, 10);
+        AudioContextManager.reverbAmount = value / 100;
+        if (reverbDialValue) reverbDialValue.textContent = value;
+    });
+}
 // Initial setup
 document.addEventListener('DOMContentLoaded', () => {
     initializeApp().catch(error => {
