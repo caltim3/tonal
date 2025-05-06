@@ -1564,6 +1564,7 @@ function initializeScaleSelects() {
 }
 
 // Audio Management
+// Audio Management
 const AudioContextManager = {
     context: null,
     soundBuffers: {},
@@ -1650,7 +1651,21 @@ const AudioContextManager = {
 
     loadPianoSamples: async function() {
         updateLoadingStatus("Loading piano samples...");
-        const baseUrl = './piano/';
+        const baseUrl = './tonal/piano/'; // Adjusted to match your directory structure
+        const allSampleFiles = [
+            'a2.wav', 'a3.wav', 'a4.wav', 'a5.wav',
+            'as2.wav', 'as3.wav', 'as4.wav', 'as5.wav',
+            'b2.wav', 'b3.wav', 'b4.wav', 'b5.wav',
+            'c2.wav', 'c3.wav', 'c4.wav', 'c5.wav',
+            'cs2.wav', 'cs3.wav', 'cs4.wav', 'cs5.wav',
+            'd2.wav', 'd3.wav', 'd4.wav', 'd5.wav',
+            'ds2.wav', 'ds3.wav', 'ds4.wav', 'ds5.wav',
+            'e2.wav', 'e3.wav', 'e4.wav', 'e5.wav',
+            'f2.wav', 'f3.wav', 'f4.wav', 'f5.wav',
+            'fs2.wav', 'fs3.wav', 'fs4.wav', 'fs5.wav',
+            'g2.wav', 'g3.wav', 'g4.wav', 'g5.wav',
+            'gs2.wav', 'gs3.wav', 'gs4.wav', 'gs5.wav'
+        ];
         for (const file of allSampleFiles) {
             try {
                 const response = await fetch(`${baseUrl}${file}`);
@@ -1668,7 +1683,7 @@ const AudioContextManager = {
 
     setupReverb: async function() {
         try {
-            const response = await fetch('./impulse_response.wav');
+            const response = await fetch('./tonal/impulse_response.wav'); // Adjusted to match your directory
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const arrayBuffer = await response.arrayBuffer();
             const reverbBuffer = await this.context.decodeAudioData(arrayBuffer);
@@ -1682,7 +1697,35 @@ const AudioContextManager = {
     }
 };
 
-// Helper function to transpose a note
+// Update SAMPLE_NOTE_MAP to match your file naming
+const SAMPLE_NOTE_MAP = {
+    'C': 'c',
+    'C#': 'cs',
+    'Db': 'cs',
+    'D': 'd',
+    'D#': 'ds',
+    'Eb': 'ds',
+    'E': 'e',
+    'F': 'f',
+    'F#': 'fs',
+    'Gb': 'fs',
+    'G': 'g',
+    'G#': 'gs',
+    'Ab': 'gs',
+    'A': 'a',
+    'A#': 'as', // Updated to match as3.wav
+    'Bb': 'as', // Updated to match as3.wav
+    'B': 'b'
+};
+
+// Update getSampleFileName function
+function getSampleFileName(note, octave) {
+    const sampleNote = SAMPLE_NOTE_MAP[standardizeNoteName(note)];
+    return `${sampleNote}${octave}.wav`; // Ensure .wav matches your file extension
+}
+
+// Rest of the script remains unchanged from the previous response
+// (e.g., Chord Playing Logic, Fretboard Functions, State Management, etc.)// Helper function to transpose a note
 function transposeNote(note, semitones) {
     const noteIndex = NOTES.indexOf(standardizeNoteName(note));
     if (noteIndex === -1) return note;
