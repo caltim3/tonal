@@ -1554,7 +1554,7 @@ function playNote(noteName, volume = 1.0, duration = 1000) {
     if (!AudioContextManager.context || !noteName) return;
 
     // Extract the pitch class and octave from the note name
-    const match = noteName.match(/^([A-G][b#]?)(\d)$/);
+    const match = noteName.match(/^([A-G][b#]?)(\d)$/i);
     if (!match) {
         console.warn(`Invalid note format: ${noteName}`);
         return;
@@ -1562,10 +1562,10 @@ function playNote(noteName, volume = 1.0, duration = 1000) {
 
     let [, rawNote, octaveStr] = match;
     const baseNote = standardizeNoteName(rawNote).replace('m', '');
-    const mappedNote = SAMPLE_NOTE_MAP[baseNote] || baseNote;
-    const octave = Math.max(2, Math.min(6, parseInt(octaveStr)));
+    const mappedNote = SAMPLE_NOTE_MAP[baseNote] || baseNote.toLowerCase();
+    const octave = Math.max(2, Math.min(5, parseInt(octaveStr)));
 
-    const sampleName = `${mappedNote}${octave}v12`;
+    const sampleName = `${mappedNote}${octave}`;
     const buffer = AudioContextManager.pianoSampleBuffers[sampleName];
 
     if (!buffer) {
@@ -1578,7 +1578,7 @@ function playNote(noteName, volume = 1.0, duration = 1000) {
         source.buffer = buffer;
 
         const gainNode = AudioContextManager.context.createGain();
-        gainNode.gain.value = finalVolume;
+        gainNode.gain.value = volume;
 
         source.connect(gainNode);
         gainNode.connect(AudioContextManager.context.destination);
@@ -1591,6 +1591,7 @@ function playNote(noteName, volume = 1.0, duration = 1000) {
                 // No-op on already stopped source
             }
         }, duration);
+        log(`Played note: ${sampleName} at volume ${volume}`);
     } catch (error) {
         console.error('Error playing note:', error);
     }
