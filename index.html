@@ -1374,15 +1374,22 @@ async function ensureAudioInitialized() {
     }
 }
 
-function getNoteFromScaleDegree(degree, key, scale) {
-    const chromaticScale = ['c', 'cs', 'd', 'ds', 'e', 'f',
-                           'fs', 'g', 'gs', 'a', 'as', 'b'];
-    const keyIndex = chromaticScale.indexOf(standardizeNoteNameForSamples(key));
+function getNoteFromScaleDegree(scaleDegree, key, scale = SCALES.major) {
+    const chromaticScale = ['C', 'C#', 'D', 'D#', 'E', 'F',
+                            'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+    // Normalize key (e.g., 'Db' -> 'C#')
+    const ENHARMONIC_EQUIVALENTS = { 'Db': 'C#', 'Eb': 'D#', 'Gb': 'F#', 'Ab': 'G#', 'Bb': 'A#' };
+    key = ENHARMONIC_EQUIVALENTS[key] || key;
+
+    const keyIndex = chromaticScale.indexOf(key);
     if (keyIndex === -1) return null;
 
-    const noteIndex = (keyIndex + scale[degree]) % 12;
+    const offset = scaleDegree >= 0 ? scale[scaleDegree % scale.length] : 0;
+    const noteIndex = (keyIndex + offset) % 12;
     return chromaticScale[noteIndex];
 }
+
 
 function standardizeNoteNameForSamples(note) {
     note = note.toLowerCase().replace('♯', '#').replace('♭', 'b');
@@ -1488,17 +1495,8 @@ function parseRomanNumeralChord(chord) {
 
 // Helper function to get the current key
 function getCurrentKey() {
-    // Return the current key of the application
-    // This should be stored somewhere in your application state
-    return 'C'; // Default to C if not specified
-}
-
-// Helper function to get a note from a scale degree
-function getNoteFromScaleDegree(degree, key) {
-    const majorScale = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
-    const keyIndex = majorScale.indexOf(key.toUpperCase().replace(/[#b]/, ''));
-    const targetIndex = (keyIndex + degree - 1) % 7;
-    return majorScale[targetIndex];
+    const keySelect = document.getElementById('keySelect');
+    return keySelect ? keySelect.value : 'C';
 }
 
 function getChordFromFunction(roman, key = "C") {
@@ -2420,47 +2418,6 @@ function stopPlayback() {
     UI.elements.startStopButton.textContent = 'Start';
     log("Playback stopped");
 }
-
-function getChordFromFunction(roman, key = "C") {
-            const romanMap = {
-                "I": 0, "II": 2, "III": 4, "IV": 5, "V": 7, "VI": 9, "VII": 11,
-                "i": 0, "ii": 2, "iii": 4, "iv": 5, "v": 7, "vi": 9, "vii": 11
-            };
-            const match = roman.match(/^([b#]?)([IViv]+)(.*)$/);
-            if (!match) return null;
-            let [, accidental, numeral, suffix] = match;
-            let semitone = romanMap[numeral];
-            if (accidental === "b") semitone -= 1;
-            if (accidental === "#") semitone += 1;
-
-            const keyNotes = ["C", "Db", "D", 'Eb', "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
-            let keyIndex = keyNotes.indexOf(key);
-            if (keyIndex === -1) keyIndex = 0;
-            let rootIndex = (keyIndex + semitone + 12) % 12;
-            let root = keyNotes[rootIndex];
-
-            let isMinor = numeral === numeral.toLowerCase();
-            let chordQuality;
-            if (suffix.includes('maj7')) {
-                chordQuality = 'maj7';
-            } else if (suffix.includes('m7') || suffix.includes('min7')) {
-                chordQuality = 'min7';
-            } else if (suffix.includes('7')) {
-                if (isMinor) {
-                    chordQuality = 'min7';
-                } else {
-                    chordQuality = 'dom7';
-                }
-            } else if (suffix.includes('6')) {
-                chordQuality = '6';
-            } else if (suffix.includes('m7b5')) {
-                chordQuality = 'min7b5';
-            } else {
-                chordQuality = isMinor ? 'min' : 'maj';
-            }
-
-            return { root, quality: chordQuality };
-        }
 
         // Helper Functions for Chord and Scale Controls
         function createKeyOptions(selectedNote) {
