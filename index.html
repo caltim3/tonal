@@ -2323,9 +2323,7 @@ function stopPlayback() {
     log("Playback stopped");
 }
 
-// Chord Progression Management
 function loadProgression(progressionName, overrideKey = null) {
-    // Validate progression exists
     if (!progressionName || !progressions[progressionName]) {
         console.error(`Invalid progression name: ${progressionName}`);
         return;
@@ -2346,33 +2344,106 @@ function loadProgression(progressionName, overrideKey = null) {
         }
 
         // Process each chord in the progression
-        progression.progression.forEach((chordFunction, index) => {
-            try {
-                // Get and parse the chord
-                const chord = getChordFromFunction(chordFunction, selectedKey);
-                if (!chord) {
-                    console.warn(`Could not get chord from function: ${chordFunction} at index ${index}`);
-                    return;
-                }
-
-                const parsedChord = parseChord(chord);
-                if (!parsedChord) {
-                    console.warn(`Could not parse chord: ${chord} at index ${index}`);
-                    return;
-                }
-
-                // Create measure with the chord
-                addMeasureWithChord(parsedChord, index);
-            } catch (error) {
-                console.error(`Error processing chord at index ${index}:`, error);
+        progression.progression.forEach((chordFunction) => {
+            const measure = document.createElement('div');
+            measure.className = 'measure';
+            
+            // Create chord controls
+            const chordControls = document.createElement('div');
+            chordControls.className = 'chord-controls';
+            
+            // Add root note and quality selects
+            const rootSelect = document.createElement('select');
+            rootSelect.className = 'root-note';
+            rootSelect.innerHTML = createKeyOptions(selectedKey);
+            
+            const qualitySelect = document.createElement('select');
+            qualitySelect.className = 'chord-quality';
+            qualitySelect.innerHTML = createQualityOptions();
+            
+            // Parse the chord function and set the selects
+            const chord = parseChordFunction(chordFunction, selectedKey);
+            if (chord) {
+                rootSelect.value = chord.root;
+                qualitySelect.value = chord.quality;
             }
+            
+            chordControls.appendChild(rootSelect);
+            chordControls.appendChild(qualitySelect);
+            measure.appendChild(chordControls);
+            
+            // Add scale controls
+            const scaleControls = document.createElement('div');
+            scaleControls.className = 'scale-controls';
+            
+            const scaleSelect = document.createElement('select');
+            scaleSelect.className = 'scale-select';
+            scaleSelect.innerHTML = createScaleOptions();
+            
+            scaleControls.appendChild(scaleSelect);
+            measure.appendChild(scaleControls);
+            
+            UI.elements.measures.appendChild(measure);
         });
-
-        // Update the display
-        updateDisplay();
     } catch (error) {
         console.error('Error loading progression:', error);
     }
+}
+
+// Add this new helper function to parse chord functions
+function parseChordFunction(chordFunction, key) {
+    // Remove any whitespace
+    chordFunction = chordFunction.trim();
+    
+    // Initialize variables for root note and quality
+    let root = key;
+    let quality = 'maj7';
+
+    // Parse the chord function
+    if (chordFunction.includes('7')) {
+        if (chordFunction.startsWith('I')) quality = 'dom7';
+        else if (chordFunction.startsWith('V')) quality = 'dom7';
+        else if (chordFunction.startsWith('IV')) quality = 'dom7';
+        else if (chordFunction.toLowerCase().includes('m7b5')) quality = 'min7b5';
+        else if (chordFunction.toLowerCase().includes('m7')) quality = 'min7';
+        else quality = 'dom7';
+    }
+
+    // Calculate the root note based on the function
+    const degree = getRomanNumeralDegree(chordFunction);
+    if (degree !== null) {
+        root = calculateRootFromDegree(key, degree);
+    }
+
+    return { root, quality };
+}
+
+// Add these helper functions
+function getRomanNumeralDegree(chordFunction) {
+    const romanNumerals = {
+        'I': 0, 'II': 2, 'III': 4, 'IV': 5, 'V': 7, 'VI': 9, 'VII': 11,
+        'i': 0, 'ii': 2, 'iii': 4, 'iv': 5, 'v': 7, 'vi': 9, 'vii': 11
+    };
+    
+    // Extract the roman numeral part
+    const match = chordFunction.match(/^(b?)([IViv]+)/);
+    if (!match) return null;
+    
+    const [, flat, numeral] = match;
+    let degree = romanNumerals[numeral];
+    
+    if (flat === 'b') {
+        degree = (degree - 1 + 12) % 12;
+    }
+    
+    return degree;
+}
+
+function calculateRootFromDegree(key, degree) {
+    const chromaticScale = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+    const keyIndex = chromaticScale.indexOf(standardizeNoteName(key));
+    const rootIndex = (keyIndex + degree) % 12;
+    return chromaticScale[rootIndex];
 }
 
 // Helper function to add a measure with a chord
@@ -2835,6 +2906,13 @@ function setupEventListeners() {
         initializeFretFlow();
     });
 
+    // Add this after your UI initialization
+    UI.elements.keySelect.addEventListener('change', function(e) {
+        const progressionSelect = UI.elements.progressionSelect;
+        if (progressionSelect.value) {
+            loadProgression(progressionSelect.value, e.target.value);
+        }
+    });
     // Tuning controls
     UI.elements.chordTuning.addEventListener('change', () => {
         const tuning = TUNINGS[UI.elements.chordTuning.value];
