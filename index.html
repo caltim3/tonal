@@ -760,6 +760,14 @@
               <input type="range" id="reverb-dial" min="0" max="100" value="20" style="width: 120px;">
               <span id="reverb-dial-value">20</span>%
          </div>
+        <!-- Add progress bar to the body -->
+<div id="audio-loading-progress" style="display: none; position: fixed; top: 10px; left: 50%; transform: translateX(-50%); width: 300px; background: #f0f0f0; border-radius: 5px; padding: 10px; text-align: center; z-index: 1001;">
+    <span>Loading Audio Samples...</span>
+    <div style="width: 100%; height: 20px; background: #ddd; border-radius: 3px; overflow: hidden;">
+        <div id="progress-bar" style="width: 0%; height: 100%; background: #4CAF50; transition: width 0.3s ease;"></div>
+    </div>
+    <span id="progress-text">0%</span>
+</div>
     </div>
 
 <div class="app-section" id="fretflow-section">
@@ -1297,13 +1305,14 @@ function initializeScaleSelects() {
 }
         
 // Audio Management
+// Modified AudioContextManager
 const AudioContextManager = {
     context: null,
     soundBuffers: {},
     pianoSampleBuffers: {},
     reverbNode: null,
     samplesLoaded: false,
-    reverbAmount: 0.2, 
+    reverbAmount: 0.2,
     currentChordGain: null,
 
     initialize: async function() {
@@ -1325,27 +1334,33 @@ const AudioContextManager = {
     },
     
     loadSounds: async function() {
-        const soundFiles = {
-            'click': 'Click.wav',
-            'hihat': 'HiHat.wav',
-            'kick': 'Kick.wav',
-            'snare': 'Snare.wav',
-            'woodblock': 'woodblock.wav'
-        };
-        for (let [type, filename] of Object.entries(soundFiles)) {
-            try {
-                const response = await fetch(`./${filename}`);
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+        const progressContainer = document.getElementById('audio-loading-progress');
+        progressContainer.style.display = 'block';
+
+        const sounds = [
+            'click.wav', 'woodblock.wav', 'Kick.wav', 'Snare.wav', 'HiHat.wav',
+            'Kick2.wav', 'Snare2.wav', 'HiHat2.wav', 'jazzkick.wav', 'jazzsnare.wav', 'jazzhat.wav'
+        ];
+        const batchSize = 3;
+        let loaded = 0;
+
+        for (let i = 0; i < sounds.length; i += batchSize) {
+            const batch = sounds.slice(i, i + batchSize);
+            await Promise.all(batch.map(async sound => {
+                const response = await fetch(`/sounds/${sound}`);
                 const arrayBuffer = await response.arrayBuffer();
-                this.soundBuffers[type] = await this.context.decodeAudioData(arrayBuffer);
-                log(`Loaded ${type} sound from ${filename}`);
-            } catch (error) {
-                console.error(`Failed to load ${filename}:`, error);
-                this.soundBuffers[type] = await this.createDrumSound(type);
-                log(`Using fallback synthetic sound for ${type}`);
-            }
+                this.soundBuffers[sound] = await this.context.decodeAudioData(arrayBuffer);
+                loaded++;
+                const progress = Math.round((loaded / sounds.length) * 100);
+                progressBar.style.width = `${progress}%`;
+                progressText.textContent = `${progress}%`;
+            }));
         }
-        updateLoadingStatus("Drum sounds loaded");
+
+        progressContainer.style.display = 'none';
+        this.samplesLoaded = true;
     },
     
     createDrumSound: async function(type) {
@@ -1383,27 +1398,33 @@ const AudioContextManager = {
     },
     
     loadPianoSamples: async function() {
-    // Use the new ALL_NOTES and OCTAVES arrays
-    this.pianoSampleBuffers = {}; // Reset
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+        const progressContainer = document.getElementById('audio-loading-progress');
+        progressContainer.style.display = 'block';
 
-    for (const note of ALL_NOTES) {
-        for (const octave of OCTAVES) {
-            const fileName = getSampleFileName(note, octave); // e.g., 'ds4.wav'
-            const key = `${note}${octave}`; // e.g., 'ds4'
-            try {
-                const response = await fetch(fileName);
-                const arrayBuffer = await response.arrayBuffer();
-                const audioBuffer = await this.context.decodeAudioData(arrayBuffer);
-                this.pianoSampleBuffers[key] = audioBuffer;
-                // LOGGING LINE: Shows which samples are loaded
-                console.log(`Loaded piano sample: ${fileName}`);
-            } catch (e) {
-                console.error(`Failed to load sample: ${fileName}`, e);
-            }
+        const batchSize = 10;
+        let loaded = 0;
+
+        for (let i = 0; i < allSampleFiles.length; i += batchSize) {
+            const batch = allSampleFiles.slice(i, i + batchSize);
+            await Promise.all(batch.map(async file => {
+                try {
+                    const response = await fetch(`/samples/${file}`);
+                    const arrayBuffer = await response.arrayBuffer();
+                    this.pianoSampleBuffers[file] = await this.context.decodeAudioData(arrayBuffer);
+                    loaded++;
+                    const progress = Math.round((loaded / allSampleFiles.length) * 100);
+                    progressBar.style.width = `${progress}%`;
+                    progressText.textContent = `${progress}%`;
+                } catch (error) {
+                    console.error(`Failed to load sample ${file}:`, error);
+                }
+            }));
         }
-    }
-    this.samplesLoaded = true;
-},
+
+        progressContainer.style.display = 'none';
+    },
     
     setupReverb: async function() {
         if (!this.reverbNode) {
