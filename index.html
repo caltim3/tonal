@@ -1114,7 +1114,6 @@ const UI = {
         chordFretboardVolume: document.getElementById('chord-fretboard-volume'),
         chordVolume: document.getElementById('chord-volume'),
         chordsEnabled: document.getElementById('chordsEnabled'),
-        fretboardVolume: document.getElementById('fretboard-volume'),
         fretboardsGrid: document.querySelector('.fretboards-grid'),
         darkModeToggle: document.getElementById('dark-mode-toggle'),
         accentIntensity: document.getElementById('accent-intensity')
@@ -1552,12 +1551,6 @@ function createScaleOptions(selected = 'major') {
 // Audio Playback
 function playNote(noteName, volume = 1.0, duration = 1000) {
     if (!AudioContextManager.context || !noteName) return;
-
-    const fretboardVolumeControl = document.getElementById('fretboard-volume');
-    const fretboardVolume = parseFloat(fretboardVolumeControl?.value ?? 1);
-    const finalVolume = volume * fretboardVolume;
-
-    if (finalVolume <= 0) return;
 
     // Extract the pitch class and octave from the note name
     const match = noteName.match(/^([A-G][b#]?)(\d)$/);
@@ -2829,10 +2822,6 @@ function setupEventListeners() {
 
     UI.elements.chordVolume.addEventListener('input', () => {
         log(`Chord volume set to ${UI.elements.chordVolume.value}`);
-    });
-
-    UI.elements.fretboardVolume.addEventListener('input', () => {
-        log(`Fretboard volume set to ${UI.elements.fretboardVolume.value}`);
     });
 
     // Progression controls
