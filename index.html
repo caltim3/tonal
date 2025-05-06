@@ -1545,6 +1545,33 @@ function initializeScaleSelects() {
 
 // Audio Management
 // Audio Management
+// Define SAMPLE_NOTE_MAP and getSampleFileName before AudioContextManager
+const SAMPLE_NOTE_MAP = {
+    'C': 'c',
+    'C#': 'cs',
+    'Db': 'cs',
+    'D': 'd',
+    'D#': 'ds',
+    'Eb': 'ds',
+    'E': 'e',
+    'F': 'f',
+    'F#': 'fs',
+    'Gb': 'fs',
+    'G': 'g',
+    'G#': 'gs',
+    'Ab': 'gs',
+    'A': 'a',
+    'A#': 'as', // Matches as3.wav
+    'Bb': 'as', // Matches as3.wav
+    'B': 'b'
+};
+
+function getSampleFileName(note, octave) {
+    const sampleNote = SAMPLE_NOTE_MAP[standardizeNoteName(note)];
+    return `${sampleNote}${octave}.wav`; // Ensure .wav matches your file extension
+}
+
+// Audio Management
 const AudioContextManager = {
     context: null,
     soundBuffers: {},
@@ -1631,7 +1658,7 @@ const AudioContextManager = {
 
     loadPianoSamples: async function() {
         updateLoadingStatus("Loading piano samples...");
-        const baseUrl = './tonal/piano/'; // Adjusted to match your directory structure
+        const baseUrl = './tonal/piano/';
         const allSampleFiles = [
             'a2.wav', 'a3.wav', 'a4.wav', 'a5.wav',
             'as2.wav', 'as3.wav', 'as4.wav', 'as5.wav',
@@ -1663,7 +1690,7 @@ const AudioContextManager = {
 
     setupReverb: async function() {
         try {
-            const response = await fetch('./tonal/impulse_response.wav'); // Adjusted to match your directory
+            const response = await fetch('./tonal/impulse_response.wav');
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const arrayBuffer = await response.arrayBuffer();
             const reverbBuffer = await this.context.decodeAudioData(arrayBuffer);
@@ -1676,28 +1703,6 @@ const AudioContextManager = {
         }
     }
 };
-
-// Update SAMPLE_NOTE_MAP to match your file naming
-const SAMPLE_NOTE_MAP = {
-    'C': 'c',
-    'C#': 'cs',
-    'Db': 'cs',
-    'D': 'd',
-    'D#': 'ds',
-    'Eb': 'ds',
-    'E': 'e',
-    'F': 'f',
-    'F#': 'fs',
-    'Gb': 'fs',
-    'G': 'g',
-    'G#': 'gs',
-    'Ab': 'gs',
-    'A': 'a',
-    'A#': 'as', // Updated to match as3.wav
-    'Bb': 'as', // Updated to match as3.wav
-    'B': 'b'
-};
-
 // Update getSampleFileName function
 function getSampleFileName(note, octave) {
     const sampleNote = SAMPLE_NOTE_MAP[standardizeNoteName(note)];
