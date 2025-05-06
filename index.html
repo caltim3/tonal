@@ -977,35 +977,180 @@ const DRUM_PATTERNS = {
 ];
 
 const progressions = {
-    "I V7": { defaultKey: "C", progression: ["Imaj7", "V7"] },
-    "jazz_blues": { defaultKey: "Bb", progression: ["I7", "IV7", "I7", "I7", "IV7", "IV7", "I7", "VI7", "IIm7", "V7", "I7", "V7"] },
-    "minor_blues": { defaultKey: "Am", progression: ["im7", "ivm7", "im7", "im7", "ivm7", "ivm7", "im7", "im7", "V7", "V7", "im7", "V7"] },
-    "rhythm_changes": { defaultKey: "Bb", progression: ["I6", "vim7", "iim7", "V7", "I6", "vim7", "iim7", "V7", "I6", "IV7", "I6", "I6", "iim7", "V7", "I6", "V7"] },
-    "2_5_1": { defaultKey: "C", progression: ["iim7", "V7", "Imaj7", "Imaj7"] },
-    "6_2_5_1": { defaultKey: "C", progression: ["vim7", "iim7", "V7", "Imaj7", "Imaj7"] },
-    "minor_2_5_1": { defaultKey: "Am", progression: ["iim7b5", "V7b9", "im7", "im7"] },
-    "dark_eyes": { defaultKey: "Dm", progression: ["V7", "V7", "im7", "im7", "V7", "V7", "VI6", "VI6", "ivm6", "ivm6", "im7", "im7", "V7", "V7", "im7", "im7"] },    
-    "ill_see_you_in_my_dreams": { defaultKey: "F", progression: ["IV6", "IV6", "ivm6", "ivm6", "Imaj7", "VII7", "Imaj7", "Imaj7", "VI7", "VI7", "VI7", "VI7", "II7", "II7", "iim7", "V7", "Imaj7"] },
-    "rose_room": {defaultKey: "Ab", progression: ["II7", "V7", "I6", "I7", "IV6", "ivm7", "bVII7", "I6", "VI7", "V7", "V7", "II7", "V7", "I6", "I7", "IV6", "ivm7", "bVII7", "I6", "VI7", "IV7", "V7", "I6", "VI7"] },
-    "black_orpheus": { defaultKey: "Am", progression: ["im7", "iim7b5", "V7b9", "im7", "ivm7", "VII7", "bIIImaj7", "bVImaj7", "iim7b5", "V7b9", "im7", "iim7b5", "V7b9", "im7", "ivm7", "VII7"] },
-    "all_the_things_you_are": { defaultKey: "Ab", progression: ["vim7", "iim7", "V7", "Imaj7", "IVmaj7", "iiim7", "VI7", "IImaj7", "iim7", "vm7", "I7", "IVmaj7", "Imaj7", "iim7", "V7", "Imaj7", "iim7", "V7", "Imaj7", "iim7", "vm7", "I7", "IVmaj7", "Imaj7"] },
-    "all_of_me": { defaultKey: "C", progression: ["Imaj7", "III7", "VI7", "iim7", "III7", "vim7", "II7", "iim7", "V7", "Imaj7", "III7", "VI7", "iim7", "IVmaj7", "ivm7", "Imaj7", "V7"] },
-    "stella_by_starlight": { defaultKey: "Bb", progression: ["iim7b5", "V7b9", "im7", "IV7", "vm7", "I7", "IVmaj7", "bVIImaj7", "biiim7b5", "VI7b9", "iim7", "V7", "im7", "IV7", "IVmaj7", "V7"] },
-    "autumn_leaves": { defaultKey: "Em", progression: ["ivm7", "VII7", "bIIImaj7", "bVImaj7", "iim7b5", "V7b9", "im7", "im7"] },
-    "summertime": { defaultKey: "Am", progression: ["im7", "V7", "im7", "V7", "im7", "V7", "im7", "V7", "iv7", "im7", "V7", "im7", "iv7", "im7", "V7", "im7"] },
-    "girl_from_ipanema": { defaultKey: "F", progression: ["Imaj7", "II7", "iim7", "V7", "Imaj7", "II7", "iim7", "V7", "Imaj7", "bII7", "#IVmaj7", "vim7", "iim7", "V7", "Imaj7", "vim7", "iim7", "V7"] },
-    "coltrane_changes": { defaultKey: "C", progression: ["Imaj7", "bIII7", "bVImaj7", "VII7", "IIImaj7", "V7", "Imaj7", "bIII7", "bVImaj7", "VII7", "IIImaj7", "V7"] },
-    "bird_blues": { defaultKey: "F", progression: ["I7", "IV7", "I7", "vim7", "iim7", "V7", "IV7", "ivm7", "I7", "vim7", "iim7", "V7"] },
-    "just_friends": { defaultKey: "G", progression: ["Imaj7", "VI7", "iim7", "V7", "Imaj7", "VI7", "iim7", "V7", "iim7", "V7", "Imaj7", "VI7", "iim7", "V7", "Imaj7", "VI7"] },
-    "blue_bossa": { defaultKey: "Cm", progression: ["im7", "im7", "bVII7", "bVII7", "im7", "im7", "ivm7", "bVII7", "im7", "V7", "im7", "im7"] },
-    "on_green_dolphin_street": { defaultKey: "C", progression: ["Imaj7", "bIII7", "bVImaj7", "iim7", "V7", "Imaj7", "bIII7", "bVImaj7", "iim7", "V7", "Imaj7"] },
-    "solar": { defaultKey: "C", progression: ["im7", "im7", "bIIImaj7", "bIIImaj7", "bVImaj7", "bVImaj7", "bII7", "bII7", "im7", "im7"] },
-    "misty": { defaultKey: "Eb", progression: ["Imaj7", "I7", "IVmaj7", "ivm7", "Imaj7", "V7", "Imaj7", "vim7", "iim7", "V7", "Imaj7"] },
-    "days_of_wine_and_roses": { defaultKey: "F", progression: ["Imaj7", "vim7", "iim7", "V7", "Imaj7", "vim7", "iim7", "V7", "Imaj7", "vim7", "iim7", "V7", "Imaj7"] },
-    "cherokee": { defaultKey: "Bb", progression: ["Imaj7", "Imaj7", "iim7", "V7", "Imaj7", "Imaj7", "iim7", "V7","bVI7", "bVI7", "V7", "V7", "Imaj7", "Imaj7", "iim7", "V7"] },
-    "caravan": { defaultKey: "Eb", progression: ["im7", "IV7b5", "im7", "IV7b5", "im7", "IV7b5", "im7", "IV7b5", "bVII7", "bVII7", "Imaj7", "Imaj7", "V7", "V7", "im7", "im7"] },
-    "nows_the_time": { defaultKey: "F", progression: ["I7", "I7", "I7", "I7", "IV7", "IV7", "I7", "I7", "V7", "IV7", "I7", "I7"] },
-    "tenor_madness": { defaultKey: "Bb", progression: ["I7", "I7", "I7", "I7", "IV7", "IV7", "I7", "I7", "iim7", "V7", "I7", "I7"] }
+    "i-v7": {
+        displayName: "I-V7 Progression",
+        defaultKey: "C",
+        progression: ["Imaj7", "V7"],
+        description: "A simple I-V7 progression, common in jazz standards."
+    },
+    "jazz-blues": {
+        displayName: "Jazz Blues",
+        defaultKey: "Bb",
+        progression: ["I7", "IV7", "I7", "I7", "IV7", "IV7", "I7", "VI7", "IIm7", "V7", "I7", "V7"],
+        description: "A standard 12-bar jazz blues progression."
+    },
+    "minor-blues": {
+        displayName: "Minor Blues",
+        defaultKey: "Am",
+        progression: ["im7", "ivm7", "im7", "im7", "ivm7", "ivm7", "im7", "im7", "V7", "V7", "im7", "V7"],
+        description: "A 12-bar minor blues progression."
+    },
+    "rhythm-changes": {
+        displayName: "Rhythm Changes",
+        defaultKey: "Bb",
+        progression: ["I6", "vim7", "iim7", "V7", "I6", "vim7", "iim7", "V7", "I6", "IV7", "I6", "I6", "iim7", "V7", "I6", "V7"],
+        description: "Based on Gershwin's 'I Got Rhythm', a common jazz form."
+    },
+    "ii-v-i": {
+        displayName: "ii-V-I Progression",
+        defaultKey: "C",
+        progression: ["iim7", "V7", "Imaj7", "Imaj7"],
+        description: "A fundamental jazz progression."
+    },
+    "vi-ii-v-i": {
+        displayName: "vi-ii-V-I Progression",
+        defaultKey: "C",
+        progression: ["vim7", "iim7", "V7", "Imaj7", "Imaj7"],
+        description: "An extended ii-V-I with a vi minor start."
+    },
+    "minor-ii-v-i": {
+        displayName: "Minor ii-V-I",
+        defaultKey: "Am",
+        progression: ["iim7b5", "V7b9", "im7", "im7"],
+        description: "A minor key ii-V-I progression."
+    },
+    "dark-eyes": {
+        displayName: "Dark Eyes",
+        defaultKey: "Dm",
+        progression: ["V7", "V7", "im7", "im7", "V7", "V7", "VI6", "VI6", "ivm6", "ivm6", "im7", "im7", "V7", "V7", "im7", "im7"],
+        description: "A gypsy jazz progression from the folk song."
+    },
+    "ill-see-you-in-my-dreams": {
+        displayName: "I'll See You in My Dreams",
+        defaultKey: "F",
+        progression: ["IV6", "IV6", "ivm6", "ivm6", "Imaj7", "VII7", "Imaj7", "Imaj7", "VI7", "VI7", "VI7", "VI7", "II7", "II7", "iim7", "V7", "Imaj7"],
+        description: "Progression from the jazz standard."
+    },
+    "rose-room": {
+        displayName: "Rose Room",
+        defaultKey: "Ab",
+        progression: ["II7", "V7", "I6", "I7", "IV6", "ivm7", "bVII7", "I6", "VI7", "V7", "V7", "II7", "V7", "I6", "I7", "IV6", "ivm7", "bVII7", "I6", "VI7", "IV7", "V7", "I6", "VI7"],
+        description: "Progression from the classic jazz tune."
+    },
+    "black-orpheus": {
+        displayName: "Black Orpheus",
+        defaultKey: "Am",
+        progression: ["im7", "iim7b5", "V7b9", "im7", "ivm7", "VII7", "bIIImaj7", "bVImaj7", "iim7b5", "V7b9", "im7", "iim7b5", "V7b9", "im7", "ivm7", "VII7"],
+        description: "Bossa nova progression from the film."
+    },
+    "all-the-things-you-are": {
+        displayName: "All the Things You Are",
+        defaultKey: "Ab",
+        progression: ["vim7", "iim7", "V7", "Imaj7", "IVmaj7", "iiim7", "VI7", "IImaj7", "iim7", "vm7", "I7", "IVmaj7", "Imaj7", "iim7", "V7", "Imaj7", "iim7", "V7", "Imaj7", "iim7", "vm7", "I7", "IVmaj7", "Imaj7"],
+        description: "Complex progression from the jazz standard."
+    },
+    "all-of-me": {
+        displayName: "All of Me",
+        defaultKey: "C",
+        progression: ["Imaj7", "III7", "VI7", "iim7", "III7", "vim7", "II7", "iim7", "V7", "Imaj7", "III7", "VI7", "iim7", "IVmaj7", "ivm7", "Imaj7", "V7"],
+        description: "Progression from the popular standard."
+    },
+    "stella-by-starlight": {
+        displayName: "Stella by Starlight",
+        defaultKey: "Bb",
+        progression: ["iim7b5", "V7b9", "im7", "IV7", "vm7", "I7", "IVmaj7", "bVIImaj7", "biiim7b5", "VI7b9", "iim7", "V7", "im7", "IV7", "IVmaj7", "V7"],
+        description: "Complex progression from the jazz standard."
+    },
+    "autumn-leaves": {
+        displayName: "Autumn Leaves",
+        defaultKey: "Em",
+        progression: ["ivm7", "VII7", "bIIImaj7", "bVImaj7", "iim7b5", "V7b9", "im7", "im7"],
+        description: "Classic jazz standard progression."
+    },
+    "summertime": {
+        displayName: "Summertime",
+        defaultKey: "Am",
+        progression: ["im7", "V7", "im7", "V7", "im7", "V7", "im7", "V7", "iv7", "im7", "V7", "im7", "iv7", "im7", "V7", "im7"],
+        description: "Progression from Gershwin's opera."
+    },
+    "girl-from-ipanema": {
+        displayName: "The Girl from Ipanema",
+        defaultKey: "F",
+        progression: ["Imaj7", "II7", "iim7", "V7", "Imaj7", "II7", "iim7", "V7", "Imaj7", "bII7", "#IVmaj7", "vim7", "iim7", "V7", "Imaj7", "vim7", "iim7", "V7"],
+        description: "Bossa nova classic."
+    },
+    "coltrane-changes": {
+        displayName: "Coltrane Changes",
+        defaultKey: "C",
+        progression: ["Imaj7", "bIII7", "bVImaj7", "VII7", "IIImaj7", "V7", "Imaj7", "bIII7", "bVImaj7", "VII7", "IIImaj7", "V7"],
+        description: "John Coltrane's harmonic cycle."
+    },
+    "bird-blues": {
+        displayName: "Bird Blues",
+        defaultKey: "F",
+        progression: ["I7", "IV7", "I7", "vim7", "iim7", "V7", "IV7", "ivm7", "I7", "vim7", "iim7", "V7"],
+        description: "Charlie Parker's blues variation."
+    },
+    "just-friends": {
+        displayName: "Just Friends",
+        defaultKey: "G",
+        progression: ["Imaj7", "VI7", "iim7", "V7", "Imaj7", "VI7", "iim7", "V7", "iim7", "V7", "Imaj7", "VI7", "iim7", "V7", "Imaj7", "VI7"],
+        description: "Upbeat jazz standard."
+    },
+    "blue-bossa": {
+        displayName: "Blue Bossa",
+        defaultKey: "Cm",
+        progression: ["im7", "im7", "bVII7", "bVII7", "im7", "im7", "ivm7", "bVII7", "im7", "V7", "im7", "im7"],
+        description: "Bossa nova with a minor feel."
+    },
+    "on-green-dolphin-street": {
+        displayName: "On Green Dolphin Street",
+        defaultKey: "C",
+        progression: ["Imaj7", "bIII7", "bVImaj7", "iim7", "V7", "Imaj7", "bIII7", "bVImaj7", "iim7", "V7", "Imaj7"],
+        description: "Jazz standard with modal shifts."
+    },
+    "solar": {
+        displayName: "Solar",
+        defaultKey: "C",
+        progression: ["im7", "im7", "bIIImaj7", "bIIImaj7", "bVImaj7", "bVImaj7", "bII7", "bII7", "im7", "im7"],
+        description: "Miles Davis' moody standard."
+    },
+    "misty": {
+        displayName: "Misty",
+        defaultKey: "Eb",
+        progression: ["Imaj7", "I7", "IVmaj7", "ivm7", "Imaj7", "V7", "Imaj7", "vim7", "iim7", "V7", "Imaj7"],
+        description: "Erroll Garner's romantic ballad."
+    },
+    "days-of-wine-and-roses": {
+        displayName: "Days of Wine and Roses",
+        defaultKey: "F",
+        progression: ["Imaj7", "vim7", "iim7", "V7", "Imaj7", "vim7", "iim7", "V7", "Imaj7", "vim7", "iim7", "V7", "Imaj7"],
+        description: "Henry Mancini's jazz standard."
+    },
+    "cherokee": {
+        displayName: "Cherokee",
+        defaultKey: "Bb",
+        progression: ["Imaj7", "Imaj7", "iim7", "V7", "Imaj7", "Imaj7", "iim7", "V7", "bVI7", "bVI7", "V7", "V7", "Imaj7", "Imaj7", "iim7", "V7"],
+        description: "Fast-paced Ray Noble standard."
+    },
+    "caravan": {
+        displayName: "Caravan",
+        defaultKey: "Eb",
+        progression: ["im7", "IV7b5", "im7", "IV7b5", "im7", "IV7b5", "im7", "IV7b5", "bVII7", "bVII7", "Imaj7", "Imaj7", "V7", "V7", "im7", "im7"],
+        description: "Exotic Duke Ellington tune."
+    },
+    "nows-the-time": {
+        displayName: "Now's the Time",
+        defaultKey: "F",
+        progression: ["I7", "I7", "I7", "I7", "IV7", "IV7", "I7", "I7", "V7", "IV7", "I7", "I7"],
+        description: "Charlie Parker's blues."
+    },
+    "tenor-madness": {
+        displayName: "Tenor Madness",
+        defaultKey: "Bb",
+        progression: ["I7", "I7", "I7", "I7", "IV7", "IV7", "I7", "I7", "iim7", "V7", "I7", "I7"],
+        description: "Sonny Rollins' bluesy standard."
+    }
 };
         
 const scaleDegrees = {
@@ -1072,7 +1217,7 @@ const AppState = {
             tempo: 120,
             audioInitialized: false,
             darkMode: false,
-            chordsEnabled: true, // Added to track chordsEnabled state
+            chordsEnabled: true,
             listeners: [],
             updateState(newState) {
                 Object.assign(this, newState);
@@ -1117,6 +1262,13 @@ const AppState = {
             init() {
                 Object.entries(this.elements).forEach(([key, el]) => {
                     if (!el) console.warn(`Missing DOM element: ${key}`);
+                });
+                // Populate progression select
+                Object.entries(progressions).forEach(([id, { displayName }]) => {
+                    const option = document.createElement('option');
+                    option.value = id;
+                    option.textContent = displayName;
+                    this.elements.progressionSelect.appendChild(option);
                 });
             }
         };
@@ -2393,17 +2545,30 @@ function getChordFromFunction(roman, key = "C") {
                 // Update UI key selection
                 if (UI.elements.keySelect) {
                     UI.elements.keySelect.value = selectedKey;
+                } else {
+                    console.warn('keySelect element not found');
                 }
 
                 // Clear existing measures
                 if (UI.elements.measures) {
                     UI.elements.measures.innerHTML = '';
+                } else {
+                    console.warn('measures element not found');
                 }
 
-                progression.progression.forEach((chordFunction) => {
+                let firstChord = null;
+                progression.progression.forEach((chordFunction, index) => {
                     // Get chord using getChordFromFunction
                     const chord = getChordFromFunction(chordFunction, selectedKey);
-                    if (!chord) return;
+                    if (!chord) {
+                        console.warn(`Failed to parse chord: ${chordFunction} in key ${selectedKey}`);
+                        return;
+                    }
+
+                    // Store first chord for fretboard update
+                    if (index === 0) {
+                        firstChord = chord;
+                    }
 
                     // Create measure
                     const measure = document.createElement('div');
@@ -2435,7 +2600,8 @@ function getChordFromFunction(roman, key = "C") {
 
                     const scaleSelect = document.createElement('select');
                     scaleSelect.className = 'scale-select';
-                    scaleSelect.innerHTML = createScaleOptions(suggestScaleForQuality(chord.quality));
+                    const suggestedScale = suggestScaleForQuality(chord.quality);
+                    scaleSelect.innerHTML = createScaleOptions(suggestedScale);
 
                     scaleControls.appendChild(scaleRootSelect);
                     scaleControls.appendChild(scaleSelect);
@@ -2444,15 +2610,21 @@ function getChordFromFunction(roman, key = "C") {
                     UI.elements.measures.appendChild(measure);
                 });
 
-                // Placeholder for fretboard update
-                if (UI.elements.chordFretboard) {
-                    // Add your existing fretboard update logic here
-                    // e.g., updateFretboard(chord, selectedKey);
+                // Update fretboard with first chord
+                if (UI.elements.chordFretboard && firstChord) {
+                    const tuning = TUNINGS[UI.elements.chordTuning?.value || 'standard'];
+                    const scaleType = suggestScaleForQuality(firstChord.quality);
+                    updateFretboardNotes(UI.elements.chordFretboard, firstChord.root, scaleType, tuning);
+                } else if (!UI.elements.chordFretboard) {
+                    console.warn('chordFretboard element not found');
                 }
+
+                log(`Loaded progression ${progression.displayName || progressionName} in key ${selectedKey}`);
             } catch (error) {
-                console.error('Error loading progression:', error);
+                console.error(`Error loading progression ${progressionName}:`, error);
             }
         }
+        
 // Add this new helper function to parse chord functions
 function parseChordFunction(chordFunction, key) {
     // Remove any whitespace
@@ -2844,7 +3016,6 @@ function setupEventListeners() {
             // Progression selection
             UI.elements.progressionSelect.addEventListener('change', (e) => {
                 loadProgression(e.target.value);
-                addFirstChordListener(); // Ensure fretboard updates with first chord
             });
 
             // Key selection for transposition
@@ -2852,7 +3023,6 @@ function setupEventListeners() {
                 const progressionSelect = UI.elements.progressionSelect;
                 if (progressionSelect.value) {
                     loadProgression(progressionSelect.value, e.target.value);
-                    addFirstChordListener(); // Update fretboard on key change
                 }
             });
 
@@ -3019,7 +3189,6 @@ function setupEventListeners() {
                 log('Removed last measure');
             });
         }
-
     // Drum set controls
     const drumSetToggleBtn = document.getElementById('drumSetToggleBtn');
     if (drumSetToggleBtn) {
@@ -3188,9 +3357,7 @@ function setupEventListeners() {
     log("Event listeners set up");
 }
 
-// Initialize the application
-// Initialize the application
-        async function initializeApp() {
+async function initializeApp() {
             UI.init();
             createBeats();
             createFretboard(UI.elements.chordFretboard, TUNINGS.standard);
