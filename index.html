@@ -1417,28 +1417,38 @@ function getNoteFromScaleDegree(degree, key) {
     const targetIndex = (keyIndex + degree - 1) % 7;
     return majorScale[targetIndex];
 }
-
+        
 function getChordFromFunction(roman, key = "C") {
+    // Standardize the key name
+    key = standardizeNoteName(key);
+    
     // Map Roman numerals to scale degrees
     const romanMap = {
         "I": 0, "II": 2, "III": 4, "IV": 5, "V": 7, "VI": 9, "VII": 11,
-        "i": 0, "ii": 2, "iii": 4, "iv": 5, "v": 7, "vi": 9, "vii": 11,
+        "i": 0, "ii": 2, "iii": 4, "iv": 5, "v": 7, "vi": 9, "vii": 11
     };
+
     // Extract base and quality
     const match = roman.match(/^([b#]?)([IViv]+)(.*)$/);
     if (!match) return null;
+
     let [, accidental, numeral, quality] = match;
     let semitone = romanMap[numeral];
     if (semitone === undefined) return null;
+
+    // Handle flattened or sharpened chords
     if (accidental === "b") semitone -= 1;
     if (accidental === "#") semitone += 1;
+
     // Get root note from key
-    const keyNotes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+    const keyNotes = NOTES;
     let keyIndex = keyNotes.indexOf(key);
     if (keyIndex === -1) keyIndex = 0;
+
     let rootIndex = (keyIndex + semitone + 12) % 12;
     let root = keyNotes[rootIndex];
-    // Determine chord quality
+
+    // Map quality to actual chord quality
     let chordQuality = "";
     if (quality) {
         chordQuality = quality;
@@ -1447,6 +1457,7 @@ function getChordFromFunction(roman, key = "C") {
     } else {
         chordQuality = "m";
     }
+
     return { root, quality: chordQuality };
 }
         
@@ -2341,9 +2352,7 @@ function stopPlayback() {
     log("Playback stopped");
 }
 
-// Chord Progression Management
 function loadProgression(progressionName, overrideKey = null) {
-    // Validate progression exists
     if (!progressionName || !progressions[progressionName]) {
         console.error(`Invalid progression name: ${progressionName}`);
         return;
@@ -2352,6 +2361,9 @@ function loadProgression(progressionName, overrideKey = null) {
     try {
         const progression = progressions[progressionName];
         const selectedKey = overrideKey || progression.defaultKey || "C";
+        
+        // Add debug logging
+        console.log(`Loading progression ${progressionName} in key ${selectedKey}`);
         
         // Update UI key selection
         if (UI.elements.keySelect) {
@@ -2363,34 +2375,37 @@ function loadProgression(progressionName, overrideKey = null) {
             UI.elements.measures.innerHTML = '';
         }
 
-        // Process each chord in the progression
-        progression.progression.forEach((chordFunction, index) => {
-            try {
-                const chord = getChordFromFunction(chordFunction, selectedKey);
-                if (!chord) {
-                    console.warn(`Could not get chord from function: ${chordFunction} at index ${index}`);
-                    return;
-                }
+        // Create new measures with the correct key
+        progression.progression.forEach((chord, index) => {
+            const measure = addMeasure();
+            if (!measure) return;
 
-                addMeasureWithChord(chord, index);
-            } catch (error) {
-                console.error(`Error processing chord at index ${index}:`, error);
+            const rootSelect = measure.querySelector('.root-note');
+            const qualitySelect = measure.querySelector('.chord-quality');
+            
+            // Get the actual chord based on the Roman numeral and selected key
+            const chordObj = getChordFromFunction(chord, selectedKey);
+            
+            // Add debug logging
+            console.log(`Chord ${index + 1}: ${chord} in ${selectedKey} -> ${chordObj?.root}${chordObj?.quality}`);
+            
+            if (chordObj && rootSelect && qualitySelect) {
+                rootSelect.value = chordObj.root;
+                qualitySelect.value = getQualityValue(chordObj.quality);
             }
         });
 
-        // Update the display for the first measure
-        const firstMeasure = UI.elements.measures.firstElementChild;
-        if (firstMeasure) {
-            const scaleRoot = firstMeasure.querySelector('.second-key').value;
-            const scaleType = firstMeasure.querySelector('.scale-select').value;
-            const tuning = TUNINGS[UI.elements.chordTuning.value];
-            updateFretboardNotes(UI.elements.chordFretboard, scaleRoot, scaleType, tuning);
+        // Update the first measure's display
+        if (UI.elements.measures.children.length > 0) {
+            const firstMeasure = UI.elements.measures.children[0];
+            updateChordProgression(firstMeasure);
         }
+
     } catch (error) {
         console.error('Error loading progression:', error);
     }
 }
-
+        
 function addMeasureWithChord(chord, index) {
     if (!chord || !chord.root) {
         console.error('Invalid chord object:', chord);
