@@ -2891,29 +2891,54 @@ function setupEventListeners() {
 
 // Initialize the application
 async function initializeApp() {
-    UI.init();
-    createBeats();
-    createFretboard(UI.elements.chordFretboard, TUNINGS.standard);
-    loadProgression(UI.elements.progressionSelect.value);
-    initializeFretFlow();
-    setupEventListeners();
-    updateLoadingStatus("Application initialized");
-    setTimeout(() => {
-        const indicator = document.getElementById('loading-indicator');
-        if (indicator) indicator.remove();
-    }, 1000);
-    log("Application initialized");
+    try {
+        // Initialize UI elements
+        UI.init();
+
+        // Create initial UI components
+        createBeats();
+        createFretboard(UI.elements.chordFretboard, TUNINGS.standard);
+
+        // Initialize audio context and load sounds
+        await AudioContextManager.initialize();
+        
+        // Setup event listeners
+        await setupEventListeners();
+        
+        // Initialize scale selects
+        initializeScaleSelects();
+
+        // Load initial progression if one is selected
+        const selectedProgression = UI.elements.progressionSelect?.value;
+        if (selectedProgression) {
+            loadProgression(selectedProgression);
+        }
+
+        // Initialize FretFlow component
+        initializeFretFlow();
+
+        // Update loading status
+        updateLoadingStatus("Application initialized");
+        setTimeout(() => {
+            const indicator = document.getElementById('loading-indicator');
+            if (indicator) indicator.remove();
+        }, 1000);
+
+        log("Application initialized successfully");
+    } catch (error) {
+        console.error("Initialization error:", error);
+        updateLoadingStatus("Initialization failed: " + error.message);
+        throw error;
+    }
 }
 
-// Initial setup
+// Initial setup with DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
     initializeApp().catch(error => {
         console.error("Initialization failed:", error);
-        updateLoadingStatus("Initialization failed");
-        initializeScaleSelects();
+        updateLoadingStatus("Initialization failed: " + error.message);
     });
 });
-
             </script>
         </body>
         </html>
