@@ -1597,8 +1597,8 @@ function playNote(noteName, volume = 1.0, duration = 1000) {
 
 
 async function playChord(root, quality, startTime = AudioContextManager.context.currentTime, duration = 2, isContinuation = false) {
+    console.log("Playing chord:", root, quality); // Add this debug line
     await ensureAudioInitialized();
-    if (!AudioContextManager.samplesLoaded || !UI.elements.chordsEnabled.classList.contains('active')) return;
 
     const chordNotes = getChordNotes(root, quality);
     const chordVolume = parseFloat(UI.elements.chordVolume.value);
@@ -1684,6 +1684,7 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
     });
 } 
 function getChordNotes(root, quality) {
+    console.log("Getting notes for chord:", root, quality);
     // Enhanced chord intervals with more voicings
     const CHORD_INTERVALS = {
         'maj': [0, 4, 7],
@@ -1693,7 +1694,7 @@ function getChordNotes(root, quality) {
         'sus4': [0, 5, 7],
         'sus2': [0, 2, 7],
         'maj7': [0, 4, 7, 11],
-        'dom7': [0, 4, 7, 10],
+        'dom7': [0, 4, 7, 10],  // This should be used for C7
         'min7': [0, 3, 7, 10],
         'dim7': [0, 3, 6, 9],
         'm7b5': [0, 3, 6, 10],
@@ -1710,9 +1711,12 @@ function getChordNotes(root, quality) {
 
     // Get base intervals
     let intervals = CHORD_INTERVALS[quality] || CHORD_INTERVALS['maj'];
+    console.log("Using intervals:", intervals);
 
     // Generate notes
     const rootIndex = NOTES.indexOf(standardizeNoteName(root));
+    console.log("Root index:", rootIndex);
+    
     if (rootIndex === -1) {
         console.error(`Invalid root note: ${root}`);
         return [root];
@@ -1721,14 +1725,12 @@ function getChordNotes(root, quality) {
     // Generate voicings with proper voice leading
     const voicing = intervals.map(interval => {
         const noteIndex = (rootIndex + interval) % 12;
-        return NOTES[noteIndex];
+        const note = NOTES[noteIndex];
+        console.log(`Interval ${interval} -> Note ${note}`);
+        return note;
     });
 
-    // Add optional extensions based on quality
-    if (quality.includes('13')) {
-        voicing.push(NOTES[(rootIndex + 21) % 12]); // Add 13th
-    }
-
+    console.log("Final voicing:", voicing);
     return voicing;
 }
         
