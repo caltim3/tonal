@@ -1456,7 +1456,8 @@ function parseRomanNumeralChord(chord) {
     };
 
     // Parse the Roman numeral part
-    const romanRegex = /^(b?[IiVv]+)([mM]|min|maj|dim|aug|7|6|9|11|13)?$/;
+   const romanRegex = /^(b?[IViv]+)(maj7|m7|m9|m13|m|maj|min|dim|aug|7|6|9|11|13|b9|#9|b13|#11)?$/;
+
     const match = chord.match(romanRegex);
 
     if (!match) {
@@ -1464,9 +1465,10 @@ function parseRomanNumeralChord(chord) {
         return null;
     }
 
-    const roman = match[1];
+    let roman = match[1];
     const quality = match[2] || '';
-    const isMinor = roman === roman.toLowerCase();
+    const isMinor = roman.toLowerCase() === roman;
+
     const hasFlatted = roman.startsWith('b');
     let scaleDegree = romanToNumber[hasFlatted ? roman.slice(1) : roman];
 
@@ -1475,7 +1477,7 @@ function parseRomanNumeralChord(chord) {
     }
 
     // Convert scale degree to root note based on current key
-    const currentKey = getCurrentKey(); // You'll need to implement this function
+      const currentKey = typeof getCurrentKey === 'function' ? getCurrentKey() : 'C';
     const rootNote = getNoteFromScaleDegree(scaleDegree, currentKey);
 
     return {
