@@ -1666,7 +1666,7 @@ async function playChord(root, quality, startTime = AudioContextManager.context.
 
         // Add reverb
         const reverbGain = AudioContextManager.context.createGain();
-        reverbGain.gain.value = 0.2;
+        reverbGain.gain.value = 0.1;
         source.connect(reverbGain);
         reverbGain.connect(AudioContextManager.reverbNode);
 
