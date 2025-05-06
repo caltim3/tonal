@@ -2322,31 +2322,57 @@ function stopPlayback() {
     log("Playback stopped");
 }
 
-function loadProgression(progressionName, overrideKey = null) {
-    if (!progressionName || !progressions[progressionName]) {
-        console.error(`Invalid progression name: ${progressionName}`);
-        return;
-    }
+function getChordFromFunction(roman, key = "C") {
+            const romanMap = {
+                "I": 0, "II": 2, "III": 4, "IV": 5, "V": 7, "VI": 9, "VII": 11,
+                "i": 0, "ii": 2, "iii": 4, "iv": 5, "v": 7, "vi": 9, "vii": 11
+            };
+            const match = roman.match(/^([b#]?)([IViv]+)(.*)$/);
+            if (!match) return null;
+            let [, accidental, numeral, suffix] = match;
+            let semitone = romanMap[numeral];
+            if (accidental === "b") semitone -= 1;
+            if (accidental === "#") semitone += 1;
 
-    try {
-        const progression = progressions[progressionName];
-        const selectedKey = overrideKey || progression.defaultKey || "C";
+            const keyNotes = ["C", "Db", "D", 'Eb', "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
+            let keyIndex = keyNotes.indexOf(key);
+            if (keyIndex === -1) keyIndex = 0;
+            let rootIndex = (keyIndex + semitone + 12) % 12;
+            let root = keyNotes[rootIndex];
 
-        // Update UI key selection
-        if (UI.elements.keySelect) {
-            UI.elements.keySelect.value = selectedKey;
+            let isMinor = numeral === numeral.toLowerCase();
+            let chordQuality;
+            if (suffix.includes('maj7')) {
+                chordQuality = 'maj7';
+            } else if (suffix.includes('m7') || suffix.includes('min7')) {
+                chordQuality = 'min7';
+            } else if (suffix.includes('7')) {
+                if (isMinor) {
+                    chordQuality = 'min7';
+                } else {
+                    chordQuality = 'dom7';
+                }
+            } else if (suffix.includes('6')) {
+                chordQuality = '6';
+            } else if (suffix.includes('m7b5')) {
+                chordQuality = 'min7b5';
+            } else {
+                chordQuality = isMinor ? 'min' : 'maj';
+            }
+
+            return { root, quality: chordQuality };
         }
 
-        // Clear existing measures
-        if (UI.elements.measures) {
-            UI.elements.measures.innerHTML = '';
+        // Helper Functions for Chord and Scale Controls
+        function createKeyOptions(selectedNote) {
+            return NOTES.map(note => 
+                `<option value="${note}" ${note === selectedNote ? 'selected' : ''}>${note}</option>`
+            ).join('');
         }
 
-        // Use a chromatic scale that matches your NOTES array for consistency
-        const chromaticScale = NOTES; // ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B']
-        const keyIndex = chromaticScale.indexOf(standardizeNoteName(selectedKey));
 
- function loadProgression(progressionName, overrideKey = null) {
+        // Load Progression
+        function loadProgression(progressionName, overrideKey = null) {
             if (!progressionName || !progressions[progressionName]) {
                 console.error(`Invalid progression name: ${progressionName}`);
                 return;
