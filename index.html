@@ -810,9 +810,25 @@ const ALL_NOTES = [
 const OCTAVES = [2, 3, 4, 5];
 const FILE_FORMAT = 'wav';
 
-function getSampleFileName(note, octave) {
-    return `${note}${octave}.${FILE_FORMAT}`;
-}
+const SAMPLE_NOTE_MAP = {
+    'C': 'c',
+    'C#': 'cs',
+    'Db': 'cs',
+    'D': 'd',
+    'D#': 'ds',
+    'Eb': 'ds',
+    'E': 'e',
+    'F': 'f',
+    'F#': 'fs',
+    'Gb': 'fs',
+    'G': 'g',
+    'G#': 'gs',
+    'Ab': 'gs',
+    'A': 'a',
+    'A#': 'as', // Matches as3.wav
+    'Bb': 'as', // Matches as3.wav
+    'B': 'b'
+};
 
 const allSampleFiles = [];
 for (const note of ALL_NOTES) {
@@ -1543,28 +1559,6 @@ function initializeScaleSelects() {
     });
 }
 
-// Audio Management
-// Audio Management
-// Define SAMPLE_NOTE_MAP and getSampleFileName before AudioContextManager
-const SAMPLE_NOTE_MAP = {
-    'C': 'c',
-    'C#': 'cs',
-    'Db': 'cs',
-    'D': 'd',
-    'D#': 'ds',
-    'Eb': 'ds',
-    'E': 'e',
-    'F': 'f',
-    'F#': 'fs',
-    'Gb': 'fs',
-    'G': 'g',
-    'G#': 'gs',
-    'Ab': 'gs',
-    'A': 'a',
-    'A#': 'as', // Matches as3.wav
-    'Bb': 'as', // Matches as3.wav
-    'B': 'b'
-};
 
 function getSampleFileName(note, octave) {
     const sampleNote = SAMPLE_NOTE_MAP[standardizeNoteName(note)];
@@ -1703,11 +1697,6 @@ const AudioContextManager = {
         }
     }
 };
-// Update getSampleFileName function
-function getSampleFileName(note, octave) {
-    const sampleNote = SAMPLE_NOTE_MAP[standardizeNoteName(note)];
-    return `${sampleNote}${octave}.wav`; // Ensure .wav matches your file extension
-}
 
 // Rest of the script remains unchanged from the previous response
 // (e.g., Chord Playing Logic, Fretboard Functions, State Management, etc.)// Helper function to transpose a note
