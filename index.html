@@ -2056,16 +2056,12 @@ function updateFretboardNotes(container, rootNote, scale, tuning) {
                 } else {
                     noteElement.style.backgroundColor = '#4CAF50';
                 }
+                noteElement.dataset.note = `${currentNote}${fret === 0 ? 3 : 4}`; // Bb3, C4, etc.
                 noteElement.addEventListener('click', async () => {
                     try {
                         await AudioContextManager.ensureAudioContext();
-                        let volume = parseFloat(currentBeatElement.dataset.baseVolume) || 0;
-                        const isAccent = volume >= 1 && ['kick', 'snare'].includes(currentBeatElement.dataset.sound);
-                        const accentBoost = parseFloat(UI.elements.accentIntensity?.value || 1);
-                        if (isAccent) {
-                            volume = Math.min(volume * accentBoost, 1); // cap at 1.0
-                        }
-                        await playNote(`string${6 - string}`, fret, volume);
+                        const noteName = noteElement.dataset.note;
+                        playNote(noteName, 0.7, 500);
                         noteElement.style.transform = 'translate(-50%, -50%) scale(1.2)';
                         setTimeout(() => {
                             noteElement.style.transform = 'translate(-50%, -50%) scale(1)';
@@ -2335,7 +2331,7 @@ function loadProgression(progressionName, overrideKey = null) {
     try {
         const progression = progressions[progressionName];
         const selectedKey = overrideKey || progression.defaultKey || "C";
-        
+
         // Update UI key selection
         if (UI.elements.keySelect) {
             UI.elements.keySelect.value = selectedKey;
@@ -2346,46 +2342,78 @@ function loadProgression(progressionName, overrideKey = null) {
             UI.elements.measures.innerHTML = '';
         }
 
+        // Get the chromatic scale for transposition
+        const chromaticScale = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+        const keyIndex = chromaticScale.indexOf(standardizeNoteName(selectedKey));
+
         // Process each chord in the progression
-        progression.progression.forEach((chordFunction) => {
+        progression.progression.forEach((chordFunction, idx) => {
+            // Parse the Roman numeral and get the degree
+            const match = chordFunction.match(/^(b?)([IViv]+)(.*)$/);
+            let degree = 0;
+            let accidental = '';
+            let numeral = '';
+            let quality = '';
+            if (match) {
+                accidental = match[1];
+                numeral = match[2];
+                quality = match[3] || '';
+                const romanNumerals = {
+                    'I': 0, 'II': 2, 'III': 4, 'IV': 5, 'V': 7, 'VI': 9, 'VII': 11,
+                    'i': 0, 'ii': 2, 'iii': 4, 'iv': 5, 'v': 7, 'vi': 9, 'vii': 11
+                };
+                degree = romanNumerals[numeral] ?? 0;
+                if (accidental === 'b') degree = (degree - 1 + 12) % 12;
+            }
+            // Calculate the root note for this chord
+            const rootIndex = (keyIndex + degree) % 12;
+            const root = chromaticScale[rootIndex];
+
+            // Determine chord quality
+            let chordQuality = 'maj7';
+            if (quality.includes('7b5') || quality.includes('m7b5')) chordQuality = 'min7b5';
+            else if (quality.includes('m7')) chordQuality = 'min7';
+            else if (quality.includes('7')) chordQuality = 'dom7';
+            else if (quality.includes('m')) chordQuality = 'min7';
+            else if (quality.includes('maj7')) chordQuality = 'maj7';
+            else if (quality.includes('6')) chordQuality = '6';
+
+            // Create measure
             const measure = document.createElement('div');
             measure.className = 'measure';
-            
-            // Create chord controls
+
+            // Chord controls
             const chordControls = document.createElement('div');
             chordControls.className = 'chord-controls';
-            
-            // Add root note and quality selects
+
             const rootSelect = document.createElement('select');
             rootSelect.className = 'root-note';
-            rootSelect.innerHTML = createKeyOptions(selectedKey);
-            
+            rootSelect.innerHTML = createKeyOptions(root);
+
             const qualitySelect = document.createElement('select');
             qualitySelect.className = 'chord-quality';
-            qualitySelect.innerHTML = createQualityOptions();
-            
-            // Parse the chord function and set the selects
-            const chord = parseChordFunction(chordFunction, selectedKey);
-            if (chord) {
-                rootSelect.value = chord.root;
-                qualitySelect.value = chord.quality;
-            }
-            
+            qualitySelect.innerHTML = createQualityOptions(chordQuality);
+
             chordControls.appendChild(rootSelect);
             chordControls.appendChild(qualitySelect);
             measure.appendChild(chordControls);
-            
-            // Add scale controls
+
+            // Scale controls
             const scaleControls = document.createElement('div');
             scaleControls.className = 'scale-controls';
-            
+
+            const scaleRootSelect = document.createElement('select');
+            scaleRootSelect.className = 'second-key';
+            scaleRootSelect.innerHTML = createKeyOptions(root);
+
             const scaleSelect = document.createElement('select');
             scaleSelect.className = 'scale-select';
-            scaleSelect.innerHTML = createScaleOptions();
-            
+            scaleSelect.innerHTML = createScaleOptions(suggestScaleForQuality(chordQuality));
+
+            scaleControls.appendChild(scaleRootSelect);
             scaleControls.appendChild(scaleSelect);
             measure.appendChild(scaleControls);
-            
+
             UI.elements.measures.appendChild(measure);
         });
     } catch (error) {
