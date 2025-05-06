@@ -2342,11 +2342,10 @@ function loadProgression(progressionName, overrideKey = null) {
             UI.elements.measures.innerHTML = '';
         }
 
-        // Get the chromatic scale for transposition
-        const chromaticScale = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+        // Use a chromatic scale that matches your NOTES array for consistency
+        const chromaticScale = NOTES; // ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B']
         const keyIndex = chromaticScale.indexOf(standardizeNoteName(selectedKey));
 
-        // Process each chord in the progression
         progression.progression.forEach((chordFunction, idx) => {
             // Parse the Roman numeral and get the degree
             const match = chordFunction.match(/^(b?)([IViv]+)(.*)$/);
@@ -2420,7 +2419,6 @@ function loadProgression(progressionName, overrideKey = null) {
         console.error('Error loading progression:', error);
     }
 }
-
 // Add this new helper function to parse chord functions
 function parseChordFunction(chordFunction, key) {
     // Remove any whitespace
