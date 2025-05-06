@@ -2892,52 +2892,116 @@ function setupEventListeners() {
 // Initialize the application
 async function initializeApp() {
     try {
+        log('FretFlow initialized with 4 independent fretboards');
+        
         // Initialize UI elements
         UI.init();
-
-        // Create initial UI components
-        createBeats();
-        createFretboard(UI.elements.chordFretboard, TUNINGS.standard);
-
-        // Initialize audio context and load sounds
+        
+        // Initialize Audio Context
         await AudioContextManager.initialize();
+        
+        // Create initial fretboard
+        const defaultTuning = TUNINGS['standard'];
+        if (UI.elements.chordFretboard) {
+            createFretboard(UI.elements.chordFretboard, defaultTuning);
+        }
+
+        // Initialize scale selects
+        initializeScaleSelects();
         
         // Setup event listeners
         await setupEventListeners();
         
-        // Initialize scale selects
-        initializeScaleSelects();
-
-        // Load initial progression if one is selected
-        const selectedProgression = UI.elements.progressionSelect?.value;
-        if (selectedProgression) {
-            loadProgression(selectedProgression);
-        }
-
-        // Initialize FretFlow component
-        initializeFretFlow();
-
-        // Update loading status
-        updateLoadingStatus("Application initialized");
-        setTimeout(() => {
-            const indicator = document.getElementById('loading-indicator');
-            if (indicator) indicator.remove();
-        }, 1000);
-
-        log("Application initialized successfully");
+        // Create initial beats
+        createBeats();
+        
+        log('Initialization completed successfully');
     } catch (error) {
-        console.error("Initialization error:", error);
-        updateLoadingStatus("Initialization failed: " + error.message);
+        console.error('Initialization error:', error);
         throw error;
     }
 }
 
-// Initial setup with DOMContentLoaded
-document.addEventListener('DOMContentLoaded', () => {
-    initializeApp().catch(error => {
-        console.error("Initialization failed:", error);
-        updateLoadingStatus("Initialization failed: " + error.message);
-    });
+// Setup event listeners
+async function setupEventListeners() {
+    try {
+        // Metronome controls
+        if (UI.elements.startStopButton) {
+            UI.elements.startStopButton.addEventListener('click', () => {
+                if (AppState.isPlaying) {
+                    stopPlayback();
+                } else {
+                    startPlayback();
+                }
+            });
+        }
+
+        if (UI.elements.timeSignature) {
+            UI.elements.timeSignature.addEventListener('change', createBeats);
+        }
+
+        if (UI.elements.soundType) {
+            UI.elements.soundType.addEventListener('change', (e) => {
+                createBeats();
+                onMetronomeInstrumentChange(e.target.value);
+            });
+        }
+
+        // Tempo controls
+        if (UI.elements.tempo) {
+            UI.elements.tempo.addEventListener('input', (e) => {
+                AppState.tempo = parseInt(e.target.value);
+                if (UI.elements.tempoDisplay) {
+                    UI.elements.tempoDisplay.textContent = `${AppState.tempo} BPM`;
+                }
+            });
+        }
+
+        // Chord controls
+        if (UI.elements.chordsEnabled) {
+            UI.elements.chordsEnabled.addEventListener('click', () => {
+                UI.elements.chordsEnabled.classList.toggle('active');
+            });
+        }
+
+        // Progression select
+        if (UI.elements.progressionSelect) {
+            UI.elements.progressionSelect.addEventListener('change', function() {
+                loadProgression(this.value);
+            });
+        }
+
+        // Dark mode toggle
+        if (UI.elements.darkModeToggle) {
+            UI.elements.darkModeToggle.addEventListener('click', () => {
+                document.body.classList.toggle('dark-mode');
+                UI.elements.darkModeToggle.classList.toggle('active');
+            });
+        }
+
+        // Tuning change
+        if (UI.elements.chordTuning) {
+            UI.elements.chordTuning.addEventListener('change', () => {
+                const tuning = TUNINGS[UI.elements.chordTuning.value];
+                if (UI.elements.chordFretboard) {
+                    createFretboard(UI.elements.chordFretboard, tuning);
+                }
+            });
+        }
+
+    } catch (error) {
+        console.error('Error setting up event listeners:', error);
+        throw error;
+    }
+}
+
+// Wait for DOM to be loaded before initializing
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        await initializeApp();
+    } catch (error) {
+        console.error('Initialization failed:', error);
+    }
 });
             </script>
         </body>
