@@ -1066,27 +1066,28 @@ const scaleDegrees = {
 };   
 // State Management
 const AppState = {
-    isPlaying: false,
-    currentBeat: 0,
-    currentMeasure: 0,
-    tempo: 120,
-    audioInitialized: false,
-    darkMode: false,
-    listeners: [],
-    updateState(newState) {
-        Object.assign(this, newState);
-        this.notifyListeners();
-    },
-    addListener(callback) {
-        this.listeners.push(callback);
-    },
-    notifyListeners() {
-        this.listeners.forEach(callback => callback(this));
-    }
-};
+            isPlaying: false,
+            currentBeat: 0,
+            currentMeasure: 0,
+            tempo: 120,
+            audioInitialized: false,
+            darkMode: false,
+            chordsEnabled: true, // Added to track chordsEnabled state
+            listeners: [],
+            updateState(newState) {
+                Object.assign(this, newState);
+                this.notifyListeners();
+            },
+            addListener(callback) {
+                this.listeners.push(callback);
+            },
+            notifyListeners() {
+                this.listeners.forEach(callback => callback(this));
+            }
+        };
 
-// UI Management
-const UI = {
+        // UI Management
+        const UI = {
             elements: {
                 chordFretboard: document.getElementById('chord-fretboard'),
                 measures: document.getElementById('measures'),
@@ -1106,7 +1107,12 @@ const UI = {
                 chordsEnabled: document.getElementById('chordsEnabled'),
                 fretboardsGrid: document.querySelector('.fretboards-grid'),
                 darkModeToggle: document.getElementById('dark-mode-toggle'),
-                accentIntensity: document.getElementById('accent-intensity')
+                accentIntensity: document.getElementById('accent-intensity'),
+                drumSetToggleBtn: document.getElementById('drumSetToggleBtn'),
+                reverbDial: document.getElementById('reverb-dial'),
+                reverbDialValue: document.getElementById('reverb-dial-value'),
+                addMeasureButton: document.querySelector('button[aria-label="Add measure"]'),
+                removeMeasureButton: document.querySelector('button[aria-label="Remove measure"]')
             },
             init() {
                 Object.entries(this.elements).forEach(([key, el]) => {
@@ -2206,50 +2212,52 @@ function toggleBeatState(beat, timeSignature, soundType) {
 }
 
 async function playBeat() {
-    const beats = document.querySelectorAll('.beat');
-    const currentBeatElement = beats[AppState.currentBeat];
-    if (currentBeatElement) {
-        currentBeatElement.classList.add('active');
-        const volume = parseFloat(currentBeatElement.dataset.volume) || 0;
-        await playMetronomeSound(volume);
-    }
-    const measures = UI.elements.measures.children;
-    const timeSignature = parseInt(UI.elements.timeSignature.value);
-    if (measures.length > 0) {
-        const currentMeasureElement = measures[AppState.currentMeasure];
-        if (currentMeasureElement) {
-            const root = currentMeasureElement.querySelector('.chord-controls .root-note')?.value;
-            const quality = currentMeasureElement.querySelector('.chord-controls .chord-quality')?.value;
-            const scaleRoot = currentMeasureElement.querySelector('.scale-controls .second-key')?.value;
-            const scaleType = currentMeasureElement.querySelector('.scale-controls .scale-select')?.value;
-            if (root && quality && scaleRoot && scaleType) {
-                const chordTuning = TUNINGS[UI.elements.chordTuning.value];
-                updateFretboardNotes(UI.elements.chordFretboard, scaleRoot, scaleType, chordTuning);
-                const beatDuration = 60 / AppState.tempo;
-                if (timeSignature === 4) {
-                    if (AppState.currentBeat === 0) {
-                        playChord(root, quality, AudioContextManager.context.currentTime, beatDuration * 2, false);
-                    } else if (AppState.currentBeat === 4) {
-                        playChord(root, quality, AudioContextManager.context.currentTime, beatDuration * 2, true);
+            const beats = document.querySelectorAll('.beat');
+            const currentBeatElement = beats[AppState.currentBeat];
+            if (currentBeatElement) {
+                currentBeatElement.classList.add('active');
+                const volume = parseFloat(currentBeatElement.dataset.volume) || 0;
+                await playMetronomeSound(volume);
+            }
+            const measures = UI.elements.measures.children;
+            const timeSignature = parseInt(UI.elements.timeSignature.value);
+            if (measures.length > 0) {
+                const currentMeasureElement = measures[AppState.currentMeasure];
+                if (currentMeasureElement) {
+                    const root = currentMeasureElement.querySelector('.chord-controls .root-note')?.value;
+                    const quality = currentMeasureElement.querySelector('.chord-controls .chord-quality')?.value;
+                    const scaleRoot = currentMeasureElement.querySelector('.scale-controls .second-key')?.value;
+                    const scaleType = currentMeasureElement.querySelector('.scale-controls .scale-select')?.value;
+                    if (root && quality && scaleRoot && scaleType) {
+                        const chordTuning = TUNINGS[UI.elements.chordTuning.value];
+                        updateFretboardNotes(UI.elements.chordFretboard, scaleRoot, scaleType, chordTuning);
+                        const beatDuration = 60 / AppState.tempo;
+                        if (AppState.chordsEnabled) { // Check chordsEnabled
+                            if (timeSignature === 4) {
+                                if (AppState.currentBeat === 0) {
+                                    playChord(root, quality, AudioContextManager.context.currentTime, beatDuration * 2, false);
+                                } else if (AppState.currentBeat === 4) {
+                                    playChord(root, quality, AudioContextManager.context.currentTime, beatDuration * 2, true);
+                                }
+                            } else if (AppState.currentBeat === 0) {
+                                playChord(root, quality, AudioContextManager.context.currentTime, beatDuration * 4, false);
+                            }
+                        }
                     }
-                } else if (AppState.currentBeat === 0) {
-                    playChord(root, quality, AudioContextManager.context.currentTime, beatDuration * 4, false);
                 }
             }
+            if (measures.length > 0) {
+                Array.from(measures).forEach((measure, index) => {
+                    measure.classList.toggle('active', index === AppState.currentMeasure);
+                });
+            }
+            const totalBeats = timeSignature === 4 ? 8 : timeSignature;
+            AppState.currentBeat = (AppState.currentBeat + 1) % totalBeats;
+            if (AppState.currentBeat === 0 && measures.length > 0) {
+                AppState.currentMeasure = (AppState.currentMeasure + 1) % measures.length;
+            }
+            AppState.updateState({ currentBeat: AppState.currentBeat, currentMeasure: AppState.currentMeasure });
         }
-    }
-    if (measures.length > 0) {
-        Array.from(measures).forEach((measure, index) => {
-            measure.classList.toggle('active', index === AppState.currentMeasure);
-        });
-    }
-    const totalBeats = timeSignature === 4 ? 8 : timeSignature;
-    AppState.currentBeat = (AppState.currentBeat + 1) % totalBeats;
-    if (AppState.currentBeat === 0 && measures.length > 0) {
-        AppState.currentMeasure = (AppState.currentMeasure + 1) % measures.length;
-    }
-    AppState.updateState({ currentBeat: AppState.currentBeat, currentMeasure: AppState.currentMeasure });
-}
 
 async function startPlayback() {
     try {
@@ -2815,72 +2823,202 @@ log("FretFlow initialized with 4 independent fretboards");
 }
 
 function setupEventListeners() {
-    // Audio initialization
-    document.addEventListener('click', async () => {
-        try {
-            await ensureAudioInitialized();
-        } catch (error) {
-            console.error('Failed to initialize audio on click:', error);
+            // Audio initialization
+            document.addEventListener('click', async () => {
+                try {
+                    await AudioContextManager.initialize();
+                } catch (error) {
+                    console.error('Failed to initialize audio on click:', error);
+                }
+            }, { once: true });
+
+            // Start/Stop button
+            UI.elements.startStopButton.addEventListener('click', () => {
+                if (AppState.isPlaying) {
+                    stopPlayback();
+                } else {
+                    startPlayback();
+                }
+            });
+
+            // Progression selection
+            UI.elements.progressionSelect.addEventListener('change', (e) => {
+                loadProgression(e.target.value);
+                addFirstChordListener(); // Ensure fretboard updates with first chord
+            });
+
+            // Key selection for transposition
+            UI.elements.keySelect.addEventListener('change', (e) => {
+                const progressionSelect = UI.elements.progressionSelect;
+                if (progressionSelect.value) {
+                    loadProgression(progressionSelect.value, e.target.value);
+                    addFirstChordListener(); // Update fretboard on key change
+                }
+            });
+
+            // Tempo controls
+            UI.elements.tempo.addEventListener('input', () => {
+                AppState.tempo = parseInt(UI.elements.tempo.value);
+                UI.elements.tempoDisplay.textContent = `${AppState.tempo} BPM`;
+                if (AppState.isPlaying) {
+                    stopPlayback();
+                    startPlayback();
+                }
+                log(`Tempo set to ${AppState.tempo} BPM`);
+            });
+
+            // Tap tempo
+            UI.elements.tapTempo.addEventListener('click', () => {
+                const now = Date.now();
+                if (!AppState.lastTap) AppState.lastTap = now;
+                const interval = now - AppState.lastTap;
+                if (interval < 2000) {
+                    const bpm = Math.round(60000 / interval);
+                    AppState.tempo = Math.max(40, Math.min(220, bpm));
+                    UI.elements.tempo.value = AppState.tempo;
+                    UI.elements.tempoDisplay.textContent = `${AppState.tempo} BPM`;
+                    if (AppState.isPlaying) {
+                        stopPlayback();
+                        startPlayback();
+                    }
+                }
+                AppState.lastTap = now;
+                log(`Tap tempo calculated: ${AppState.tempo} BPM`);
+            });
+
+            // Time signature
+            UI.elements.timeSignature.addEventListener('change', () => {
+                createBeats();
+                if (AppState.isPlaying) {
+                    stopPlayback();
+                    startPlayback();
+                }
+                log(`Time signature changed to ${UI.elements.timeSignature.value}`);
+            });
+
+            // Sound type
+            UI.elements.soundType.addEventListener('change', (e) => {
+                UI.elements.drumSetToggleBtn.style.display = e.target.value === 'drums' ? 'inline-block' : 'none';
+                createBeats();
+                onMetronomeInstrumentChange(e.target.value);
+                log(`Sound type changed to ${e.target.value}`);
+            });
+
+            // Drum set toggle
+            UI.elements.drumSetToggleBtn.addEventListener('click', () => {
+                currentDrumSetIndex = (currentDrumSetIndex + 1) % drumSoundSets.length;
+                UI.elements.drumSetToggleBtn.textContent = drumSoundSets[currentDrumSetIndex].name;
+                log(`Switched to drum set ${drumSoundSets[currentDrumSetIndex].name}`);
+            });
+
+            // Volume controls
+            UI.elements.metronomeVolume.addEventListener('input', () => {
+                const volume = parseFloat(UI.elements.metronomeVolume.value);
+                log(`Metronome volume set to ${volume}`);
+            });
+
+            UI.elements.chordFretboardVolume.addEventListener('input', () => {
+                const volume = parseFloat(UI.elements.chordFretboardVolume.value);
+                log(`Chord fretboard volume set to ${volume}`);
+            });
+
+            UI.elements.chordVolume.addEventListener('input', () => {
+                const volume = parseFloat(UI.elements.chordVolume.value);
+                log(`Chord volume set to ${volume}`);
+            });
+
+            // Reverb dial
+            UI.elements.reverbDial.addEventListener('input', (e) => {
+                const value = parseInt(e.target.value, 10);
+                AudioContextManager.reverbAmount = value / 100;
+                UI.elements.reverbDialValue.textContent = value;
+                log(`Reverb set to ${value}%`);
+            });
+
+            // Dark mode toggle
+            let colorMode = 0;
+            UI.elements.darkModeToggle.addEventListener('click', () => {
+                colorMode = (colorMode + 1) % 4;
+                document.body.classList.remove('dark-mode', 'dark-mode-2', 'dark-mode-3');
+                UI.elements.darkModeToggle.classList.remove('active', 'active-2', 'active-3');
+                switch (colorMode) {
+                    case 1:
+                        document.body.classList.add('dark-mode');
+                        UI.elements.darkModeToggle.classList.add('active');
+                        log('Dark mode 1 enabled');
+                        break;
+                    case 2:
+                        document.body.classList.add('dark-mode-2');
+                        UI.elements.darkModeToggle.classList.add('active-2');
+                        log('Dark mode 2 enabled');
+                        break;
+                    case 3:
+                        document.body.classList.add('dark-mode-3');
+                        UI.elements.darkModeToggle.classList.add('active-3');
+                        log('Dark mode 3 enabled');
+                        break;
+                    default:
+                        log('Light mode enabled');
+                        break;
+                }
+            });
+
+            // Chords enabled toggle
+            UI.elements.chordsEnabled.addEventListener('click', () => {
+                AppState.chordsEnabled = !AppState.chordsEnabled;
+                UI.elements.chordsEnabled.textContent = AppState.chordsEnabled ? 'Chords Enabled' : 'Chords Disabled';
+                UI.elements.chordsEnabled.classList.toggle('active', AppState.chordsEnabled);
+                log(`Chords ${AppState.chordsEnabled ? 'enabled' : 'disabled'}`);
+            });
+
+            // Tuning controls
+            UI.elements.chordTuning.addEventListener('change', () => {
+                const tuning = TUNINGS[UI.elements.chordTuning.value];
+                const firstMeasure = UI.elements.measures.firstElementChild;
+                if (firstMeasure) {
+                    const scaleRoot = firstMeasure.querySelector('.second-key').value;
+                    const scaleType = firstMeasure.querySelector('.scale-select').value;
+                    updateFretboardNotes(UI.elements.chordFretboard, scaleRoot, scaleType, tuning);
+                }
+                log(`Tuning changed to ${UI.elements.chordTuning.value}`);
+            });
+
+            // Accent intensity
+            UI.elements.accentIntensity.addEventListener('input', () => {
+                const intensity = parseFloat(UI.elements.accentIntensity.value);
+                log(`Accent intensity set to ${intensity}`);
+            });
+
+            // Measure controls
+            UI.elements.measures.addEventListener('change', (e) => {
+                if (e.target.classList.contains('root-note') || e.target.classList.contains('chord-quality')) {
+                    const measure = e.target.closest('.measure');
+                    const root = measure.querySelector('.root-note').value;
+                    const quality = measure.querySelector('.chord-quality').value;
+                    const secondKeySelect = measure.querySelector('.second-key');
+                    const scaleSelect = measure.querySelector('.scale-select');
+                    secondKeySelect.value = root;
+                    scaleSelect.value = suggestScaleForQuality(quality);
+                    if (measure === UI.elements.measures.firstElementChild) {
+                        const tuning = TUNINGS[UI.elements.chordTuning.value];
+                        updateFretboardNotes(UI.elements.chordFretboard, root, scaleSelect.value, tuning);
+                    }
+                    log(`Updated chord in measure to ${root} ${quality}`);
+                }
+            });
+
+            // Add measure button
+            UI.elements.addMeasureButton.addEventListener('click', () => {
+                addMeasure();
+                log('Added new measure');
+            });
+
+            // Remove measure button
+            UI.elements.removeMeasureButton.addEventListener('click', () => {
+                removeMeasure();
+                log('Removed last measure');
+            });
         }
-    }, { once: true });
-
-    // Start/Stop button
-    UI.elements.startStopButton.addEventListener('click', () => {
-        if (AppState.isPlaying) {
-            stopPlayback();
-        } else {
-            startPlayback();
-        }
-    });
-
-    // Progression selection
-    UI.elements.progressionSelect.addEventListener('change', function(e) {
-        loadProgression(e.target.value);
-    });
-
-    // Key selection for transposition
-    UI.elements.keySelect.addEventListener('change', function(e) {
-        const progressionSelect = UI.elements.progressionSelect;
-        if (progressionSelect.value) {
-            loadProgression(progressionSelect.value, e.target.value);
-        }
-    });
-
-    // Placeholder listeners for other UI elements
-    if (UI.elements.tempo) {
-        UI.elements.tempo.addEventListener('change', updateMetronome);
-    }
-    if (UI.elements.darkModeToggle) {
-        UI.elements.darkModeToggle.addEventListener('change', toggleDarkMode);
-    }
-    if (UI.elements.tapTempo) {
-        UI.elements.tapTempo.addEventListener('click', updateMetronome);
-    }
-    if (UI.elements.soundType) {
-        UI.elements.soundType.addEventListener('change', updateSoundSettings);
-    }
-    if (UI.elements.metronomeVolume) {
-        UI.elements.metronomeVolume.addEventListener('input', updateMetronome);
-    }
-    if (UI.elements.chordVolume) {
-        UI.elements.chordVolume.addEventListener('input', updateSoundSettings);
-    }
-    if (UI.elements.chordFretboardVolume) {
-        UI.elements.chordFretboardVolume.addEventListener('input', updateSoundSettings);
-    }
-    if (UI.elements.accentIntensity) {
-        UI.elements.accentIntensity.addEventListener('input', updateMetronome);
-    }
-    if (UI.elements.timeSignature) {
-        UI.elements.timeSignature.addEventListener('change', updateMetronome);
-    }
-    if (UI.elements.chordsEnabled) {
-        UI.elements.chordsEnabled.addEventListener('change', updateSoundSettings);
-    }
-    if (UI.elements.chordTuning) {
-        UI.elements.chordTuning.addEventListener('change', updateFretboard);
-    }
-}
 
     // Drum set controls
     const drumSetToggleBtn = document.getElementById('drumSetToggleBtn');
@@ -3051,37 +3189,29 @@ function setupEventListeners() {
 }
 
 // Initialize the application
-async function initializeApp() {
-    UI.init();
-    createBeats();
-    createFretboard(UI.elements.chordFretboard, TUNINGS.standard);
-    loadProgression(UI.elements.progressionSelect.value);
-    initializeFretFlow();
-    setupEventListeners();
-    updateLoadingStatus("Application initialized");
-    setTimeout(() => {
-        const indicator = document.getElementById('loading-indicator');
-        if (indicator) indicator.remove();
-    }, 1000);
-    log("Application initialized");
-}
-const reverbDial = document.getElementById('reverb-dial');
-const reverbDialValue = document.getElementById('reverb-dial-value');
-if (reverbDial) {
-    reverbDial.addEventListener('input', function(e) {
-        const value = parseInt(e.target.value, 10);
-        AudioContextManager.reverbAmount = value / 100;
-        if (reverbDialValue) reverbDialValue.textContent = value;
-    });
-}
-// Initial setup
-document.addEventListener('DOMContentLoaded', () => {
-    initializeApp().catch(error => {
-        console.error("Initialization failed:", error);
-        updateLoadingStatus("Initialization failed");
-        initializeScaleSelects();
-    });
-});
+// Initialize the application
+        async function initializeApp() {
+            UI.init();
+            createBeats();
+            createFretboard(UI.elements.chordFretboard, TUNINGS.standard);
+            loadProgression(UI.elements.progressionSelect.value);
+            initializeFretFlow();
+            setupEventListeners();
+            updateLoadingStatus("Application initialized");
+            setTimeout(() => {
+                const indicator = document.getElementById('loading-indicator');
+                if (indicator) indicator.remove();
+            }, 1000);
+            log("Application initialized");
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeApp().catch(error => {
+                console.error("Initialization failed:", error);
+                updateLoadingStatus("Initialization failed");
+                initializeScaleSelects();
+            });
+        });
 
             </script>
         </body>
