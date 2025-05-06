@@ -1232,25 +1232,27 @@ const AudioContextManager = {
     },
     
     loadPianoSamples: async function() {
-        // Use the new ALL_NOTES and OCTAVES arrays
-        this.pianoSampleBuffers = {}; // Reset
+    // Use the new ALL_NOTES and OCTAVES arrays
+    this.pianoSampleBuffers = {}; // Reset
 
-        for (const note of ALL_NOTES) {
-            for (const octave of OCTAVES) {
-                const fileName = getSampleFileName(note, octave); // e.g., 'ds4.wav'
-                const key = `${note}${octave}`; // e.g., 'ds4'
-                try {
-                    const response = await fetch(fileName);
-                    const arrayBuffer = await response.arrayBuffer();
-                    const audioBuffer = await this.context.decodeAudioData(arrayBuffer);
-                    this.pianoSampleBuffers[key] = audioBuffer;
-                } catch (e) {
-                    console.error(`Failed to load sample: ${fileName}`, e);
-                }
+    for (const note of ALL_NOTES) {
+        for (const octave of OCTAVES) {
+            const fileName = getSampleFileName(note, octave); // e.g., 'ds4.wav'
+            const key = `${note}${octave}`; // e.g., 'ds4'
+            try {
+                const response = await fetch(fileName);
+                const arrayBuffer = await response.arrayBuffer();
+                const audioBuffer = await this.context.decodeAudioData(arrayBuffer);
+                this.pianoSampleBuffers[key] = audioBuffer;
+                // LOGGING LINE: Shows which samples are loaded
+                console.log(`Loaded piano sample: ${fileName}`);
+            } catch (e) {
+                console.error(`Failed to load sample: ${fileName}`, e);
             }
         }
-        this.samplesLoaded = true;
-    },
+    }
+    this.samplesLoaded = true;
+},
     
     setupReverb: async function() {
         if (!this.reverbNode) {
