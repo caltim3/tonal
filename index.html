@@ -803,7 +803,7 @@ function debounce(func, wait) {
 }
 
 // Musical Constants
-const NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+const NOTES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
         
 const ALL_NOTES = [
   'a', 'as', 'b', 'c', 'cs', 'd', 'ds', 'e', 'f', 'fs', 'g', 'gs'
@@ -822,13 +822,7 @@ for (const note of ALL_NOTES) {
   }
 }
         
-const PIANO_CONFIG = {
-  notes: ALL_NOTES,
-  octaves: OCTAVES,
-  velocities: [12],
-  fileFormat: FILE_FORMAT
-};
-        
+      
 const ENHARMONIC_MAP = {
     'C#': 'Db', 'Db': 'Db',
     'D#': 'Eb', 'Eb': 'Eb',
@@ -868,26 +862,25 @@ function standardizeNoteName(note) {
     // Convert to uppercase and handle basic formatting
     note = note.toUpperCase().trim();
     
-    // Handle flats
-    const flatToSharp = {
-        'BB': 'A#',
-        'DB': 'C#',
-        'EB': 'D#',
-        'GB': 'F#',
-        'AB': 'G#'
-    };
-    
     // Replace ♭ with b and ♯ with #
     note = note.replace('♭', 'b').replace('♯', '#');
     
-    // Convert flats to sharps
-    if (note.includes('b')) {
-        const flatNote = note.replace('b', 'B');
-        return flatToSharp[flatNote] || note;
+    // Convert sharps to flats
+    const sharpToFlat = {
+        'C#': 'Db',
+        'D#': 'Eb',
+        'F#': 'Gb',
+        'G#': 'Ab',
+        'A#': 'Bb'
+    };
+    
+    if (note.includes('#')) {
+        return sharpToFlat[note] || note;
     }
     
     return note;
 }
+        
 const FRETBOARD_FREQUENCIES = {
     'string6': [82.41, 87.31, 92.50, 98.00, 103.83, 110.00, 116.54, 123.47, 130.81, 138.59, 146.83, 155.56, 164.81],
     'string5': [110.00, 116.54, 123.47, 130.81, 138.59, 146.83, 155.56, 164.81, 174.61, 185.00, 196.00, 207.65, 220.00],
