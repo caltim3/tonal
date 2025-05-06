@@ -1102,6 +1102,7 @@ const AppState = {
 };
 
 // UI Management
+// Replace the UI.elements definition with this updated version
 const UI = {
     elements: {
         chordFretboard: document.getElementById('chord-fretboard'),
@@ -1120,7 +1121,6 @@ const UI = {
         chordFretboardVolume: document.getElementById('chord-fretboard-volume'),
         chordVolume: document.getElementById('chord-volume'),
         chordsEnabled: document.getElementById('chordsEnabled'),
-        fretboardVolume: document.getElementById('fretboard-volume'),
         fretboardsGrid: document.querySelector('.fretboards-grid'),
         darkModeToggle: document.getElementById('dark-mode-toggle'),
         accentIntensity: document.getElementById('accent-intensity')
@@ -1130,6 +1130,7 @@ const UI = {
             if (!el) console.warn(`Missing DOM element: ${key}`);
         });
     }
+};
 };
 function initializeScaleSelects() {
     // Get all scale options
@@ -2270,14 +2271,19 @@ async function startPlayback() {
         
         if (AppState.isPlaying) return;
         
-        const timeSignature = parseInt(UI.elements.timeSignature.value);
         const measures = UI.elements.measures.children;
         
-        if (measures.length === 0) {
-            console.warn('No measures defined. Please add at least one measure.');
-            return;
+        if (!measures || measures.length === 0) {
+            // Add a default measure if none exist
+            addMeasure();
+            await new Promise(resolve => setTimeout(resolve, 100)); // Give time for measure to be created
+            if (!UI.elements.measures.children.length) {
+                console.warn('Unable to create measures. Please check your setup.');
+                return;
+            }
         }
         
+        const timeSignature = parseInt(UI.elements.timeSignature.value);
         let interval = (60 / AppState.tempo) * 1000;
         if (timeSignature === 4) {
             interval = interval / 2;
@@ -2286,7 +2292,7 @@ async function startPlayback() {
         AppState.updateState({ currentBeat: 0, currentMeasure: 0 });
         clearInterval(AppState.intervalId);
         
-        const currentMeasureElement = measures[AppState.currentMeasure];
+        const currentMeasureElement = UI.elements.measures.children[0];
         if (currentMeasureElement) {
             const root = currentMeasureElement.querySelector('.chord-controls .root-note')?.value;
             const quality = currentMeasureElement.querySelector('.chord-controls .chord-quality')?.value;
@@ -2313,11 +2319,11 @@ async function startPlayback() {
     } catch (error) {
         console.error('Failed to start playback:', error);
         alert('Please try clicking the start button again');
-        stopPlayback(); // Ensure everything is reset if playback fails
+        stopPlayback();
         UI.elements.startStopButton.textContent = 'Start';
     }
 }
-
+        
 function stopPlayback() {
     clearInterval(AppState.intervalId);
     AppState.intervalId = null;
