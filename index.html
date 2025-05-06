@@ -1500,43 +1500,43 @@ function getNoteFromScaleDegree(degree, key) {
 }
 
 function getChordFromFunction(roman, key = "C") {
-            const romanMap = {
-                "I": 0, "II": 2, "III": 4, "IV": 5, "V": 7, "VI": 9, "VII": 11,
-                "i": 0, "ii": 2, "iii": 4, "iv": 5, "v": 7, "vi": 9, "vii": 11
-            };
-            const match = roman.match(/^([b#]?)([IViv]+)(.*)$/);
-            if (!match) return null;
-            let [, accidental, numeral, suffix] = match;
-            let semitone = romanMap[numeral];
-            if (accidental === "b") semitone -= 1;
-            if (accidental === "#") semitone += 1;
+    const romanMap = {
+        "I": 0, "II": 2, "III": 4, "IV": 5, "V": 7, "VI": 9, "VII": 11,
+        "i": 0, "ii": 2, "iii": 4, "iv": 5, "v": 7, "vi": 9, "vii": 11
+    };
+    const match = roman.match(/^([b#]?)([IViv]+)(.*)$/);
+    if (!match) return null;
+    let [, accidental, numeral, suffix] = match;
+    let semitone = romanMap[numeral];
+    if (accidental === "b") semitone -= 1;
+    if (accidental === "#") semitone += 1;
 
-            const keyNotes = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
-            let keyIndex = keyNotes.indexOf(key);
-            if (keyIndex === -1) keyIndex = 0;
-            let rootIndex = (keyIndex + semitone + 12) % 12;
-            let root = keyNotes[rootIndex];
+    const keyNotes = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
+    let keyIndex = keyNotes.indexOf(key);
+    if (keyIndex === -1) keyIndex = 0;
+    let rootIndex = (keyIndex + semitone + 12) % 12;
+    let root = keyNotes[rootIndex];
 
-            let isMinor = numeral === numeral.toLowerCase();
-            let chordQuality;
-            if (suffix.includes('maj7')) {
-                chordQuality = 'maj7';
-            } else if (suffix.includes('m7') || suffix.includes('min7')) {
-                chordQuality = 'min7';
-            } else if (suffix.includes('7')) {
-                if (isMinor) {
-                    chordQuality = 'min7';
-                } else {
-                    chordQuality = 'dom7';
-                }
-            } else if (suffix.includes('6')) {
-                chordQuality = '6';
-            } else {
-                chordQuality = isMinor ? 'min' : 'maj';
-            }
-
-            return { root, quality: chordQuality };
+    let isMinor = numeral === numeral.toLowerCase();
+    let chordQuality;
+    if (suffix.includes('maj7')) {
+        chordQuality = 'maj7';
+    } else if (suffix.includes('m7') || suffix.includes('min7')) {
+        chordQuality = 'min7';
+    } else if (suffix.includes('7')) {
+        if (isMinor) {
+            chordQuality = 'min7';
+        } else {
+            chordQuality = 'dom7';
         }
+    } else if (suffix.includes('6')) {
+        chordQuality = '6';
+    } else {
+        chordQuality = isMinor ? 'min' : 'maj';
+    }
+
+    return { root, quality: chordQuality };
+}
         
 // Helper function for flat notes
 function flattenNote(note) {
@@ -2651,8 +2651,8 @@ function updateProgressionKey(newKey) {
     Array.from(UI.elements.measures.children).forEach((measure, index) => {
         const chordFunc = progression.progression[index];
         if (!chordFunc) return;
-        const chord = getChordFromFunction(newKey, chordFunc);
-        const [root, quality] = parseChord(chord);
+        const chord = getChordFromFunction(chordFunc, newKey);
+        const {root, quality} = chord;
         const rootSelect = measure.querySelector('.root-note');
         const qualitySelect = measure.querySelector('.chord-quality');
         const secondKeySelect = measure.querySelector('.second-key');
@@ -3154,35 +3154,6 @@ function setupEventListeners() {
             drumSetToggleBtn.style.display = soundTypeSelect.value === 'drums' ? 'inline-block' : 'none';
         }
     }
-
-    // Dark mode toggle
-    let colorMode = 0;
-    UI.elements.darkModeToggle.addEventListener('click', () => {
-        colorMode = (colorMode + 1) % 4;
-        document.body.classList.remove('dark-mode', 'dark-mode-2', 'dark-mode-3');
-        UI.elements.darkModeToggle.classList.remove('active', 'active-2', 'active-3');
-        
-        switch(colorMode) {
-            case 1:
-                document.body.classList.add('dark-mode');
-                UI.elements.darkModeToggle.classList.add('active');
-                log('Dark mode 1 enabled');
-                break;
-            case 2:
-                document.body.classList.add('dark-mode-2');
-                UI.elements.darkModeToggle.classList.add('active-2');
-                log('Dark mode 2 enabled');
-                break;
-            case 3:
-                document.body.classList.add('dark-mode-3');
-                UI.elements.darkModeToggle.classList.add('active-3');
-                log('Dark mode 3 enabled');
-                break;
-            default:
-                log('Light mode enabled');
-                break;
-        }
-    });
 
     // Chords toggle
     const chordsButton = UI.elements.chordsEnabled;
