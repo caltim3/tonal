@@ -587,7 +587,7 @@ body.dark-mode-3 .volume-control input[type="range"]::-moz-range-thumb {
                 <option value="12">12/8</option>
             </select>
             <select id="sound-type" aria-label="Select metronome sound">
-                <option value="click">Click</option>
+                <option value="Click">Click</option>
                 <option value="woodblock">Woodblock</option>
                 <option value="drums">Drums</option>
             </select>
@@ -848,7 +848,7 @@ const drumSoundSets = [ // Ensure filenames match actual files in DRUM_SAMPLE_BA
 ];
 
 const METRONOME_SOUND_PATHS = { // Ensure filenames match actual files in METRONOME_SOUND_BASE_PATH
-    click: 'click.wav',
+    click: 'Click.wav',
     woodblock: 'woodblock.wav'
 };
 
@@ -1667,7 +1667,7 @@ function createBeats() {
 
     const timeSigValue = UI.elements.timeSignature?.value || '4/4';
     const [beatsPerMeasure, beatUnit] = timeSigValue.split('/').map(Number);
-    const soundType = UI.elements.soundType?.value || 'click';
+    const soundType = UI.elements.soundType?.value || 'Click';
     const totalDisplayBeats = (beatsPerMeasure === 4 && beatUnit === 4) ? 8 : beatsPerMeasure;
 
     const beatPatternConfig = { /* ... Same as your well-defined beatPatternConfig ... */
