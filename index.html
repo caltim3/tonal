@@ -1044,40 +1044,93 @@ const AppState = {
     notifyListeners() { this.listeners.forEach(callback => callback(this)); }
 };
 
-// --- UI Management ---
-// Inside your main script, part of the UI object
-elements: {
-    // Corrected to use kebab-case IDs from your HTML
-    chordFretboard: document.getElementById('chord-fretboard'),
-    measures: document.getElementById('measures'), // This ID was likely correct
-    tempoDisplay: document.getElementById('tempo-display'),
-    startStopButton: document.getElementById('start-stop'), // Corrected from startStopButton if it was that
-    progressionSelect: document.getElementById('progression-select'),
-    keySelect: document.getElementById('keySelect'), // This ID was likely correct
-    scaleDisplay: document.getElementById('scale-display'),
-    chordTuning: document.getElementById('chord-tuning'),
-    timeSignature: document.getElementById('time-signature'),
-    soundType: document.getElementById('sound-type'),
-    metronomeVolume: document.getElementById('metronome-volume'),
-    tempo: document.getElementById('tempo'), // This ID was likely correct
-    tapTempo: document.getElementById('tap-tempo'),
-    chordFretboardVolume: document.getElementById('chord-fretboard-volume'),
-    chordVolume: document.getElementById('chord-volume'),
-    chordsEnabled: document.getElementById('chordsEnabled'), // This ID was likely correct
-    fretboardsGrid: document.querySelector('.fretboards-grid'), // Uses class selector, should be fine
-    darkModeToggle: document.getElementById('dark-mode-toggle'),
-    accentIntensity: document.getElementById('accent-intensity'),
-    drumSetToggleBtn: document.getElementById('drumSetToggleBtn'), // This ID was likely correct
-    reverbDial: document.getElementById('reverb-dial'),
-    reverbDialValue: document.getElementById('reverb-dial-value'),
-    
-    // For buttons selected by aria-label, ensure these selectors are robust.
-    // The errors suggest these might also be problematic if UI.elements.addMeasureButton is null.
-    // The querySelector approach is generally fine if the aria-labels are unique and correct.
-    addMeasureButton: document.querySelector('button[aria-label="Add measure"]'),
-    removeMeasureButton: document.querySelector('button[aria-label="Remove measure"]')
-},
+const LOG_PREFIX = "[BebopBlueprint]"; // Or any prefix you prefer
 
+const UI = {
+    // You can define the 'elements' object directly here
+    elements: {
+        // Kebab-case IDs matching your HTML
+        chordFretboard: document.getElementById('chord-fretboard'),
+        measures: document.getElementById('measures'),
+        tempoDisplay: document.getElementById('tempo-display'),
+        startStopButton: document.getElementById('start-stop'),
+        progressionSelect: document.getElementById('progression-select'),
+        keySelect: document.getElementById('keySelect'), // Assuming this ID is correct in HTML
+        scaleDisplay: document.getElementById('scale-display'),
+        chordTuning: document.getElementById('chord-tuning'),
+        timeSignature: document.getElementById('time-signature'),
+        soundType: document.getElementById('sound-type'),
+        metronomeVolume: document.getElementById('metronome-volume'),
+        tempo: document.getElementById('tempo'), // Assuming this ID is correct
+        tapTempo: document.getElementById('tap-tempo'),
+        chordFretboardVolume: document.getElementById('chord-fretboard-volume'),
+        chordVolume: document.getElementById('chord-volume'),
+        chordsEnabled: document.getElementById('chordsEnabled'), // Assuming this ID is correct
+        fretboardsGrid: document.querySelector('.fretboards-grid'), // Uses class selector
+        darkModeToggle: document.getElementById('dark-mode-toggle'),
+        accentIntensity: document.getElementById('accent-intensity'),
+        drumSetToggleBtn: document.getElementById('drumSetToggleBtn'), // Assuming this ID is correct
+        reverbDial: document.getElementById('reverb-dial'),
+        reverbDialValue: document.getElementById('reverb-dial-value'),
+        addMeasureButton: document.querySelector('button[aria-label="Add measure"]'),
+        removeMeasureButton: document.querySelector('button[aria-label="Remove measure"]'),
+
+        // Add other elements from your HTML that are referenced in the script
+        // For example, elements related to audio loading, piano, drums:
+        audioLoadingProgress: document.getElementById('audio-loading-progress'),
+        audioLoadingText: document.getElementById('audio-loading-text'),
+        // Drum kit buttons (ensure these IDs exist in your HTML)
+        kickButton: document.getElementById('kick-button'),
+        snareButton: document.getElementById('snare-button'),
+        hihatClosedButton: document.getElementById('hihat-closed-button'),
+        hihatOpenButton: document.getElementById('hihat-open-button'),
+        crashButton: document.getElementById('crash-button'),
+        // Piano keys (ensure these IDs exist in your HTML if you have them)
+        // Example: pianoKeyC4: document.getElementById('piano-key-C4'), // etc. for all keys
+    },
+
+init() {
+        console.log(`${LOG_PREFIX} UI.init() called.`);
+
+        // Check if elements were found (good for debugging)
+        for (const key in this.elements) {
+            if (!this.elements[key]) {
+                // querySelector can legitimately return null if an element isn't found.
+                // For getElementById, null means the ID wasn't found.
+                // Avoid warning for aria-label buttons if they are optional or dynamically added.
+                if (!( (key === 'addMeasureButton' || key === 'removeMeasureButton' || key === 'fretboardsGrid') && this.elements[key] === null) ) {
+                     console.warn(`${LOG_PREFIX} Missing DOM element for UI.elements.${key}. Expected ID/selector: ${key.replace(/([A-Z])/g, '-$1').toLowerCase()} (approx)`);
+                }
+            }
+        }
+
+        this.populateProgressionSelect();
+        this.setupEventListeners(); // Call to setup event listeners
+        // Any other UI initialization tasks
+        if (this.elements.tempo) this.updateTempoDisplay(parseInt(this.elements.tempo.value, 10));
+        if (this.elements.metronomeVolume) this.updateMetronomeVolumeDisplay(this.elements.metronomeVolume.value);
+
+        console.log(`${LOG_PREFIX} UI initialized and event listeners set up.`);
+    },
+
+    populateProgressionSelect() {
+        if (this.elements.progressionSelect && typeof progressions !== 'undefined' && Object.keys(progressions).length > 0) {
+            // Clear existing options first (if any, e.g., from HTML template)
+            // this.elements.progressionSelect.innerHTML = '';
+            Object.entries(progressions).forEach(([id, { displayName }]) => {
+                const option = document.createElement('option');
+                option.value = id;
+                option.textContent = displayName;
+                this.elements.progressionSelect.appendChild(option);
+            });
+            console.log(`${LOG_PREFIX} Progression select populated.`);
+        } else if (!this.elements.progressionSelect) {
+            console.warn(`${LOG_PREFIX} 'progression-select' element not found for populating.`);
+        } else if (typeof progressions === 'undefined' || Object.keys(progressions).length === 0) {
+            console.warn(`${LOG_PREFIX} 'progressions' data not available or empty for populating select.`);
+        }
+    },
+    
 // --- AudioContextManager (Refactored for Preloading) ---
 const AudioContextManager = {
     context: null,
