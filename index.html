@@ -1044,10 +1044,7 @@ const AppState = {
     notifyListeners() { this.listeners.forEach(callback => callback(this)); }
 };
 
-const LOG_PREFIX = "[BebopBlueprint]"; // Or any prefix you prefer
-
 const UI = {
-    // You can define the 'elements' object directly here
     elements: {
         // Kebab-case IDs matching your HTML
         chordFretboard: document.getElementById('chord-fretboard'),
@@ -1055,68 +1052,62 @@ const UI = {
         tempoDisplay: document.getElementById('tempo-display'),
         startStopButton: document.getElementById('start-stop'),
         progressionSelect: document.getElementById('progression-select'),
-        keySelect: document.getElementById('keySelect'), // Assuming this ID is correct in HTML
+        keySelect: document.getElementById('keySelect'),
         scaleDisplay: document.getElementById('scale-display'),
         chordTuning: document.getElementById('chord-tuning'),
         timeSignature: document.getElementById('time-signature'),
         soundType: document.getElementById('sound-type'),
         metronomeVolume: document.getElementById('metronome-volume'),
-        tempo: document.getElementById('tempo'), // Assuming this ID is correct
+        tempo: document.getElementById('tempo'),
         tapTempo: document.getElementById('tap-tempo'),
         chordFretboardVolume: document.getElementById('chord-fretboard-volume'),
         chordVolume: document.getElementById('chord-volume'),
-        chordsEnabled: document.getElementById('chordsEnabled'), // Assuming this ID is correct
-        fretboardsGrid: document.querySelector('.fretboards-grid'), // Uses class selector
+        chordsEnabled: document.getElementById('chordsEnabled'),
+        fretboardsGrid: document.querySelector('.fretboards-grid'),
         darkModeToggle: document.getElementById('dark-mode-toggle'),
         accentIntensity: document.getElementById('accent-intensity'),
-        drumSetToggleBtn: document.getElementById('drumSetToggleBtn'), // Assuming this ID is correct
+        drumSetToggleBtn: document.getElementById('drumSetToggleBtn'),
         reverbDial: document.getElementById('reverb-dial'),
         reverbDialValue: document.getElementById('reverb-dial-value'),
         addMeasureButton: document.querySelector('button[aria-label="Add measure"]'),
         removeMeasureButton: document.querySelector('button[aria-label="Remove measure"]'),
-
-        // Add other elements from your HTML that are referenced in the script
-        // For example, elements related to audio loading, piano, drums:
         audioLoadingProgress: document.getElementById('audio-loading-progress'),
-        audioLoadingText: document.getElementById('audio-loading-text'),
-        // Drum kit buttons (ensure these IDs exist in your HTML)
+        audioLoadingText: document.getElementById('audio-loading-text'), // Note: Your HTML uses 'progress-text' inside 'audio-loading-progress'
         kickButton: document.getElementById('kick-button'),
         snareButton: document.getElementById('snare-button'),
         hihatClosedButton: document.getElementById('hihat-closed-button'),
         hihatOpenButton: document.getElementById('hihat-open-button'),
         crashButton: document.getElementById('crash-button'),
-        // Piano keys (ensure these IDs exist in your HTML if you have them)
-        // Example: pianoKeyC4: document.getElementById('piano-key-C4'), // etc. for all keys
     },
 
-init() {
+    init() {
         console.log(`${LOG_PREFIX} UI.init() called.`);
 
         // Check if elements were found (good for debugging)
         for (const key in this.elements) {
             if (!this.elements[key]) {
-                // querySelector can legitimately return null if an element isn't found.
-                // For getElementById, null means the ID wasn't found.
-                // Avoid warning for aria-label buttons if they are optional or dynamically added.
-                if (!( (key === 'addMeasureButton' || key === 'removeMeasureButton' || key === 'fretboardsGrid') && this.elements[key] === null) ) {
-                     console.warn(`${LOG_PREFIX} Missing DOM element for UI.elements.${key}. Expected ID/selector: ${key.replace(/([A-Z])/g, '-$1').toLowerCase()} (approx)`);
+                // querySelector can legitimately return null.
+                // Avoid warning for aria-label buttons or class selectors if they are optional or dynamically added.
+                const optionalSelectors = ['addMeasureButton', 'removeMeasureButton', 'fretboardsGrid', 'kickButton', 'snareButton', 'hihatClosedButton', 'hihatOpenButton', 'crashButton', 'audioLoadingText'];
+                if (!optionalSelectors.includes(key) || (this.elements[key] === null && !document.querySelector(`[aria-label="${key.replace(/([A-Z])/g, ' $1').trim()}"]`))) {
+                     // A more robust check for aria-label might be needed if IDs don't match keys directly
+                    console.warn(`${LOG_PREFIX} Missing DOM element for UI.elements.${key}.`);
                 }
             }
         }
 
         this.populateProgressionSelect();
-        this.setupEventListeners(); // Call to setup event listeners
-        // Any other UI initialization tasks
-        if (this.elements.tempo) this.updateTempoDisplay(parseInt(this.elements.tempo.value, 10));
-        if (this.elements.metronomeVolume) this.updateMetronomeVolumeDisplay(this.elements.metronomeVolume.value);
+        // Note: Calls to setupEventListeners, updateTempoDisplay, and updateMetronomeVolumeDisplay
+        // were removed as their responsibilities are handled in initializeApp or by event listeners directly.
 
-        console.log(`${LOG_PREFIX} UI initialized and event listeners set up.`);
+        console.log(`${LOG_PREFIX} UI elements populated and initial setup done.`);
     },
 
     populateProgressionSelect() {
         if (this.elements.progressionSelect && typeof progressions !== 'undefined' && Object.keys(progressions).length > 0) {
-            // Clear existing options first (if any, e.g., from HTML template)
-            // this.elements.progressionSelect.innerHTML = '';
+            // Clear existing options from HTML template if any, before populating
+            // this.elements.progressionSelect.innerHTML = ''; // Uncomment if you have placeholder options in HTML
+
             Object.entries(progressions).forEach(([id, { displayName }]) => {
                 const option = document.createElement('option');
                 option.value = id;
@@ -1129,7 +1120,8 @@ init() {
         } else if (typeof progressions === 'undefined' || Object.keys(progressions).length === 0) {
             console.warn(`${LOG_PREFIX} 'progressions' data not available or empty for populating select.`);
         }
-    },
+    }
+};
     
 // --- AudioContextManager (Refactored for Preloading) ---
 const AudioContextManager = {
