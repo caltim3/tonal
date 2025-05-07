@@ -1340,24 +1340,6 @@ function getNoteFromScaleDegree(scaleDegree, key, scaleIntervals = SCALES.major)
     return NOTES[(rootIndex + offset) % 12];
 }
 
-function getChordNotes(root, quality) {
-    const CHORD_INTERVALS = {
-        'maj': [0, 4, 7], 'min': [0, 3, 7], 'dim': [0, 3, 6], 'aug': [0, 4, 8],
-        'sus4': [0, 5, 7], 'sus2': [0, 2, 7],
-        'maj7': [0, 4, 7, 11], 'dom7': [0, 4, 7, 10], 'min7': [0, 3, 7, 10],
-        'dim7': [0, 3, 6, 9], 'min7b5': [0, 3, 6, 10], 'aug7': [0, 4, 8, 10], // aka 7#5
-        '6': [0, 4, 7, 9], 'm6': [0, 3, 7, 9], // Major 6th and Minor 6th
-        // Add more complex chords as needed
-        'maj9': [0, 4, 7, 11, 14], 'dom9': [0, 4, 7, 10, 14], 'min9': [0, 3, 7, 10, 14],
-        'V7alt': [0, 4, 10] // Root, 3rd, b7 - alterations (b9, #9, b5, #5) added by context/improviser
-    };
-    const intervals = CHORD_INTERVALS[quality] || CHORD_INTERVALS['maj'];
-    const rootStd = standardizeNoteName(root);
-    const rootIndex = NOTES.indexOf(rootStd);
-    if (rootIndex === -1) return [rootStd];
-    return intervals.map(interval => NOTES[(rootIndex + interval) % 12]);
-}
-
 function getChordFromFunction(romanNumeralInput, key = "C") {
     const romanMap = { "I":0, "II":2, "III":4, "IV":5, "V":7, "VI":9, "VII":11 };
     const qualityMap = {
@@ -1367,46 +1349,71 @@ function getChordFromFunction(romanNumeralInput, key = "C") {
         "m7b5": "min7b5", "ø": "min7b5",
         "dim7": "dim7", "°7": "dim7",
         "6": "6", "m6": "m6",
-        "maj": "maj", "m": "min", "min": "min",
+        "maj": "maj", "m": "min", "min": "min", // Ensure 'min' maps to 'min'
         "alt": "V7alt", "7alt": "V7alt"
     };
 
+    // Ensure romanNumeralInput is a string to prevent errors if it's not
+    if (typeof romanNumeralInput !== 'string') {
+        console.warn(`${LOG_PREFIX} Invalid romanNumeralInput (not a string):`, romanNumeralInput);
+        return { root: key, quality: 'maj7' }; // Fallback
+    }
+
     const match = romanNumeralInput.match(/([b#♭♯]*)?([IViv]+)(.*)/i);
-    if (!match) return { root: key, quality: 'maj7' }; // Fallback
+    if (!match) {
+        console.warn(`${LOG_PREFIX} Could not parse Roman numeral:`, romanNumeralInput);
+        return { root: key, quality: 'maj7' }; // Fallback
+    }
 
     let [, accidental, numeralStr, suffix] = match;
-    let quality = 'maj7'; // Default
+    let quality = 'maj7'; // Default quality
     let isExplicitlyMinor = numeralStr === numeralStr.toLowerCase();
 
     // Determine quality from suffix first
-    for (const [qSuffix, qInternal] of Object.entries(qualityMap)) {
-        if (suffix.includes(qSuffix)) {
-            quality = qInternal;
-            break;
+    // ***** MODIFICATION START *****
+    if (typeof suffix === 'string' && suffix.length > 0) { // Check if suffix is a non-empty string
+        for (const [qSuffix, qInternal] of Object.entries(qualityMap)) {
+            if (suffix.includes(qSuffix)) {
+                quality = qInternal;
+                break;
+            }
         }
     }
+    // ***** MODIFICATION END *****
+
     // If no suffix quality, infer from Roman numeral case
-    if (quality === 'maj7' && isExplicitlyMinor && !suffix) { // Suffix check prevents "Im7" becoming "min"
-        quality = 'min';
-    } else if (quality === 'maj7' && !isExplicitlyMinor && !suffix) {
-        quality = 'maj';
+    // This logic might need refinement based on how you want to interpret suffixes vs. numeral case
+    if (quality === 'maj7') { // Only if suffix didn't set a quality
+        if (isExplicitlyMinor && (!suffix || suffix.length === 0)) { // Suffix check prevents "Im7" becoming "min"
+            quality = 'min';
+        } else if (!isExplicitlyMinor && (!suffix || suffix.length === 0)) {
+            quality = 'maj';
+        }
     }
 
 
     let semitoneOffset = romanMap[numeralStr.toUpperCase()];
-    if (semitoneOffset === undefined) return { root: key, quality: 'maj7' };
+    if (semitoneOffset === undefined) {
+        console.warn(`${LOG_PREFIX} Unknown Roman numeral base:`, numeralStr);
+        return { root: key, quality: 'maj7' };
+    }
 
-    if (accidental.includes('b') || accidental.includes('♭')) semitoneOffset--;
-    if (accidental.includes('#') || accidental.includes('♯')) semitoneOffset++;
+    if (accidental) { // Ensure accidental is not null/undefined before using includes
+        if (accidental.includes('b') || accidental.includes('♭')) semitoneOffset--;
+        if (accidental.includes('#') || accidental.includes('♯')) semitoneOffset++;
+    }
+
 
     const keyStd = standardizeNoteName(key);
     const keyIndex = NOTES.indexOf(keyStd);
-    if (keyIndex === -1) return { root: key, quality: 'maj7' };
+    if (keyIndex === -1) {
+        console.warn(`${LOG_PREFIX} Unknown key for chord function:`, key);
+        return { root: key, quality: 'maj7' };
+    }
 
     const rootNote = NOTES[(keyIndex + semitoneOffset + 12) % 12];
     return { root: rootNote, quality: quality };
 }
-
 function getQualityValue(quality) { // Maps internal quality names to select values if different
     const map = { 'maj': 'major', 'min': 'minor', 'V7alt': 'dom7' }; // Example, expand as needed
     return map[quality] || quality;
