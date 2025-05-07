@@ -511,7 +511,7 @@ body.dark-mode-3 .volume-control input[type="range"] {
 body.dark-mode .volume-control input[type="range"]::-webkit-slider-runnable-track,
 body.dark-mode-2 .volume-control input[type="range"]::-webkit-slider-runnable-track,
 body.dark-mode-3 .volume-control input[type="range"]::-webkit-slider-runnable-track {
-    background: var(--dm1-bg-alt, --dm2-bg-alt, --dm3-bg-alt);
+    background: var(--dm1-bg-alt, var(--dm2-bg-alt, var(--dm3-bg-alt)));
     height: 8px;
     border-radius: 4px;
 }
@@ -524,15 +524,15 @@ body.dark-mode-3 .volume-control input[type="range"]::-webkit-slider-thumb {
     width: 16px;
     height: 16px;
     border-radius: 50%;
-    background: var(--dm1-accent, --dm2-accent, --dm3-accent);
-    border: 1px solid var(--dm1-accent-hover, --dm2-accent-hover, --dm3-accent-hover);
+    background: var(--dm1-accent, var(--dm2-accent, var(--dm3-accent)));
+    border: 1px solid var(--dm1-accent-hover, var(--dm2-accent-hover, var(--dm3-accent-hover)));
     margin-top: -4px;
 }
 
 body.dark-mode .volume-control input[type="range"]::-moz-range-track,
 body.dark-mode-2 .volume-control input[type="range"]::-moz-range-track,
 body.dark-mode-3 .volume-control input[type="range"]::-moz-range-track {
-    background: var(--dm1-bg-alt, --dm2-bg-alt, --dm3-bg-alt);
+    background: var(--dm1-bg-alt, var(--dm2-bg-alt, var(--dm3-bg-alt)));
     height: 8px;
     border-radius: 4px;
 }
@@ -543,8 +543,8 @@ body.dark-mode-3 .volume-control input[type="range"]::-moz-range-thumb {
     width: 16px;
     height: 16px;
     border-radius: 50%;
-    background: var(--dm1-accent, --dm2-accent, --dm3-accent);
-    border: 1px solid var(--dm1-accent-hover, --dm2-accent-hover, --dm3-accent-hover);
+    background: var(--dm1-accent, var(--dm2-accent, var(--dm3-accent)));
+    border: 1px solid var(--dm1-accent-hover, var(--dm2-accent-hover, var(--dm3-accent-hover)));
 }
         
     </style>
