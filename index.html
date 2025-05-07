@@ -3299,18 +3299,22 @@ function setupEventListeners() {
  *           updateLoadingStatus, log, TUNINGS, UI.elements
  */
 async function initializeApp() {
-    UI.init();
     createBeats();
     createFretboard(UI.elements.chordFretboard, TUNINGS.standard);
-    loadProgression(UI.elements.progressionSelect.value);
     initializeFretFlow();
     setupEventListeners();
-    UI.elements.reverbDialValue.textContent = UI.elements.reverbDial.value; // Initialize reverb dial value
+
+    UI.init(); // moved here after DOM-dependent setup
+    loadProgression(UI.elements.progressionSelect.value); // now safe
+
+    UI.elements.reverbDialValue.textContent = UI.elements.reverbDial.value;
     updateLoadingStatus("Application initialized");
+
     setTimeout(() => {
         const indicator = document.getElementById('loading-indicator');
         if (indicator) indicator.remove();
     }, 1000);
+
     log("Application initialized");
 }
 
