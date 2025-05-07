@@ -718,14 +718,7 @@ function debounce(func, wait) {
     };
 }
 
-const NOTES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
-        function standardizeNoteName(note) {
-            const sharpToFlat = {
-                'C#': 'Db', 'D#': 'Eb', 'F#': 'Gb', 'G#': 'Ab', 'A#': 'Bb'
-            };
-            return sharpToFlat[note] || note;
-        }
-        
+const NOTES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];    
 const ALL_NOTES = [
   'a', 'as', 'b', 'c', 'cs', 'd', 'ds', 'e', 'f', 'fs', 'g', 'gs'
 ];
@@ -1581,18 +1574,6 @@ function createQualityOptions(selectedQuality) {
             `<option value="${quality.value}" ${quality.value === selectedQuality ? 'selected' : ''}>${quality.label}</option>`
         )
         .join('');
-}
-
-function suggestScaleForQuality(quality) {
-    const scaleMap = {
-        major: 'major',
-        minor: 'minor',
-        dom7: 'mixolydian',
-        min7: 'dorian',
-        maj7: 'major',
-        min7b5: 'locrian'
-    };
-    return scaleMap[quality] || 'major';
 }
 
 function updateChordProgression(measure) {
@@ -3195,18 +3176,6 @@ async function initializeApp() {
         // Show error to user
         alert('There was an error initializing the application. Some features may not work properly. Please refresh the page and try again.');
     }
-}
-
-/**
- * Handles DOM content loaded event and initializes the application
- */
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', async () => {
-        await initializeAppWithRetries();
-    });
-} else {
-    // DOM already loaded, run initialization directly
-    initializeAppWithRetries();
 }
 
 async function initializeAppWithRetries() {
