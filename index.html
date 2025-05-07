@@ -3200,20 +3200,30 @@ async function initializeApp() {
 /**
  * Handles DOM content loaded event and initializes the application
  */
-function handleDOMContentLoaded() {
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', async () => {
+        await initializeAppWithRetries();
+    });
+} else {
+    // DOM already loaded, run initialization directly
+    initializeAppWithRetries();
+}
+
+async function initializeAppWithRetries() {
     const maxRetries = 3;
     let retryCount = 0;
 
-    async function tryInitialize() {
+    while (retryCount < maxRetries) {
         try {
             await initializeApp();
+            return; // Exit if initialization succeeds
         } catch (error) {
             retryCount++;
             console.error(`Initialization attempt ${retryCount} failed:`, error);
 
             if (retryCount < maxRetries) {
                 updateLoadingStatus(`Retrying initialization (attempt ${retryCount + 1}/${maxRetries})...`);
-                setTimeout(tryInitialize, 1000); // Wait 1 second before retrying
+                await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retrying
             } else {
                 updateLoadingStatus("Failed to initialize after multiple attempts");
                 console.error("Failed to initialize after", maxRetries, "attempts");
@@ -3221,16 +3231,6 @@ function handleDOMContentLoaded() {
             }
         }
     }
-
-    // Start initialization process
-    tryInitialize();
-} // <-- Add this closing curly brace
-// Add event listener with error boundary
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', handleDOMContentLoaded);
-} else {
-    // DOM already loaded, run initialization directly
-    handleDOMContentLoaded();
 }
 
 // Add window error handler for uncaught errors
