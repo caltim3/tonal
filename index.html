@@ -1326,7 +1326,7 @@ const AudioContextManager = {
             const batch = allSampleFiles.slice(i, i + batchSize);
             await Promise.all(batch.map(async file => {
                 try {
-                    const response = await fetch(`/samples/${file}`);
+                    const response = await fetch(`/${file}`);
                     const arrayBuffer = await response.arrayBuffer();
                     this.pianoSampleBuffers[file] = await this.context.decodeAudioData(arrayBuffer);
                     loaded++;
