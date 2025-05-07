@@ -1331,15 +1331,120 @@ setupReverb: async function() {
         this.currentChordSources = [];
     }
 };
+async function playMetronomeSound(baseBeatVolume) {
+    await AudioContextManager.ensureAudioContext();
+    if (!AudioContextManager.samplesFullyLoaded) {
+        // console.warn(`${LOG_PREFIX} Samples not fully loaded. Skipping metronome sound.`); // Can be noisy
+        return;
+    }
 
+    const metronomeVolumeSetting = parseFloat(UI.elements.metronomeVolume?.value || 0.7);
+    const combinedVolume = baseBeatVolume * metronomeVolumeSetting;
+    if (combinedVolume <= 0) return;
+
+    const soundType = UI.elements.soundType?.value || 'click';
+    const beatElement = document.querySelector(`.beat[data-beat="${AppState.currentBeat}"]`);
+    if (!beatElement) {
+        console.warn(`${LOG_PREFIX} No beat element found for beat: ${AppState.currentBeat}`);
+        return;
+    }
+
+    const drumSoundKeys = beatElement.dataset.sound?.split(',').map(s => s.trim()).filter(s => s) || ['click'];
+    const accentBoost = parseFloat(UI.elements.accentIntensity?.value || 1.0); // Default to 1.0 (no boost)
+    const isStrongBeat = parseFloat(beatElement.dataset.baseVolume) >= 1.0; // Assuming 1.0 is a strong beat marker
+
+    for (let soundKey of drumSoundKeys) {
+        if (soundKey === 'silent') continue;
+
+        let bufferKeyToPlay;
+        let soundSpecificVolumeAdjustment = 1.0;
+
+        if (soundType === 'drums') {
+            if (!drumSoundSets || currentDrumSetIndex === undefined || !drumSoundSets[currentDrumSetIndex]) {
+                console.warn(`${LOG_PREFIX} Drum sets not properly initialized.`);
+                bufferKeyToPlay = `metronome_click`; // Fallback to click if drums misconfigured
+            } else {
+                const currentSet = drumSoundSets[currentDrumSetIndex];
+                const kitNameKey = currentSet.name.replace(/\s+/g, '_').toLowerCase();
+                bufferKeyToPlay = `drum_${kitNameKey}_${soundKey}`;
+
+                if (!AudioContextManager.soundBuffers[bufferKeyToPlay]) {
+                    console.warn(`${LOG_PREFIX} Sound '${soundKey}' not found in kit '${currentSet.name}'. Trying default kit.`);
+                    bufferKeyToPlay = `drum_default_kit_${soundKey}`; // Fallback to default kit
+                    if (!AudioContextManager.soundBuffers[bufferKeyToPlay]) {
+                        console.warn(`${LOG_PREFIX} Sound '${soundKey}' not found in default kit. Skipping this drum sound.`);
+                        continue; // Skip if not in default kit either
+                    }
+                }
+            }
+            // Volume adjustments for specific drum sounds
+            if (soundKey === 'kick') soundSpecificVolumeAdjustment = 1.1;
+            else if (soundKey === 'snare') soundSpecificVolumeAdjustment = 1.0;
+            else if (soundKey === 'hihat' || soundKey === 'closedhat') soundSpecificVolumeAdjustment = 0.7;
+            // Add other adjustments as needed
+        } else { // 'click' or 'woodblock'
+            bufferKeyToPlay = `metronome_${soundType}`;
+            if (!AudioContextManager.soundBuffers[bufferKeyToPlay]) {
+                 console.warn(`${LOG_PREFIX} Metronome sound '${bufferKeyToPlay}' not loaded. Skipping.`);
+                 continue;
+            }
+        }
+
+        let finalVolume = combinedVolume * soundSpecificVolumeAdjustment;
+        if (isStrongBeat && (soundKey === 'kick' || soundKey === 'snare' || soundType === 'click' || soundType === 'woodblock')) {
+            finalVolume = Math.min(finalVolume * accentBoost, 1.0); // Apply accent, cap at 1.0
+        }
+        finalVolume = Math.max(0, Math.min(finalVolume, 1.0)); // Ensure volume is [0, 1]
+
+        const source = AudioContextManager._playBuffer(bufferKeyToPlay, finalVolume, AudioContextManager.context.destination);
+        
+        if (source && soundType === 'drums' && AudioContextManager.reverbNode && AudioContextManager.reverbAmount > 0) {
+            const reverbGain = AudioContextManager.context.createGain();
+            reverbGain.gain.value = AudioContextManager.reverbAmount * 0.3; // Drums reverb mix, adjust as needed
+            
+            // Connect the source to the reverb send.
+            // _playBuffer already connects source (via its own gain) to context.destination (dry signal).
+            // This creates a parallel path for the wet signal.
+            source.connect(reverbGain); 
+            reverbGain.connect(AudioContextManager.reverbNode);
+            // AudioContextManager.reverbNode should already be connected to context.destination in setupReverb.
+            // So, this line is likely redundant here: AudioContextManager.reverbNode.connect(AudioContextManager.context.destination);
+        }
+    }
+}
 // --- Chord and Scale Utilities ---
 function getNoteFromScaleDegree(scaleDegree, key, scaleIntervals = SCALES.major) {
     const rootIndex = NOTES.indexOf(standardizeNoteName(key));
-    if (rootIndex === -1) return null;
+    if (rootIndex === -1) {
+        console.warn(`${LOG_PREFIX} Invalid key for getNoteFromScaleDegree: ${key}`);
+        return null; // Good handling for invalid key
+    }
+    // Assuming scaleDegree is 0-indexed (0 for 1st degree, 1 for 2nd, etc.)
+    // If scaleDegree is 1-indexed, you'd use (scaleDegree - 1)
     const offset = scaleIntervals[scaleDegree % scaleIntervals.length];
-    return NOTES[(rootIndex + offset) % 12];
+    return NOTES[(rootIndex + offset + 12) % 12]; // Added +12 to ensure positive result before modulo
 }
+function getChordNotes(root, quality) {
+    const CHORD_INTERVALS = {
+        'maj': [0, 4, 7], 'min': [0, 3, 7], 'dim': [0, 3, 6], 'aug': [0, 4, 8],
+        'sus4': [0, 5, 7], 'sus2': [0, 2, 7],
+        'maj7': [0, 4, 7, 11], 'dom7': [0, 4, 7, 10], 'min7': [0, 3, 7, 10],
+        'dim7': [0, 3, 6, 9], 'min7b5': [0, 3, 6, 10], 'aug7': [0, 4, 8, 10], // aka 7#5
+        '6': [0, 4, 7, 9], 'm6': [0, 3, 7, 9], // Major 6th and Minor 6th
+        'maj9': [0, 4, 7, 11, 14], 'dom9': [0, 4, 7, 10, 14], 'min9': [0, 3, 7, 10, 14],
+        'V7alt': [0, 4, 10] // Root, 3rd, b7 - alterations (b9, #9, b5, #5) added by context/improviser
+    };
+    const intervals = CHORD_INTERVALS[quality] || CHORD_INTERVALS['maj']; // Fallback to major if quality unknown
+    const rootStd = standardizeNoteName(root);
+    const rootIndex = NOTES.indexOf(rootStd);
 
+    if (rootIndex === -1) {
+        console.warn(`${LOG_PREFIX} Unknown root note for getChordNotes:`, root);
+        return [rootStd]; // Return array with just root if root not in NOTES
+    }
+    return intervals.map(interval => NOTES[(rootIndex + interval) % 12]);
+}
+        
 function getChordFromFunction(romanNumeralInput, key = "C") {
     const romanMap = { "I":0, "II":2, "III":4, "IV":5, "V":7, "VI":9, "VII":11 };
     const qualityMap = {
@@ -1489,57 +1594,60 @@ async function playChord(root, quality, durationMs = 2000) {
     });
 }
 
-async function playMetronomeSound(baseBeatVolume) {
+async function playChord(root, quality, durationMs = 2000) {
     await AudioContextManager.ensureAudioContext();
-    if (!AudioContextManager.samplesFullyLoaded) return;
+    if (!AudioContextManager.samplesFullyLoaded) {
+        console.warn(`${LOG_PREFIX} Samples not fully loaded. Skipping playChord.`);
+        return;
+    }
 
-    const metronomeVolumeSetting = parseFloat(UI.elements.metronomeVolume?.value || 0.7);
-    const combinedVolume = baseBeatVolume * metronomeVolumeSetting;
-    if (combinedVolume <= 0) return;
+    AudioContextManager.stopCurrentChord(); 
 
-    const soundType = UI.elements.soundType?.value || 'click';
-    const beatElement = document.querySelector(`.beat[data-beat="${AppState.currentBeat}"]`);
-    if (!beatElement) return;
+    const chordNotes = getChordNotes(root, quality); // This requires getChordNotes to be defined
+    const chordVolume = parseFloat(UI.elements.chordVolume?.value || 0.5);
 
-    const drumSoundKeys = beatElement.dataset.sound?.split(',') || ['click'];
-    const accentBoost = parseFloat(UI.elements.accentIntensity?.value || 1.0);
-    const isStrongBeat = parseFloat(beatElement.dataset.baseVolume) >= 1.0;
+    if (chordVolume <= 0 || !chordNotes || chordNotes.length === 0) {
+        if (chordVolume <= 0) console.log(`${LOG_PREFIX} Chord volume is 0, not playing.`);
+        if (!chordNotes || chordNotes.length === 0) console.warn(`${LOG_PREFIX} No notes found for chord ${root}${quality}.`);
+        return;
+    }
 
-    for (let soundKey of drumSoundKeys) {
-        soundKey = soundKey.trim();
-        if (soundKey === 'silent') continue;
-
-        let bufferKeyToPlay;
-        let soundSpecificVolumeAdjustment = 1.0;
-
-        if (soundType === 'drums') {
-            const currentSet = drumSoundSets[currentDrumSetIndex];
-            const kitNameKey = currentSet.name.replace(/\s+/g, '_').toLowerCase();
-            bufferKeyToPlay = `drum_${kitNameKey}_${soundKey}`;
-            if (!AudioContextManager.soundBuffers[bufferKeyToPlay]) { // Fallback to default kit if specific sound not found
-                 bufferKeyToPlay = `drum_default_kit_${soundKey}`;
-            }
-            if (soundKey === 'kick') soundSpecificVolumeAdjustment = 1.1;
-            else if (soundKey === 'snare') soundSpecificVolumeAdjustment = 1.0;
-            else if (soundKey === 'hihat') soundSpecificVolumeAdjustment = 0.7;
-        } else { // 'click' or 'woodblock'
-            bufferKeyToPlay = `metronome_${soundType}`;
-        }
-
-        let finalVolume = combinedVolume * soundSpecificVolumeAdjustment;
-        if (isStrongBeat && (soundKey === 'kick' || soundKey === 'snare' || soundType === 'click' || soundType === 'woodblock')) {
-            finalVolume = Math.min(finalVolume * accentBoost, 1.0);
+    chordNotes.forEach((note, index) => {
+        // Voicing logic:
+        // Original: const baseOctave = (index === 0 && NOTES.indexOf(note) < NOTES.indexOf('F')) ? 3 : 3;
+        // This always results in baseOctave = 3.
+        // If you intended roots below F to be in octave 2:
+        let baseOctave = 3;
+        if (index === 0 && NOTES.indexOf(note) < NOTES.indexOf('F')) {
+            baseOctave = 2; // Example: Lower roots (C, D, E) slightly
+        } else {
+            baseOctave = 3;
         }
         
-        const source = AudioContextManager._playBuffer(bufferKeyToPlay, finalVolume, AudioContextManager.context.destination);
-        if (source && soundType === 'drums' && AudioContextManager.reverbNode && AudioContextManager.reverbAmount > 0) {
-            const reverbGain = AudioContextManager.context.createGain();
-            reverbGain.gain.value = AudioContextManager.reverbAmount * 0.3; // Drums reverb mix
-            source.connect(reverbGain); // This connection might be tricky if source is already connected
-            reverbGain.connect(AudioContextManager.reverbNode);
-            AudioContextManager.reverbNode.connect(AudioContextManager.context.destination);
+        // Ensure the first note (root) is not placed higher than subsequent notes due to octave wrapping.
+        // This logic tries to keep notes generally ascending from the root.
+        let octave = baseOctave;
+        if (index > 0 && NOTES.indexOf(note) < NOTES.indexOf(chordNotes[0])) {
+             octave = baseOctave + 1; // If current note is "before" root in NOTES array, push to higher octave
         }
-    }
+
+
+        const sampleNoteName = DISPLAY_TO_SAMPLE_NOTE_MAP[note];
+        if (!sampleNoteName) {
+            console.warn(`${LOG_PREFIX} No sample mapping for display note: ${note}`);
+            return; // Skip this note if no mapping
+        }
+        
+        // Clamp octave to available piano octaves
+        const finalOctave = Math.min(PIANO_OCTAVES[PIANO_OCTAVES.length-1], Math.max(PIANO_OCTAVES[0], octave));
+        const noteKey = `${sampleNoteName}${finalOctave}`;
+        
+        const source = AudioContextManager.playPianoNote(noteKey, chordVolume * (0.8 + Math.random() * 0.2), durationMs);
+        if (source) {
+            // Storing only the source is fine if stopCurrentChord only uses source.stop() and source.disconnect()
+            AudioContextManager.currentChordSources.push({source: source, gainNode: null}); 
+        }
+    });
 }
 
 async function playDrumSamplePreview(drumType) { // For clicking drum set buttons
