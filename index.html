@@ -2898,28 +2898,26 @@ function attachNoteClickHandlers(fretboard) {
 // Log initialization
 log("FretFlow initialized with 4 independent fretboards");
 
-function addFirstChordListener() {
+// Refactored function to update the fretboard
+function updateFretboardFromFirstMeasure() {
     const firstMeasure = UI.elements.measures?.firstElementChild;
     if (firstMeasure) {
-        const scaleRoot = firstMeasure.querySelector(".second-key");
-        const scaleType = firstMeasure.querySelector(".scale-select");
-        const updateFretboard = () => {
-            const tuning = TUNINGS[UI.elements.chordTuning.value];
-            updateFretboardNotes(UI.elements.chordFretboard, scaleRoot.value, scaleType.value, tuning);
-        };
-        scaleRoot.addEventListener("change", updateFretboard);
-        scaleType.addEventListener("change", updateFretboard);
+        const scaleRoot = firstMeasure.querySelector(".second-key")?.value;
+        const scaleType = firstMeasure.querySelector(".scale-select")?.value;
+        const tuning = TUNINGS[UI.elements.chordTuning.value];
+        if (scaleRoot && scaleType && tuning) {
+            updateFretboardNotes(UI.elements.chordFretboard, scaleRoot, scaleType, tuning);
+        } else {
+            console.warn("Missing scale root, scale type, or tuning for fretboard update.");
+        }
     }
 }
 
-/**
- * Sets up event listeners for all UI interactions in the Bebop Blueprint application.
- * Consolidated all listeners to prevent duplicates and added input validation.
- */
+// Consolidated event listener setup
 function setupEventListeners() {
     // Early validation
     if (!UI.elements) {
-        console.error('UI.elements is undefined');
+        console.error("UI.elements is undefined");
         return;
     }
 
@@ -2934,28 +2932,31 @@ function setupEventListeners() {
     };
 
     // Audio initialization
-    document.addEventListener('click', async () => {
-        try {
-            await AudioContextManager.initialize();
-        } catch (error) {
-            console.error('Failed to initialize audio:', error);
-        }
-    }, { once: true });
+    document.addEventListener(
+        "click",
+        async () => {
+            try {
+                await AudioContextManager.initialize();
+            } catch (error) {
+                console.error("Failed to initialize audio:", error);
+            }
+        },
+        { once: true }
+    );
 
     // Playback controls
-    addListener('startStopButton', 'click', () => {
+    addListener("startStopButton", "click", () => {
         AppState.isPlaying ? stopPlayback() : startPlayback();
     });
 
     // Progression and key controls
-    addListener('progressionSelect', 'change', (e) => loadProgression(e.target.value));
-    
-    addListener('keySelect', 'change', (e) => {
+    addListener("progressionSelect", "change", (e) => loadProgression(e.target.value));
+    addListener("keySelect", "change", (e) => {
         const progressionValue = UI.elements.progressionSelect?.value;
         if (progressionValue) {
             loadProgression(progressionValue, e.target.value);
             updateProgressionKey(e.target.value);
-            initializeFretFlow();
+            updateFretboardFromFirstMeasure();
         }
     });
 
@@ -2965,18 +2966,17 @@ function setupEventListeners() {
         AppState.tempo = Math.max(40, Math.min(220, tempo));
         UI.elements.tempo.value = AppState.tempo;
         UI.elements.tempoDisplay.textContent = `${AppState.tempo} BPM`;
-        
+
         if (AppState.isPlaying) {
             stopPlayback();
             startPlayback();
         }
         log(`Tempo set to ${AppState.tempo} BPM`);
     };
-
-    addListener('tempo', 'input', handleTempoChange);
+    addListener("tempo", "input", handleTempoChange);
 
     // Tap tempo
-    addListener('tapTempo', 'click', () => {
+    addListener("tapTempo", "click", () => {
         const now = Date.now();
         if (!AppState.lastTap) {
             AppState.lastTap = now;
@@ -2987,32 +2987,29 @@ function setupEventListeners() {
         if (interval < 2000) {
             const bpm = Math.round(60000 / interval);
             AppState.tempo = Math.max(40, Math.min(220, bpm));
-            if (UI.elements.tempo && UI.elements.tempoDisplay) {
-                UI.elements.tempo.value = AppState.tempo;
-                UI.elements.tempoDisplay.textContent = `${AppState.tempo} BPM`;
-                
-                if (AppState.isPlaying) {
-                    stopPlayback();
-                    startPlayback();
-                }
+            UI.elements.tempo.value = AppState.tempo;
+            UI.elements.tempoDisplay.textContent = `${AppState.tempo} BPM`;
+
+            if (AppState.isPlaying) {
+                stopPlayback();
+                startPlayback();
             }
         }
         AppState.lastTap = now;
     });
 
     // Sound controls
-    addListener('timeSignature', 'change', () => {
+    addListener("timeSignature", "change", () => {
         createBeats();
         if (AppState.isPlaying) {
             stopPlayback();
             startPlayback();
         }
     });
-
-    addListener('soundType', 'change', (e) => {
+    addListener("soundType", "change", (e) => {
         if (UI.elements.drumSetToggleBtn) {
-            UI.elements.drumSetToggleBtn.style.display = 
-                e.target.value === 'drums' ? 'inline-block' : 'none';
+            UI.elements.drumSetToggleBtn.style.display =
+                e.target.value === "drums" ? "inline-block" : "none";
         }
         createBeats();
         onMetronomeInstrumentChange(e.target.value);
@@ -3020,18 +3017,17 @@ function setupEventListeners() {
 
     // Volume controls
     const createVolumeHandler = (elementKey, label) => {
-        addListener(elementKey, 'input', (e) => {
+        addListener(elementKey, "input", (e) => {
             const volume = Math.min(Math.max(parseFloat(e.target.value) || 0, 0), 1);
             log(`${label} volume set to ${volume}`);
         });
     };
-
-    createVolumeHandler('metronomeVolume', 'Metronome');
-    createVolumeHandler('chordFretboardVolume', 'Chord fretboard');
-    createVolumeHandler('chordVolume', 'Chord');
+    createVolumeHandler("metronomeVolume", "Metronome");
+    createVolumeHandler("chordFretboardVolume", "Chord fretboard");
+    createVolumeHandler("chordVolume", "Chord");
 
     // Effects controls
-    addListener('reverbDial', 'input', (e) => {
+    addListener("reverbDial", "input", (e) => {
         const value = parseInt(e.target.value, 10) || 0;
         AudioContextManager.reverbAmount = value / 100;
         if (UI.elements.reverbDialValue) {
@@ -3040,111 +3036,92 @@ function setupEventListeners() {
     });
 
     // Visual mode controls
-    addListener('darkModeToggle', 'click', () => {
-        const modes = ['', 'dark-mode', 'dark-mode-2', 'dark-mode-3'];
-        const currentMode = modes.findIndex(mode => 
-            mode ? document.body.classList.contains(mode) : true);
+    addListener("darkModeToggle", "click", () => {
+        const modes = ["", "dark-mode", "dark-mode-2", "dark-mode-3"];
+        const currentMode = modes.findIndex((mode) =>
+            mode ? document.body.classList.contains(mode) : true
+        );
         const nextMode = (currentMode + 1) % modes.length;
 
         // Remove all modes
         document.body.classList.remove(...modes.filter(Boolean));
-        UI.elements.darkModeToggle.classList.remove('active', 'active-2', 'active-3');
+        UI.elements.darkModeToggle.classList.remove("active", "active-2", "active-3");
 
         // Add new mode
         if (nextMode > 0) {
             document.body.classList.add(modes[nextMode]);
-            UI.elements.darkModeToggle.classList.add(`active${nextMode > 1 ? '-' + nextMode : ''}`);
+            UI.elements.darkModeToggle.classList.add(`active${nextMode > 1 ? "-" + nextMode : ""}`);
         }
     });
 
     // Chord controls
-    addListener('chordsEnabled', 'click', () => {
+    addListener("chordsEnabled", "click", () => {
         AppState.chordsEnabled = !AppState.chordsEnabled;
-        UI.elements.chordsEnabled.textContent = 
-            AppState.chordsEnabled ? 'Chords Enabled' : 'Chords Disabled';
-        UI.elements.chordsEnabled.classList.toggle('active', AppState.chordsEnabled);
+        UI.elements.chordsEnabled.textContent = AppState.chordsEnabled
+            ? "Chords Enabled"
+            : "Chords Disabled";
+        UI.elements.chordsEnabled.classList.toggle("active", AppState.chordsEnabled);
     });
 
     // Tuning controls
-    addListener('chordTuning', 'change', () => {
-        const tuning = TUNINGS[UI.elements.chordTuning.value];
-        if (!tuning) {
-            console.error(`Invalid tuning: ${UI.elements.chordTuning.value}`);
-            return;
-        }
-
-        const updateFretboardIfPossible = () => {
-            const firstMeasure = UI.elements.measures?.firstElementChild;
-            if (firstMeasure) {
-                const scaleRoot = firstMeasure.querySelector('.second-key')?.value;
-                const scaleType = firstMeasure.querySelector('.scale-select')?.value;
-                if (scaleRoot && scaleType) {
-                    updateFretboardNotes(UI.elements.chordFretboard, scaleRoot, scaleType, tuning);
-                }
-            }
-        };
-
-        updateFretboardIfPossible();
+    addListener("chordTuning", "change", () => {
+        updateFretboardFromFirstMeasure();
         initializeFretFlow();
     });
 
     // Measure controls
- if (UI.elements.measures) {
-    UI.elements.measures.addEventListener('change', (e) => {
-        if (!e.target.matches('.root-note, .chord-quality, .second-key, .scale-select')) return;
+    if (UI.elements.measures) {
+        UI.elements.measures.addEventListener("change", (e) => {
+            if (!e.target.matches(".root-note, .chord-quality, .second-key, .scale-select")) return;
 
-        const measure = e.target.closest('.measure');
-        if (!measure) return;
+            const measure = e.target.closest(".measure");
+            if (!measure) return;
 
-        const controls = {
-            root: measure.querySelector('.root-note')?.value,
-            quality: measure.querySelector('.chord-quality')?.value,
-            secondKey: measure.querySelector('.second-key'),
-            scale: measure.querySelector('.scale-select')
-        };
+            const controls = {
+                root: measure.querySelector(".root-note")?.value,
+                quality: measure.querySelector(".chord-quality")?.value,
+                secondKey: measure.querySelector(".second-key"),
+                scale: measure.querySelector(".scale-select"),
+            };
 
-        if (Object.values(controls).every(control => control && (typeof control !== 'object' || control.value))) {
-            // Update second-key and scale when root or quality changes
-            if (e.target.matches('.root-note, .chord-quality')) {
-                controls.secondKey.value = controls.root;
-                controls.scale.value = suggestScaleForQuality(controls.quality);
-            }
-
-            // Update fretboard if this is the first measure
-            if (measure === UI.elements.measures.firstElementChild) {
-                const tuning = TUNINGS[UI.elements.chordTuning.value];
-                if (tuning) {
-                    updateFretboardNotes(
-                        UI.elements.chordFretboard,
-                        controls.secondKey.value,
-                        controls.scale.value,
-                        tuning
-                    );
+            if (
+                Object.values(controls).every(
+                    (control) => control && (typeof control !== "object" || control.value)
+                )
+            ) {
+                // Update second-key and scale when root or quality changes
+                if (e.target.matches(".root-note, .chord-quality")) {
+                    controls.secondKey.value = controls.root;
+                    controls.scale.value = suggestScaleForQuality(controls.quality);
                 }
+
+                // Update fretboard if this is the first measure
+                if (measure === UI.elements.measures.firstElementChild) {
+                    updateFretboardFromFirstMeasure();
+                }
+
+                log(`Updated measure controls: ${controls.root} ${controls.quality}`);
             }
+        });
+    }
 
-            log(`Updated measure controls: ${controls.root} ${controls.quality}`);
-        }
-    });
-}
+    // Measure management
+    if (UI.elements.addMeasureButton) {
+        UI.elements.addMeasureButton.addEventListener("click", () => {
+            addMeasure();
+            log("Added new measure");
+        });
+    }
 
-// Measure management
-if (UI.elements.addMeasureButton) {
-    UI.elements.addMeasureButton.addEventListener('click', () => {
-        addMeasure();
-        log('Added new measure');
-    });
-}
+    if (UI.elements.removeMeasureButton) {
+        UI.elements.removeMeasureButton.addEventListener("click", () => {
+            removeMeasure();
+            log("Removed last measure");
+        });
+    }
 
-if (UI.elements.removeMeasureButton) {
-    UI.elements.removeMeasureButton.addEventListener('click', () => {
-        removeMeasure();
-        log('Removed last measure');
-    });
-}
-
-log("Event listeners set up");
-    
+    log("Event listeners set up");
+} 
 
 async function initializeApp() {
     try {
