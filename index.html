@@ -1854,165 +1854,332 @@ function toggleBeatState(beatElement, timeSignature, soundType) { /* ... Your ex
     beatElement.style.backgroundColor = nextState.color;
 }
 
+/**
+ * Plays the sound for the current beat, updates UI (active beat, active measure),
+ * and handles chord/fretboard updates based on the current measure's DOM elements.
+ * This function is intended to be called at each "tick" of the metronome.
+ */
 async function playBeat() {
+    if (!AppState.isPlaying) return; // Stop if playback was cancelled
+
     const beatsContainer = UI.elements.beatsContainer || document.querySelector('.beats-container');
     const allBeatElements = beatsContainer?.querySelectorAll('.beat');
-    if (!allBeatElements || allBeatElements.length === 0) return;
 
-    allBeatElements.forEach(b => b.classList.remove('active')); // Clear previous active
-    const currentBeatElement = allBeatElements[AppState.currentBeat];
+    if (!allBeatElements || allBeatElements.length === 0) {
+        console.warn(`${LOG_PREFIX} No beat elements found in beatsContainer.`);
+        return;
+    }
+
+    // Update active beat UI
+    allBeatElements.forEach(b => b.classList.remove('active')); // Clear previous active beat
+    const currentBeatVisualIndex = AppState.currentBeat % allBeatElements.length; // Ensure index is within bounds
+    const currentBeatElement = allBeatElements[currentBeatVisualIndex];
 
     if (currentBeatElement) {
         currentBeatElement.classList.add('active');
         const baseBeatVol = parseFloat(currentBeatElement.dataset.baseVolume) || 0;
-        if (baseBeatVol > 0) await playMetronomeSound(baseBeatVol);
+        if (baseBeatVol > 0 && UI.elements.metronomeVolume?.value > 0) { // Also check metronome master volume
+            await playMetronomeSound(baseBeatVol);
+        }
     }
 
-    const measures = UI.elements.measures?.children;
+    const measureContainer = UI.elements.measures; // Assuming this is the container for measure divs
+    const measureElements = measureContainer?.children; // HTMLCollection of measure divs
+
     const timeSigValue = UI.elements.timeSignature?.value || '4/4';
     const [beatsPerMeasureNum] = timeSigValue.split('/').map(Number);
-    const totalDisplayBeats = (beatsPerMeasureNum === 4) ? 8 : beatsPerMeasureNum;
+    
+    // Determine total subdivisions to count per measure for AppState.currentBeat
+    // If 4/4, usually 8 subdivisions (8th notes). Otherwise, main beats.
+    const totalSubdivisionsPerMeasureCycle = (beatsPerMeasureNum === 4 && (UI.elements.subdivisionSelect?.value === '2' || UI.elements.subdivisionSelect?.value === undefined)) ? 8 : beatsPerMeasureNum;
 
-    if (measures && measures.length > 0) {
-        const currentMeasureEl = measures[AppState.currentMeasure];
+
+    if (measureElements && measureElements.length > 0) {
+        const currentMeasureDOMIndex = AppState.currentMeasure % measureElements.length;
+        const currentMeasureEl = measureElements[currentMeasureDOMIndex];
+
         if (currentMeasureEl) {
-            currentMeasureEl.classList.add('active');
-            measures.forEach((m, idx) => { if (idx !== AppState.currentMeasure) m.classList.remove('active'); });
+            // Update active measure UI
+            // Only remove 'active' from siblings if the measure has actually changed
+            if (AppState.currentBeat === 0) { // Indicates start of a new measure cycle or first beat
+                 Array.from(measureElements).forEach((m, idx) => {
+                    if (idx === currentMeasureDOMIndex) {
+                        m.classList.add('active');
+                    } else {
+                        m.classList.remove('active');
+                    }
+                });
+            }
 
-            const isFirstBeatOfMeasureSubdivision = AppState.currentBeat % (totalDisplayBeats / beatsPerMeasureNum) === 0;
 
-            if (isFirstBeatOfMeasureSubdivision) { // Update fretboard on relevant beats
+            // Determine if this beat is the primary beat of a measure subdivision
+            // (e.g., for 4/4 with 8th notes, this would be on the 0th, 2nd, 4th, 6th 8th notes)
+            const subdivisionUnit = (beatsPerMeasureNum === 4 && totalSubdivisionsPerMeasureCycle === 8) ? 2 : 1;
+            const isFirstBeatOfMainSubdivision = AppState.currentBeat % subdivisionUnit === 0;
+
+            // Update fretboard based on the current measure's scale controls
+            // This typically happens when the measure changes or on a significant beat.
+            // Let's tie it to when the measure becomes active (first beat of its cycle).
+            if (AppState.currentBeat === 0) {
                 const scaleRoot = currentMeasureEl.querySelector('.scale-controls .second-key')?.value;
                 const scaleType = currentMeasureEl.querySelector('.scale-controls .scale-select')?.value;
                 if (scaleRoot && scaleType && UI.elements.chordFretboard && UI.elements.chordTuning) {
-                    const chordTuning = TUNINGS[UI.elements.chordTuning.value];
-                    updateFretboardNotes(UI.elements.chordFretboard, scaleRoot, scaleType, chordTuning);
+                    const chordTuningValue = UI.elements.chordTuning.value;
+                    if (TUNINGS && TUNINGS[chordTuningValue]) {
+                        updateFretboardNotes(UI.elements.chordFretboard, scaleRoot, scaleType, TUNINGS[chordTuningValue]);
+                    } else {
+                        console.warn(`${LOG_PREFIX} Tuning '${chordTuningValue}' not found in TUNINGS.`);
+                    }
                 }
             }
 
+            // Play chord if enabled and on the correct beat
             if (AppState.chordsEnabled) {
                 const root = currentMeasureEl.querySelector('.chord-controls .root-note')?.value;
                 const quality = currentMeasureEl.querySelector('.chord-controls .chord-quality')?.value;
-                const beatDurationSec = 60 / AppState.tempo;
+                const tempo = AppState.tempo || parseInt(UI.elements.bpmSlider?.value || 120);
+                const beatDurationSec = 60 / tempo;
                 
                 let shouldPlayChord = false;
-                if (totalDisplayBeats === 8) { // 4/4 with 8th note subdivision
-                    if (AppState.currentBeat === 0 || AppState.currentBeat === 4) shouldPlayChord = true; // Play on 1 and 3
-                } else { // Other time sigs, play on beat 0
-                    if (AppState.currentBeat === 0) shouldPlayChord = true;
+                // For 4/4 with 8 subdivisions, play chords on the 1st and 3rd quarter notes (beat 0 and 4 of 8)
+                if (totalSubdivisionsPerMeasureCycle === 8) { 
+                    if (AppState.currentBeat === 0 || AppState.currentBeat === 4) {
+                        shouldPlayChord = true;
+                    }
+                } else { // For other time signatures, play chord on the first beat of the measure
+                    if (AppState.currentBeat === 0) {
+                        shouldPlayChord = true;
+                    }
                 }
 
                 if (shouldPlayChord && root && quality) {
-                    const chordDurationMs = (totalDisplayBeats === 8) ? beatDurationSec * 2 * 1000 : beatDurationSec * beatsPerMeasureNum * 1000;
+                    // Duration: For 4/4 with 8 subdivisions, chords on 1 & 3 last for 2 quarter notes (a half note)
+                    // Otherwise, chord lasts for the whole measure.
+                    const chordDurationBeats = (totalSubdivisionsPerMeasureCycle === 8) ? (subdivisionUnit) : beatsPerMeasureNum;
+                    const chordDurationMs = beatDurationSec * chordDurationBeats * 1000;
                     await playChord(root, quality, chordDurationMs);
                 }
             }
         }
     }
     
-    AppState.currentBeat = (AppState.currentBeat + 1) % totalDisplayBeats;
-    if (AppState.currentBeat === 0 && measures && measures.length > 0) {
-        AppState.currentMeasure = (AppState.currentMeasure + 1) % measures.length;
+    // Advance beat and measure counters
+    AppState.currentBeat = (AppState.currentBeat + 1) % totalSubdivisionsPerMeasureCycle;
+    if (AppState.currentBeat === 0 && measureElements && measureElements.length > 0) { // Cycled through all beats for the measure
+        AppState.currentMeasure = (AppState.currentMeasure + 1) % measureElements.length;
     }
-    // AppState.updateState({ currentBeat: AppState.currentBeat, currentMeasure: AppState.currentMeasure }); // If explicit update needed
+    // If AppState.updateState is used for reactivity, call it here:
+    // AppState.updateState({ currentBeat: AppState.currentBeat, currentMeasure: AppState.currentMeasure });
 }
 
 async function startPlayback() {
     try {
+        log(`${LOG_PREFIX} Attempting to start playback...`);
         await AudioContextManager.ensureAudioContext();
-        if (!AudioContextManager.samplesFullyLoaded) {
-            alert("Audio samples are still loading. Please wait."); return;
+
+        if (!AudioContextManager.samplesFullyLoaded && !confirm("Audio samples might still be loading. Some sounds may not play immediately. Continue?")) {
+            log(`${LOG_PREFIX} Playback cancelled by user due to samples loading.`);
+            return;
         }
-        if (AppState.isPlaying) return;
-        const measures = UI.elements.measures?.children;
-        if (!measures || measures.length === 0) {
-            alert('No measures defined.'); return;
+        if (AppState.isPlaying) {
+            log(`${LOG_PREFIX} Playback already in progress.`);
+            return;
         }
 
+        const measureContainer = UI.elements.measures;
+        const measureElements = measureContainer?.children;
+
+        if (!measureElements || measureElements.length === 0) {
+            alert('No measures defined. Please load or add measures before starting playback.');
+            log(`${LOG_PREFIX} Playback start failed: No measures defined.`);
+            return;
+        }
+
+        AppState.tempo = parseInt(UI.elements.bpmSlider?.value || 120); // Ensure tempo is current
         AppState.updateState({ isPlaying: true, currentBeat: 0, currentMeasure: 0 });
+
         if (AppState.intervalId) clearInterval(AppState.intervalId);
 
         const timeSigValue = UI.elements.timeSignature?.value || '4/4';
         const [beatsPerMeasureNum] = timeSigValue.split('/').map(Number);
-        let intervalMs = (60 / AppState.tempo) * 1000;
-        if (beatsPerMeasureNum === 4) intervalMs /= 2; // Eighth note interval for 4/4
+        const subdivisionSetting = UI.elements.subdivisionSelect?.value; // e.g., '1' for quarter, '2' for eighth
 
-        // Initial setup for first beat/measure
-        const firstMeasureEl = measures[0];
-        const initialScaleRoot = firstMeasureEl.querySelector('.scale-controls .second-key')?.value;
-        const initialScaleType = firstMeasureEl.querySelector('.scale-controls .scale-select')?.value;
-        if (initialScaleRoot && initialScaleType && UI.elements.chordFretboard && UI.elements.chordTuning) {
-            updateFretboardNotes(UI.elements.chordFretboard, initialScaleRoot, initialScaleType, TUNINGS[UI.elements.chordTuning.value]);
+        let intervalMs = (60 / AppState.tempo) * 1000; // Duration of one main beat (e.g., quarter note)
+        // If 4/4 time and subdivision is set to 8th notes (value '2'), interval is for 8th notes.
+        if (beatsPerMeasureNum === 4 && (subdivisionSetting === '2' || subdivisionSetting === undefined)) {
+            intervalMs /= 2; // Eighth note interval
         }
-        if (AppState.chordsEnabled) {
-            const initialRoot = firstMeasureEl.querySelector('.chord-controls .root-note')?.value;
-            const initialQuality = firstMeasureEl.querySelector('.chord-controls .chord-quality')?.value;
-            if (initialRoot && initialQuality) await playChord(initialRoot, initialQuality);
+
+        // Initial setup for the very first beat/measure before interval starts
+        const firstMeasureEl = measureElements[0];
+        if (firstMeasureEl) {
+            // Set first measure active
+            Array.from(measureElements).forEach(m => m.classList.remove('active'));
+            firstMeasureEl.classList.add('active');
+
+            const initialScaleRoot = firstMeasureEl.querySelector('.scale-controls .second-key')?.value;
+            const initialScaleType = firstMeasureEl.querySelector('.scale-controls .scale-select')?.value;
+            if (initialScaleRoot && initialScaleType && UI.elements.chordFretboard && UI.elements.chordTuning) {
+                const tuningValue = UI.elements.chordTuning.value;
+                if (TUNINGS && TUNINGS[tuningValue]) {
+                    updateFretboardNotes(UI.elements.chordFretboard, initialScaleRoot, initialScaleType, TUNINGS[tuningValue]);
+                }
+            }
+            if (AppState.chordsEnabled) {
+                const initialRoot = firstMeasureEl.querySelector('.chord-controls .root-note')?.value;
+                const initialQuality = firstMeasureEl.querySelector('.chord-controls .chord-quality')?.value;
+                if (initialRoot && initialQuality) {
+                    // Determine initial chord duration similar to playBeat logic
+                    const beatDurationSec = 60 / AppState.tempo;
+                    const totalSubdivisionsPerMeasureCycle = (beatsPerMeasureNum === 4 && (subdivisionSetting === '2' || subdivisionSetting === undefined)) ? 8 : beatsPerMeasureNum;
+                    const subdivisionUnit = (beatsPerMeasureNum === 4 && totalSubdivisionsPerMeasureCycle === 8) ? 2 : 1;
+                    const chordDurationBeats = (totalSubdivisionsPerMeasureCycle === 8) ? subdivisionUnit : beatsPerMeasureNum;
+                    const chordDurationMs = beatDurationSec * chordDurationBeats * 1000;
+                    await playChord(initialRoot, initialQuality, chordDurationMs);
+                }
+            }
         }
         
-        await playBeat(); // Play first beat immediately
-        AppState.intervalId = setInterval(playBeat, intervalMs);
+        await playBeat(); // Play the first beat immediately (will also handle metronome sound)
+        
+        AppState.intervalId = setInterval(async () => {
+            try {
+                await playBeat();
+            } catch (beatError) {
+                console.error(`${LOG_PREFIX} Error during scheduled playBeat:`, beatError);
+                // Optionally stop playback on repeated errors, or implement more robust error handling
+                // await stopPlayback(); 
+                // alert(`An error occurred during playback: ${beatError.message}. Playback stopped.`);
+            }
+        }, intervalMs);
+
         if (UI.elements.startStopButton) UI.elements.startStopButton.textContent = 'Stop';
-        log("Playback started.");
+        log(`${LOG_PREFIX} Playback started. Interval: ${intervalMs}ms. Tempo: ${AppState.tempo}bpm.`);
+
     } catch (error) {
         console.error(`${LOG_PREFIX} Failed to start playback:`, error);
         alert(`Error starting playback: ${error.message}.`);
-        await stopPlayback();
+        await stopPlayback(); // Ensure cleanup if start fails
     }
 }
 
 function stopPlayback() {
-    if (AppState.intervalId) clearInterval(AppState.intervalId);
-    AppState.intervalId = null;
-    AudioContextManager.stopCurrentChord();
-    AppState.updateState({ isPlaying: false /*, currentBeat: 0, currentMeasure: 0 */ }); // Optionally reset beat/measure
-    document.querySelectorAll('.beat.active, .measure.active').forEach(el => el.classList.remove('active'));
+    if (AppState.intervalId) {
+        clearInterval(AppState.intervalId);
+        AppState.intervalId = null;
+    }
+    AudioContextManager.stopCurrentChord(); // Stop any playing chord notes
+    AudioContextManager.stopAllPianoNotes(); // Also ensure any sustained piano notes are stopped
+    AudioContextManager.stopAllMetronomeSounds(); // Ensure metronome sounds are stopped
+
+    AppState.updateState({ isPlaying: false }); // currentBeat and currentMeasure can retain their last state or be reset
+    
+    // Clear active visual indicators
+    document.querySelectorAll('.beat.active').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.measure.active').forEach(el => el.classList.remove('active'));
+
     if (UI.elements.startStopButton) UI.elements.startStopButton.textContent = 'Start';
-    log("Playback stopped.");
+    log(`${LOG_PREFIX} Playback stopped.`);
 }
 
 // --- Progression and Measure Management ---
+// Assumes progressionData.progression is a flat array of chord function strings (e.g., "Im7", "V7")
+// Each string in this array will generate a new measure in the DOM.
 function loadProgression(progressionName, overrideKey = null) {
     const progressionData = progressions[progressionName];
-    if (!progressionData) { console.error(`${LOG_PREFIX} Progression not found: ${progressionName}`); return; }
+    if (!progressionData) {
+        console.error(`${LOG_PREFIX} Progression not found: ${progressionName}`);
+        alert(`Progression "${progressionName}" not found.`);
+        return;
+    }
 
-    const selectedKey = overrideKey || progressionData.defaultKey || "C";
+    const selectedKey = overrideKey || progressionData.defaultKey || "C"; // Ensure a fallback key
     if (UI.elements.keySelect) UI.elements.keySelect.value = selectedKey;
-    if (UI.elements.measures) UI.elements.measures.innerHTML = '';
+    
+    const measuresContainer = UI.elements.measures;
+    if (measuresContainer) {
+        measuresContainer.innerHTML = ''; // Clear existing measures
+    } else {
+        console.error(`${LOG_PREFIX} Measures container (UI.elements.measures) not found.`);
+        return;
+    }
 
     let firstChordDetails = null;
+
+    if (!progressionData.progression || !Array.isArray(progressionData.progression)) {
+        console.error(`${LOG_PREFIX} Progression data for "${progressionName}" is missing 'progression' array or it's not an array.`);
+        alert(`Invalid progression data for "${progressionName}".`);
+        return;
+    }
+
     progressionData.progression.forEach((chordFunc, index) => {
-        const parsedChord = getChordFromFunction(chordFunc, selectedKey);
+        const parsedChord = getChordFromFunction(chordFunc, selectedKey); // Depends on getChordFromFunction
         if (!parsedChord || !parsedChord.root || !parsedChord.quality) {
-            console.warn(`${LOG_PREFIX} Failed to parse chord: ${chordFunc} in key ${selectedKey}`); return;
+            console.warn(`${LOG_PREFIX} Failed to parse chord function: "${chordFunc}" in key ${selectedKey}. Skipping measure.`);
+            // Optionally add a placeholder "error" measure or skip
+            return; 
         }
-        if (index === 0) firstChordDetails = { ...parsedChord, scaleType: suggestScaleForQuality(parsedChord.quality) };
-        addMeasureWithChordDOM(parsedChord, index);
+        if (index === 0) {
+            // Depends on suggestScaleForQuality
+            firstChordDetails = { ...parsedChord, scaleType: suggestScaleForQuality(parsedChord.quality) }; 
+        }
+        addMeasureWithChordDOM(parsedChord, index + 1); // Pass 1-based index for display
     });
 
     if (UI.elements.chordFretboard && firstChordDetails) {
-        updateFretboardNotes(UI.elements.chordFretboard, firstChordDetails.root, firstChordDetails.scaleType, TUNINGS[UI.elements.chordTuning?.value || 'standard']);
+        const tuningValue = UI.elements.chordTuning?.value || 'standard';
+        if (TUNINGS && TUNINGS[tuningValue] && firstChordDetails.scaleType) {
+             updateFretboardNotes(UI.elements.chordFretboard, firstChordDetails.root, firstChordDetails.scaleType, TUNINGS[tuningValue]);
+        } else {
+            if (!firstChordDetails.scaleType) console.warn(`${LOG_PREFIX} No scaleType suggested for first chord to update fretboard.`);
+            if (!(TUNINGS && TUNINGS[tuningValue])) console.warn(`${LOG_PREFIX} Tuning '${tuningValue}' not found for fretboard update.`);
+        }
     }
-    log(`Loaded progression: ${progressionData.displayName || progressionName} in key ${selectedKey}`);
+    log(`${LOG_PREFIX} Loaded progression: ${progressionData.displayName || progressionName} in key ${selectedKey}. ${progressionData.progression.length} measures created.`);
 }
 
-function addMeasureWithChordDOM(parsedChord, index) { // Renamed to avoid conflict
+// Creates and appends a DOM element for a single measure with chord/scale controls.
+function addMeasureWithChordDOM(parsedChord, measureNumber) { // measureNumber is 1-based for display
     const measure = document.createElement('div');
     measure.className = 'measure';
-    measure.draggable = true;
+    measure.draggable = true; // Assuming you have drag-and-drop functionality elsewhere
+    measure.dataset.measureNumber = measureNumber;
+
+    // Ensure parsedChord and its properties are valid before creating options
+    const rootNote = parsedChord.root || 'C';
+    const quality = parsedChord.quality || 'maj'; // Fallback quality
+    // Assuming suggestScaleForQuality exists and returns a valid scale name or null/undefined
+    const suggestedScale = suggestScaleForQuality(quality) || 'major'; 
+
     measure.innerHTML = `
-        <span class="measure-number">${index + 1}</span>
+        <span class="measure-number">${measureNumber}</span>
         <div class="chord-controls">
-            <select class="root-note">${createKeyOptions(parsedChord.root)}</select>
-            <select class="chord-quality">${createQualityOptions(getQualityValue(parsedChord.quality))}</select>
+            <label>Chord: </label>
+            <select class="root-note">${createKeyOptions(rootNote)}</select>
+            <select class="chord-quality">${createQualityOptions(quality)}</select> 
+            <!-- Assuming createQualityOptions can take 'quality' directly. 
+                 If a 'getQualityValue' mapping is needed, it should be used here. -->
         </div>
         <div class="scale-controls">
-            <select class="second-key">${createKeyOptions(parsedChord.root)}</select>
-            <select class="scale-select">${createScaleOptions(suggestScaleForQuality(parsedChord.quality))}</select>
+            <label>Scale: </label>
+            <select class="second-key">${createKeyOptions(rootNote)}</select> <!-- Typically same as chord root -->
+            <select class="scale-select">${createScaleOptions(suggestedScale)}</select>
         </div>
+        <button class="delete-measure-btn" title="Delete measure">X</button> 
+        <!-- Add other controls like copy, etc. as needed -->
     `;
-    UI.elements.measures?.appendChild(measure);
-    setupIndividualMeasureEventListeners(measure); // Setup listeners for this new measure
+    
+    const measuresContainer = UI.elements.measures;
+    if (measuresContainer) {
+        measuresContainer.appendChild(measure);
+        if (typeof setupIndividualMeasureEventListeners === 'function') {
+            setupIndividualMeasureEventListeners(measure); // Setup listeners for this new measure
+        } else {
+            console.warn(`${LOG_PREFIX} setupIndividualMeasureEventListeners function not found.`);
+        }
+    } else {
+         console.error(`${LOG_PREFIX} Cannot append measure, UI.elements.measures is null.`);
+    }
 }
 
 function updateProgressionKey(newKey) {
