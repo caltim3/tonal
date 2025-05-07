@@ -1657,7 +1657,10 @@ function playNote(noteName, volume = 1.0, duration = 1000) {
         console.error('Error playing note:', error);
     }
 }
-
+function standardizeNoteNameForSamples(note) {
+    // Convert note to the format needed for sample filenames
+    return SAMPLE_NOTE_MAP[note] || note.toLowerCase();
+}
 
 async function playChord(root, quality, startTime = AudioContextManager.context.currentTime, duration = 2, isContinuation = false) {
     console.log("Playing chord:", root, quality); // Add this debug line
