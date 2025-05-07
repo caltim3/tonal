@@ -779,27 +779,12 @@ const PIANO_NOTES = {
         
 function standardizeNoteName(note) {
     if (!note) return '';
-    
-    // Convert to uppercase and handle basic formatting
     note = note.toUpperCase().trim();
-    
-    // Replace ♭ with b and ♯ with #
     note = note.replace('♭', 'b').replace('♯', '#');
-    
-    // Convert sharps to flats
     const sharpToFlat = {
-        'C#': 'Db',
-        'D#': 'Eb',
-        'F#': 'Gb',
-        'G#': 'Ab',
-        'A#': 'Bb'
+        'C#': 'Db', 'D#': 'Eb', 'F#': 'Gb', 'G#': 'Ab', 'A#': 'Bb'
     };
-    
-    if (note.includes('#')) {
-        return sharpToFlat[note] || note;
-    }
-    
-    return note;
+    return sharpToFlat[note] || note;
 }
         
 const FRETBOARD_FREQUENCIES = {
@@ -1249,169 +1234,135 @@ const AudioContextManager = {
         return await this.initialize();
     },
     
-   loadSounds: async function() {
-    const progressBar = document.getElementById('progress-bar');
-    const progressText = document.getElementById('progress-text');
-    const progressContainer = document.getElementById('audio-loading-progress');
+    loadSounds: async function() {
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+        const progressContainer = document.getElementById('audio-loading-progress');
 
-    // Validate DOM elements
-    if (!progressBar || !progressText || !progressContainer) {
-        console.error('Progress UI elements missing:', {
-            progressBar: !!progressBar,
-            progressText: !!progressText,
-            progressContainer: !!progressContainer
-        });
-        return;
-    }
+        // Validate DOM elements
+        if (!progressBar || !progressText || !progressContainer) {
+            console.error('Progress UI elements missing:', {
+                progressBar: !!progressBar,
+                progressText: !!progressText,
+                progressContainer: !!progressContainer
+            });
+            return;
+        }
 
-    progressContainer.style.display = 'block';
+        progressContainer.style.display = 'block';
 
-    // Base path for sound files (root directory)
-    const SOUND_BASE_PATH = '/'; // Use '/tonal/' if hosted at /tonal/, or './' for relative paths
+        // Base path for sound files (root directory)
+        const SOUND_BASE_PATH = '/'; // Use '/tonal/' if hosted at /tonal/, or './' for relative paths
 
-    const sounds = [
-        // Non-piano sounds
-        'click.wav',
-        'kick.wav',
-        'snare.wav',
-        'hihat.wav',
-        'woodblock.wav',
-        // Piano notes: Octave 2
-        'c2.wav',
-        'cs2.wav',
-        'd2.wav',
-        'ds2.wav',
-        'e2.wav',
-        'f2.wav',
-        'fs2.wav',
-        'g2.wav',
-        'gs2.wav',
-        'a2.wav',
-        'as2.wav',
-        'b2.wav',
-        // Piano notes: Octave 3
-        'c3.wav',
-        'cs3.wav',
-        'd3.wav',
-        'ds3.wav',
-        'e3.wav',
-        'f3.wav',
-        'fs3.wav',
-        'g3.wav',
-        'gs3.wav',
-        'a3.wav',
-        'as3.wav',
-        'b3.wav',
-        // Piano notes: Octave 4
-        'c4.wav',
-        'cs4.wav',
-        'd4.wav',
-        'ds4.wav',
-        'e4.wav',
-        'f4.wav',
-        'fs4.wav',
-        'g4.wav',
-        'gs4.wav',
-        'a4.wav',
-        'as4.wav',
-        'b4.wav',
-        // Piano notes: Octave 5
-        'c5.wav',
-        'cs5.wav',
-        'd5.wav',
-        'ds5.wav',
-        'e5.wav',
-        'f5.wav',
-        'fs5.wav',
-        'g5.wav',
-        'gs5.wav',
-        'a5.wav',
-        'as5.wav',
-        'b5.wav'
-    ];
-    const batchSize = 3;
-    let loaded = 0;
+        const sounds = [
+            // Non-piano sounds
+            'click.wav',
+            'kick.wav',
+            'snare.wav',
+            'hihat.wav',
+            'woodblock.wav',
+            // Piano notes: Octave 2
+            'c2.wav', 'cs2.wav', 'd2.wav', 'ds2.wav', 'e2.wav', 'f2.wav',
+            'fs2.wav', 'g2.wav', 'gs2.wav', 'a2.wav', 'as2.wav', 'b2.wav',
+            // Piano notes: Octave 3
+            'c3.wav', 'cs3.wav', 'd3.wav', 'ds3.wav', 'e3.wav', 'f3.wav',
+            'fs3.wav', 'g3.wav', 'gs3.wav', 'a3.wav', 'as3.wav', 'b3.wav',
+            // Piano notes: Octave 4
+            'c4.wav', 'cs4.wav', 'd4.wav', 'ds4.wav', 'e4.wav', 'f4.wav',
+            'fs4.wav', 'g4.wav', 'gs4.wav', 'a4.wav', 'as4.wav', 'b4.wav',
+            // Piano notes: Octave 5
+            'c5.wav', 'cs5.wav', 'd5.wav', 'ds5.wav', 'e5.wav', 'f5.wav',
+            'fs5.wav', 'g5.wav', 'gs5.wav', 'a5.wav', 'as5.wav', 'b5.wav'
+        ];
+        
+        const batchSize = 3;
+        let loaded = 0;
 
-    for (let i = 0; i < sounds.length; i += batchSize) {
-        const batch = sounds.slice(i, i + batchSize);
-        await Promise.all(batch.map(async sound => {
-            try {
-                // Normalize the sound path
-                const soundPath = sound.startsWith('/') || sound.startsWith(SOUND_BASE_PATH)
-                    ? sound
-                    : `${SOUND_BASE_PATH}${sound.replace(/^\//, '')}`;
-                
-                console.log(`Fetching sound: ${soundPath}`); // Debug log
-                const response = await fetch(soundPath);
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch ${soundPath}: ${response.statusText}`);
+        for (let i = 0; i < sounds.length; i += batchSize) {
+            const batch = sounds.slice(i, i + batchSize);
+            await Promise.all(batch.map(async sound => {
+                try {
+                    // Normalize the sound path
+                    const soundPath = sound.startsWith('/') || sound.startsWith(SOUND_BASE_PATH)
+                        ? sound
+                        : `${SOUND_BASE_PATH}${sound.replace(/^\//, '')}`;
+                    
+                    console.log(`Fetching sound: ${soundPath}`); // Debug log
+                    const response = await fetch(soundPath);
+                    if (!response.ok) {
+                        throw new Error(`Failed to fetch ${soundPath}: ${response.statusText}`);
+                    }
+                    const arrayBuffer = await response.arrayBuffer();
+                    this.soundBuffers[sound] = await this.context.decodeAudioData(arrayBuffer);
+                    loaded++;
+                    const progress = Math.round((loaded / sounds.length) * 100);
+                    progressBar.style.width = `${progress}%`;
+                    progressText.textContent = `${progress}%`;
+                } catch (error) {
+                    console.error(`Error loading sound ${sound}:`, error);
+                    // Try to create synthetic sound as fallback
+                    try {
+                        this.soundBuffers[sound] = await this.createDrumSound(sound.replace('.wav', ''));
+                    } catch (fallbackError) {
+                        console.error(`Fallback sound creation failed for ${sound}:`, fallbackError);
+                    }
                 }
-                const arrayBuffer = await response.arrayBuffer();
-                this.soundBuffers[sound] = await this.context.decodeAudioData(arrayBuffer);
-                loaded++;
-                const progress = Math.round((loaded / sounds.length) * 100);
-                progressBar.style.width = `${progress}%`;
-                progressText.textContent = `${progress}%`;
-            } catch (error) {
-                console.error(`Error loading sound ${sound}:`, error);
-                // Continue loading other sounds
+            }));
+        }
+
+        progressContainer.style.display = 'none';
+        this.samplesLoaded = true;
+    },
+
+    createDrumSound: async function(type) {
+        return new Promise((resolve) => {
+            const sampleRate = this.context.sampleRate;
+            const duration = type === 'hihat' ? 0.05 : 0.2;
+            const buffer = this.context.createBuffer(1, sampleRate * duration, sampleRate);
+            const data = buffer.getChannelData(0);
+
+            switch (type) {
+                case 'click':
+                    for (let i = 0; i < data.length; i++) {
+                        data[i] = Math.sin(i * 0.05) * Math.exp(-i * 0.01);
+                    }
+                    break;
+
+                case 'hihat':
+                    for (let i = 0; i < data.length; i++) {
+                        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (sampleRate * 0.01));
+                    }
+                    break;
+
+                case 'kick':
+                    for (let i = 0; i < data.length; i++) {
+                        const t = i / sampleRate;
+                        data[i] = Math.sin(2 * Math.PI * 100 * t) * Math.exp(-t * 10) * 2;
+                    }
+                    break;
+
+                case 'snare':
+                    for (let i = 0; i < data.length; i++) {
+                        const t = i / sampleRate;
+                        data[i] = ((Math.random() * 2 - 1) + Math.sin(2 * Math.PI * 200 * t)) * Math.exp(-t * 10) * 2;
+                    }
+                    break;
+
+                case 'woodblock':
+                    for (let i = 0; i < data.length; i++) {
+                        const t = i / sampleRate;
+                        data[i] = Math.sin(2 * Math.PI * 800 * t) * Math.exp(-t * 20);
+                    }
+                    break;
+
+                default:
+                    console.warn(`Unknown drum sound type: ${type}`);
             }
-        }));
+
+            resolve(buffer);
+        });
     }
-
-    progressContainer.style.display = 'none';
-    this.samplesLoaded = true;
-}
-    
- function createDrumSound(type) {
-  return new Promise((resolve) => {
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    const sampleRate = audioContext.sampleRate;
-    const duration = type === 'hihat' ? 0.05 : 0.2;
-    const buffer = audioContext.createBuffer(1, sampleRate * duration, sampleRate);
-    const data = buffer.getChannelData(0);
-
-    switch (type) {
-      case 'click':
-        for (let i = 0; i < data.length; i++) {
-          data[i] = Math.sin(i * 0.05) * Math.exp(-i * 0.01);
-        }
-        break;
-
-      case 'hihat':
-        for (let i = 0; i < data.length; i++) {
-          data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (sampleRate * 0.01));
-        }
-        break;
-
-      case 'kick':
-        for (let i = 0; i < data.length; i++) {
-          const t = i / sampleRate;
-          data[i] = Math.sin(2 * Math.PI * 100 * t) * Math.exp(-t * 10) * 2;
-        }
-        break;
-
-      case 'snare':
-        for (let i = 0; i < data.length; i++) {
-          const t = i / sampleRate;
-          data[i] = ((Math.random() * 2 - 1) + Math.sin(2 * Math.PI * 200 * t)) * Math.exp(-t * 10) * 2;
-        }
-        break;
-
-      case 'woodblock':
-        for (let i = 0; i < data.length; i++) {
-          const t = i / sampleRate;
-          data[i] = Math.sin(2 * Math.PI * 800 * t) * Math.exp(-t * 20);
-        }
-        break;
-
-      default:
-        console.warn(`Unknown drum sound type: ${type}`);
-    }
-
-    resolve(buffer);
-  });
-}
+};
 
     loadPianoSamples: async function() {
         const progressBar = document.getElementById('progress-bar');
@@ -1489,28 +1440,7 @@ function getNoteFromScaleDegree(scaleDegree, key, scale = SCALES.major) {
     const noteIndex = (keyIndex + offset) % 12;
     return chromaticScale[noteIndex];
 }
-
-
-function standardizeNoteNameForSamples(note) {
-    note = note.toLowerCase().replace('♯', '#').replace('♭', 'b');
-    if (note.length === 2 && note[1] === 'b') {
-        const flatToSharp = {
-            'cb': 'b',
-            'db': 'cs',
-            'eb': 'ds',
-            'fb': 'e',
-            'gb': 'fs',
-            'ab': 'gs',
-            'bb': 'as'
-        };
-        return flatToSharp[note] || note[0];
-    }
-    if (note.length === 2 && note[1] === '#') {
-        return note[0] + 's';
-    }
-    return note[0];
-}
-        
+     
 function parseChord(chord) {
     // Handle null or undefined input
     if (!chord) {
@@ -3203,45 +3133,62 @@ function setupEventListeners() {
     });
 
     // Measure controls
-    if (UI.elements.measures) {
-        UI.elements.measures.addEventListener('change', (e) => {
-            if (!e.target.matches('.root-note, .chord-quality')) return;
+ if (UI.elements.measures) {
+    UI.elements.measures.addEventListener('change', (e) => {
+        if (!e.target.matches('.root-note, .chord-quality, .second-key, .scale-select')) return;
 
-            const measure = e.target.closest('.measure');
-            if (!measure) return;
+        const measure = e.target.closest('.measure');
+        if (!measure) return;
 
-            const controls = {
-                root: measure.querySelector('.root-note')?.value,
-                quality: measure.querySelector('.chord-quality')?.value,
-                secondKey: measure.querySelector('.second-key'),
-                scale: measure.querySelector('.scale-select')
-            };
+        const controls = {
+            root: measure.querySelector('.root-note')?.value,
+            quality: measure.querySelector('.chord-quality')?.value,
+            secondKey: measure.querySelector('.second-key'),
+            scale: measure.querySelector('.scale-select')
+        };
 
-            if (Object.values(controls).every(Boolean)) {
+        if (Object.values(controls).every(control => control && (typeof control !== 'object' || control.value))) {
+            // Update second-key and scale when root or quality changes
+            if (e.target.matches('.root-note, .chord-quality')) {
                 controls.secondKey.value = controls.root;
                 controls.scale.value = suggestScaleForQuality(controls.quality);
+            }
 
-                if (measure === UI.elements.measures.firstElementChild) {
-                    const tuning = TUNINGS[UI.elements.chordTuning.value];
-                    if (tuning) {
-                        updateFretboardNotes(
-                            UI.elements.chordFretboard,
-                            controls.root,
-                            controls.scale.value,
-                            tuning
-                        );
-                    }
+            // Update fretboard if this is the first measure
+            if (measure === UI.elements.measures.firstElementChild) {
+                const tuning = TUNINGS[UI.elements.chordTuning.value];
+                if (tuning) {
+                    updateFretboardNotes(
+                        UI.elements.chordFretboard,
+                        controls.secondKey.value,
+                        controls.scale.value,
+                        tuning
+                    );
                 }
             }
-        });
-    }
 
-    // Measure management
-    addListener('addMeasureButton', 'click', addMeasure);
-    addListener('removeMeasureButton', 'click', removeMeasure);
-
-    log("Event listeners setup completed");
+            log(`Updated measure controls: ${controls.root} ${controls.quality}`);
+        }
+    });
 }
+
+// Measure management
+if (UI.elements.addMeasureButton) {
+    UI.elements.addMeasureButton.addEventListener('click', () => {
+        addMeasure();
+        log('Added new measure');
+    });
+}
+
+if (UI.elements.removeMeasureButton) {
+    UI.elements.removeMeasureButton.addEventListener('click', () => {
+        removeMeasure();
+        log('Removed last measure');
+    });
+}
+
+log("Event listeners set up");
+    
 
 async function initializeApp() {
     try {
