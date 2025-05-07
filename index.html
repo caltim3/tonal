@@ -2828,28 +2828,57 @@ function initializeFretFlow() {
 }
         
 function setupMeasureEventListeners() {
-    // TODO: Implement measure event listeners if needed
+    const measures = UI.elements.measures?.children;
+    if (!measures) {
+        console.warn("No measures found to set up event listeners.");
+        return;
+    }
+
+    Array.from(measures).forEach((measure) => {
+        measure.addEventListener("change", (e) => {
+            if (!e.target.matches(".root-note, .chord-quality, .second-key, .scale-select")) return;
+
+            const root = measure.querySelector(".root-note")?.value;
+            const quality = measure.querySelector(".chord-quality")?.value;
+            const scaleRoot = measure.querySelector(".second-key")?.value;
+            const scaleType = measure.querySelector(".scale-select")?.value;
+
+            if (root && quality && scaleRoot && scaleType) {
+                const tuning = TUNINGS[UI.elements.chordTuning.value];
+                updateFretboardNotes(UI.elements.chordFretboard, scaleRoot, scaleType, tuning);
+                log(`Updated measure: ${root} ${quality}`);
+            }
+        });
+    });
 }
+
 function updateDisplay() {
-    // TODO: Implement display update logic if needed
-}        
+    const tempoDisplay = UI.elements.tempoDisplay;
+    if (tempoDisplay) {
+        tempoDisplay.textContent = `${AppState.tempo} BPM`;
+    }
+
+    const chordFretboardVolume = UI.elements.chordFretboardVolume?.value || 1.0;
+    log(`Chord fretboard volume: ${chordFretboardVolume}`);
+}
+
 function attachNoteClickHandlers(fretboard) {
     if (!fretboard) {
-        console.error('Invalid fretboard element provided');
+        console.error("Invalid fretboard element provided.");
         return;
     }
 
     // Remove existing event listeners to prevent duplicates
-    const oldNotes = fretboard.getElementsByClassName('note');
-    Array.from(oldNotes).forEach(note => {
+    const oldNotes = fretboard.getElementsByClassName("note");
+    Array.from(oldNotes).forEach((note) => {
         const clone = note.cloneNode(true);
         note.parentNode.replaceChild(clone, note);
     });
 
     // Attach new event listeners
-    const notes = fretboard.getElementsByClassName('note');
-    Array.from(notes).forEach(note => {
-        note.addEventListener('click', function(e) {
+    const notes = fretboard.getElementsByClassName("note");
+    Array.from(notes).forEach((note) => {
+        note.addEventListener("click", function (e) {
             e.stopPropagation();
             const noteName = this.dataset.note;
             if (noteName) {
@@ -2858,7 +2887,7 @@ function attachNoteClickHandlers(fretboard) {
                     playNote(noteName, fretboardVolume, 500);
                     log(`Playing note: ${noteName}`);
                 } catch (error) {
-                    console.error('Error playing note:', error);
+                    console.error("Error playing note:", error);
                     log(`Error playing note ${noteName}: ${error.message}`);
                 }
             }
@@ -2869,18 +2898,17 @@ function attachNoteClickHandlers(fretboard) {
 // Log initialization
 log("FretFlow initialized with 4 independent fretboards");
 
-        
-    function addFirstChordListener() {
-    const firstMeasure = UI.elements.measures.firstElementChild;
+function addFirstChordListener() {
+    const firstMeasure = UI.elements.measures?.firstElementChild;
     if (firstMeasure) {
-        const scaleRoot = firstMeasure.querySelector('.second-key');
-        const scaleType = firstMeasure.querySelector('.scale-select');
+        const scaleRoot = firstMeasure.querySelector(".second-key");
+        const scaleType = firstMeasure.querySelector(".scale-select");
         const updateFretboard = () => {
             const tuning = TUNINGS[UI.elements.chordTuning.value];
             updateFretboardNotes(UI.elements.chordFretboard, scaleRoot.value, scaleType.value, tuning);
         };
-        scaleRoot.addEventListener('change', updateFretboard);
-        scaleType.addEventListener('change', updateFretboard);
+        scaleRoot.addEventListener("change", updateFretboard);
+        scaleType.addEventListener("change", updateFretboard);
     }
 }
 
