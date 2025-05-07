@@ -1233,85 +1233,76 @@ const AudioContextManager = {
     ensureAudioContext: async function() {
         return await this.initialize();
     },
-    
+
     loadSounds: async function() {
         const progressBar = document.getElementById('progress-bar');
         const progressText = document.getElementById('progress-text');
         const progressContainer = document.getElementById('audio-loading-progress');
-
-        // Validate DOM elements
-        if (!progressBar || !progressText || !progressContainer) {
-            console.error('Progress UI elements missing:', {
-                progressBar: !!progressBar,
-                progressText: !!progressText,
-                progressContainer: !!progressContainer
-            });
-            return;
-        }
-
         progressContainer.style.display = 'block';
 
-        // Base path for sound files (root directory)
-        const SOUND_BASE_PATH = '/'; // Use '/tonal/' if hosted at /tonal/, or './' for relative paths
-
-        const sounds = [
-            // Non-piano sounds
-            'click.wav',
-            'kick.wav',
-            'snare.wav',
-            'hihat.wav',
-            'woodblock.wav',
-            // Piano notes: Octave 2
-            'c2.wav', 'cs2.wav', 'd2.wav', 'ds2.wav', 'e2.wav', 'f2.wav',
-            'fs2.wav', 'g2.wav', 'gs2.wav', 'a2.wav', 'as2.wav', 'b2.wav',
-            // Piano notes: Octave 3
-            'c3.wav', 'cs3.wav', 'd3.wav', 'ds3.wav', 'e3.wav', 'f3.wav',
-            'fs3.wav', 'g3.wav', 'gs3.wav', 'a3.wav', 'as3.wav', 'b3.wav',
-            // Piano notes: Octave 4
-            'c4.wav', 'cs4.wav', 'd4.wav', 'ds4.wav', 'e4.wav', 'f4.wav',
-            'fs4.wav', 'g4.wav', 'gs4.wav', 'a4.wav', 'as4.wav', 'b4.wav',
-            // Piano notes: Octave 5
-            'c5.wav', 'cs5.wav', 'd5.wav', 'ds5.wav', 'e5.wav', 'f5.wav',
-            'fs5.wav', 'g5.wav', 'gs5.wav', 'a5.wav', 'as5.wav', 'b5.wav'
-        ];
-        
-        const batchSize = 3;
+        const soundTypes = ['click', 'hihat', 'kick', 'snare', 'woodblock'];
         let loaded = 0;
 
-        for (let i = 0; i < sounds.length; i += batchSize) {
-            const batch = sounds.slice(i, i + batchSize);
-            await Promise.all(batch.map(async sound => {
+        for (const type of soundTypes) {
+            try {
+                this.soundBuffers[type] = await this.createDrumSound(type);
+                loaded++;
+                const progress = Math.round((loaded / soundTypes.length) * 100);
+                progressBar.style.width = `${progress}%`;
+                progressText.textContent = `${progress}%`;
+            } catch (error) {
+                console.error(`Failed to create sound ${type}:`, error);
+            }
+        }
+
+        progressContainer.style.display = 'none';
+        this.samplesLoaded = true;
+    },
+
+    loadPianoSamples: async function() {
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+        const progressContainer = document.getElementById('audio-loading-progress');
+        progressContainer.style.display = 'block';
+
+        const batchSize = 10;
+        let loaded = 0;
+
+        for (let i = 0; i < allSampleFiles.length; i += batchSize) {
+            const batch = allSampleFiles.slice(i, i + batchSize);
+            await Promise.all(batch.map(async file => {
                 try {
-                    // Normalize the sound path
-                    const soundPath = sound.startsWith('/') || sound.startsWith(SOUND_BASE_PATH)
-                        ? sound
-                        : `${SOUND_BASE_PATH}${sound.replace(/^\//, '')}`;
-                    
-                    console.log(`Fetching sound: ${soundPath}`); // Debug log
-                    const response = await fetch(soundPath);
-                    if (!response.ok) {
-                        throw new Error(`Failed to fetch ${soundPath}: ${response.statusText}`);
-                    }
+                    const response = await fetch(`/${file}`);
                     const arrayBuffer = await response.arrayBuffer();
-                    this.soundBuffers[sound] = await this.context.decodeAudioData(arrayBuffer);
+                    this.pianoSampleBuffers[file] = await this.context.decodeAudioData(arrayBuffer);
                     loaded++;
-                    const progress = Math.round((loaded / sounds.length) * 100);
+                    const progress = Math.round((loaded / allSampleFiles.length) * 100);
                     progressBar.style.width = `${progress}%`;
                     progressText.textContent = `${progress}%`;
                 } catch (error) {
-                    console.error(`Error loading sound ${sound}:`, error);
-                    // Try to create synthetic sound as fallback
-                    try {
-                        this.soundBuffers[sound] = await this.createDrumSound(sound.replace('.wav', ''));
-                    } catch (fallbackError) {
-                        console.error(`Fallback sound creation failed for ${sound}:`, fallbackError);
-                    }
+                    console.error(`Failed to load sample ${file}:`, error);
                 }
             }));
         }
 
         progressContainer.style.display = 'none';
-        this.samplesLoaded = true;
+    },
+
+    setupReverb: async function() {
+        try {
+            const response = await fetch('/reverb.wav');
+            const arrayBuffer = await response.arrayBuffer();
+            this.reverbBuffer = await this.context.decodeAudioData(arrayBuffer);
+            this.reverbNode = this.context.createConvolver();
+            this.reverbNode.buffer = this.reverbBuffer;
+
+            const gainNode = this.context.createGain();
+            gainNode.gain.value = this.reverbAmount;
+            this.reverbNode.connect(gainNode);
+            gainNode.connect(this.context.destination);
+        } catch (error) {
+            console.error('Failed to set up reverb:', error);
+        }
     },
 
     createDrumSound: async function(type) {
@@ -1361,53 +1352,6 @@ const AudioContextManager = {
 
             resolve(buffer);
         });
-    }
-};
-
-    loadPianoSamples: async function() {
-        const progressBar = document.getElementById('progress-bar');
-        const progressText = document.getElementById('progress-text');
-        const progressContainer = document.getElementById('audio-loading-progress');
-        progressContainer.style.display = 'block';
-
-        const batchSize = 10;
-        let loaded = 0;
-
-        for (let i = 0; i < allSampleFiles.length; i += batchSize) {
-            const batch = allSampleFiles.slice(i, i + batchSize);
-            await Promise.all(batch.map(async file => {
-                try {
-                    const response = await fetch(`/${file}`);
-                    const arrayBuffer = await response.arrayBuffer();
-                    this.pianoSampleBuffers[file] = await this.context.decodeAudioData(arrayBuffer);
-                    loaded++;
-                    const progress = Math.round((loaded / allSampleFiles.length) * 100);
-                    progressBar.style.width = `${progress}%`;
-                    progressText.textContent = `${progress}%`;
-                } catch (error) {
-                    console.error(`Failed to load sample ${file}:`, error);
-                }
-            }));
-        }
-
-        progressContainer.style.display = 'none';
-    },
-    
-    setupReverb: async function() {
-        if (!this.reverbNode) {
-            this.reverbNode = this.context.createConvolver();
-            const sampleRate = this.context.sampleRate;
-            const length = sampleRate * 2.5;
-            const impulse = this.context.createBuffer(2, length, sampleRate);
-            for (let channel = 0; channel < 2; channel++) {
-                const channelData = impulse.getChannelData(channel);
-                for (let i = 0; i < length; i++) {
-                    channelData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2);
-                }
-            }
-            this.reverbNode.buffer = impulse;
-            this.reverbNode.connect(this.context.destination);
-        }
     }
 };
 async function ensureAudioInitialized() {
