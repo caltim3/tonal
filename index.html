@@ -2672,11 +2672,15 @@ function removeMeasure() {
         log(`Removed last measure`);
     }
 }
-
+        
 function updateMeasureNumbers() {
     Array.from(UI.elements.measures.children).forEach((measure, index) => {
         const number = measure.querySelector('.measure-number');
-        if (number) number.textContent = index + 1;
+        if (number) {
+            number.textContent = index + 1;
+        } else {
+            console.warn(`Measure number element not found in measure ${index}`);
+        }
     });
 }
 
