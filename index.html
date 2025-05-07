@@ -1265,7 +1265,7 @@ const AudioContextManager = {
         for (let i = 0; i < sounds.length; i += batchSize) {
             const batch = sounds.slice(i, i + batchSize);
             await Promise.all(batch.map(async sound => {
-                const response = await fetch(`/sounds/${sound}`);
+                const response = await fetch(`${sound}`);
                 const arrayBuffer = await response.arrayBuffer();
                 this.soundBuffers[sound] = await this.context.decodeAudioData(arrayBuffer);
                 loaded++;
