@@ -1045,33 +1045,38 @@ const AppState = {
 };
 
 // --- UI Management ---
-const UI = {
-    elements: {}, // Populated by UI.init()
-    init() {
-        const elementIds = [
-            'chordFretboard', 'measures', 'tempoDisplay', 'startStopButton',
-            'progressionSelect', 'keySelect', 'scaleDisplay', 'chordTuning',
-            'timeSignature', 'soundType', 'metronomeVolume', 'tempo', 'tapTempo',
-            'chordFretboardVolume', 'chordVolume', 'chordsEnabled', 'fretboardsGrid',
-            'darkModeToggle', 'accentIntensity', 'drumSetToggleBtn', 'reverbDial',
-            'reverbDialValue', 'addMeasureButton', 'removeMeasureButton'
-            // Add any other element IDs your script uses
-        ];
-        elementIds.forEach(id => {
-            this.elements[id] = document.getElementById(id);
-            if (!this.elements[id]) console.warn(`${LOG_PREFIX} Missing DOM element: #${id}`);
-        });
-
-        if (this.elements.progressionSelect) {
-            Object.entries(progressions).forEach(([id, { displayName }]) => {
-                const option = document.createElement('option');
-                option.value = id;
-                option.textContent = displayName;
-                this.elements.progressionSelect.appendChild(option);
-            });
-        }
-    }
-};
+// Inside your main script, part of the UI object
+elements: {
+    // Corrected to use kebab-case IDs from your HTML
+    chordFretboard: document.getElementById('chord-fretboard'),
+    measures: document.getElementById('measures'), // This ID was likely correct
+    tempoDisplay: document.getElementById('tempo-display'),
+    startStopButton: document.getElementById('start-stop'), // Corrected from startStopButton if it was that
+    progressionSelect: document.getElementById('progression-select'),
+    keySelect: document.getElementById('keySelect'), // This ID was likely correct
+    scaleDisplay: document.getElementById('scale-display'),
+    chordTuning: document.getElementById('chord-tuning'),
+    timeSignature: document.getElementById('time-signature'),
+    soundType: document.getElementById('sound-type'),
+    metronomeVolume: document.getElementById('metronome-volume'),
+    tempo: document.getElementById('tempo'), // This ID was likely correct
+    tapTempo: document.getElementById('tap-tempo'),
+    chordFretboardVolume: document.getElementById('chord-fretboard-volume'),
+    chordVolume: document.getElementById('chord-volume'),
+    chordsEnabled: document.getElementById('chordsEnabled'), // This ID was likely correct
+    fretboardsGrid: document.querySelector('.fretboards-grid'), // Uses class selector, should be fine
+    darkModeToggle: document.getElementById('dark-mode-toggle'),
+    accentIntensity: document.getElementById('accent-intensity'),
+    drumSetToggleBtn: document.getElementById('drumSetToggleBtn'), // This ID was likely correct
+    reverbDial: document.getElementById('reverb-dial'),
+    reverbDialValue: document.getElementById('reverb-dial-value'),
+    
+    // For buttons selected by aria-label, ensure these selectors are robust.
+    // The errors suggest these might also be problematic if UI.elements.addMeasureButton is null.
+    // The querySelector approach is generally fine if the aria-labels are unique and correct.
+    addMeasureButton: document.querySelector('button[aria-label="Add measure"]'),
+    removeMeasureButton: document.querySelector('button[aria-label="Remove measure"]')
+},
 
 // --- AudioContextManager (Refactored for Preloading) ---
 const AudioContextManager = {
@@ -1177,22 +1182,36 @@ const AudioContextManager = {
         }, 1000);
     },
 
-    async setupReverb() {
-        if (!this.context) return;
-        try {
-            const response = await fetch(REVERB_IMPULSE_PATH);
-            if (!response.ok) throw new Error(`Failed to fetch reverb impulse: ${response.status}`);
-            const arrayBuffer = await response.arrayBuffer();
-            this.reverbBuffer = await this.context.decodeAudioData(arrayBuffer);
-            this.reverbNode = this.context.createConvolver();
-            this.reverbNode.buffer = this.reverbBuffer;
-            // The reverbNode will be connected to destination via a gain node for mix control
-            log("Reverb setup complete.");
-        } catch (error) {
-            console.error(`${LOG_PREFIX} Failed to set up reverb:`, error);
-            this.reverbNode = null; // Ensure reverb is not used if setup fails
+   // Inside AudioContextManager
+setupReverb: async function() {
+    try {
+        // Use the constant for the path
+        const response = await fetch(REVERB_IMPULSE_PATH); 
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status} for ${REVERB_IMPULSE_PATH}`);
         }
-    },
+        const arrayBuffer = await response.arrayBuffer();
+        this.reverbBuffer = await this.context.decodeAudioData(arrayBuffer);
+        this.reverbNode = this.context.createConvolver();
+        this.reverbNode.buffer = this.reverbBuffer;
+
+        // Connect reverb to main destination (you might have a more complex chain)
+        // This example connects it directly, adjust if you have a master gain for reverb
+        this.reverbNode.connect(this.context.destination); 
+        
+        // If you want to control reverb amount with a gain node:
+        // this.reverbGainNode = this.context.createGain();
+        // this.reverbGainNode.gain.value = this.reverbAmount; // Default amount
+        // this.reverbNode.connect(this.reverbGainNode);
+        // this.reverbGainNode.connect(this.context.destination);
+
+        console.log(`${LOG_PREFIX} Reverb set up successfully.`);
+    } catch (error) {
+        console.error(`${LOG_PREFIX} Failed to set up reverb:`, error);
+        // Optionally, clear the reverbNode if setup fails partially
+        this.reverbNode = null; 
+    }
+},
     
     // Generic function to play any preloaded buffer
     _playBuffer(bufferKey, volume, destination, pan = 0, pitchBend = 0) {
