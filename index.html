@@ -3224,7 +3224,7 @@ function handleDOMContentLoaded() {
 
     // Start initialization process
     tryInitialize();
-
+} // <-- Add this closing curly brace
 // Add event listener with error boundary
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', handleDOMContentLoaded);
