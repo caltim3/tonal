@@ -1249,35 +1249,119 @@ const AudioContextManager = {
         return await this.initialize();
     },
     
-    loadSounds: async function() {
-        const progressBar = document.getElementById('progress-bar');
-        const progressText = document.getElementById('progress-text');
-        const progressContainer = document.getElementById('audio-loading-progress');
-        progressContainer.style.display = 'block';
+   loadSounds: async function() {
+    const progressBar = document.getElementById('progress-bar');
+    const progressText = document.getElementById('progress-text');
+    const progressContainer = document.getElementById('audio-loading-progress');
 
-        const sounds = [
-            'click.wav', 'woodblock.wav', 'Kick.wav', 'Snare.wav', 'HiHat.wav',
-            'Kick2.wav', 'Snare2.wav', 'HiHat2.wav', 'jazzkick.wav', 'jazzsnare.wav', 'jazzhat.wav'
-        ];
-        const batchSize = 3;
-        let loaded = 0;
+    // Validate DOM elements
+    if (!progressBar || !progressText || !progressContainer) {
+        console.error('Progress UI elements missing:', {
+            progressBar: !!progressBar,
+            progressText: !!progressText,
+            progressContainer: !!progressContainer
+        });
+        return;
+    }
 
-        for (let i = 0; i < sounds.length; i += batchSize) {
-            const batch = sounds.slice(i, i + batchSize);
-            await Promise.all(batch.map(async sound => {
-                const response = await fetch(`${sound}`);
+    progressContainer.style.display = 'block';
+
+    // Base path for sound files (root directory)
+    const SOUND_BASE_PATH = '/'; // Use '/tonal/' if hosted at /tonal/, or './' for relative paths
+
+    const sounds = [
+        // Non-piano sounds
+        'click.wav',
+        'kick.wav',
+        'snare.wav',
+        'hihat.wav',
+        'woodblock.wav',
+        // Piano notes: Octave 2
+        'c2.wav',
+        'cs2.wav',
+        'd2.wav',
+        'ds2.wav',
+        'e2.wav',
+        'f2.wav',
+        'fs2.wav',
+        'g2.wav',
+        'gs2.wav',
+        'a2.wav',
+        'as2.wav',
+        'b2.wav',
+        // Piano notes: Octave 3
+        'c3.wav',
+        'cs3.wav',
+        'd3.wav',
+        'ds3.wav',
+        'e3.wav',
+        'f3.wav',
+        'fs3.wav',
+        'g3.wav',
+        'gs3.wav',
+        'a3.wav',
+        'as3.wav',
+        'b3.wav',
+        // Piano notes: Octave 4
+        'c4.wav',
+        'cs4.wav',
+        'd4.wav',
+        'ds4.wav',
+        'e4.wav',
+        'f4.wav',
+        'fs4.wav',
+        'g4.wav',
+        'gs4.wav',
+        'a4.wav',
+        'as4.wav',
+        'b4.wav',
+        // Piano notes: Octave 5
+        'c5.wav',
+        'cs5.wav',
+        'd5.wav',
+        'ds5.wav',
+        'e5.wav',
+        'f5.wav',
+        'fs5.wav',
+        'g5.wav',
+        'gs5.wav',
+        'a5.wav',
+        'as5.wav',
+        'b5.wav'
+    ];
+    const batchSize = 3;
+    let loaded = 0;
+
+    for (let i = 0; i < sounds.length; i += batchSize) {
+        const batch = sounds.slice(i, i + batchSize);
+        await Promise.all(batch.map(async sound => {
+            try {
+                // Normalize the sound path
+                const soundPath = sound.startsWith('/') || sound.startsWith(SOUND_BASE_PATH)
+                    ? sound
+                    : `${SOUND_BASE_PATH}${sound.replace(/^\//, '')}`;
+                
+                console.log(`Fetching sound: ${soundPath}`); // Debug log
+                const response = await fetch(soundPath);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch ${soundPath}: ${response.statusText}`);
+                }
                 const arrayBuffer = await response.arrayBuffer();
                 this.soundBuffers[sound] = await this.context.decodeAudioData(arrayBuffer);
                 loaded++;
                 const progress = Math.round((loaded / sounds.length) * 100);
                 progressBar.style.width = `${progress}%`;
                 progressText.textContent = `${progress}%`;
-            }));
-        }
+            } catch (error) {
+                console.error(`Error loading sound ${sound}:`, error);
+                // Continue loading other sounds
+            }
+        }));
+    }
 
-        progressContainer.style.display = 'none';
-        this.samplesLoaded = true;
-    },
+    progressContainer.style.display = 'none';
+    this.samplesLoaded = true;
+}
     
     createDrumSound: async function(type) {
         const sampleRate = this.context.sampleRate;
