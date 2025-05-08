@@ -1061,10 +1061,104 @@ function updateFretboardNotes(fretboardContainer, rootNote, scaleName, tuningArr
     }
 }
 
-// Playback Control (startPlayback, stopPlayback - largely unchanged)
-async function startPlayback() { /* ... (Keep existing) ... */ try{await AudioContextManager.ensureAudioContext();if(AppState.isPlaying)return;const m=UI.elements.measures.children; const tsn=parseInt(UI.elements.timeSignature.value);let ims=(60/AppState.tempo)*1000;if(tsn===4)ims/=2; AppState.currentBeat=0; if(!AppState.intervalId){AppState.currentMeasure=AppState.loopingActive&&AppState.loopStartMeasure!==-1?AppState.loopStartMeasure:0;await playBeat();const tbuid=document.querySelectorAll('.beat').length;AppState.currentBeat=(AppState.currentBeat+1)%tbuid;if(AppState.currentBeat===0){if(AppState.loopingActive&&AppState.loopStartMeasure!==-1&&AppState.loopEndMeasure!==-1){AppState.currentMeasure++;if(AppState.currentMeasure>AppState.loopEndMeasure)AppState.currentMeasure=AppState.loopStartMeasure;}else if(m.length>0)AppState.currentMeasure=(AppState.currentMeasure+1)%m.length;}} clearInterval(AppState.intervalId);AppState.intervalId=setInterval(async()=>{await playBeat();},ims);AppState.updateState({isPlaying:true});UI.elements.startStopButton.textContent='Stop';log("Playback started.");}catch(e){console.error('Failed to start playback:',e);stopPlayback();}}
-function stopPlayback() { /* ... (Keep existing) ... */ clearInterval(AppState.intervalId);AppState.intervalId=null;AppState.updateState({isPlaying:false});document.querySelectorAll('.beat.active').forEach(b=>b.classList.remove('active'));document.querySelectorAll('.measure.active').forEach(m=>m.classList.remove('active'));if(AudioContextManager.currentChordGain&&AudioContextManager.context){const n=AudioContextManager.context.currentTime;AudioContextManager.currentChordGain.gain.setValueAtTime(AudioContextManager.currentChordGain.gain.value,n);AudioContextManager.currentChordGain.gain.exponentialRampToValueAtTime(0.001,n+0.1);AudioContextManager.currentChordGain=null;}UI.elements.startStopButton.textContent='Start';log("Playback stopped.");}
+async function startPlayback() {
+    try {
+        await AudioContextManager.ensureAudioContext(); // Ensure audio is ready
+        if (AppState.isPlaying) return; // Don't start if already playing
 
+        const measures = UI.elements.measures.children;
+        // Note: Removed check for empty measures, playback might just be metronome
+        // if (measures.length === 0) {
+        //     log('No measures to play.');
+        //     // return; // Or allow metronome-only playback
+        // }
+
+        const timeSignatureNum = parseInt(UI.elements.timeSignature.value);
+        let intervalMs = (60 / AppState.tempo) * 1000;
+
+        // Adjust interval for time signatures where we display subdivisions
+        if (timeSignatureNum === 4) { // 4/4 uses 8th note interval if 8 beats displayed
+            intervalMs /= 2;
+        }
+        // Add similar adjustments if needed for 6/8, 12/8 depending on how createBeats works
+
+        AppState.currentBeat = 0; // Always start beat count at 0 for the measure
+
+        // --- Start Logic ---
+        // Only reset measure/play first beat immediately if NOT resuming playback
+        // (e.g., first time clicking play, or after stopping completely)
+        if (!AppState.intervalId) {
+            // Determine starting measure (respect loop if active)
+            AppState.currentMeasure = (AppState.loopingActive && AppState.loopStartMeasure !== -1)
+                                      ? AppState.loopStartMeasure
+                                      : 0;
+
+            await playBeat(); // Play the very first beat/chord immediately
+
+            // Advance beat counter *after* playing the first beat,
+            // so the first interval waits correctly before playing the *second* beat.
+            const totalBeatsInDisplay = document.querySelectorAll('.beat').length;
+             if (totalBeatsInDisplay > 0) { // Prevent division by zero if no beats exist
+                 AppState.currentBeat = (AppState.currentBeat + 1) % totalBeatsInDisplay;
+                  // Advance measure if we wrapped around immediately (e.g., 1 beat time sig?)
+                 if (AppState.currentBeat === 0) {
+                     if (AppState.loopingActive && AppState.loopStartMeasure !== -1 && AppState.loopEndMeasure !== -1) {
+                         AppState.currentMeasure++;
+                         if (AppState.currentMeasure > AppState.loopEndMeasure) AppState.currentMeasure = AppState.loopStartMeasure;
+                     } else if (measures.length > 0) {
+                         AppState.currentMeasure = (AppState.currentMeasure + 1) % measures.length;
+                     }
+                 }
+            }
+        }
+        // --- End Start Logic ---
+
+
+        // Clear any previous interval and start the main playback loop
+        clearInterval(AppState.intervalId);
+        AppState.intervalId = setInterval(async () => {
+            await playBeat(); // Call the main beat playing logic repeatedly
+        }, intervalMs);
+
+        AppState.updateState({ isPlaying: true });
+        UI.elements.startStopButton.textContent = 'Stop';
+        log("Playback started.");
+
+    } catch (e) { // Catch errors during startup
+        console.error('Failed to start playback:', e);
+        stopPlayback(); // Ensure cleanup if start fails
+        alert("Error starting playback. Please check console."); // Inform user
+    }
+}
+
+function stopPlayback() {
+    clearInterval(AppState.intervalId); // Stop the interval timer
+    AppState.intervalId = null;
+    AppState.updateState({ isPlaying: false }); // Update state, keep beat/measure for resume
+
+    // Clear active highlights
+    document.querySelectorAll('.beat.active').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.measure.active').forEach(m => m.classList.remove('active'));
+
+    // Fade out any currently playing chord sound
+    if (AudioContextManager.currentChordGain && AudioContextManager.context) {
+        try {
+            const now = AudioContextManager.context.currentTime;
+            // Check if gain node is still valid before manipulating
+             if (AudioContextManager.currentChordGain.gain) {
+                 AudioContextManager.currentChordGain.gain.setValueAtTime(AudioContextManager.currentChordGain.gain.value, now);
+                 AudioContextManager.currentChordGain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+            }
+        } catch (rampError) {
+            console.warn("Could not ramp down chord gain:", rampError); // Log error if ramp fails
+        } finally {
+             AudioContextManager.currentChordGain = null; // Allow garbage collection
+        }
+    }
+
+    UI.elements.startStopButton.textContent = 'Start'; // Reset button text
+    log("Playback stopped.");
+}
 
 // Progression Management (loadProgression, updateProgressionKey - update for song info)
 function loadProgression(progName, overrideKey = null, isUserSong = false) {
