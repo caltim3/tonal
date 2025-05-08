@@ -1137,29 +1137,6 @@ async function playBeat() {
 
 } // --- End of playBeat Function Definition ---
 
-
-    // --- Advance Beat and Measure Counters ---
-    const totalBeatsInDisplay = beatsUI.length; // Use length of actual beat elements
-    AppState.currentBeat = (AppState.currentBeat + 1) % totalBeatsInDisplay;
-
-    // Check if we've completed a measure cycle
-    if (AppState.currentBeat === 0) {
-        if (AppState.loopingActive && AppState.loopStartMeasure !== -1 && AppState.loopEndMeasure !== -1) {
-            // If looping, advance within the loop range
-            AppState.currentMeasure++;
-            if (AppState.currentMeasure > AppState.loopEndMeasure) {
-                AppState.currentMeasure = AppState.loopStartMeasure; // Loop back to start
-            }
-        } else if (measures.length > 0) {
-            // If not looping, advance to the next measure cyclically
-            AppState.currentMeasure = (AppState.currentMeasure + 1) % measures.length;
-        }
-        // If guide tones are active, recalculate them for the new measure
-        if (AppState.guideTonesActive) {
-             highlightGuideTones();
-        }
-    }
-
 async function startPlayback() {
     try {
         await AudioContextManager.ensureAudioContext(); // Ensure audio is ready
