@@ -1245,7 +1245,7 @@ const AudioContextManager = {
 }
 
 
-    playPianoNote(noteNameWithOctave, volume, durationMs = 1000) {
+    function playPianoNote(noteNameWithOctave, volume, durationMs = 1000) {
         const bufferKey = `piano_${noteNameWithOctave.toLowerCase()}`; 
         const playedSound = this._playBuffer(bufferKey, volume, this.context.destination);
         
@@ -1260,7 +1260,7 @@ const AudioContextManager = {
         return playedSound ? playedSound.source : null;
     },
 
-    stopCurrentChord() {
+    fucntion stopCurrentChord() {
         this.currentChordSources.forEach(chordNote => {
             try {
                 if (chordNote.source) { // Check if source exists
