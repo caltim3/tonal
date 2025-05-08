@@ -1045,53 +1045,36 @@ function updateFretboardNotes(fretboardContainer, rootNote, scaleName, tuningArr
     // --- End Guide Tones ---
 } // --- END OF updateFretboardNotes FUNCTION ---
     
-    // Advance beat and measure
-    const totalBeatsInDisplay = beatsUI.length;
-    AppState.currentBeat = (AppState.currentBeat + 1) % totalBeatsInDisplay;
-    
-    if (AppState.currentBeat === 0) { // End of displayed beats for the measure
-        if (AppState.loopingActive && AppState.loopStartMeasure !== -1 && AppState.loopEndMeasure !== -1) {
-            AppState.currentMeasure++;
-            if (AppState.currentMeasure > AppState.loopEndMeasure) {
-                AppState.currentMeasure = AppState.loopStartMeasure; // Loop back
-            }
-        } else if (measures.length > 0) {
-            AppState.currentMeasure = (AppState.currentMeasure + 1) % measures.length;
-        }
-    }
-// PASTE THIS ENTIRE FUNCTION DEFINITION INTO YOUR SCRIPT TAG
 
 async function playBeat() {
-    const beatsUI = document.querySelectorAll('.beat'); // Get beat elements
+    // --- Get UI Elements (defined within function scope) ---
+    const beatsUI = document.querySelectorAll('.beat');
+    const measures = UI.elements.measures.children; // Access measures via UI cache
+    // --- End Get UI Elements ---
+
     if (beatsUI.length === 0) return; // Exit if no beats are displayed
 
     // --- Determine Current Measure (Handle Looping) ---
     let measureToPlayIndex = AppState.currentMeasure;
     if (AppState.loopingActive && AppState.loopStartMeasure !== -1 && AppState.loopEndMeasure !== -1) {
-        // If current measure is outside the loop range, jump to the start
         if (AppState.currentMeasure < AppState.loopStartMeasure || AppState.currentMeasure > AppState.loopEndMeasure) {
             AppState.currentMeasure = AppState.loopStartMeasure;
         }
-        measureToPlayIndex = AppState.currentMeasure; // Use the (potentially corrected) measure index
+        measureToPlayIndex = AppState.currentMeasure;
     }
     // --- End Measure Determination ---
 
 
     // --- Update UI Highlights ---
-    // Deactivate previous beat highlight
     beatsUI.forEach(b => b.classList.remove('active'));
-    // Activate current beat highlight
     const currentBeatElement = beatsUI[AppState.currentBeat];
     if (currentBeatElement) {
         currentBeatElement.classList.add('active');
-        // Play metronome sound for the current beat
         const vol = parseFloat(currentBeatElement.dataset.volume);
         if (vol > 0) {
              await playMetronomeSound(vol);
         }
     }
-    // Update active measure highlight
-    const measures = UI.elements.measures.children; // Get measure elements
     if (measures.length > 0 && measureToPlayIndex < measures.length) {
         Array.from(measures).forEach((m, idx) => m.classList.toggle('active', idx === measureToPlayIndex));
     }
@@ -1107,27 +1090,52 @@ async function playBeat() {
         const scaleType = currentMeasureElement.querySelector('.scale-controls .scale-select')?.value;
 
         if (root && quality && scaleRoot && scaleType) {
-            // Update the main fretboard display according to the current measure's settings
             const tuning = TUNINGS[UI.elements.chordTuning.value];
+            // Update fretboard *before* potential long chord playback
             updateFretboardNotes(UI.elements.chordFretboard, scaleRoot, scaleType, tuning);
 
-            // Play the chord sound at the appropriate time within the measure
             const timeSig = parseInt(UI.elements.timeSignature.value);
             const beatDur = 60 / AppState.tempo;
-            let chordDur = beatDur * timeSig; // Default duration: one measure
+            let chordDur = beatDur * timeSig;
 
-            if (timeSig === 4) { // Special handling for 4/4 (common time)
-                chordDur = beatDur * 2; // Chord often lasts half measure (2 beats)
-                // Play chord on beat 1 (index 0) and beat 3 (index 4 of 8th notes)
+            if (timeSig === 4) {
+                chordDur = beatDur * 2;
                 if (AppState.currentBeat === 0 || AppState.currentBeat === 4) {
-                    playChord(root, quality, AudioContextManager.context.currentTime, chordDur);
+                    // Use await if playChord might block or you need sequential execution guarantee
+                    await playChord(root, quality, AudioContextManager.context.currentTime, chordDur);
                 }
-            } else if (AppState.currentBeat === 0) { // For other time signatures, play chord on beat 1
-                playChord(root, quality, AudioContextManager.context.currentTime, chordDur);
+            } else if (AppState.currentBeat === 0) {
+                 await playChord(root, quality, AudioContextManager.context.currentTime, chordDur);
             }
         }
     }
     // --- End Chord & Fretboard Update ---
+
+
+    // --- Advance Beat and Measure Counters (Definitely inside playBeat now) ---
+    const totalBeatsInDisplay = beatsUI.length; // beatsUI is defined above
+    AppState.currentBeat = (AppState.currentBeat + 1) % totalBeatsInDisplay;
+
+    // Check if we've completed a measure cycle
+    if (AppState.currentBeat === 0) {
+        if (AppState.loopingActive && AppState.loopStartMeasure !== -1 && AppState.loopEndMeasure !== -1) {
+            // If looping, advance within the loop range
+            AppState.currentMeasure++;
+            if (AppState.currentMeasure > AppState.loopEndMeasure) {
+                AppState.currentMeasure = AppState.loopStartMeasure; // Loop back
+            }
+        } else if (measures.length > 0) { // Use measures defined above
+            // If not looping, advance to the next measure cyclically
+            AppState.currentMeasure = (AppState.currentMeasure + 1) % measures.length;
+        }
+        // If guide tones are active, recalculate them for the new measure
+        if (AppState.guideTonesActive) {
+             highlightGuideTones(); // highlightGuideTones uses AppState.currentMeasure
+        }
+    }
+    // --- End Counter Advancement ---
+
+} // --- End of playBeat Function Definition ---
 
 
     // --- Advance Beat and Measure Counters ---
