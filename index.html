@@ -2299,14 +2299,6 @@ function setupGlobalEventListeners() {
     addSafeListener('addMeasureButton', 'click', addMeasure);
     addSafeListener('removeMeasureButton', 'click', removeMeasure);
 
-    // Drum Pad Button Listeners
-    addSafeListener('kickButton', 'click', () => );
-    addSafeListener('snareButton', 'click', () => );
-    addSafeListener('hihatClosedButton', 'click', () => ); // Assuming 'hihat' is closed
-    // addSafeListener('hihatOpenButton', 'click', () => ); // Need 'openhat' sample
-    // addSafeListener('crashButton', 'click', () => ); // Need 'crash' sample
-
-
     // Event delegation for measure controls (drag/drop on container)
     if (UI.elements.measures) {
         UI.elements.measures.addEventListener('dragover', dragOver);
