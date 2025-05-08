@@ -633,9 +633,17 @@ const FILE_FORMAT = 'wav';
 
 function getSampleFileName(note, octave) { return `${note}${octave}.${FILE_FORMAT}`; }
 const SAMPLE_NOTE_MAP = { 'C':'c', 'Db':'cs', 'D':'d', 'Eb':'ds', 'E':'e', 'F':'f', 'Gb':'fs', 'G':'g', 'Ab':'gs', 'A':'a', 'Bb':'as', 'B':'b' };
+
 function standardizeNoteName(note) {
-    if (!note) return ''; let s = note.toUpperCase().trim().replace('♭','b').replace('♯','#');
-    constsfm={'C#':'Db','D#':'Eb','F#':'Gb','G#':'Ab','A#':'Bb'}; return sfm[s]||NOTES.find(n=>n.toUpperCase()===s.toUpperCase())||s;
+    if (!note) return '';
+    let standardized = note.toUpperCase().trim();
+    standardized = standardized.replace('♭', 'b').replace('♯', '#');
+    const sharpToFlatMap = {'C#':'Db', 'D#':'Eb', 'F#':'Gb', 'G#':'Ab', 'A#':'Bb'};
+    if (standardized.includes('#')) {
+        return sharpToFlatMap[standardized] || standardized; // Use the correctly named map
+    }
+    const found = NOTES.find(n => n.toUpperCase() === standardized.toUpperCase());
+    return found || standardized;
 }
 
 const SCALES = {
