@@ -1069,6 +1069,7 @@ const AudioContextManager = {
     soundBuffers: {}, 
     reverbNode: null,
     reverbBuffer: null,
+    chordGainNode: null,
     reverbAmount: 0.2, 
     samplesFullyLoaded: false,
     currentChordSources: [], 
@@ -1084,8 +1085,14 @@ const AudioContextManager = {
                 log("AudioContext is suspended. Attempting to resume...");
                 // No direct resume here; wait for user interaction handled globally
             }
+    
+            // 🔊 Setup global chord GainNode with live volume control
+            this.chordGainNode = this.context.createGain();
+            this.chordGainNode.gain.value = parseFloat(UI.elements.chordVolume?.value || 0.75);
+            this.chordGainNode.connect(this.context.destination);
+    
             await this.setupReverb();
-            AppState.updateState({ audioInitialized: true }); // Mark as initialized, but not necessarily resumed
+            AppState.updateState({ audioInitialized: true });
             log("AudioContext initialized (state: " + this.context.state + "). Sample loading will follow.");
         } catch (error) {
             console.error(`${LOG_PREFIX} AudioContext initialization failed:`, error);
@@ -1095,6 +1102,7 @@ const AudioContextManager = {
         }
         return this.context;
     },
+
 
     async ensureAudioContextResumed() {
         if (!this.context) {
@@ -1208,44 +1216,46 @@ const AudioContextManager = {
     },
     
     _playBuffer(bufferKey, volume, destination, pan = 0, pitchBend = 0, isMetronomeSound = false) {
-        if (!this.context || this.context.state !== 'running' || !this.soundBuffers[bufferKey]) {
-            if (!this.soundBuffers[bufferKey]) console.warn(`${LOG_PREFIX} Buffer not found for key: ${bufferKey}`);
-            // else console.warn(`${LOG_PREFIX} Audio context not running or buffer not ready for ${bufferKey}`);
-            return null;
+    if (!this.context || this.context.state !== 'running' || !this.soundBuffers[bufferKey]) {
+        if (!this.soundBuffers[bufferKey]) console.warn(`${LOG_PREFIX} Buffer not found for key: ${bufferKey}`);
+        return null;
+    }
+
+    const source = this.context.createBufferSource();
+    source.buffer = this.soundBuffers[bufferKey];
+
+    if (pitchBend !== 0) source.detune.value = pitchBend * 100;
+
+    const gainNode = this.context.createGain();
+    gainNode.gain.value = Math.max(0, Math.min(1, volume));
+
+    const pannerNode = this.context.createStereoPanner();
+    pannerNode.pan.value = Math.max(-1, Math.min(1, pan));
+
+    source.connect(gainNode);
+    gainNode.connect(pannerNode);
+
+    // 🔊 Route through chordGainNode for volume slider control unless overridden
+    const finalDestination = (!isMetronomeSound && this.chordGainNode) ? this.chordGainNode : (destination || this.context.destination);
+    pannerNode.connect(finalDestination);
+
+    // 🎧 Reverb send (skip for metronome)
+    if (this.reverbNode && this.reverbAmount > 0 && !isMetronomeSound) {
+        const reverbSendGain = this.context.createGain();
+        reverbSendGain.gain.value = this.reverbAmount * (bufferKey.startsWith('piano_') ? 0.5 : 0.3);
+        pannerNode.connect(reverbSendGain);
+        reverbSendGain.connect(this.reverbNode);
+
+        if (!this.reverbNodeConnectedToDestination) {
+            this.reverbNode.connect(this.context.destination);
+            this.reverbNodeConnectedToDestination = true;
         }
-        const source = this.context.createBufferSource();
-        source.buffer = this.soundBuffers[bufferKey];
+    }
 
-        if (pitchBend !== 0) source.detune.value = pitchBend * 100;
+    source.start(this.context.currentTime);
+    return { source, gainNode, pannerNode };
+}
 
-        const gainNode = this.context.createGain();
-        gainNode.gain.value = Math.max(0, Math.min(1, volume)); 
-
-        const pannerNode = this.context.createStereoPanner();
-        pannerNode.pan.value = Math.max(-1, Math.min(1, pan)); 
-
-        source.connect(gainNode);
-        gainNode.connect(pannerNode);
-        pannerNode.connect(destination || this.context.destination); // Main dry signal path
-        
-        // Reverb Send
-        if (this.reverbNode && this.reverbAmount > 0 && !isMetronomeSound) { // Typically don't reverb metronome clicks
-            const reverbSendGain = this.context.createGain();
-            // Adjust reverb send level based on type or a global setting
-            reverbSendGain.gain.value = this.reverbAmount * (bufferKey.startsWith('piano_') ? 0.5 : 0.3); // Example: more reverb for piano
-            
-            pannerNode.connect(reverbSendGain); // Send from after panner to maintain stereo image into reverb
-            reverbSendGain.connect(this.reverbNode);
-            // Ensure reverbNode is connected to destination (usually done once)
-            if (!this.reverbNodeConnectedToDestination) {
-                 this.reverbNode.connect(this.context.destination);
-                 this.reverbNodeConnectedToDestination = true;
-            }
-        }
-        
-        source.start(this.context.currentTime);
-        return { source, gainNode, pannerNode }; // Return nodes for potential future control
-    },
 
     playPianoNote(noteNameWithOctave, volume, durationMs = 1000) {
         const bufferKey = `piano_${noteNameWithOctave.toLowerCase()}`; 
@@ -2349,8 +2359,19 @@ async function initializeApp() {
     } catch (error) {
         // Error already logged and status updated by AudioContextManager.initialize
     }
-    
+
+    // 🔊 Set up chord volume live control
+    if (UI.elements.chordVolume) {
+        UI.elements.chordVolume.addEventListener('input', () => {
+            const vol = parseFloat(UI.elements.chordVolume.value);
+            if (AudioContextManager.chordGainNode) {
+                AudioContextManager.chordGainNode.gain.setValueAtTime(vol, AudioContextManager.context.currentTime);
+            }
+        });
+    }
+
     updateLoadingStatus("Setting up interface components...", null);
+
     createBeats();
     if (UI.elements.chordFretboard && UI.elements.chordTuning) {
         createFretboard(UI.elements.chordFretboard, TUNINGS[UI.elements.chordTuning.value] || TUNINGS.standard);
@@ -2358,7 +2379,6 @@ async function initializeApp() {
         updateFretboardNotes(UI.elements.chordFretboard, 'C', 'major', TUNINGS[UI.elements.chordTuning.value] || TUNINGS.standard); 
     }
     initializeFretFlow(); 
-
     setupGlobalEventListeners();
 
     if (UI.elements.progressionSelect?.value) {
@@ -2366,24 +2386,29 @@ async function initializeApp() {
     } else {
         addMeasure(); 
     }
-    
-    if (UI.elements.tempoDisplay && UI.elements.tempo) UI.elements.tempoDisplay.textContent = `${UI.elements.tempo.value} BPM`;
-    if (UI.elements.reverbDialValue && UI.elements.reverbDial) UI.elements.reverbDialValue.textContent = UI.elements.reverbDial.value;
-    if (UI.elements.drumSetToggleBtn) UI.elements.drumSetToggleBtn.textContent = drumSoundSets[currentDrumSetIndex].name;
-    if (UI.elements.soundType?.value !== 'drums' && UI.elements.drumSetToggleBtn) { // Initial hide if not drums
+
+    if (UI.elements.tempoDisplay && UI.elements.tempo) {
+        UI.elements.tempoDisplay.textContent = `${UI.elements.tempo.value} BPM`;
+    }
+    if (UI.elements.reverbDialValue && UI.elements.reverbDial) {
+        UI.elements.reverbDialValue.textContent = UI.elements.reverbDial.value;
+    }
+    if (UI.elements.drumSetToggleBtn) {
+        UI.elements.drumSetToggleBtn.textContent = drumSoundSets[currentDrumSetIndex].name;
+    }
+    if (UI.elements.soundType?.value !== 'drums' && UI.elements.drumSetToggleBtn) {
         UI.elements.drumSetToggleBtn.style.display = 'none';
     }
-
 
     if (!AudioContextManager.context || AudioContextManager.context.state !== 'running') {
         updateLoadingStatus("Ready. Click or press a key to enable audio and load samples.", null);
     } else {
-        // If context is already running (e.g. browser allows it or previous interaction), load samples
         await AudioContextManager.loadAllSoundSamples();
     }
 
     log("Application initialized.");
 }
+
 
 // --- Global Error Handling ---
 window.addEventListener('error', (event) => {
