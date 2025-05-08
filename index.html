@@ -1379,29 +1379,71 @@ function clearGuideToneHighlights() {
 function setupEventListeners() {
     document.body.addEventListener('click', ensureAudioInitializedUserInteraction, { once: true });
     UI.elements.startStopButton.addEventListener('click', () => { if (AppState.isPlaying) stopPlayback(); else startPlayback(); });
-    if (UI.elements.drumSetToggleBtn) { UI.elements.drumSetToggleBtn.addEventListener('click', () => { currentDrumSetIndex=(currentDrumSetIndex+1)%drumSoundSets.length; UI.elements.drumSetToggleBtn.textContent=drumSoundSets[currentDrumSetIndex].name; }); }
-    if (UI.elements.soundType) { UI.elements.soundType.addEventListener('change', (e)=>onMetronomeInstrumentChange(e.target.value)); onMetronomeInstrumentChange(UI.elements.soundType.value); }
-    
+    if (UI.elements.drumSetToggleBtn) { UI.elements.drumSetToggleBtn.addEventListener('click', () => { currentDrumSetIndex=(currentDrumSetIndex+1)%drumSoundSets.length; UI.elements.drumSetToggleBtn.textContent=drumSoundSets[currentDrumSetIndex].name; log(`Switched to drum set: ${drumSoundSets[currentDrumSetIndex].name}`); }); }
+    if (UI.elements.soundType) { UI.elements.soundType.addEventListener('change', (e)=>onMetronomeInstrumentChange(e.target.value)); onMetronomeInstrumentChange(UI.elements.soundType.value); } // Initialize visibility based on current value
+
     let colorMode=0; UI.elements.darkModeToggle.addEventListener('click',()=>{colorMode=(colorMode+1)%4;document.body.classList.remove('dark-mode','dark-mode-2','dark-mode-3');UI.elements.darkModeToggle.classList.remove('active','active-2','active-3');const m=['','dark-mode','dark-mode-2','dark-mode-3'];const ac=['','active','active-2','active-3'];if(colorMode>0){document.body.classList.add(m[colorMode]);UI.elements.darkModeToggle.classList.add(ac[colorMode]);} log(`Color mode: ${m[colorMode]||'Light'}`);});
-    
-    UI.elements.chordsEnabled.addEventListener('click',()=>{const iA=UI.elements.chordsEnabled.classList.toggle('active');UI.elements.chordsEnabled.textContent=iA?'Chords Enabled':'Chords Disabled';});
+
+    UI.elements.chordsEnabled.addEventListener('click',()=>{const iA=UI.elements.chordsEnabled.classList.toggle('active');UI.elements.chordsEnabled.textContent=iA?'Chords Enabled':'Chords Disabled'; log(`Chords ${iA ? 'enabled' : 'disabled'}`); });
     UI.elements.tempo.addEventListener('input',()=>{AppState.tempo=parseInt(UI.elements.tempo.value);UI.elements.tempoDisplay.textContent=`${AppState.tempo} BPM`;if(AppState.isPlaying){stopPlayback();startPlayback();}});
     UI.elements.tapTempo.addEventListener('click',()=>{const n=Date.now();AppState.tapTempoTimestamps.push(n);if(AppState.tapTempoTimestamps.length>4)AppState.tapTempoTimestamps.shift();if(AppState.tapTempoTimestamps.length>1){let ti=0;for(let i=1;i<AppState.tapTempoTimestamps.length;i++)ti+=AppState.tapTempoTimestamps[i]-AppState.tapTempoTimestamps[i-1];const ai=ti/(AppState.tapTempoTimestamps.length-1);if(ai>0&&ai<3000){const bpm=Math.round(60000/ai);AppState.tempo=Math.max(40,Math.min(220,bpm));UI.elements.tempo.value=AppState.tempo;UI.elements.tempoDisplay.textContent=`${AppState.tempo} BPM`;if(AppState.isPlaying){stopPlayback();startPlayback();}}} setTimeout(()=>{if(AppState.tapTempoTimestamps.length>0&&Date.now()-AppState.tapTempoTimestamps[AppState.tapTempoTimestamps.length-1]>3000)AppState.tapTempoTimestamps=[];},3100);});
     UI.elements.timeSignature.addEventListener('change',()=>{createBeats();if(AppState.isPlaying){stopPlayback();startPlayback();}});
-    
-    if(UI.elements.reverbDial&&UI.elements.reverbDialValue){UI.elements.reverbDial.addEventListener('input',function(e){const v=parseInt(e.target.value,10);AudioContextManager.reverbAmount=v/100;UI.elements.reverbDialValue.textContent=v;});}
-    
-    UI.elements.progressionSelect.addEventListener('change',(e)=>{const s=e.target.value;const k=UI.elements.keySelect.value;loadProgression(s,k,false); if (s) UI.elements.userProgressionSelect.value = ""; /* Deselect user song */ });
-    UI.elements.userProgressionSelect.addEventListener('change',(e)=>{const s=e.target.value; if(s){const uS=JSON.parse(localStorage.getItem('userBebopProgressions')||'{}');const k=uS[s]?.defaultKey || UI.elements.keySelect.value; loadProgression(s,k,true); UI.elements.progressionSelect.value = ""; /* Deselect standard song */}});
-    UI.elements.keySelect.addEventListener('change',(e)=>{updateProgressionKey(e.target.value);});
-    UI.elements.chordTuning.addEventListener('change',()=>{addFirstChordListener();initializeFretFlow();});
-    UI.elements.saveProgressionButton.addEventListener('click', saveCurrentProgression);
-    UI.elements.deleteUserSongButton.addEventListener('click', deleteSelectedUserSong);
-    UI.elements.guideTonesToggle.addEventListener('click', toggleGuideTones);
-    UI.elements.loopSelectedToggle.addEventListener('click', toggleLoopingMode);
 
-    UI.elements.measures.addEventListener('dragover', dragOver); // For the container
-    UI.elements.measures.addEventListener('drop', drop);         // For the container
+    if(UI.elements.reverbDial&&UI.elements.reverbDialValue){UI.elements.reverbDial.addEventListener('input',function(e){const v=parseInt(e.target.value,10);AudioContextManager.reverbAmount=v/100;UI.elements.reverbDialValue.textContent=v; log(`Reverb amount set to: ${AudioContextManager.reverbAmount}`);});}
+
+    // Listener for standard progression selection
+    UI.elements.progressionSelect.addEventListener('change', (e) => {
+        const selectedSong = e.target.value;
+        // --- CORRECTED PART ---
+        // Load the selected song using its default key (pass null for overrideKey)
+        loadProgression(selectedSong, null, false);
+        // --- END CORRECTION ---
+
+        // Deselect any user song if a standard progression is chosen
+        if (selectedSong && UI.elements.userProgressionSelect) {
+            UI.elements.userProgressionSelect.value = "";
+        }
+    });
+
+    // Listener for user-saved progression selection
+    if (UI.elements.userProgressionSelect) {
+        UI.elements.userProgressionSelect.addEventListener('change', (e) => {
+            const selectedUserSong = e.target.value;
+            if (selectedUserSong) { // Only proceed if a valid user song is selected
+                const userSongs = JSON.parse(localStorage.getItem('userBebopProgressions') || '{}');
+                const userSongData = userSongs[selectedUserSong];
+                // Use the user song's saved default key, or fallback if needed
+                const keyToLoad = userSongData?.defaultKey || UI.elements.keySelect.value;
+                loadProgression(selectedUserSong, keyToLoad, true);
+                // Deselect any standard song if a user progression is chosen
+                if (UI.elements.progressionSelect) UI.elements.progressionSelect.value = "";
+            }
+        });
+    }
+
+    // Listener for changing the key (transposing the currently loaded song)
+    UI.elements.keySelect.addEventListener('change', (e) => {
+        updateProgressionKey(e.target.value);
+    });
+
+    // Listener for changing the tuning
+    UI.elements.chordTuning.addEventListener('change', () => {
+        addFirstChordListener(); // Update main fretboard display
+        initializeFretFlow(); // Reinitialize FretFlow boards
+    });
+
+    // Listeners for user song management buttons
+    if (UI.elements.saveProgressionButton) UI.elements.saveProgressionButton.addEventListener('click', saveCurrentProgression);
+    if (UI.elements.deleteUserSongButton) UI.elements.deleteUserSongButton.addEventListener('click', deleteSelectedUserSong);
+
+    // Listeners for toggle buttons
+    if (UI.elements.guideTonesToggle) UI.elements.guideTonesToggle.addEventListener('click', toggleGuideTones);
+    if (UI.elements.loopSelectedToggle) UI.elements.loopSelectedToggle.addEventListener('click', toggleLoopingMode);
+
+    // Listeners for drag and drop on the measures container
+    UI.elements.measures.addEventListener('dragover', dragOver);
+    UI.elements.measures.addEventListener('drop', drop);
+    // Note: dragstart/dragend listeners are added to individual measures when they are created
 
     log("Event listeners set up.");
 }
