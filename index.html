@@ -1539,18 +1539,6 @@ async function playChord(root, quality, durationMs = 2000) {
     });
 }
 
-async function  { 
-    if (!await AudioContextManager.ensureAudioContextResumed()) return;
-    if (!AudioContextManager.samplesFullyLoaded) return;
-
-    const currentSet = drumSoundSets[currentDrumSetIndex];
-    const kitNameKey = currentSet.name.replace(/\s+/g, '_').toLowerCase();
-    const bufferKey = `drum_${kitNameKey}_${drumType}`;
-    const volume = parseFloat(UI.elements.metronomeVolume?.value || 0.7); // Use metronome volume for preview
-    AudioContextManager._playBuffer(bufferKey, volume, AudioContextManager.context.destination, 0, 0, true); // isMetronomeSound = true to bypass reverb
-}
-
-
 // --- Fretboard Rendering (Event Delegation for Clicks) ---
 function createFretboard(container, tuningArray) {
     if (!container) { console.error("Fretboard container not found for creation."); return; }
