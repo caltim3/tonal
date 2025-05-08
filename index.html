@@ -609,6 +609,52 @@
         .toggle-button:not(.active) {
             background: #9E9E9E; /* Grey when inactive */
         }
+
+         #song-info-display {
+            background-color: #f0f0f0; /* Light background for contrast */
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+        }
+        body.dark-mode #song-info-display {
+            background-color: #4a542e; /* Dark mode equivalent */
+            border-color: #7a845e;
+            color: #fefae0;
+        }
+        body.dark-mode-2 #song-info-display {
+            background-color: #023059; /* Dark mode 2 equivalent */
+            border-color: #0f6090;
+            color: #fefcfb;
+        }
+        body.dark-mode-3 #song-info-display {
+            background-color: #8a8a75; /* Dark mode 3 equivalent */
+            border-color: #b6a191;
+            color: #ffe8d6;
+        }
+
+        #current-song-title {
+            font-size: 1.4em; /* Larger title */
+            font-weight: bold;
+            margin-top: 0;
+            margin-bottom: 5px;
+            color: #333; /* Default color */
+        }
+        body.dark-mode #current-song-title { color: #fefae0; }
+        body.dark-mode-2 #current-song-title { color: #fefcfb; }
+        body.dark-mode-3 #current-song-title { color: #ffe8d6; }
+
+
+        #current-song-description {
+            font-size: 0.95em;
+            margin-top: 0;
+            margin-bottom: 0;
+            line-height: 1.4;
+            color: #555; /* Default color */
+        }
+        body.dark-mode #current-song-description { color: #e0daca; }
+        body.dark-mode-2 #current-song-description { color: #e0e0df; }
+        body.dark-mode-3 #current-song-description { color: #f0d8c6; }
         
     </style>
 </head>
@@ -672,8 +718,12 @@
         <input type="range" id="accent-intensity" min="1" max="2" step="0.1" value="1.5" aria-label="Accent intensity">
     </div>
     
-    <div class="app-section" id="chord-progression-section">
+<div class="app-section" id="chord-progression-section">
         <h2>Chord Progression Practice</h2>
+        <div id="song-info-display">
+            <h4 id="current-song-title"></h4> 
+            <p id="current-song-description"></p>
+        </div>
         <h3>Create a progression or pick one from the dropdown. Choose which key and scale to go with it.</h3>
         <label for="progression-select">Select Progression:</label>
         <select id="progression-select" aria-label="Select chord progression">
@@ -888,35 +938,151 @@ const drumSoundSets = [
 ];
 
 const progressions = {
-    "I V7": { defaultKey: "C", progression: ["Imaj7", "V7"] }, // Explicit qualities
-    "jazz_blues": { defaultKey: "Bb", progression: ["I7", "IV7", "I7", "I7", "IV7", "IV7", "I7", "VI7", "iim7", "V7", "I7", "V7"] },
-    "minor_blues": { defaultKey: "Am", progression: ["im7", "ivm7", "im7", "im7", "ivm7", "ivm7", "im7", "im7", "V7", "V7", "im7", "V7"] }, // Assumes V7 is dominant in minor
-    "rhythm_changes": { defaultKey: "Bb", progression: ["Imaj7", "vim7", "iim7", "V7", "Imaj7", "vim7", "iim7", "V7", "Imaj7", "IV7", "Imaj7", "Imaj7", "iim7", "V7", "Imaj7", "V7"] }, // Using Maj7 for I if no '6'
-    "2_5_1": { defaultKey: "C", progression: ["iim7", "V7", "Imaj7", "Imaj7"] },
-    "6_2_5_1": { defaultKey: "C", progression: ["vim7", "iim7", "V7", "Imaj7", "Imaj7"] },
-    "minor_2_5_1": { defaultKey: "Am", progression: ["iim7b5", "V7b9", "im7", "im7"] },
-    "dark_eyes": { defaultKey: "Dm", progression: ["V7", "V7", "im7", "im7", "V7", "V7", "VI6", "VI6", "ivm6", "ivm6", "im7", "im7", "V7", "V7", "im7", "im7"] },    
-    "ill_see_you_in_my_dreams": { defaultKey: "F", progression: ["IV6", "IV6", "ivm6", "ivm6", "Imaj7", "VII7", "Imaj7", "Imaj7", "VI7", "VI7", "VI7", "VI7", "II7", "II7", "iim7", "V7", "Imaj7"] },
-    "rose_room": {defaultKey: "Ab", progression: ["II7", "V7", "I6", "I7", "IV6", "ivm7", "bVII7", "I6", "VI7", "V7", "V7", "II7", "V7", "I6", "I7", "IV6", "ivm7", "bVII7", "I6", "VI7", "IV7", "V7", "I6", "VI7"] },
-    "black_orpheus": { defaultKey: "Am", progression: ["im7", "iim7b5", "V7b9", "im7", "ivm7", "VII7", "bIIImaj7", "bVImaj7", "iim7b5", "V7b9", "im7", "iim7b5", "V7b9", "im7", "ivm7", "VII7"] },
-    "all_the_things_you_are": { defaultKey: "Ab", progression: ["vim7", "iim7", "V7", "Imaj7", "IVmaj7", "iiim7", "VI7", "IImaj7", "iim7", "vm7", "I7", "IVmaj7", "Imaj7", "iim7", "V7", "Imaj7", "iim7", "V7", "Imaj7", "iim7", "vm7", "I7", "IVmaj7", "Imaj7"] },
-    "all_of_me": { defaultKey: "C", progression: ["Imaj7", "III7", "VI7", "iim7", "III7", "vim7", "II7", "iim7", "V7", "Imaj7", "III7", "VI7", "iim7", "IVmaj7", "ivm7", "Imaj7", "V7"] },
-    "stella_by_starlight": { defaultKey: "Bb", progression: ["iim7b5", "V7b9", "Imaj7", "IV7", "vm7", "I7", "IVmaj7", "bVIImaj7", "biiim7b5", "VI7b9", "iim7", "V7", "Imaj7", "IV7", "IVmaj7", "V7"] }, // Using Imaj7 often for tonic in Bb
-    "autumn_leaves": { defaultKey: "Gm", progression: ["iim7b5", "V7", "imaj7", "IVmaj7", "viim7b5", "III7", "vim7", "vim7"] }, // Typical Gm changes
-    "summertime": { defaultKey: "Am", progression: ["im7", "V7", "im7", "V7", "im7", "V7", "im7", "V7", "ivm7", "im7", "V7", "im7", "ivm7", "im7", "V7", "im7"] },
-    "girl_from_ipanema": { defaultKey: "F", progression: ["Imaj7", "II7", "iim7", "V7", "Imaj7", "II7", "iim7", "V7", "Imaj7", "bII7", "#IVm7b5", "VII7", "iiim7", "VI7", "iim7", "V7"] }, // #IVm7b5 common
-    "coltrane_changes": { defaultKey: "C", progression: ["Imaj7", "bIII7", "bVImaj7", "VII7", "IIImaj7", "V7", "Imaj7", "bIII7", "bVImaj7", "VII7", "IIImaj7", "V7"] },
-    "bird_blues": { defaultKey: "F", progression: ["I7", "IV7", "I7", "vim7", "iim7", "V7", "IV7", "ivm7", "I7", "vim7", "iim7", "V7"] },
-    "just_friends": { defaultKey: "G", progression: ["Imaj7", "VI7", "iim7", "V7", "Imaj7", "VI7", "iim7", "V7", "iim7", "V7", "Imaj7", "VI7", "iim7", "V7", "Imaj7", "VI7"] },
-    "blue_bossa": { defaultKey: "Cm", progression: ["im7", "im7", "bVII7", "bVII7", "im7", "im7", "ivm7", "bVII7", "im7", "V7", "im7", "im7"] },
-    "on_green_dolphin_street": { defaultKey: "C", progression: ["Imaj7", "im7", "Imaj7", "im7", "bIImaj7", "Imaj7", "bIImaj7", "Imaj7", "iim7", "V7"] }, // Simplified common changes
-    "solar": { defaultKey: "Cm", progression: ["imaj7", "iim7b5", "V7alt", "imaj7", "bVImaj7", "bIIImaj7", "bVII7", "bVII7", "imaj7", "imaj7"] }, // Miles Davis' Solar changes
-    "misty": { defaultKey: "Eb", progression: ["Imaj7", "vm7", "I7", "IVmaj7", "ivm7", "Imaj7", "iim7", "V7", "iiim7", "VI7", "iim7", "V7"] },
-    "days_of_wine_and_roses": { defaultKey: "F", progression: ["Imaj7", "vim7", "iim7", "V7", "Imaj7", "vim7", "iim7", "V7", "IVmaj7", "vm7", "I7", "IVmaj7", "iiim7", "VI7", "iim7", "V7"] },
-    "cherokee": { defaultKey: "Bb", progression: ["Imaj7", "Imaj7", "iim7", "V7", "Imaj7", "Imaj7", "iim7", "V7","bVImaj7", "bVImaj7", "V7", "V7", "Imaj7", "Imaj7", "iim7", "V7"] }, // Bridge bVI is common
-    "caravan": { defaultKey: "Fm", progression: ["im7", "IV7b5", "im7", "IV7b5", "im7", "IV7b5", "im7", "IV7b5", "bVII7", "bVII7", "Imaj7", "Imaj7", "V7", "V7", "im7", "im7"] }, // Key is Fm for typical Caravan changes
-    "nows_the_time": { defaultKey: "F", progression: ["I7", "I7", "I7", "I7", "IV7", "IV7", "I7", "I7", "V7", "IV7", "I7", "I7"] },
-    "tenor_madness": { defaultKey: "Bb", progression: ["I7", "I7", "I7", "I7", "IV7", "IV7", "I7", "I7", "iim7", "V7", "I7", "I7"] }
+    "I V7": { 
+        defaultKey: "C", 
+        progression: ["Imaj7", "V7"], 
+        description: "A classic two-chord progression often used in jazz standards for a simple, elegant harmonic resolution."
+    },
+    "jazz_blues": { 
+        defaultKey: "Bb", 
+        progression: ["I7", "IV7", "I7", "I7", "IV7", "IV7", "I7", "VI7", "iim7", "V7", "I7", "V7"], 
+        description: "A swinging 12-bar blues with jazzy substitutions, perfect for improvisation and soulful melodies."
+    },
+    "minor_blues": { 
+        defaultKey: "Am", 
+        progression: ["im7", "ivm7", "im7", "im7", "ivm7", "ivm7", "im7", "im7", "V7", "V7", "im7", "V7"], 
+        description: "A moody minor blues progression with a melancholic vibe, ideal for expressive solos."
+    },
+    "rhythm_changes": { 
+        defaultKey: "Bb", 
+        progression: ["Imaj7", "vim7", "iim7", "V7", "Imaj7", "vim7", "iim7", "V7", "Imaj7", "IV7", "Imaj7", "Imaj7", "iim7", "V7", "Imaj7", "V7"], 
+        description: "A fast-paced, iconic jazz structure based on Gershwin's 'I Got Rhythm,' great for bebop."
+    },
+    "2_5_1": { 
+        defaultKey: "C", 
+        progression: ["iim7", "V7", "Imaj7", "Imaj7"], 
+        description: "The quintessential jazz turnaround, providing a smooth and satisfying resolution."
+    },
+    "6_2_5_1": { 
+        defaultKey: "C", 
+        progression: ["vim7", "iim7", "V7", "Imaj7", "Imaj7"], 
+        description: "An extended version of the 2-5-1, starting on the vi minor for a richer harmonic journey."
+    },
+    "minor_2_5_1": { 
+        defaultKey: "Am", 
+        progression: ["iim7b5", "V7b9", "im7", "im7"], 
+        description: "A dramatic minor key progression, often used for intense and emotional resolutions."
+    },
+    "dark_eyes": { 
+        defaultKey: "Dm", 
+        progression: ["V7", "V7", "im7", "im7", "V7", "V7", "VI6", "VI6", "ivm6", "ivm6", "im7", "im7", "V7", "V7", "im7", "im7"], 
+        description: "A passionate, Gypsy jazz-inspired progression with a fiery, Eastern European flair."
+    },
+    "ill_see_you_in_my_dreams": { 
+        defaultKey: "F", 
+        progression: ["IV6", "IV6", "ivm6", "ivm6", "Imaj7", "VII7", "Imaj7", "Imaj7", "VI7", "VI7", "VI7", "VI7", "II7", "II7", "iim7", "V7", "Imaj7"], 
+        description: "A dreamy, nostalgic progression from the 1920s, evoking romance and whimsy."
+    },
+    "rose_room": { 
+        defaultKey: "Ab", 
+        progression: ["II7", "V7", "I6", "I7", "IV6", "ivm7", "bVII7", "I6", "VI7", "V7", "V7", "II7", "V7", "I6", "I7", "IV6", "ivm7", "bVII7", "I6", "VI7", "IV7", "V7", "I6", "VI7"], 
+        description: "A sophisticated swing tune with lush chords, perfect for a classy jazz vibe."
+    },
+    "black_orpheus": { 
+        defaultKey: "Am", 
+        progression: ["im7", "iim7b5", "V7b9", "im7", "ivm7", "VII7", "bIIImaj7", "bVImaj7", "iim7b5", "V7b9", "im7", "iim7b5", "V7b9", "im7", "ivm7", "VII7"], 
+        description: "A bossa nova classic with a haunting minor key, inspired by Brazilian rhythms."
+    },
+    "all_the_things_you_are": { 
+        defaultKey: "Ab", 
+        progression: ["vim7", "iim7", "V7", "Imaj7", "IVmaj7", "iiim7", "VI7", "IImaj7", "iim7", "vm7", "I7", "IVmaj7", "Imaj7", "iim7", "V7", "Imaj7", "iim7", "V7", "Imaj7", "iim7", "vm7", "I7", "IVmaj7", "Imaj7"], 
+        description: "A harmonically complex standard with shifting keys, beloved in jazz for its beauty."
+    },
+    "all_of_me": { 
+        defaultKey: "C", 
+        progression: ["Imaj7", "III7", "VI7", "iim7", "III7", "vim7", "II7", "iim7", "V7", "Imaj7", "III7", "VI7", "iim7", "IVmaj7", "ivm7", "Imaj7", "V7"], 
+        description: "A cheerful, upbeat standard with a catchy progression, great for vocal jazz."
+    },
+    "stella_by_starlight": { 
+        defaultKey: "Bb", 
+        progression: ["iim7b5", "V7b9", "Imaj7", "IV7", "vm7", "I7", "IVmaj7", "bVIImaj7", "biiim7b5", "VI7b9", "iim7", "V7", "Imaj7", "IV7", "IVmaj7", "V7"], 
+        description: "A lush, cinematic progression with a romantic and introspective feel."
+    },
+    "autumn_leaves": { 
+        defaultKey: "Gm", 
+        progression: ["iim7b5", "V7", "imaj7", "IVmaj7", "viim7b5", "III7", "vim7", "vim7"], 
+        description: "A melancholic jazz standard evoking falling leaves and wistful nostalgia."
+    },
+    "summertime": { 
+        defaultKey: "Am", 
+        progression: ["im7", "V7", "im7", "V7", "im7", "V7", "im7", "V7", "ivm7", "im7", "V7", "im7", "ivm7", "im7", "V7", "im7"], 
+        description: "A sultry, soulful progression from Gershwin's opera, perfect for laid-back grooves."
+    },
+    "girl_from_ipanema": { 
+        defaultKey: "F", 
+        progression: ["Imaj7", "II7", "iim7", "V7", "Imaj7", "II7", "iim7", "V7", "Imaj7", "bII7", "#IVm7b5", "VII7", "iiim7", "VI7", "iim7", "V7"], 
+        description: "A breezy bossa nova tune with a sunny, beachy vibe, iconic in jazz."
+    },
+    "coltrane_changes": { 
+        defaultKey: "C", 
+        progression: ["Imaj7", "bIII7", "bVImaj7", "VII7", "IIImaj7", "V7", "Imaj7", "bIII7", "bVImaj7", "VII7", "IIImaj7", "V7"], 
+        description: "A challenging, innovative progression from John Coltrane, with rapid key shifts."
+    },
+    "bird_blues": { 
+        defaultKey: "F", 
+        progression: ["I7", "IV7", "I7", "vim7", "iim7", "V7", "IV7", "ivm7", "I7", "vim7", "iim7", "V7"], 
+        description: "A bebop blues progression inspired by Charlie Parker, full of energy and drive."
+    },
+    "just_friends": { 
+        defaultKey: "G", 
+        progression: ["Imaj7", "VI7", "iim7", "V7", "Imaj7", "VI7", "iim7", "V7", "iim7", "V7 "Imaj7", "VI7", "iim7", "V7", "Imaj7", "VI7"], 
+        description: "A lively, upbeat standard with a playful harmonic structure, great for swing."
+    },
+    "blue_bossa": { 
+        defaultKey: "Cm", 
+        progression: ["im7", "im7", "bVII7", "bVII7", "im7", "im7", "ivm7", "bVII7", "im7", "V7", "im7", "im7"], 
+        description: "A cool, Latin-jazz progression with a relaxed yet groovy bossa nova feel."
+    },
+    "on_green_dolphin_street": { 
+        defaultKey: "C", 
+        progression: ["Imaj7", "im7", "Imaj7", "im7", "bIImaj7", "Imaj7", "bIImaj7", "Imaj7", "iim7", "V7"], 
+        description: "A modal, cinematic progression with a mysterious and captivating atmosphere."
+    },
+    "solar": { 
+        defaultKey: "Cm", 
+        progression: ["imaj7", "iim7b5", "V7alt", "imaj7", "bVImaj7", "bIIImaj7", "bVII7", "bVII7", "imaj7", "imaj7"], 
+        description: "A contemplative, Miles Davis original with a flowing, introspective harmonic line."
+    },
+    "misty": { 
+        defaultKey: "Eb", 
+        progression: ["Imaj7", "vm7", "I7", "IVmaj7", "ivm7", "Imaj7", "iim7", "V7", "iiim7", "VI7", "iim7", "V7"], 
+        description: "A tender, romantic ballad progression, evoking misty-eyed sentimentality."
+    },
+    "days_of_wine_and_roses": { 
+        defaultKey: "F", 
+        progression: ["Imaj7", "vim7", "iim7", "V7", "Imaj7", "vim7", "iim7", "V7", "IVmaj7", "vm7", "I7", "IVmaj7", "iiim7", "VI7", "iim7", "V7"], 
+        description: "A bittersweet, elegant progression with a waltzing, reflective quality."
+    },
+    "cherokee": { 
+        defaultKey: "Bb", 
+        progression: ["Imaj7", "Imaj7", "iim7", "V7", "Imaj7", "Imaj7", "iim7", "V7", "bVImaj7", "bVImaj7", "V7", "V7", "Imaj7", "Imaj7", "iim7", "V7"], 
+        description: "A high-energy bebop standard with a fast-moving, adventurous harmonic structure."
+    },
+    "caravan": { 
+        defaultKey: "Fm", 
+        progression: ["im7", "IV7b5", "im7", "IV7b5", "im7", "IV7b5", "im7", "IV7b5", "bVII7", "bVII7", "Imaj7", "Imaj7", "V7", "V7", "im7", "im7"], 
+        description: "An exotic, Latin-tinged progression with a hypnotic, caravan-like rhythm."
+    },
+    "nows_the_time": { 
+        defaultKey: "F", 
+        progression: ["I7", "I7", "I7", "I7", "IV7", "IV7", "I7", "I7", "V7", "IV7", "I7", "I7"], 
+        description: "A gritty, straightforward blues progression by Charlie Parker, full of soul."
+    },
+    "tenor_madness": { 
+        defaultKey: "Bb", 
+        progression: ["I7", "I7", "I7", "I7", "IV7", "IV7", "I7", "I7", "iim7", "V7", "I7", "I7"], 
+        description: "A hard-swinging blues progression, ideal for fiery tenor sax battles."
+    }
 };
         
 const CHORD_INTERVALS = {
@@ -982,6 +1148,8 @@ const UI = {
             darkModeToggle: document.getElementById('dark-mode-toggle'),
             accentIntensity: document.getElementById('accent-intensity'),
             drumSetToggleBtn: document.getElementById('drumSetToggleBtn'),
+            currentSongTitle: document.getElementById('current-song-title'), // New
+            currentSongDescription: document.getElementById('current-song-description'),
             reverbDial: document.getElementById('reverb-dial'),
             reverbDialValue: document.getElementById('reverb-dial-value')
         };
@@ -2052,76 +2220,10 @@ function stopPlayback() {
 }
 
 
-function loadProgression(progressionNameInput, overrideKey = null) {
-    if (!progressionNameInput || !progressions[progressionNameInput]) {
-        console.error(`Invalid progression name: ${progressionNameInput}`);
-        currentProgressionName = "";
-        currentFunctionalProgression = [];
-        UI.elements.measures.innerHTML = '<p>Select a progression.</p>'; // Clear measures
-        return;
-    }
-    currentProgressionName = progressionNameInput;
 
-    try {
-        const progressionData = progressions[currentProgressionName];
-        const activeKey = overrideKey || progressionData.defaultKey || "C"; // e.g. "C", "Am"
-        
-        currentFunctionalProgression = progressionData.progression; // Store Roman numerals
 
-        if (UI.elements.keySelect) { // Update UI key select to reflect the key being used
-            UI.elements.keySelect.value = activeKey;
-        }
-
-        UI.elements.measures.innerHTML = ''; // Clear existing measures
-
-        currentFunctionalProgression.forEach((romanChordString, idx) => {
-            const parsedChord = parseRomanNumeralToAbsoluteChord(romanChordString, activeKey);
-            
-            const measureDiv = document.createElement('div');
-            measureDiv.className = 'measure';
-            measureDiv.draggable = true; // For future drag/drop reordering
-            
-            // parsedChord.quality should now be a CHORD_INTERVALS key
-            measureDiv.innerHTML = `
-                <span class="measure-number">${idx + 1}</span>
-                <div class="chord-controls">
-                    <select class="root-note">${createKeyOptions(parsedChord.root)}</select>
-                    <select class="chord-quality">${createQualityOptions(parsedChord.quality)}</select> 
-                </div>
-                <div class="scale-controls">
-                    <select class="second-key">${createKeyOptions(parsedChord.root)}</select>
-                    <select class="scale-select">${createScaleOptions(suggestScaleForQuality(parsedChord.quality))}</select>
-                </div>
-            `;
-            UI.elements.measures.appendChild(measureDiv);
-            // Add event listeners for changes within this measure's controls
-            measureDiv.querySelectorAll('select').forEach(sel => {
-                sel.addEventListener('change', () => handleMeasureControlChange(measureDiv));
-            });
-        });
-        updateMeasureNumbers(); // Renumber if needed
-        addFirstChordListener(); // Update main fretboard based on first measure
-        log(`Loaded progression: ${currentProgressionName} in key ${activeKey}`);
-
-    } catch (error) {
-        console.error('Error loading progression:', error);
-        log(`Error loading progression: ${error.message}`);
-        UI.elements.measures.innerHTML = '<p>Error loading progression.</p>';
-    }
-}
-
-function updateProgressionKey(newKey) { // newKey is from keySelect e.g. "C", "Am"
-    if (!currentFunctionalProgression || currentFunctionalProgression.length === 0) {
-        log("No functional progression loaded to update key for.");
-        // If no song is loaded, perhaps just update the main fretboard's default scale?
-        if (UI.elements.measures.children.length === 0) {
-            const tuning = TUNINGS[UI.elements.chordTuning.value];
-            // Display a default major scale in the new key on the main fretboard
-            updateFretboardNotes(UI.elements.chordFretboard, newKey, 'major', tuning);
-            if (UI.elements.scaleDisplay) UI.elements.scaleDisplay.textContent = `${newKey} Major`;
-        }
-        return;
-    }
+    // Song info display should remain as the song is still "loaded", just transposed
+    // No need to clear it here unless a new song is chosen (handled in loadProgression)
 
     Array.from(UI.elements.measures.children).forEach((measureElement, index) => {
         if (index < currentFunctionalProgression.length) {
@@ -2130,17 +2232,17 @@ function updateProgressionKey(newKey) { // newKey is from keySelect e.g. "C", "A
 
             const rootSelect = measureElement.querySelector('.root-note');
             const qualitySelect = measureElement.querySelector('.chord-quality');
-            const secondKeySelect = measureElement.querySelector('.second-key'); // For scale root
-            const scaleSelect = measureElement.querySelector('.scale-select');   // For scale type
+            const secondKeySelect = measureElement.querySelector('.scale-controls .second-key');
+            const scaleSelect = measureElement.querySelector('.scale-controls .scale-select');
 
             if (rootSelect) rootSelect.value = parsedChord.root;
             if (qualitySelect) qualitySelect.value = parsedChord.quality;
-            if (secondKeySelect) secondKeySelect.value = parsedChord.root; // Scale root defaults to chord root
+            if (secondKeySelect) secondKeySelect.value = parsedChord.root;
             if (scaleSelect) scaleSelect.value = suggestScaleForQuality(parsedChord.quality);
         }
     });
 
-    addFirstChordListener(); // Update main fretboard display after key change
+    addFirstChordListener();
     log(`Progression '${currentProgressionName}' re-calculated for new key: ${newKey}`);
 }
 
