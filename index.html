@@ -1064,21 +1064,18 @@ const AudioContextManager = {
     activePianoNotes: {}, // To track individual piano notes for stopping
     activeMetronomeSounds: [], // To track metronome sounds for stopping
 
-
     async initialize() {
         if (this.context) return this.context;
         try {
             this.context = new (window.AudioContext || window.webkitAudioContext)();
             if (this.context.state === 'suspended') {
                 log("AudioContext is suspended. Attempting to resume...");
-                // No direct resume here; wait for user interaction handled globally
             }
-    
             // 🔊 Setup global chord GainNode with live volume control
             this.chordGainNode = this.context.createGain();
             this.chordGainNode.gain.value = parseFloat(UI.elements.chordVolume?.value || 0.75);
             this.chordGainNode.connect(this.context.destination);
-    
+
             await this.setupReverb();
             AppState.updateState({ audioInitialized: true });
             log("AudioContext initialized (state: " + this.context.state + "). Sample loading will follow.");
@@ -1091,10 +1088,9 @@ const AudioContextManager = {
         return this.context;
     },
 
-
     async ensureAudioContextResumed() {
         if (!this.context) {
-            await this.initialize(); // Should not happen if initializeApp calls it first
+            await this.initialize();
         }
         if (this.context && this.context.state === 'suspended') {
             try {
@@ -1103,7 +1099,6 @@ const AudioContextManager = {
             } catch (e) {
                 console.error(`${LOG_PREFIX} Failed to resume AudioContext:`, e);
                 updateLoadingStatus("Could not resume audio. Please interact with the page.", null);
-                // Do not throw here, allow app to continue, user might interact again
             }
         }
         return this.context && this.context.state === 'running';
@@ -1117,7 +1112,6 @@ const AudioContextManager = {
         }
         if (this.context.state !== 'running') {
             log("AudioContext not running. Sample loading deferred until resumed.");
-            // No updateLoadingStatus here, as ensureAudioContextResumed will handle interaction prompts
             return;
         }
 
@@ -1181,7 +1175,7 @@ const AudioContextManager = {
         setTimeout(() => {
             const indicator = document.getElementById('loading-indicator') || document.getElementById('audio-loading-progress');
             if (indicator) indicator.style.opacity = '0';
-            setTimeout(() => indicator?.remove(), 600); // Slightly longer for the message to be read
+            setTimeout(() => indicator?.remove(), 600);
         }, 1500);
     },
 
@@ -1194,8 +1188,6 @@ const AudioContextManager = {
             this.reverbBuffer = await this.context.decodeAudioData(arrayBuffer);
             this.reverbNode = this.context.createConvolver();
             this.reverbNode.buffer = this.reverbBuffer;
-            // Reverb node is NOT connected to destination here. It's a send effect.
-            // Sources will connect to it, and it will connect to destination.
             log("Reverb impulse loaded. Convolver ready.");
         } catch (error) {
             console.error(`${LOG_PREFIX} Failed to set up reverb:`, error);
@@ -1204,48 +1196,74 @@ const AudioContextManager = {
     },
     
     _playBuffer(bufferKey, volume, destination, pan = 0, pitchBend = 0, isMetronomeSound = false) {
-    if (!this.context || this.context.state !== 'running' || !this.soundBuffers[bufferKey]) {
-        if (!this.soundBuffers[bufferKey]) console.warn(`${LOG_PREFIX} Buffer not found for key: ${bufferKey}`);
-        return null;
-    }
-
-    const source = this.context.createBufferSource();
-    source.buffer = this.soundBuffers[bufferKey];
-
-    if (pitchBend !== 0) source.detune.value = pitchBend * 100;
-
-    const gainNode = this.context.createGain();
-    gainNode.gain.value = Math.max(0, Math.min(1, volume));
-
-    const pannerNode = this.context.createStereoPanner();
-    pannerNode.pan.value = Math.max(-1, Math.min(1, pan));
-
-    source.connect(gainNode);
-    gainNode.connect(pannerNode);
-
-    // 🔊 Route through chordGainNode for volume slider control unless overridden
-    const finalDestination = (!isMetronomeSound && this.chordGainNode) ? this.chordGainNode : (destination || this.context.destination);
-    pannerNode.connect(finalDestination);
-
-    // 🎧 Reverb send (skip for metronome)
-    if (this.reverbNode && this.reverbAmount > 0 && !isMetronomeSound) {
-        const reverbSendGain = this.context.createGain();
-        reverbSendGain.gain.value = this.reverbAmount * (bufferKey.startsWith('piano_') ? 0.5 : 0.3);
-        pannerNode.connect(reverbSendGain);
-        reverbSendGain.connect(this.reverbNode);
-
-        if (!this.reverbNodeConnectedToDestination) {
-            this.reverbNode.connect(this.context.destination);
-            this.reverbNodeConnectedToDestination = true;
+        if (!this.context || this.context.state !== 'running' || !this.soundBuffers[bufferKey]) {
+            if (!this.soundBuffers[bufferKey]) console.warn(`${LOG_PREFIX} Buffer not found for key: ${bufferKey}`);
+            return null;
         }
+
+        const source = this.context.createBufferSource();
+        source.buffer = this.soundBuffers[bufferKey];
+
+        if (pitchBend !== 0) source.detune.value = pitchBend * 100;
+
+        const gainNode = this.context.createGain();
+        gainNode.gain.value = Math.max(0, Math.min(1, volume));
+
+        const pannerNode = this.context.createStereoPanner();
+        pannerNode.pan.value = Math.max(-1, Math.min(1, pan));
+
+        source.connect(gainNode);
+        gainNode.connect(pannerNode);
+
+        const finalDestination = (!isMetronomeSound && this.chordGainNode) ? this.chordGainNode : (destination || this.context.destination);
+        pannerNode.connect(finalDestination);
+
+        if (this.reverbNode && this.reverbAmount > 0 && !isMetronomeSound) {
+            const reverbSendGain = this.context.createGain();
+            reverbSendGain.gain.value = this.reverbAmount * (bufferKey.startsWith('piano_') ? 0.5 : 0.3);
+            pannerNode.connect(reverbSendGain);
+            reverbSendGain.connect(this.reverbNode);
+
+            if (!this.reverbNodeConnectedToDestination) {
+                this.reverbNode.connect(this.context.destination);
+                this.reverbNodeConnectedToDestination = true;
+            }
+        }
+
+        source.start(this.context.currentTime);
+        return { source, gainNode, pannerNode };
+    },
+
+    stopAllPianoNotes() {
+        for (const noteId in this.activePianoNotes) {
+            try {
+                this.activePianoNotes[noteId].stop(this.context.currentTime);
+            } catch (e) { /* ignore */ }
+        }
+        this.activePianoNotes = {};
+    },
+
+    stopAllMetronomeSounds() {
+        this.activeMetronomeSounds.forEach(sound => {
+            try {
+                if (sound.source) {
+                    if (sound.gainNode) {
+                        sound.gainNode.gain.cancelScheduledValues(this.context.currentTime);
+                        sound.gainNode.gain.setValueAtTime(sound.gainNode.gain.value, this.context.currentTime);
+                        sound.gainNode.gain.linearRampToValueAtTime(0.0001, this.context.currentTime + 0.02);
+                        sound.source.stop(this.context.currentTime + 0.03);
+                    } else {
+                        sound.source.stop(this.context.currentTime + 0.02);
+                    }
+                }
+            } catch (e) { /* ignore */ }
+        });
+        this.activeMetronomeSounds = [];
     }
+}; // <--- End of AudioContextManager object
 
-    source.start(this.context.currentTime);
-    return { source, gainNode, pannerNode };
-}
-
-
-    function playPianoNote(noteNameWithOctave, volume, durationMs = 1000) {
+// Standalone function: playPianoNote
+function playPianoNote(noteNameWithOctave, volume, durationMs = 1000) {
     const bufferKey = `piano_${noteNameWithOctave.toLowerCase()}`;
     const playedSound = AudioContextManager._playBuffer(bufferKey, volume, AudioContextManager.context.destination);
 
@@ -1260,17 +1278,17 @@ const AudioContextManager = {
     return playedSound ? playedSound.source : null;
 }
 
+// Standalone function: stopCurrentChord
 function stopCurrentChord() {
     AudioContextManager.currentChordSources.forEach(chordNote => {
         try {
-            if (chordNote.source) { // Check if source exists
-                // Fade out quickly
-                if (chordNote.gainNode) { // If we have direct access to its gain node
+            if (chordNote.source) {
+                if (chordNote.gainNode) {
                     chordNote.gainNode.gain.cancelScheduledValues(AudioContextManager.context.currentTime);
                     chordNote.gainNode.gain.setValueAtTime(chordNote.gainNode.gain.value, AudioContextManager.context.currentTime);
                     chordNote.gainNode.gain.exponentialRampToValueAtTime(0.0001, AudioContextManager.context.currentTime + 0.05);
                     chordNote.source.stop(AudioContextManager.context.currentTime + 0.06);
-                } else { // Fallback if only source is stored
+                } else {
                     chordNote.source.stop(AudioContextManager.context.currentTime + 0.05);
                 }
             }
