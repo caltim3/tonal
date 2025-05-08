@@ -53,23 +53,23 @@
             gap: 20px;
             margin-bottom: 20px;
         }
-        
+
         .control-group {
             display: flex;
             align-items: center;
             gap: 10px;
         }
-        
+
         .control-group label {
             font-weight: bold;
         }
-        
+
         .control-group select {
             padding: 5px;
             border-radius: 4px;
             border: 1px solid #ccc;
         }
-        
+
         .fretboard {
             position: relative;
             height: 200px;
@@ -221,43 +221,43 @@
             border-radius: 8px;
             background-color: #f9f9f9;
         }
-        
+
         body.dark-mode .fretboard-section {
             background-color: #3a441e; /* Adjusted for green dark mode */
             border-color: #606c38;
             color: #fefae0;
         }
-        
+
         body.dark-mode-2 .fretboard-section {
             background-color: #001f54;
             border-color: #1282a2;
             color: #fefcfb;
         }
-        
+
         body.dark-mode-3 .fretboard-section {
             background-color: #a5a58d;
             border-color: #cb997e;
             color: #ffe8d6;
         }
-        
+
         .fretboard-controls {
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
             margin-bottom: 15px;
         }
-        
+
         .control-group label {
             font-weight: bold;
             font-size: 0.9em;
         }
-        
+
         .control-group select {
             padding: 4px;
             border-radius: 4px;
             border: 1px solid #ccc;
         }
-        
+
         @media (max-width: 1200px) {
             /* #measures grid-template-columns already responsive */
         }
@@ -335,7 +335,7 @@
             font-size: 0.9em;
             /* background will be handled by .active / :not(.active) for toggle-button */
         }
-        
+
         #chordsEnabled { /* Specific ID if needed, but .toggle-button is better */
             margin-bottom: 10px;
         }
@@ -400,7 +400,7 @@
         .dark-mode #fretflow-section { background: linear-gradient(145deg, #283618, #606c38); color: #fefae0; }
         .dark-mode-2 #fretflow-section { background: linear-gradient(145deg, #001f54, #034078); color: #fefcfb; }
         .dark-mode-3 #fretflow-section { background: linear-gradient(145deg, #6b705c, #a5a58d); color: #ffe8d6; }
-        
+
         .toggle-button { /* General toggle button styling */
             padding: 8px 12px; /* Consistent padding */
             border: none;
@@ -446,7 +446,7 @@
         /* User songs section */
         #user-songs-section { margin-top: 15px; }
         #user-songs-section label { margin-right: 5px; }
-        
+
     </style>
 </head>
 <body>
@@ -506,11 +506,11 @@
             <input type="range" id="accent-intensity" min="1" max="2" step="0.1" value="1.5" aria-label="Accent intensity">
         </div>
     </div>
-    
+
     <div class="app-section" id="chord-progression-section">
         <h2>Chord Progression Practice</h2>
         <div id="song-info-display">
-            <h4 id="current-song-title"></h4> 
+            <h4 id="current-song-title"></h4>
             <p id="current-song-description"></p>
         </div>
         <h3>Create a progression or pick one from the dropdown. Choose which key and scale to go with it.</h3>
@@ -575,111 +575,28 @@
 </div>
 
     <script>
-// Utility Functions
-function log(message) {
-    console.log(`[Bebop Blueprint Debug] ${message}`);
-}
-
-function updateLoadingStatus(message, isVisible = true) {
-    let indicator = document.getElementById('loading-indicator');
-    if (!indicator) {
-        indicator = document.createElement('div');
-        indicator.id = 'loading-indicator';
-        document.body.appendChild(indicator);
-    }
-    indicator.textContent = message;
-    indicator.style.display = isVisible ? 'block' : 'none';
-}
+// --- Utility Functions ---
+function log(message) { console.log(`[Bebop Blueprint Debug] ${message}`); }
+function updateLoadingStatus(message, isVisible = true) { let i = document.getElementById('loading-indicator'); if (!i) { i = document.createElement('div'); i.id = 'loading-indicator'; document.body.appendChild(i); } i.textContent = message; i.style.display = isVisible ? 'block' : 'none'; }
 
 // --- Musical Constants ---
-const progressions = {
-    "I V7": { defaultKey: "C", progression: ["Imaj7", "V7"], description: "A classic two-chord progression often used in jazz standards for a simple, elegant harmonic resolution." },
-    "jazz_blues": { defaultKey: "Bb", progression: ["I7", "IV7", "I7", "I7", "IV7", "IV7", "I7", "VI7", "iim7", "V7", "I7", "V7"], description: "A swinging 12-bar blues with jazzy substitutions, perfect for improvisation and soulful melodies." },
-    "minor_blues": { defaultKey: "Am", progression: ["im7", "ivm7", "im7", "im7", "ivm7", "ivm7", "im7", "im7", "V7", "V7", "im7", "V7"], description: "A moody minor blues progression with a melancholic vibe, ideal for expressive solos." },
-    "rhythm_changes": { defaultKey: "Bb", progression: ["Imaj7", "vim7", "iim7", "V7", "Imaj7", "vim7", "iim7", "V7", "Imaj7", "IV7", "Imaj7", "Imaj7", "iim7", "V7", "Imaj7", "V7"], description: "A fast-paced, iconic jazz structure based on Gershwin's 'I Got Rhythm,' great for bebop." },
-    "2_5_1": { defaultKey: "C", progression: ["iim7", "V7", "Imaj7", "Imaj7"], description: "The quintessential jazz turnaround, providing a smooth and satisfying resolution." },
-    "6_2_5_1": { defaultKey: "C", progression: ["vim7", "iim7", "V7", "Imaj7", "Imaj7"], description: "An extended version of the 2-5-1, starting on the vi minor for a richer harmonic journey." },
-    "minor_2_5_1": { defaultKey: "Am", progression: ["iim7b5", "V7b9", "im7", "im7"], description: "A dramatic minor key progression, often used for intense and emotional resolutions." },
-    "dark_eyes": { defaultKey: "Dm", progression: ["V7", "V7", "im7", "im7", "V7", "V7", "VI6", "VI6", "ivm6", "ivm6", "im7", "im7", "V7", "V7", "im7", "im7"], description: "A passionate, Gypsy jazz-inspired progression with a fiery, Eastern European flair." },
-    "ill_see_you_in_my_dreams": { defaultKey: "F", progression: ["IV6", "IV6", "ivm6", "ivm6", "Imaj7", "VII7", "Imaj7", "Imaj7", "VI7", "VI7", "VI7", "VI7", "II7", "II7", "iim7", "V7", "Imaj7"], description: "A dreamy, nostalgic progression from the 1920s, evoking romance and whimsy." },
-    "rose_room": { defaultKey: "Ab", progression: ["II7", "V7", "I6", "I7", "IV6", "ivm7", "bVII7", "I6", "VI7", "V7", "V7", "II7", "V7", "I6", "I7", "IV6", "ivm7", "bVII7", "I6", "VI7", "IV7", "V7", "I6", "VI7"], description: "A sophisticated swing tune with lush chords, perfect for a classy jazz vibe." },
-    "black_orpheus": { defaultKey: "Am", progression: ["im7", "iim7b5", "V7b9", "im7", "ivm7", "VII7", "bIIImaj7", "bVImaj7", "iim7b5", "V7b9", "im7", "iim7b5", "V7b9", "im7", "ivm7", "VII7"], description: "A bossa nova classic with a haunting minor key, inspired by Brazilian rhythms." },
-    "all_the_things_you_are": { defaultKey: "Ab", progression: ["vim7", "iim7", "V7", "Imaj7", "IVmaj7", "iiim7", "VI7", "IImaj7", "iim7", "vm7", "I7", "IVmaj7", "Imaj7", "iim7", "V7", "Imaj7", "iim7", "V7", "Imaj7", "iim7", "vm7", "I7", "IVmaj7", "Imaj7"], description: "A harmonically complex standard with shifting keys, beloved in jazz for its beauty." },
-    "all_of_me": { defaultKey: "C", progression: ["Imaj7", "III7", "VI7", "iim7", "III7", "vim7", "II7", "iim7", "V7", "Imaj7", "III7", "VI7", "iim7", "IVmaj7", "ivm7", "Imaj7", "V7"], description: "A cheerful, upbeat standard with a catchy progression, great for vocal jazz." },
-    "stella_by_starlight": { defaultKey: "Bb", progression: ["iim7b5", "V7b9", "Imaj7", "IV7", "vm7", "I7", "IVmaj7", "bVIImaj7", "biiim7b5", "VI7b9", "iim7", "V7", "Imaj7", "IV7", "IVmaj7", "V7"], description: "A lush, cinematic progression with a romantic and introspective feel." },
-    "autumn_leaves": { defaultKey: "Gm", progression: ["iim7b5", "V7", "imaj7", "IVmaj7", "viim7b5", "III7", "vim7", "vim7"], description: "A melancholic jazz standard evoking falling leaves and wistful nostalgia." },
-    "summertime": { defaultKey: "Am", progression: ["im7", "V7", "im7", "V7", "im7", "V7", "im7", "V7", "ivm7", "im7", "V7", "im7", "ivm7", "im7", "V7", "im7"], description: "A sultry, soulful progression from Gershwin's opera, perfect for laid-back grooves." },
-    "girl_from_ipanema": { defaultKey: "F", progression: ["Imaj7", "II7", "iim7", "V7", "Imaj7", "II7", "iim7", "V7", "Imaj7", "bII7", "#IVm7b5", "VII7", "iiim7", "VI7", "iim7", "V7"], description: "A breezy bossa nova tune with a sunny, beachy vibe, iconic in jazz." },
-    "coltrane_changes": { defaultKey: "C", progression: ["Imaj7", "bIII7", "bVImaj7", "VII7", "IIImaj7", "V7", "Imaj7", "bIII7", "bVImaj7", "VII7", "IIImaj7", "V7"], description: "A challenging, innovative progression from John Coltrane, with rapid key shifts." },
-    "bird_blues": { defaultKey: "F", progression: ["I7", "IV7", "I7", "vim7", "iim7", "V7", "IV7", "ivm7", "I7", "vim7", "iim7", "V7"], description: "A bebop blues progression inspired by Charlie Parker, full of energy and drive." },
-    "just_friends": { defaultKey: "G", progression: ["Imaj7", "VI7", "iim7", "V7", "Imaj7", "VI7", "iim7", "V7", "iim7", "V7", "Imaj7", "VI7", "iim7", "V7", "Imaj7", "VI7"], description: "A lively, upbeat standard with a playful harmonic structure, great for swing." },
-    "blue_bossa": { defaultKey: "Cm", progression: ["im7", "im7", "bVII7", "bVII7", "im7", "im7", "ivm7", "bVII7", "im7", "V7", "im7", "im7"], description: "A cool, Latin-jazz progression with a relaxed yet groovy bossa nova feel." },
-    "on_green_dolphin_street": { defaultKey: "C", progression: ["Imaj7", "im7", "Imaj7", "im7", "bIImaj7", "Imaj7", "bIImaj7", "Imaj7", "iim7", "V7"], description: "A modal, cinematic progression with a mysterious and captivating atmosphere." },
-    "solar": { defaultKey: "Cm", progression: ["imaj7", "iim7b5", "V7alt", "imaj7", "bVImaj7", "bIIImaj7", "bVII7", "bVII7", "imaj7", "imaj7"], description: "A contemplative, Miles Davis original with a flowing, introspective harmonic line." },
-    "misty": { defaultKey: "Eb", progression: ["Imaj7", "vm7", "I7", "IVmaj7", "ivm7", "Imaj7", "iim7", "V7", "iiim7", "VI7", "iim7", "V7"], description: "A tender, romantic ballad progression, evoking misty-eyed sentimentality." },
-    "days_of_wine_and_roses": { defaultKey: "F", progression: ["Imaj7", "vim7", "iim7", "V7", "Imaj7", "vim7", "iim7", "V7", "IVmaj7", "vm7", "I7", "IVmaj7", "iiim7", "VI7", "iim7", "V7"], description: "A bittersweet, elegant progression with a waltzing, reflective quality." },
-    "cherokee": { defaultKey: "Bb", progression: ["Imaj7", "Imaj7", "iim7", "V7", "Imaj7", "Imaj7", "iim7", "V7", "bVImaj7", "bVImaj7", "V7", "V7", "Imaj7", "Imaj7", "iim7", "V7"], description: "A high-energy bebop standard with a fast-moving, adventurous harmonic structure." },
-    "caravan": { defaultKey: "Fm", progression: ["im7", "IV7b5", "im7", "IV7b5", "im7", "IV7b5", "im7", "IV7b5", "bVII7", "bVII7", "Imaj7", "Imaj7", "V7", "V7", "im7", "im7"], description: "An exotic, Latin-tinged progression with a hypnotic, caravan-like rhythm." },
-    "nows_the_time": { defaultKey: "F", progression: ["I7", "I7", "I7", "I7", "IV7", "IV7", "I7", "I7", "V7", "IV7", "I7", "I7"], description: "A gritty, straightforward blues progression by Charlie Parker, full of soul." },
-    "tenor_madness": { defaultKey: "Bb", progression: ["I7", "I7", "I7", "I7", "IV7", "IV7", "I7", "I7", "iim7", "V7", "I7", "I7"], description: "A hard-swinging blues progression, ideal for fiery tenor sax battles." }
-};
+const progressions = { "I V7": { defaultKey: "C", progression: ["Imaj7", "V7"], description: "A classic two-chord progression often used in jazz standards for a simple, elegant harmonic resolution." }, "jazz_blues": { defaultKey: "Bb", progression: ["I7", "IV7", "I7", "I7", "IV7", "IV7", "I7", "VI7", "iim7", "V7", "I7", "V7"], description: "A swinging 12-bar blues with jazzy substitutions, perfect for improvisation and soulful melodies." }, "minor_blues": { defaultKey: "Am", progression: ["im7", "ivm7", "im7", "im7", "ivm7", "ivm7", "im7", "im7", "V7", "V7", "im7", "V7"], description: "A moody minor blues progression with a melancholic vibe, ideal for expressive solos." }, "rhythm_changes": { defaultKey: "Bb", progression: ["Imaj7", "vim7", "iim7", "V7", "Imaj7", "vim7", "iim7", "V7", "Imaj7", "IV7", "Imaj7", "Imaj7", "iim7", "V7", "Imaj7", "V7"], description: "A fast-paced, iconic jazz structure based on Gershwin's 'I Got Rhythm,' great for bebop." }, "2_5_1": { defaultKey: "C", progression: ["iim7", "V7", "Imaj7", "Imaj7"], description: "The quintessential jazz turnaround, providing a smooth and satisfying resolution." }, "6_2_5_1": { defaultKey: "C", progression: ["vim7", "iim7", "V7", "Imaj7", "Imaj7"], description: "An extended version of the 2-5-1, starting on the vi minor for a richer harmonic journey." }, "minor_2_5_1": { defaultKey: "Am", progression: ["iim7b5", "V7b9", "im7", "im7"], description: "A dramatic minor key progression, often used for intense and emotional resolutions." }, "dark_eyes": { defaultKey: "Dm", progression: ["V7", "V7", "im7", "im7", "V7", "V7", "VI6", "VI6", "ivm6", "ivm6", "im7", "im7", "V7", "V7", "im7", "im7"], description: "A passionate, Gypsy jazz-inspired progression with a fiery, Eastern European flair." }, "ill_see_you_in_my_dreams": { defaultKey: "F", progression: ["IV6", "IV6", "ivm6", "ivm6", "Imaj7", "VII7", "Imaj7", "Imaj7", "VI7", "VI7", "VI7", "VI7", "II7", "II7", "iim7", "V7", "Imaj7"], description: "A dreamy, nostalgic progression from the 1920s, evoking romance and whimsy." }, "rose_room": { defaultKey: "Ab", progression: ["II7", "V7", "I6", "I7", "IV6", "ivm7", "bVII7", "I6", "VI7", "V7", "V7", "II7", "V7", "I6", "I7", "IV6", "ivm7", "bVII7", "I6", "VI7", "IV7", "V7", "I6", "VI7"], description: "A sophisticated swing tune with lush chords, perfect for a classy jazz vibe." }, "black_orpheus": { defaultKey: "Am", progression: ["im7", "iim7b5", "V7b9", "im7", "ivm7", "VII7", "bIIImaj7", "bVImaj7", "iim7b5", "V7b9", "im7", "iim7b5", "V7b9", "im7", "ivm7", "VII7"], description: "A bossa nova classic with a haunting minor key, inspired by Brazilian rhythms." }, "all_the_things_you_are": { defaultKey: "Ab", progression: ["vim7", "iim7", "V7", "Imaj7", "IVmaj7", "iiim7", "VI7", "IImaj7", "iim7", "vm7", "I7", "IVmaj7", "Imaj7", "iim7", "V7", "Imaj7", "iim7", "V7", "Imaj7", "iim7", "vm7", "I7", "IVmaj7", "Imaj7"], description: "A harmonically complex standard with shifting keys, beloved in jazz for its beauty." }, "all_of_me": { defaultKey: "C", progression: ["Imaj7", "III7", "VI7", "iim7", "III7", "vim7", "II7", "iim7", "V7", "Imaj7", "III7", "VI7", "iim7", "IVmaj7", "ivm7", "Imaj7", "V7"], description: "A cheerful, upbeat standard with a catchy progression, great for vocal jazz." }, "stella_by_starlight": { defaultKey: "Bb", progression: ["iim7b5", "V7b9", "Imaj7", "IV7", "vm7", "I7", "IVmaj7", "bVIImaj7", "biiim7b5", "VI7b9", "iim7", "V7", "Imaj7", "IV7", "IVmaj7", "V7"], description: "A lush, cinematic progression with a romantic and introspective feel." }, "autumn_leaves": { defaultKey: "Gm", progression: ["iim7b5", "V7", "imaj7", "IVmaj7", "viim7b5", "III7", "vim7", "vim7"], description: "A melancholic jazz standard evoking falling leaves and wistful nostalgia." }, "summertime": { defaultKey: "Am", progression: ["im7", "V7", "im7", "V7", "im7", "V7", "im7", "V7", "ivm7", "im7", "V7", "im7", "ivm7", "im7", "V7", "im7"], description: "A sultry, soulful progression from Gershwin's opera, perfect for laid-back grooves." }, "girl_from_ipanema": { defaultKey: "F", progression: ["Imaj7", "II7", "iim7", "V7", "Imaj7", "II7", "iim7", "V7", "Imaj7", "bII7", "#IVm7b5", "VII7", "iiim7", "VI7", "iim7", "V7"], description: "A breezy bossa nova tune with a sunny, beachy vibe, iconic in jazz." }, "coltrane_changes": { defaultKey: "C", progression: ["Imaj7", "bIII7", "bVImaj7", "VII7", "IIImaj7", "V7", "Imaj7", "bIII7", "bVImaj7", "VII7", "IIImaj7", "V7"], description: "A challenging, innovative progression from John Coltrane, with rapid key shifts." }, "bird_blues": { defaultKey: "F", progression: ["I7", "IV7", "I7", "vim7", "iim7", "V7", "IV7", "ivm7", "I7", "vim7", "iim7", "V7"], description: "A bebop blues progression inspired by Charlie Parker, full of energy and drive." }, "just_friends": { defaultKey: "G", progression: ["Imaj7", "VI7", "iim7", "V7", "Imaj7", "VI7", "iim7", "V7", "iim7", "V7", "Imaj7", "VI7", "iim7", "V7", "Imaj7", "VI7"], description: "A lively, upbeat standard with a playful harmonic structure, great for swing." }, "blue_bossa": { defaultKey: "Cm", progression: ["im7", "im7", "bVII7", "bVII7", "im7", "im7", "ivm7", "bVII7", "im7", "V7", "im7", "im7"], description: "A cool, Latin-jazz progression with a relaxed yet groovy bossa nova feel." }, "on_green_dolphin_street": { defaultKey: "C", progression: ["Imaj7", "im7", "Imaj7", "im7", "bIImaj7", "Imaj7", "bIImaj7", "Imaj7", "iim7", "V7"], description: "A modal, cinematic progression with a mysterious and captivating atmosphere." }, "solar": { defaultKey: "Cm", progression: ["imaj7", "iim7b5", "V7alt", "imaj7", "bVImaj7", "bIIImaj7", "bVII7", "bVII7", "imaj7", "imaj7"], description: "A contemplative, Miles Davis original with a flowing, introspective harmonic line." }, "misty": { defaultKey: "Eb", progression: ["Imaj7", "vm7", "I7", "IVmaj7", "ivm7", "Imaj7", "iim7", "V7", "iiim7", "VI7", "iim7", "V7"], description: "A tender, romantic ballad progression, evoking misty-eyed sentimentality." }, "days_of_wine_and_roses": { defaultKey: "F", progression: ["Imaj7", "vim7", "iim7", "V7", "Imaj7", "vim7", "iim7", "V7", "IVmaj7", "vm7", "I7", "IVmaj7", "iiim7", "VI7", "iim7", "V7"], description: "A bittersweet, elegant progression with a waltzing, reflective quality." }, "cherokee": { defaultKey: "Bb", progression: ["Imaj7", "Imaj7", "iim7", "V7", "Imaj7", "Imaj7", "iim7", "V7", "bVImaj7", "bVImaj7", "V7", "V7", "Imaj7", "Imaj7", "iim7", "V7"], description: "A high-energy bebop standard with a fast-moving, adventurous harmonic structure." }, "caravan": { defaultKey: "Fm", progression: ["im7", "IV7b5", "im7", "IV7b5", "im7", "IV7b5", "im7", "IV7b5", "bVII7", "bVII7", "Imaj7", "Imaj7", "V7", "V7", "im7", "im7"], description: "An exotic, Latin-tinged progression with a hypnotic, caravan-like rhythm." }, "nows_the_time": { defaultKey: "F", progression: ["I7", "I7", "I7", "I7", "IV7", "IV7", "I7", "I7", "V7", "IV7", "I7", "I7"], description: "A gritty, straightforward blues progression by Charlie Parker, full of soul." }, "tenor_madness": { defaultKey: "Bb", progression: ["I7", "I7", "I7", "I7", "IV7", "IV7", "I7", "I7", "iim7", "V7", "I7", "I7"], description: "A hard-swinging blues progression, ideal for fiery tenor sax battles." } };
 const NOTES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
 const NOTES_CHROMATIC = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
 const ALL_NOTES_FOR_SAMPLES = ['a', 'as', 'b', 'c', 'cs', 'd', 'ds', 'e', 'f', 'fs', 'g', 'gs'];
-const OCTAVES_FOR_SAMPLES = [2, 3, 4, 5]; // Samples available
-const PLAYBACK_OCTAVES = [3, 4]; // Octaves to use for chord playback
+const OCTAVES_FOR_SAMPLES = [2, 3, 4, 5];
+const PLAYBACK_OCTAVES = [3, 4];
 const FILE_FORMAT = 'wav';
-const FRETBOARD_NOTES_OCTAVES = {
-  string1: ['E4', 'F4', 'Fs4', 'G4', 'Gs4', 'A4', 'As4', 'B4', 'C5', 'Cs5', 'D5', 'Ds5', 'E5'],
-  string2: ['B3', 'C4', 'Cs4', 'D4', 'Ds4', 'E4', 'F4', 'Fs4', 'G4', 'Gs4', 'A4', 'As4', 'B4'],
-  string3: ['G3', 'Gs3', 'A3', 'As3', 'B3', 'C4', 'Cs4', 'D4', 'Ds4', 'E4', 'F4', 'Fs4', 'G4'],
-  string4: ['D3', 'Ds3', 'E3', 'F3', 'Fs3', 'G3', 'Gs3', 'A3', 'As3', 'B3', 'C4', 'Cs4', 'D4'],
-  string5: ['A2', 'As2', 'B2', 'C3', 'Cs3', 'D3', 'Ds3', 'E3', 'F3', 'Fs3', 'G3', 'Gs3', 'A3'],
-  string6: ['E2', 'F2', 'Fs2', 'G2', 'Gs2', 'A2', 'As2', 'B2', 'C3', 'Cs3', 'D3', 'Ds3', 'E3']
-};
-const SAMPLE_NOTE_MAP = {
-    'C':'c', 'Db':'cs', 'C#':'cs', 'D':'d', 'Eb':'ds', 'D#':'ds', 'E':'e', 'F':'f',
-    'Gb':'fs', 'F#':'fs', 'G':'g', 'Ab':'gs', 'G#':'gs', 'A':'a', 'Bb':'as', 'A#':'as', 'B':'b',
-    'CS':'cs', 'DS':'ds', 'FS':'fs', 'GS':'gs', 'AS':'as'
-};
-const SCALES = {
-    major: [0,2,4,5,7,9,11], minor: [0,2,3,5,7,8,10], harmonicMinor: [0,2,3,5,7,8,11], melodicMinor: [0,2,3,5,7,9,11],
-    dorian: [0,2,3,5,7,9,10], phrygian: [0,1,3,5,7,8,10], lydian: [0,2,4,6,7,9,11], mixolydian: [0,2,4,5,7,9,10], locrian: [0,1,3,5,6,8,10],
-    bebopDominant: [0,2,4,5,7,9,10,11], bebopMajor: [0,2,4,5,7,8,9,11], bebopDorian: [0,2,3,4,5,7,9,10], bebopPhrygian: [0,1,2,3,5,7,8,10],
-    altered: [0,1,3,4,6,8,10], lydianDominant: [0,2,4,6,7,9,10],
-    diminishedWH: [0,2,3,5,6,8,9,11], diminishedHW: [0,1,3,4,6,7,9,10], wholeTone: [0,2,4,6,8,10],
-    pentatonicMajor: [0,2,4,7,9], pentatonicMinor: [0,3,5,7,10], blues: [0,3,5,6,7,10], majorBlues: [0,2,3,4,7,9],
-    harmonicMajor: [0,2,4,5,7,8,11], doubleHarmonic: [0,1,4,5,7,8,11],
-    enigmatic:[0,1,4,6,8,10,11], persian:[0,1,4,5,6,8,11], arabic:[0,2,4,5,6,8,10], japanese:[0,2,5,7,8], egyptian:[0,2,5,7,10]
-};
-const TUNINGS = {
-    standard: ['E','B','G','D','A','E'], dropD: ['E','B','G','D','A','D'], openG: ['D','B','G','D','G','D'],
-    DADGAD: ['D','A','G','D','A','D'], openE: ['E','B','E','Ab','B','E']
-};
+const FRETBOARD_NOTES_OCTAVES = { string1: ['E4', 'F4', 'Fs4', 'G4', 'Gs4', 'A4', 'As4', 'B4', 'C5', 'Cs5', 'D5', 'Ds5', 'E5'], string2: ['B3', 'C4', 'Cs4', 'D4', 'Ds4', 'E4', 'F4', 'Fs4', 'G4', 'Gs4', 'A4', 'As4', 'B4'], string3: ['G3', 'Gs3', 'A3', 'As3', 'B3', 'C4', 'Cs4', 'D4', 'Ds4', 'E4', 'F4', 'Fs4', 'G4'], string4: ['D3', 'Ds3', 'E3', 'F3', 'Fs3', 'G3', 'Gs3', 'A3', 'As3', 'B3', 'C4', 'Cs4', 'D4'], string5: ['A2', 'As2', 'B2', 'C3', 'Cs3', 'D3', 'Ds3', 'E3', 'F3', 'Fs3', 'G3', 'Gs3', 'A3'], string6: ['E2', 'F2', 'Fs2', 'G2', 'Gs2', 'A2', 'As2', 'B2', 'C3', 'Cs3', 'D3', 'Ds3', 'E3'] };
+const SAMPLE_NOTE_MAP = { 'C':'c', 'Db':'cs', 'C#':'cs', 'D':'d', 'Eb':'ds', 'D#':'ds', 'E':'e', 'F':'f', 'Gb':'fs', 'F#':'fs', 'G':'g', 'Ab':'gs', 'G#':'gs', 'A':'a', 'Bb':'as', 'A#':'as', 'B':'b', 'CS':'cs', 'DS':'ds', 'FS':'fs', 'GS':'gs', 'AS':'as' };
+const SCALES = { major: [0,2,4,5,7,9,11], minor: [0,2,3,5,7,8,10], harmonicMinor: [0,2,3,5,7,8,11], melodicMinor: [0,2,3,5,7,9,11], dorian: [0,2,3,5,7,9,10], phrygian: [0,1,3,5,7,8,10], lydian: [0,2,4,6,7,9,11], mixolydian: [0,2,4,5,7,9,10], locrian: [0,1,3,5,6,8,10], bebopDominant: [0,2,4,5,7,9,10,11], bebopMajor: [0,2,4,5,7,8,9,11], bebopDorian: [0,2,3,4,5,7,9,10], bebopPhrygian: [0,1,2,3,5,7,8,10], altered: [0,1,3,4,6,8,10], lydianDominant: [0,2,4,6,7,9,10], diminishedWH: [0,2,3,5,6,8,9,11], diminishedHW: [0,1,3,4,6,7,9,10], wholeTone: [0,2,4,6,8,10], pentatonicMajor: [0,2,4,7,9], pentatonicMinor: [0,3,5,7,10], blues: [0,3,5,6,7,10], majorBlues: [0,2,3,4,7,9], harmonicMajor: [0,2,4,5,7,8,11], doubleHarmonic: [0,1,4,5,7,8,11], enigmatic:[0,1,4,6,8,10,11], persian:[0,1,4,5,6,8,11], arabic:[0,2,4,5,6,8,10], japanese:[0,2,5,7,8], egyptian:[0,2,5,7,10] };
+const TUNINGS = { standard: ['E','B','G','D','A','E'], dropD: ['E','B','G','D','A','D'], openG: ['D','B','G','D','G','D'], DADGAD: ['D','A','G','D','A','D'], openE: ['E','B','E','Ab','B','E'] };
 Object.keys(TUNINGS).forEach(key => TUNINGS[key].reverse());
-const CHORD_INTERVALS = {
-    'maj':[0,4,7],'min':[0,3,7],'dim':[0,3,6],'aug':[0,4,8],'sus4':[0,5,7],'sus2':[0,2,7],
-    'maj7':[0,4,7,11],'dom7':[0,4,7,10],'min7':[0,3,7,10],'min7b5':[0,3,6,10],'dim7':[0,3,6,9],
-    'maj6':[0,4,7,9],'min6':[0,3,7,9],'dom7b9':[0,4,7,10,13],'dom7#9':[0,4,7,10,15],'dom7b5':[0,4,6,10],
-    'alt':[0,4,6,10,13],'dom7sus':[0,5,7,10],'maj9':[0,4,7,11,14],'dom9':[0,4,7,10,14],'min9':[0,3,7,10,14],
-    'imaj7':[0,3,7,11],'unknown':[0,4,7,10]
-};
-const drumSoundSets = [
-    { name: "Drums", snare: "Snare.wav", hihat: "HiHat.wav", kick: "Kick.wav" },
-    { name: "Makaya", snare: "Snare2.wav", hihat: "HiHat2.wav", kick: "Kick2.wav" },
-    { name: "PhillyJoe", kick: 'jazzkick.wav', snare: 'jazzsnare.wav', hihat: 'jazzhat.wav' }
-];
+const CHORD_INTERVALS = { 'maj':[0,4,7],'min':[0,3,7],'dim':[0,3,6],'aug':[0,4,8],'sus4':[0,5,7],'sus2':[0,2,7], 'maj7':[0,4,7,11],'dom7':[0,4,7,10],'min7':[0,3,7,10],'min7b5':[0,3,6,10],'dim7':[0,3,6,9], 'maj6':[0,4,7,9],'min6':[0,3,7,9],'dom7b9':[0,4,7,10,13],'dom7#9':[0,4,7,10,15],'dom7b5':[0,4,6,10], 'alt':[0,4,6,10,13],'dom7sus':[0,5,7,10],'maj9':[0,4,7,11,14],'dom9':[0,4,7,10,14],'min9':[0,3,7,10,14], 'imaj7':[0,3,7,11],'unknown':[0,4,7,10] };
+const drumSoundSets = [ { name: "Drums", snare: "Snare.wav", hihat: "HiHat.wav", kick: "Kick.wav" }, { name: "Makaya", snare: "Snare2.wav", hihat: "HiHat2.wav", kick: "Kick2.wav" }, { name: "PhillyJoe", kick: 'jazzkick.wav', snare: 'jazzsnare.wav', hihat: 'jazzhat.wav' } ];
 
 // --- State Management ---
-const AppState = {
-    isPlaying: false, currentBeat: 0, currentMeasure: 0, tempo: 120, audioInitialized: false,
-    intervalId: null, lastTapTime: 0, tapTempoTimestamps: [],
-    guideTonesActive: false, loopingActive: false, loopStartMeasure: -1, loopEndMeasure: -1,
-    previousChordRootIndex: undefined,
-    listeners: [],
-    updateState(newState){ Object.assign(this,newState); this.notifyListeners(); },
-    addListener(cb){ this.listeners.push(cb); }, notifyListeners(){ this.listeners.forEach(cb=>cb(this));}
-};
+const AppState = { isPlaying: false, currentBeat: 0, currentMeasure: 0, tempo: 120, audioInitialized: false, intervalId: null, lastTapTime: 0, tapTempoTimestamps: [], guideTonesActive: false, loopingActive: false, loopStartMeasure: -1, loopEndMeasure: -1, previousChordRootIndex: undefined, listeners: [], updateState(newState){ Object.assign(this,newState); this.notifyListeners(); }, addListener(cb){ this.listeners.push(cb); }, notifyListeners(){ this.listeners.forEach(cb=>cb(this));} };
 let currentFunctionalProgression = [];
 let currentProgressionName = "";
 let currentDrumSetIndex = 0;
@@ -714,7 +631,7 @@ const UI = {
 const AudioContextManager = {
     context: null, soundBuffers: {}, pianoSampleBuffers: {}, reverbNode: null,
     samplesLoaded: false, reverbAmount: 0.2, currentChordGain: null,
-    secondaryLoadStarted: false, reverbNodeConnected: false, // Added flags
+    secondaryLoadStarted: false, reverbNodeConnected: false,
 
     initialize: async function() {
         if (this.context && this.context.state !== 'closed') return this.context;
@@ -722,7 +639,7 @@ const AudioContextManager = {
             this.context = new (window.AudioContext || window.webkitAudioContext)();
             log("AudioContext created/resumed.");
             updateLoadingStatus("Loading essential sounds...", true);
-            await this.loadInitialSounds();
+            await this.loadInitialSounds(); // Changed to split loading
             AppState.audioInitialized = true;
             log("AudioContextManager initial sounds loaded.");
             await this.setupReverb();
@@ -730,23 +647,18 @@ const AudioContextManager = {
                 await this.context.resume();
                 log("AudioContext resumed from suspended state.");
             }
-            setTimeout(() => this.loadSecondarySounds(), 100);
+            setTimeout(() => this.loadSecondarySounds(), 100); // Trigger background load
         } catch (error) {
             console.error("Error initializing AudioContextManager:", error);
-            alert("Failed to initialize audio."); AppState.audioInitialized = false; // Ensure state reflects failure
+            alert("Failed to initialize audio."); AppState.audioInitialized = false;
             throw error;
         }
         return this.context;
     },
 
     ensureAudioContext: async function() {
-        if (!this.context || this.context.state === 'suspended') {
-            return await this.initialize();
-        }
-        if(this.context.state === 'closed'){ // Handle if context gets closed unexpectedly
-             console.warn("AudioContext was closed, re-initializing.");
-             return await this.initialize();
-        }
+        if (!this.context || this.context.state === 'suspended') { return await this.initialize(); }
+        if(this.context.state === 'closed'){ console.warn("AudioContext was closed, re-initializing."); return await this.initialize(); }
         return this.context;
     },
 
@@ -763,8 +675,8 @@ const AudioContextManager = {
             this.soundBuffers['click'] = await this.createDrumSound('click');
             log("Using synth fallback for click.");
         }
-        // 2. Load Piano Octaves 2 & 3
-        await this.loadPianoSamplesSpecific(PLAYBACK_OCTAVES); // Load only playback octaves initially
+        // 2. Load Piano Octaves defined in PLAYBACK_OCTAVES
+        await this.loadPianoSamplesSpecific(PLAYBACK_OCTAVES);
         this.samplesLoaded = Object.keys(this.pianoSampleBuffers).length > 0;
         if(this.samplesLoaded) log(`Initial piano samples (Octaves ${PLAYBACK_OCTAVES.join(',')}) loaded.`);
         else console.warn(`Initial piano samples (Octaves ${PLAYBACK_OCTAVES.join(',')}) failed.`);
@@ -776,27 +688,16 @@ const AudioContextManager = {
         log("Starting secondary background sound loading...");
         updateLoadingStatus("Loading additional sounds...", true);
         const loadPromises = [];
-
-        // 1. Load Other Metronome Sounds
         const secondaryMetronome = { 'woodblock':'woodblock.wav', 'hihat':'HiHat.wav', 'kick':'Kick.wav', 'snare':'Snare.wav' };
-        for (let [type, filename] of Object.entries(secondaryMetronome)) {
-            if (!this.soundBuffers[type]) {
-                loadPromises.push(this.loadSingleSound(type, filename));
-            }
-        }
-        // 2. Load Other Piano Octaves
+        for (let [type, filename] of Object.entries(secondaryMetronome)) { if (!this.soundBuffers[type]) { loadPromises.push(this.loadSingleSound(type, filename)); } }
         const remainingOctaves = OCTAVES_FOR_SAMPLES.filter(o => !PLAYBACK_OCTAVES.includes(o));
-        if (remainingOctaves.length > 0) {
-            loadPromises.push(this.loadPianoSamplesSpecific(remainingOctaves));
-        }
-        // Wait for all
+        if (remainingOctaves.length > 0) { loadPromises.push(this.loadPianoSamplesSpecific(remainingOctaves)); }
         await Promise.allSettled(loadPromises);
         log("Secondary background sound loading complete.");
         updateLoadingStatus("All sounds loaded.", true);
         setTimeout(() => updateLoadingStatus("", false), 1500);
     },
 
-     // Helper to load a single sound buffer with fallback
      loadSingleSound: async function(type, filename) {
          try {
              const response = await fetch(`./${filename}`);
@@ -812,26 +713,16 @@ const AudioContextManager = {
      },
 
     loadPianoSamplesSpecific: async function(octavesToLoad) {
-        let loadedCount = 0;
-        const promises = [];
+        let loadedCount = 0; const promises = [];
         for (const note of ALL_NOTES_FOR_SAMPLES) {
             for (const octave of octavesToLoad) {
-                if (!OCTAVES_FOR_SAMPLES.includes(octave)) continue;
-                const key = `${note}${octave}`;
-                if (this.pianoSampleBuffers[key]) continue;
-                const fileName = getSampleFileName(note, octave);
-                promises.push(
-                    fetch(fileName)
-                    .then(r => r.ok ? r.arrayBuffer() : Promise.reject(`HTTP ${r.status} for ${fileName}`))
-                    .then(ab => this.context.decodeAudioData(ab))
-                    .then(buf => { this.pianoSampleBuffers[key] = buf; loadedCount++; })
-                    .catch(e => console.error(`Failed piano sample: ${fileName}`, e))
-                );
+                if (!OCTAVES_FOR_SAMPLES.includes(octave)) continue; const key = `${note}${octave}`;
+                if (this.pianoSampleBuffers[key]) continue; const fileName = getSampleFileName(note, octave);
+                promises.push( fetch(fileName) .then(r => r.ok ? r.arrayBuffer() : Promise.reject(`HTTP ${r.status} for ${fileName}`)) .then(ab => this.context.decodeAudioData(ab)) .then(buf => { this.pianoSampleBuffers[key] = buf; loadedCount++; }) .catch(e => console.error(`Failed piano sample: ${fileName}`, e)) );
             }
         }
         await Promise.allSettled(promises);
         log(`Loaded ${loadedCount} piano samples for octaves: [${octavesToLoad.join(', ')}]`);
-         // Update overall loaded flag after any load attempt
         this.samplesLoaded = Object.keys(this.pianoSampleBuffers).length > 0;
     },
 
@@ -841,26 +732,12 @@ const AudioContextManager = {
          if(!this.context) return;
          if(!this.reverbNode) {
              try {
-                 this.reverbNode = this.context.createConvolver();
-                 const sr = this.context.sampleRate;
-                 const len = sr * 2.5;
+                 this.reverbNode = this.context.createConvolver(); const sr = this.context.sampleRate; const len = sr * 2.5;
                  const impulse = this.context.createBuffer(2, len, sr);
-                 for(let ch=0; ch<2; ch++){
-                     const cd = impulse.getChannelData(ch);
-                     for(let i=0; i<len; i++) cd[i] = (Math.random()*2-1) * Math.pow(1-i/len, 2.5);
-                 }
-                 this.reverbNode.buffer = impulse;
-                 log("Reverb node created.");
-                 // Connect reverb output to destination *once*
-                 if(this.context.destination && !this.reverbNodeConnected) {
-                     this.reverbNode.connect(this.context.destination);
-                     this.reverbNodeConnected = true;
-                     log("Reverb connected to destination.");
-                 }
-             } catch (e) {
-                 console.error("Failed to create reverb node:", e);
-                 this.reverbNode = null; // Ensure it's null if creation fails
-             }
+                 for(let ch=0; ch<2; ch++){ const cd = impulse.getChannelData(ch); for(let i=0; i<len; i++) cd[i] = (Math.random()*2-1) * Math.pow(1-i/len, 2.5); }
+                 this.reverbNode.buffer = impulse; log("Reverb node created.");
+                 if(this.context.destination && !this.reverbNodeConnected) { this.reverbNode.connect(this.context.destination); this.reverbNodeConnected = true; log("Reverb connected to destination."); }
+             } catch (e) { console.error("Failed to create reverb node:", e); this.reverbNode = null; }
          }
      }
 };
@@ -879,66 +756,34 @@ function createQualityOptions(selQ='maj7'){const Qs=[{v:'maj7',l:'Maj7'},{v:'dom
 function createScaleOptions(selS='major'){return Object.keys(SCALES).map(sn=>{const dn=sn.replace(/([A-Z]+)/g,' $1').replace(/([A-Z][a-z])/g,' $1').split(' ').map(s=>s.charAt(0).toUpperCase()+s.substring(1)).join(' ');return`<option value="${sn}"${sn===selS?' selected':''}>${dn}</option>`;}).join('');}
 
 // --- Audio Playback ---
-function standardizeNoteNameForSamples(note){ const sn = standardizeNoteName(note); return SAMPLE_NOTE_MAP[sn] || SAMPLE_NOTE_MAP[note.toUpperCase()] || note.toLowerCase(); } // Added second map lookup
+function standardizeNoteNameForSamples(note){ const sn = standardizeNoteName(note); return SAMPLE_NOTE_MAP[sn] || SAMPLE_NOTE_MAP[note.toUpperCase()] || note.toLowerCase(); }
 function playNote(noteNameWithOctave, volume=0.5, duration=500) {
     if (!AudioContextManager.context || !AudioContextManager.samplesLoaded || !noteNameWithOctave) return;
-    const m=noteNameWithOctave.match(/^([A-G][#bs]?)(\d)$/i); // Allow #, b, or s
+    const m=noteNameWithOctave.match(/^([A-G][#bs]?)(\d)$/i);
     if(!m){console.warn(`Invalid note format: ${noteNameWithOctave}`);return;}
-    let [,pc,os]=m;
-    const spc=standardizeNoteNameForSamples(pc); // Convert Ab, Fs, C# etc. to gs, fs, cs etc.
+    let [,pc,os]=m; const spc=standardizeNoteNameForSamples(pc);
     const o=Math.max(OCTAVES_FOR_SAMPLES[0],Math.min(OCTAVES_FOR_SAMPLES[OCTAVES_FOR_SAMPLES.length-1],parseInt(os)));
     const sk=`${spc}${o}`; const b=AudioContextManager.pianoSampleBuffers[sk];
     if(!b){console.warn(`No sample for ${sk} (orig: ${noteNameWithOctave})`);return;}
     try{const s=AudioContextManager.context.createBufferSource();s.buffer=b;const gn=AudioContextManager.context.createGain();gn.gain.setValueAtTime(volume,AudioContextManager.context.currentTime);s.connect(gn);gn.connect(AudioContextManager.context.destination);s.start(AudioContextManager.context.currentTime);s.stop(AudioContextManager.context.currentTime+duration/1000);}catch(e){console.error('Error playing note:',e);}
 }
-
 async function playChord(root, quality, startTime, duration) {
     if (!UI.elements.chordsEnabled.classList.contains('active') || !AudioContextManager.samplesLoaded) return;
     await AudioContextManager.ensureAudioContext();
-    const baseNotes = getChordNotes(root, quality);
-    if (!baseNotes || baseNotes.length === 0) return;
-    const overallVolume = parseFloat(UI.elements.chordVolume.value) * 0.7;
-    if (overallVolume <= 0) return;
+    const baseNotes = getChordNotes(root, quality); if (!baseNotes || baseNotes.length === 0) return;
+    const overallVolume = parseFloat(UI.elements.chordVolume.value) * 0.7; if (overallVolume <= 0) return;
     if (AudioContextManager.currentChordGain) { try { AudioContextManager.currentChordGain.gain.setValueAtTime(AudioContextManager.currentChordGain.gain.value, startTime); AudioContextManager.currentChordGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.05); } catch(e) { console.warn("Fade out error", e); } }
-    const mainGain = AudioContextManager.context.createGain();
-    mainGain.gain.setValueAtTime(0, startTime);
-    mainGain.gain.linearRampToValueAtTime(overallVolume, startTime + 0.02);
-    mainGain.connect(AudioContextManager.context.destination);
-    AudioContextManager.currentChordGain = mainGain;
-    if (AudioContextManager.reverbNode && AudioContextManager.reverbAmount > 0) {
-        const reverbDryWet = AudioContextManager.context.createGain();
-        reverbDryWet.gain.value = AudioContextManager.reverbAmount;
-        mainGain.connect(reverbDryWet);
-        reverbDryWet.connect(AudioContextManager.reverbNode);
-         if (!AudioContextManager.reverbNodeConnected && AudioContextManager.context.destination) { AudioContextManager.reverbNode.connect(AudioContextManager.context.destination); AudioContextManager.reverbNodeConnected = true; }
-    }
-    let voicing = [...baseNotes];
-    const inversion = Math.floor(Math.random() * voicing.length);
-    for (let i = 0; i < inversion; i++) { voicing.push(voicing.shift()); }
+    const mainGain = AudioContextManager.context.createGain(); mainGain.gain.setValueAtTime(0, startTime); mainGain.gain.linearRampToValueAtTime(overallVolume, startTime + 0.02); mainGain.connect(AudioContextManager.context.destination); AudioContextManager.currentChordGain = mainGain;
+    if (AudioContextManager.reverbNode && AudioContextManager.reverbAmount > 0) { const rdw = AudioContextManager.context.createGain(); rdw.gain.value = AudioContextManager.reverbAmount; mainGain.connect(rdw); rdw.connect(AudioContextManager.reverbNode); if (!AudioContextManager.reverbNodeConnected && AudioContextManager.context.destination) { AudioContextManager.reverbNode.connect(AudioContextManager.context.destination); AudioContextManager.reverbNodeConnected = true; } }
+    let voicing = [...baseNotes]; const inv = Math.floor(Math.random() * voicing.length); for (let i = 0; i < inv; i++) { voicing.push(voicing.shift()); }
     const assignedNotesWithOctaves = voicing.map((noteName, index) => {
-        let octave = PLAYBACK_OCTAVES[0];
-        if (index > 0 && NOTES.indexOf(noteName) < NOTES.indexOf(voicing[0]) && PLAYBACK_OCTAVES.length > 1) { octave = PLAYBACK_OCTAVES[1]; }
-        else if (PLAYBACK_OCTAVES.length > 1 && index > 1) { octave = PLAYBACK_OCTAVES[index % PLAYBACK_OCTAVES.length]; }
-        if (!OCTAVES_FOR_SAMPLES.includes(octave)) { octave = OCTAVES_FOR_SAMPLES.find(o => o >= PLAYBACK_OCTAVES[0]) || OCTAVES_FOR_SAMPLES[0]; }
-        return { name: noteName, octave: octave };
+        let octave = PLAYBACK_OCTAVES[0]; if (index > 0 && NOTES.indexOf(noteName) < NOTES.indexOf(voicing[0]) && PLAYBACK_OCTAVES.length > 1) { octave = PLAYBACK_OCTAVES[1]; } else if (PLAYBACK_OCTAVES.length > 1 && index > 1) { octave = PLAYBACK_OCTAVES[index % PLAYBACK_OCTAVES.length]; } if (!OCTAVES_FOR_SAMPLES.includes(octave)) { octave = OCTAVES_FOR_SAMPLES.find(o => o >= PLAYBACK_OCTAVES[0]) || OCTAVES_FOR_SAMPLES[0]; } return { name: noteName, octave: octave };
     });
     assignedNotesWithOctaves.forEach(noteObj => {
-        const samplePitchClass = standardizeNoteNameForSamples(noteObj.name);
-        const sampleKey = `${samplePitchClass}${noteObj.octave}`;
-        const buffer = AudioContextManager.pianoSampleBuffers[sampleKey];
-        if (!buffer) { console.warn(`Chord Playback: No sample for ${sampleKey}`); return; }
-        const source = AudioContextManager.context.createBufferSource();
-        source.buffer = buffer;
-        const noteSpecificGain = AudioContextManager.context.createGain();
-        noteSpecificGain.gain.value = 0.8 + Math.random() * 0.2;
-        source.connect(noteSpecificGain);
-        noteSpecificGain.connect(mainGain);
-        const timeVariation = Math.random() * 0.03;
-        source.start(startTime + timeVariation);
-        source.stop(startTime + duration + timeVariation);
+        const spc = standardizeNoteNameForSamples(noteObj.name); const sk = `${spc}${noteObj.octave}`; const b = AudioContextManager.pianoSampleBuffers[sk]; if (!b) { console.warn(`Chord Playback: No sample for ${sk}`); return; }
+        const s = AudioContextManager.context.createBufferSource(); s.buffer = b; const nsg = AudioContextManager.context.createGain(); nsg.gain.value = 0.8 + Math.random() * 0.2; s.connect(nsg); nsg.connect(mainGain); const tv = Math.random() * 0.03; s.start(startTime + tv); s.stop(startTime + duration + tv);
     });
 }
-
 async function playMetronomeSound(baseVol) { if (!AudioContextManager.context) return; const mov = parseFloat(UI.elements.metronomeVolume.value); const cv = baseVol * mov; if (cv <= 0) return; const st = UI.elements.soundType.value; const be = document.querySelector(`.beat[data-beat="${AppState.currentBeat}"]`); if (!be) return; const sktp = be.dataset.sound.split(','); const iab = parseFloat(be.dataset.baseVolume) >= 1; const ab = parseFloat(UI.elements.accentIntensity?.value || 1.0); let fvfts = cv; if (iab && (sktp.includes('kick') || sktp.includes('snare') || st === 'click' || st === 'woodblock')) { fvfts = Math.min(cv * ab, 1.0); } for (let sk of sktp) { sk = sk.trim(); if (sk === 'silent') continue; let btp; let esk = sk; if (st === 'drums') { const cs = drumSoundSets[currentDrumSetIndex]; let sfn; switch(sk){case 'kick':sfn=cs.kick;break; case 'snare':sfn=cs.snare;break; case 'hihat':sfn=cs.hihat;break; default:esk='click';sfn=null;} if(sfn){try{if(!AudioContextManager.soundBuffers[sfn]){const r=await fetch(`./${sfn}`);if(!r.ok)throw new Error(`${r.status} for ${sfn}`);const aby=await r.arrayBuffer();AudioContextManager.soundBuffers[sfn]=await AudioContextManager.context.decodeAudioData(aby);}btp=AudioContextManager.soundBuffers[sfn];}catch(e){console.error(`Failed drum sample ${sfn}:`,e);btp=AudioContextManager.soundBuffers[sk]||AudioContextManager.soundBuffers['click'];}}else{btp=AudioContextManager.soundBuffers[esk]||AudioContextManager.soundBuffers['click'];}}else{esk=st;btp=AudioContextManager.soundBuffers[st]||AudioContextManager.soundBuffers['click'];} if(!btp)continue;const src=AudioContextManager.context.createBufferSource();src.buffer=btp;const gn=AudioContextManager.context.createGain();let afv=fvfts;if(st==='drums'){if(esk==='hihat'&&sktp.length>1)afv*=0.6;else if(esk==='kick')afv*=1.0;else if(esk==='snare')afv*=0.9;}gn.gain.setValueAtTime(Math.min(afv,1.0),AudioContextManager.context.currentTime);src.connect(gn);gn.connect(AudioContextManager.context.destination);if(st==='drums'&&AudioContextManager.reverbNode){const rg=AudioContextManager.context.createGain();rg.gain.setValueAtTime(0.05,AudioContextManager.context.currentTime);src.connect(rg);rg.connect(AudioContextManager.reverbNode);}src.start(AudioContextManager.context.currentTime);}}
 function onMetronomeInstrumentChange(selIns){UI.elements.drumSetToggleBtn.style.display=selIns==="drums"?"inline-block":"none";createBeats();}
 
@@ -1011,11 +856,11 @@ function updateFretboardNotes(fretboardContainer, rootNote, scaleName, tuningArr
     }
     if (AppState.guideTonesActive && fretboardContainer.id === 'chord-fretboard') { highlightGuideTones(); }
 }
-      
+
 // --- Metronome Beat/Playback Logic ---
 async function playBeat() {
     // Get UI Elements (defined within function scope)
-    const beatsUI = document.querySelectorAll('.beat');
+    const beatsUI = document.querySelectorAll('.beat'); // Define beatsUI at the start
     const measures = UI.elements.measures.children; // Access measures via UI cache
     // --- End Get UI Elements ---
 
@@ -1085,6 +930,7 @@ async function playBeat() {
 
     // Check if we've completed a measure cycle
     if (AppState.currentBeat === 0) {
+        // measures variable is accessible here
         if (AppState.loopingActive && AppState.loopStartMeasure !== -1 && AppState.loopEndMeasure !== -1) {
             // If looping, advance within the loop range
             AppState.currentMeasure++;
@@ -1104,9 +950,8 @@ async function playBeat() {
 
 } // --- End of playBeat Function Definition ---
 
-
-function createBeats() { /* ... (Keep existing) ... */ const c=document.querySelector('.beats-container');if(!c){console.error("Beats container not found");return;}c.innerHTML='';const ts=parseInt(UI.elements.timeSignature.value);const sot=UI.elements.soundType.value;let tbtd=ts;let sf=1;if(ts===4){tbtd=8;sf=2;}else if(ts===6||ts===12){tbtd=ts;sf=1;} for(let i=0;i<tbtd;i++){const bd=document.createElement('div');bd.className='beat';bd.dataset.beat=i;let bl=`${Math.floor(i/sf)+1}`;if(sf>1&&(i%sf!==0)){bl+="&";}else if((ts===6||ts===12)&&(i%3===0)&&i!==0){bl=`${Math.floor(i/3)+1}`;}bd.textContent=bl;let bs=sot==='drums'?'hihat':sot;let bv=0.3;let col='#4CAF50';const ifbom=(i===0);let isbits=false;if(ts===4){isbits=(i===0||i===4);}else if(ts===3){isbits=(i===0);}else if(ts===2){isbits=(i===0);}else if(ts===6){isbits=(i===0||i===3);}else if(ts===12){isbits=(i===0||i===3||i===6||i===9);}else{isbits=(i===0);} if(isbits){bv=1.0;col='#1F618D';if(sot==='drums'){bs=(i===0||(ts===4&&i===4)||(ts===6&&i===3)||(ts===12&&(i===3||i===6||i===9)))?'kick,hihat':'kick,hihat';if(ts===4&&(i===2||i===6)){bs='snare,hihat';bv=0.8;col='#D9534F';}}}else if(ts===4&&(i===2||i===6)&&sot==='drums'){bs='snare,hihat';bv=0.8;col='#D9534F';}else if(sot==='drums'&&sf>1&&(i%sf!==0)){bs='hihat';bv=0.2;col='#9E9E9E';}else if(sot!=='drums'&&sf>1&&(i%sf!==0)){bs='silent';bv=0;col='#666';} bd.dataset.sound=bs;bd.dataset.baseVolume=bv;bd.dataset.volume=bv;bd.style.backgroundColor=col;bd.addEventListener('click',()=>toggleBeatAccent(bd,sot,sf>1));c.appendChild(bd);}}
-function toggleBeatAccent(be, cst, isSub) { /* ... (Keep existing) ... */ const cv=parseFloat(be.dataset.volume);let nv,ns,nc;if(cst==='drums'){const s=['silent','hihat','snare,hihat','kick,hihat'];const cl=['#666','#9E9E9E','#D9534F','#1F618D'];const v=[0,0.3,0.8,1.0];let ci=s.indexOf(be.dataset.sound);if(ci===-1)ci=1;let ni=(ci+1)%s.length;if(isSub&&(s[ni]==='snare,hihat'||s[ni]==='kick,hihat')){if(s[ci]!=='hihat'&&s[ci]!=='silent'){ni=(ci+1)%s.length;}else{ni=(ci+2)%s.length;if(ni===ci)ni=(ni+1)%s.length;}} ns=s[ni];nv=v[ni];nc=cl[ni];}else{const st=[{volume:0,sound:'silent',color:'#666'},{volume:0.3,sound:cst,color:'#9E9E9E'},{volume:1.0,sound:cst,color:'#1F618D'}];let csi=st.findIndex(s=>s.volume===cv);if(csi===-1){if(cv>0.5)csi=2;else if(cv>0)csi=1;else csi=0;} const nst=st[(csi+1)%st.length];nv=nst.volume;ns=nst.sound;nc=nst.color;} be.dataset.volume=nv;be.dataset.sound=ns;be.dataset.baseVolume=nv;be.style.backgroundColor=nc;}
+function createBeats() { const c=document.querySelector('.beats-container');if(!c){console.error("Beats container not found");return;}c.innerHTML='';const ts=parseInt(UI.elements.timeSignature.value);const sot=UI.elements.soundType.value;let tbtd=ts;let sf=1;if(ts===4){tbtd=8;sf=2;}else if(ts===6||ts===12){tbtd=ts;sf=1;} for(let i=0;i<tbtd;i++){const bd=document.createElement('div');bd.className='beat';bd.dataset.beat=i;let bl=`${Math.floor(i/sf)+1}`;if(sf>1&&(i%sf!==0)){bl+="&";}else if((ts===6||ts===12)&&(i%3===0)&&i!==0){bl=`${Math.floor(i/3)+1}`;}bd.textContent=bl;let bs=sot==='drums'?'hihat':sot;let bv=0.3;let col='#4CAF50';const ifbom=(i===0);let isbits=false;if(ts===4){isbits=(i===0||i===4);}else if(ts===3){isbits=(i===0);}else if(ts===2){isbits=(i===0);}else if(ts===6){isbits=(i===0||i===3);}else if(ts===12){isbits=(i===0||i===3||i===6||i===9);}else{isbits=(i===0);} if(isbits){bv=1.0;col='#1F618D';if(sot==='drums'){bs=(i===0||(ts===4&&i===4)||(ts===6&&i===3)||(ts===12&&(i===3||i===6||i===9)))?'kick,hihat':'kick,hihat';if(ts===4&&(i===2||i===6)){bs='snare,hihat';bv=0.8;col='#D9534F';}}}else if(ts===4&&(i===2||i===6)&&sot==='drums'){bs='snare,hihat';bv=0.8;col='#D9534F';}else if(sot==='drums'&&sf>1&&(i%sf!==0)){bs='hihat';bv=0.2;col='#9E9E9E';}else if(sot!=='drums'&&sf>1&&(i%sf!==0)){bs='silent';bv=0;col='#666';} bd.dataset.sound=bs;bd.dataset.baseVolume=bv;bd.dataset.volume=bv;bd.style.backgroundColor=col;bd.addEventListener('click',()=>toggleBeatAccent(bd,sot,sf>1));c.appendChild(bd);}}
+function toggleBeatAccent(be, cst, isSub) { const cv=parseFloat(be.dataset.volume);let nv,ns,nc;if(cst==='drums'){const s=['silent','hihat','snare,hihat','kick,hihat'];const cl=['#666','#9E9E9E','#D9534F','#1F618D'];const v=[0,0.3,0.8,1.0];let ci=s.indexOf(be.dataset.sound);if(ci===-1)ci=1;let ni=(ci+1)%s.length;if(isSub&&(s[ni]==='snare,hihat'||s[ni]==='kick,hihat')){if(s[ci]!=='hihat'&&s[ci]!=='silent'){ni=(ci+1)%s.length;}else{ni=(ci+2)%s.length;if(ni===ci)ni=(ni+1)%s.length;}} ns=s[ni];nv=v[ni];nc=cl[ni];}else{const st=[{volume:0,sound:'silent',color:'#666'},{volume:0.3,sound:cst,color:'#9E9E9E'},{volume:1.0,sound:cst,color:'#1F618D'}];let csi=st.findIndex(s=>s.volume===cv);if(csi===-1){if(cv>0.5)csi=2;else if(cv>0)csi=1;else csi=0;} const nst=st[(csi+1)%st.length];nv=nst.volume;ns=nst.sound;nc=nst.color;} be.dataset.volume=nv;be.dataset.sound=ns;be.dataset.baseVolume=nv;be.style.backgroundColor=nc;}
 
 // --- Playback Control ---
 async function startPlayback() {
@@ -1119,13 +964,13 @@ async function startPlayback() {
         if (timeSignatureNum === 4) intervalMs /= 2;
 
         AppState.currentBeat = 0;
-        if (!AppState.intervalId) { // Only run initial playBeat if not already running
+        if (!AppState.intervalId) {
             AppState.currentMeasure = (AppState.loopingActive && AppState.loopStartMeasure !== -1) ? AppState.loopStartMeasure : 0;
-            await playBeat(); // Initial immediate beat
+            await playBeat();
             const totalBeatsInDisplay = document.querySelectorAll('.beat').length;
             if (totalBeatsInDisplay > 0) {
-                AppState.currentBeat = (AppState.currentBeat + 1) % totalBeatsInDisplay; // Pre-advance for first interval
-                if (AppState.currentBeat === 0) { // Advance measure if wrapped immediately
+                AppState.currentBeat = (AppState.currentBeat + 1) % totalBeatsInDisplay;
+                if (AppState.currentBeat === 0) {
                      if (AppState.loopingActive && AppState.loopStartMeasure !== -1 && AppState.loopEndMeasure !== -1) {
                          AppState.currentMeasure++;
                          if (AppState.currentMeasure > AppState.loopEndMeasure) AppState.currentMeasure = AppState.loopStartMeasure;
@@ -1181,120 +1026,76 @@ function loadProgression(progName, overrideKey = null, isUserSong = false) {
     if(songDescEl) songDescEl.textContent = progData.description || "";
     if(UI.elements.keySelect) UI.elements.keySelect.value = activeKey;
 
-    UI.elements.measures.innerHTML = ''; resetLoop(); // Clear loop selection when loading new song
+    UI.elements.measures.innerHTML = ''; resetLoop();
     currentFunctionalProgression.forEach((rcs, idx) => {
         const pc = parseRomanNumeralToAbsoluteChord(rcs, activeKey);
         const md = document.createElement('div'); md.className = 'measure'; md.draggable = true; md.dataset.measureIndex = idx;
         md.innerHTML = `<span class="measure-number" data-measure-idx="${idx}">${idx+1}</span><div class="chord-controls"><select class="root-note">${createKeyOptions(pc.root)}</select><select class="chord-quality">${createQualityOptions(pc.quality)}</select></div><div class="scale-controls"><select class="second-key">${createKeyOptions(pc.root)}</select><select class="scale-select">${createScaleOptions(suggestScaleForQuality(pc.quality))}</select></div>`;
         UI.elements.measures.appendChild(md);
         md.querySelectorAll('select').forEach(sel => sel.addEventListener('change', () => handleMeasureControlChange(md)));
-        md.addEventListener('click', (e) => { if (e.target.tagName !== 'SELECT') toggleMeasureLoopSelection(idx); }); // Only toggle loop if not clicking select
+        md.addEventListener('click', (e) => { if (e.target.tagName !== 'SELECT') toggleMeasureLoopSelection(idx); });
         md.addEventListener('dragstart', dragStart);
     });
     updateMeasureNumbers(); addFirstChordListener();
     log(`Loaded ${isUserSong ? 'user song' : 'progression'}: ${progName} in key ${activeKey}`);
 }
-
 function updateProgressionKey(newKey) { const st=UI.elements.currentSongTitle;const sd=UI.elements.currentSongDescription;if(!currentFunctionalProgression||currentFunctionalProgression.length===0){if(UI.elements.measures.children.length===0){const t=TUNINGS[UI.elements.chordTuning.value];updateFretboardNotes(UI.elements.chordFretboard,newKey,'major',t);if(UI.elements.scaleDisplay)UI.elements.scaleDisplay.textContent=`${newKey} Major`;if(st)st.textContent="";if(sd)sd.textContent="";}return;} Array.from(UI.elements.measures.children).forEach((me,ix)=>{if(ix<currentFunctionalProgression.length){const rcs=currentFunctionalProgression[ix];const pc=parseRomanNumeralToAbsoluteChord(rcs,newKey);const rs=me.querySelector('.root-note');const qs=me.querySelector('.chord-quality');const sks=me.querySelector('.scale-controls .second-key');const ss=me.querySelector('.scale-controls .scale-select');if(rs)rs.value=pc.root;if(qs)qs.value=pc.quality;if(sks)sks.value=pc.root;if(ss)ss.value=suggestScaleForQuality(pc.quality);}});addFirstChordListener();log(`Progression '${currentProgressionName}' re-calculated for key: ${newKey}`);}
 function addMeasure(r='C',q='maj7',sr='C',st='major'){const mc=UI.elements.measures.children.length;const md=document.createElement('div');md.className='measure';md.draggable=true;md.dataset.measureIndex=mc;md.innerHTML=`<span class="measure-number" data-measure-idx="${mc}">${mc+1}</span><div class="chord-controls"><select class="root-note">${createKeyOptions(r)}</select><select class="chord-quality">${createQualityOptions(q)}</select></div><div class="scale-controls"><select class="second-key">${createKeyOptions(sr)}</select><select class="scale-select">${createScaleOptions(st)}</select></div>`;UI.elements.measures.appendChild(md);md.querySelectorAll('select').forEach(sel=>sel.addEventListener('change',()=>handleMeasureControlChange(md)));md.addEventListener('click',(e) => { if (e.target.tagName !== 'SELECT') toggleMeasureLoopSelection(mc); });md.addEventListener('dragstart',dragStart);updateMeasureNumbers();if(mc===0)addFirstChordListener();log(`Added measure ${mc+1}`);}
 function removeMeasure(){const m=UI.elements.measures.children;if(m.length>0){const removedIdx = m.length -1; if(AppState.loopStartMeasure === removedIdx || AppState.loopEndMeasure === removedIdx) resetLoop(); m[m.length-1].remove();updateMeasureNumbers();if(m.length>0)addFirstChordListener();else if(UI.elements.scaleDisplay)UI.elements.scaleDisplay.textContent="";log('Removed last measure');}}
 function updateMeasureNumbers(){Array.from(UI.elements.measures.children).forEach((m,i)=>{const n=m.querySelector('.measure-number');if(n){n.textContent=i+1; m.dataset.measureIndex = i; n.dataset.measureIdx = i;}});}
 function dragStart(e){e.dataTransfer.setData('text/plain',e.target.dataset.measureIndex);setTimeout(()=>e.target.classList.add('dragging'),0);}
 function dragOver(e){e.preventDefault();}
-function drop(e){e.preventDefault();const di=parseInt(e.dataTransfer.getData('text/plain'));const te=e.target.closest('.measure');if(!te)return;const ti=parseInt(te.dataset.measureIndex);if(di===ti||isNaN(di)||isNaN(ti))return;const ma=Array.from(UI.elements.measures.children);const dm=ma[di];if(di<ti)te.after(dm);else te.before(dm);updateMeasureNumbers();if(currentFunctionalProgression.length>0){const movedItem=currentFunctionalProgression.splice(di,1)[0];if(movedItem)currentFunctionalProgression.splice(ti,0,movedItem);}addFirstChordListener();resetLoop();log(`Moved measure ${di+1} to ${ti+1}`);}
+function drop(e){e.preventDefault();const di=parseInt(e.dataTransfer.getData('text/plain'));const te=e.target.closest('.measure');if(!te)return;const ti=parseInt(te.dataset.measureIndex);if(di===ti||isNaN(di)||isNaN(ti))return;const ma=Array.from(UI.elements.measures.children);const dm=ma[di];if(di<ti)te.after(dm);else te.before(dm);updateMeasureNumbers();if(currentFunctionalProgression.length>0 && di < currentFunctionalProgression.length && ti < currentFunctionalProgression.length){const movedItem=currentFunctionalProgression.splice(di,1)[0];if(movedItem)currentFunctionalProgression.splice(ti,0,movedItem);}addFirstChordListener();resetLoop();log(`Moved measure ${di+1} to ${ti+1}`);} // Added check for valid indices
 function dragEnd(e){e.target.classList.remove('dragging');}
 
 // --- FretFlow ---
 function initializeFretFlow() { const fg=UI.elements.fretboardsGrid;if(!fg)return;fg.innerHTML='';fg.style.display='grid';fg.style.gridTemplateColumns='repeat(2,1fr)';fg.style.gap='20px';for(let i=0;i<4;i++){const fs=document.createElement('div');fs.className='fretboard-section';const so=Object.entries(SCALES).map(([sk,_])=>{const dn=sk.replace(/([A-Z])/g,' $1').replace(/^./,s=>s.toUpperCase());return`<option value="${sk}">${dn}</option>`;}).join('');fs.innerHTML=`<div class="fretboard-controls"><div class="control-group"><label for="ffk-${i}">Key:</label><select id="ffk-${i}"class="fretflow-key">${createKeyOptions()}</select></div><div class="control-group"><label for="ffs-${i}">Scale:</label><select id="ffs-${i}"class="fretflow-scale">${so}</select></div><div class="control-group"><label for="fft-${i}">Tuning:</label><select id="fft-${i}"class="tuning-select"><option value="standard">Std</option><option value="dropD">DropD</option><option value="openG">OpG</option><option value="DADGAD">DADGAD</option><option value="openE">OpE</option></select></div></div><div class="scale-display"id="ffsd-${i}"></div><div id="fffb-${i}"class="fretboard"></div>`;fg.appendChild(fs);const fe=fs.querySelector(`#fffb-${i}`);const kse=fs.querySelector(`#ffk-${i}`);const sse=fs.querySelector(`#ffs-${i}`);const tse=fs.querySelector(`#fft-${i}`);const sde=fs.querySelector(`#ffsd-${i}`);function u(){const sk=kse.value;const ss=sse.value;const stv=tse.value;const sta=TUNINGS[stv];if(!sta)return;const dsn=sse.options[sse.selectedIndex].text;sde.textContent=`${sk} ${dsn}`;createFretboard(fe,sta);updateFretboardNotes(fe,sk,ss,sta);}kse.addEventListener('change',u);sse.addEventListener('change',u);tse.addEventListener('change',u);u();}log("FretFlow initialized.");}
-      
+
 // --- Event Handling Helpers ---
 function addFirstChordListener() { const fm=UI.elements.measures.firstElementChild;if(fm){const srs=fm.querySelector('.scale-controls .second-key');const sts=fm.querySelector('.scale-controls .scale-select');const ts=UI.elements.chordTuning;const u=()=>{if(srs&&sts&&ts){const t=TUNINGS[ts.value];updateFretboardNotes(UI.elements.chordFretboard,srs.value,sts.value,t);}};u();}else{const t=TUNINGS[UI.elements.chordTuning.value];updateFretboardNotes(UI.elements.chordFretboard,"C","major",t);if(UI.elements.scaleDisplay)UI.elements.scaleDisplay.textContent="C Major (Default)";}}
 function handleMeasureControlChange(me) { const rs=me.querySelector('.chord-controls .root-note');const qs=me.querySelector('.chord-controls .chord-quality');const sks=me.querySelector('.scale-controls .second-key');const ss=me.querySelector('.scale-controls .scale-select');if(rs&&qs&&sks&&ss){sks.value=rs.value;ss.value=suggestScaleForQuality(qs.value);}if(me===UI.elements.measures.firstElementChild)addFirstChordListener();const mix=Array.from(UI.elements.measures.children).indexOf(me);if(AppState.isPlaying&&mix===AppState.currentMeasure){const t=TUNINGS[UI.elements.chordTuning.value];updateFretboardNotes(UI.elements.chordFretboard,sks.value,ss.value,t);}}
 
 // --- User Progression Save/Load ---
 function saveCurrentProgression() {
-    const measures = Array.from(UI.elements.measures.children);
-    if (measures.length === 0) { alert("No progression to save!"); return; }
-    let progName = prompt("Enter a name for this progression:", currentProgressionName || "My New Song");
-    if (!progName || progName.trim() === "") { alert("Save cancelled or invalid name."); return; }
+    const measures = Array.from(UI.elements.measures.children); if (measures.length === 0) { alert("No progression to save!"); return; }
+    let progName = prompt("Enter a name for this progression:", currentProgressionName || "My New Song"); if (!progName || progName.trim() === "") { alert("Save cancelled or invalid name."); return; }
     progName = progName.trim();
     const progressionToSave = measures.map(measure => {
         const measureIndex = parseInt(measure.dataset.measureIndex);
-        // Prefer Roman if it's loaded and not modified, otherwise save absolute
-        if (currentFunctionalProgression && measureIndex < currentFunctionalProgression.length && !isUserSongCurrentlyLoaded()) {
-            return currentFunctionalProgression[measureIndex];
-        }
-        const root = measure.querySelector('.root-note').value;
-        const quality = measure.querySelector('.chord-quality').value;
-        return `${root}${quality}`; // Simplistic absolute save
+        if (currentFunctionalProgression && measureIndex < currentFunctionalProgression.length && !isUserSongCurrentlyLoaded()) { return currentFunctionalProgression[measureIndex]; }
+        const root = measure.querySelector('.root-note').value; const quality = measure.querySelector('.chord-quality').value; return `${root}${quality}`;
     });
     const userSongs = JSON.parse(localStorage.getItem('userBebopProgressions') || '{}');
-    userSongs[progName] = {
-        progression: progressionToSave, defaultKey: UI.elements.keySelect.value,
-        description: `User saved on ${new Date().toLocaleDateString()}`, displayName: progName
-    };
-    localStorage.setItem('userBebopProgressions', JSON.stringify(userSongs));
-    populateUserSongsDropdown(); alert(`Progression "${progName}" saved!`); log(`Saved: ${progName}`);
+    userSongs[progName] = { progression: progressionToSave, defaultKey: UI.elements.keySelect.value, description: `User saved on ${new Date().toLocaleDateString()}`, displayName: progName };
+    localStorage.setItem('userBebopProgressions', JSON.stringify(userSongs)); populateUserSongsDropdown(); alert(`Progression "${progName}" saved!`); log(`Saved: ${progName}`);
 }
 function isUserSongCurrentlyLoaded() { const uS = JSON.parse(localStorage.getItem('userBebopProgressions') || '{}'); return uS.hasOwnProperty(currentProgressionName); }
 function populateUserSongsDropdown() {
-    const selectEl = UI.elements.userProgressionSelect;
-    selectEl.innerHTML = '<option value="">-- Select a saved song --</option>';
+    const selectEl = UI.elements.userProgressionSelect; selectEl.innerHTML = '<option value="">-- Select a saved song --</option>';
     const userSongs = JSON.parse(localStorage.getItem('userBebopProgressions') || '{}');
-    Object.keys(userSongs).sort().forEach(name => { // Sort names alphabetically
-        const option = document.createElement('option'); option.value = name;
-        option.textContent = userSongs[name].displayName || name; selectEl.appendChild(option);
-    });
+    Object.keys(userSongs).sort().forEach(name => { const option = document.createElement('option'); option.value = name; option.textContent = userSongs[name].displayName || name; selectEl.appendChild(option); });
 }
 function deleteSelectedUserSong() {
-    const selectedSongName = UI.elements.userProgressionSelect.value;
-    if (!selectedSongName) { alert("Please select a song to delete."); return; }
+    const selectedSongName = UI.elements.userProgressionSelect.value; if (!selectedSongName) { alert("Please select a song to delete."); return; }
     if (confirm(`Delete "${selectedSongName}"? This cannot be undone.`)) {
-        const userSongs = JSON.parse(localStorage.getItem('userBebopProgressions') || '{}');
-        delete userSongs[selectedSongName];
-        localStorage.setItem('userBebopProgressions', JSON.stringify(userSongs));
-        populateUserSongsDropdown();
-        if (currentProgressionName === selectedSongName) {
-            UI.elements.measures.innerHTML = ''; UI.elements.currentSongTitle.textContent = '';
-            UI.elements.currentSongDescription.textContent = ''; currentProgressionName = ""; currentFunctionalProgression = [];
-        }
+        const userSongs = JSON.parse(localStorage.getItem('userBebopProgressions') || '{}'); delete userSongs[selectedSongName];
+        localStorage.setItem('userBebopProgressions', JSON.stringify(userSongs)); populateUserSongsDropdown();
+        if (currentProgressionName === selectedSongName) { UI.elements.measures.innerHTML = ''; UI.elements.currentSongTitle.textContent = ''; UI.elements.currentSongDescription.textContent = ''; currentProgressionName = ""; currentFunctionalProgression = []; }
         alert(`Song "${selectedSongName}" deleted.`); log(`Deleted: ${selectedSongName}`);
     }
 }
 
 // --- Looper Functionality ---
 function toggleMeasureLoopSelection(measureIndex) {
-    if (!AppState.loopingActive) { // If looping is off, turn it on and select this measure
-        toggleLoopingMode(); // Turn on looping mode first
-    }
-     // If looping was just turned on, loopStart/End might be -1, handle this
-    const measureEl = UI.elements.measures.children[measureIndex];
-    if (!measureEl) return;
-
-    const wasSelected = measureEl.classList.contains('loop-selected');
-    const selectedIndices = Array.from(UI.elements.measures.children)
-                           .map((m, idx) => m.classList.contains('loop-selected') ? idx : -1)
-                           .filter(idx => idx !== -1);
-
-    // Logic for range selection: if clicking outside current range, reset. If clicking inside, deselect? (Simpler: always define range by min/max selected)
-    measureEl.classList.toggle('loop-selected'); // Toggle clicked measure first
-
-     const newSelectedIndices = Array.from(UI.elements.measures.children)
-                           .map((m, idx) => m.classList.contains('loop-selected') ? idx : -1)
-                           .filter(idx => idx !== -1)
-                           .sort((a,b) => a - b); // Get current selection sorted
-
-    if (newSelectedIndices.length > 0) {
-        AppState.loopStartMeasure = newSelectedIndices[0];
-        AppState.loopEndMeasure = newSelectedIndices[newSelectedIndices.length - 1];
-        // Clear all first, then re-select the continuous range
-        Array.from(UI.elements.measures.children).forEach(m => m.classList.remove('loop-selected'));
-        for (let i = AppState.loopStartMeasure; i <= AppState.loopEndMeasure; i++) {
-            if(UI.elements.measures.children[i]) UI.elements.measures.children[i].classList.add('loop-selected');
-        }
-    } else {
-        resetLoop(); // If nothing is selected anymore
-    }
+    if (!AppState.loopingActive) { toggleLoopingMode(); } // Turn looping on if selecting first measure while off
+    const measureEl = UI.elements.measures.children[measureIndex]; if (!measureEl) return;
+    measureEl.classList.toggle('loop-selected');
+    const selectedIndices = Array.from(UI.elements.measures.children).map((m, idx) => m.classList.contains('loop-selected') ? idx : -1).filter(idx => idx !== -1).sort((a,b) => a - b);
+    if (selectedIndices.length > 0) {
+        AppState.loopStartMeasure = selectedIndices[0]; AppState.loopEndMeasure = selectedIndices[selectedIndices.length - 1];
+        Array.from(UI.elements.measures.children).forEach(m => m.classList.remove('loop-selected')); // Clear all first
+        for (let i = AppState.loopStartMeasure; i <= AppState.loopEndMeasure; i++) { if(UI.elements.measures.children[i]) UI.elements.measures.children[i].classList.add('loop-selected'); } // Select continuous range
+    } else { resetLoop(); }
     log(`Loop selection: ${AppState.loopStartMeasure} to ${AppState.loopEndMeasure}`);
 }
 function resetLoop() { AppState.loopStartMeasure = -1; AppState.loopEndMeasure = -1; Array.from(UI.elements.measures.children).forEach(m => m.classList.remove('loop-selected')); log("Loop selection cleared.");}
@@ -1305,22 +1106,11 @@ function toggleGuideTones() { AppState.guideTonesActive = !AppState.guideTonesAc
 function highlightGuideTones() {
     clearGuideToneHighlights();
     if (!AppState.guideTonesActive || AppState.currentMeasure < 0 || !UI.elements.measures.children[AppState.currentMeasure]) return;
-    const measures = UI.elements.measures.children;
-    const currentMeasureEl = measures[AppState.currentMeasure];
-    let nextMeasureIndex;
-    if (AppState.loopingActive && AppState.loopStartMeasure !== -1 && AppState.loopEndMeasure !== -1) {
-         nextMeasureIndex = AppState.currentMeasure + 1;
-         if (nextMeasureIndex > AppState.loopEndMeasure) nextMeasureIndex = AppState.loopStartMeasure;
-    } else {
-         nextMeasureIndex = (AppState.currentMeasure + 1) % measures.length;
-    }
-    const nextMeasureEl = measures[nextMeasureIndex];
-    if (!currentMeasureEl || !nextMeasureEl) return;
-
-    const cr=currentMeasureEl.querySelector('.root-note')?.value, cq=currentMeasureEl.querySelector('.chord-quality')?.value;
-    const nr=nextMeasureEl.querySelector('.root-note')?.value, nq=nextMeasureEl.querySelector('.chord-quality')?.value;
-    if(!cr || !cq || !nr || !nq) return; // Need both chords defined
-
+    const measures = UI.elements.measures.children; const cme = measures[AppState.currentMeasure]; let nmi;
+    if (AppState.loopingActive && AppState.loopStartMeasure !== -1 && AppState.loopEndMeasure !== -1) { nmi = AppState.currentMeasure + 1; if (nmi > AppState.loopEndMeasure) nmi = AppState.loopStartMeasure; }
+    else { nmi = (AppState.currentMeasure + 1) % measures.length; }
+    const nme = measures[nmi]; if (!cme || !nme) return;
+    const cr=cme.querySelector('.root-note')?.value, cq=cme.querySelector('.chord-quality')?.value, nr=nme.querySelector('.root-note')?.value, nq=nme.querySelector('.chord-quality')?.value; if(!cr || !cq || !nr || !nq) return;
     const ci = CHORD_INTERVALS[cq], ni = CHORD_INTERVALS[nq]; if(!ci || !ni) return;
     let si = ci.find(i=>i===10||i===11); if(si===undefined && cq.includes('6')) si=9; if(si===undefined) return;
     const c7 = NOTES[(NOTES.indexOf(standardizeNoteName(cr))+si+12)%12];
@@ -1364,23 +1154,97 @@ function setupEventListeners() {
 
 // --- Initialize App ---
 async function initializeApp() {
-    UI.init();
-    try { await AudioContextManager.initialize(); } catch (e) { updateLoadingStatus("Audio init failed. Click to try.", true); }
-    createBeats();
+    UI.init(); // Initialize UI elements cache first
+    // THEN define functions that might use UI elements
+    // Place createBeats definition here or ensure it's defined before this call
+    createBeats(); // Now call it after UI.init() but before setupEventListeners maybe
     const initTuning = TUNINGS[UI.elements.chordTuning.value] || TUNINGS.standard;
     createFretboard(UI.elements.chordFretboard, initTuning);
-    
     populateUserSongsDropdown();
     const initProg = UI.elements.progressionSelect.value || Object.keys(progressions)[0];
     const initKey = UI.elements.keySelect.value || progressions[initProg]?.defaultKey || "C";
-    loadProgression(initProg, initKey, false); 
-    
+    loadProgression(initProg, initKey, false);
     initializeFretFlow();
-    setupEventListeners();
-    updateLoadingStatus("Application initialized", false);
-    setTimeout(() => updateLoadingStatus("", false), 1500);
+    setupEventListeners(); // Setup listeners after other UI setup is done
+
+    try {
+        // Initialize audio last or defer parts of it
+        await AudioContextManager.initialize();
+    } catch (e) {
+         updateLoadingStatus("Audio init failed. Click to try.", true);
+    }
+
+    updateLoadingStatus("Application initialized", true); // Show init message
+    setTimeout(() => updateLoadingStatus("", false), 1500); // Hide after delay
     log("Application initialized.");
 }
+
+
+// --- Add createBeats definition here if it's missing ---
+function createBeats() {
+    const container = document.querySelector('.beats-container');
+    if (!container) { console.error("Beats container not found"); return; }
+    container.innerHTML = ''; // Clear previous beats
+
+    // Ensure UI elements are available - call UI.init() if it hasn't run? Or ensure initializeApp order
+    if (!UI.elements.timeSignature || !UI.elements.soundType) {
+        console.error("UI elements not ready for createBeats");
+        // Maybe call UI.init() here? Or ensure initializeApp runs it first.
+        // UI.init(); // Risky if called multiple times, better to fix init order
+        return; // Exit if UI elements aren't ready
+    }
+
+
+    const timeSignature = parseInt(UI.elements.timeSignature.value);
+    const soundType = UI.elements.soundType.value;
+
+    let totalBeatsToDisplay = timeSignature;
+    let subdivisionFactor = 1;
+
+    if (timeSignature === 4) { totalBeatsToDisplay = 8; subdivisionFactor = 2; }
+    else if (timeSignature === 6 || timeSignature === 12) { totalBeatsToDisplay = timeSignature; subdivisionFactor = 1; }
+
+    for (let i = 0; i < totalBeatsToDisplay; i++) {
+        const beatDiv = document.createElement('div');
+        beatDiv.className = 'beat';
+        beatDiv.dataset.beat = i;
+
+        let beatLabel = `${Math.floor(i / subdivisionFactor) + 1}`;
+        if (subdivisionFactor > 1 && (i % subdivisionFactor !== 0)) { beatLabel += "&"; }
+        else if ((timeSignature === 6 || timeSignature === 12) && (i % 3 === 0) && i !== 0) { beatLabel = `${Math.floor(i / 3) + 1}`; }
+        beatDiv.textContent = beatLabel;
+
+        let beatSound = soundType === 'drums' ? 'hihat' : soundType;
+        let baseVolume = 0.3; let color = '#4CAF50';
+        const isFirstBeatOfMeasure = (i === 0); let isStrongBeatInTimeSig = false;
+        if (timeSignature === 4) { isStrongBeatInTimeSig = (i === 0 || i === 4); }
+        else if (timeSignature === 3 || timeSignature === 2) { isStrongBeatInTimeSig = (i === 0); }
+        else if (timeSignature === 6) { isStrongBeatInTimeSig = (i === 0 || i === 3); }
+        else if (timeSignature === 12) { isStrongBeatInTimeSig = (i === 0 || i === 3 || i === 6 || i === 9); }
+        else { isStrongBeatInTimeSig = (i === 0); }
+
+        if (isStrongBeatInTimeSig) {
+            baseVolume = 1.0; color = '#1F618D';
+            if (soundType === 'drums') {
+                beatSound = 'kick,hihat'; // Kick on strong beats generally
+                 if (timeSignature === 4 && (i === 2 || i === 6)) { beatSound = 'snare,hihat'; baseVolume = 0.8; color = '#D9534F'; } // Snare on 2&4
+            }
+        } else if (timeSignature === 4 && (i === 2 || i === 6) && soundType === 'drums') {
+            beatSound = 'snare,hihat'; baseVolume = 0.8; color = '#D9534F';
+        } else if (soundType === 'drums' && subdivisionFactor > 1 && (i % subdivisionFactor !== 0)) {
+            beatSound = 'hihat'; baseVolume = 0.2; color = '#9E9E9E';
+        } else if (soundType !== 'drums' && subdivisionFactor > 1 && (i % subdivisionFactor !== 0)) {
+            beatSound = 'silent'; baseVolume = 0; color = '#666';
+        }
+
+        beatDiv.dataset.sound = beatSound; beatDiv.dataset.baseVolume = baseVolume;
+        beatDiv.dataset.volume = baseVolume; beatDiv.style.backgroundColor = color;
+        beatDiv.addEventListener('click', () => toggleBeatAccent(beatDiv, soundType, subdivisionFactor > 1));
+        container.appendChild(beatDiv);
+    }
+}
+// --- End createBeats definition ---
+
 
 document.addEventListener('DOMContentLoaded', () => {
     initializeApp().catch(e => { console.error("App init failed:", e); updateLoadingStatus("Initialization Error!", true); });
