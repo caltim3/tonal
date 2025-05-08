@@ -1246,38 +1246,39 @@ const AudioContextManager = {
 
 
     function playPianoNote(noteNameWithOctave, volume, durationMs = 1000) {
-        const bufferKey = `piano_${noteNameWithOctave.toLowerCase()}`; 
-        const playedSound = this._playBuffer(bufferKey, volume, this.context.destination);
-        
-        if (playedSound && durationMs > 0) {
-            const noteId = `${bufferKey}_${Date.now()}`; // Unique ID for this note instance
-            this.activePianoNotes[noteId] = playedSound.source;
-            playedSound.source.onended = () => {
-                delete this.activePianoNotes[noteId];
-            };
-            playedSound.source.stop(this.context.currentTime + durationMs / 1000);
-        }
-        return playedSound ? playedSound.source : null;
-    },
+    const bufferKey = `piano_${noteNameWithOctave.toLowerCase()}`;
+    const playedSound = AudioContextManager._playBuffer(bufferKey, volume, AudioContextManager.context.destination);
 
-    fucntion stopCurrentChord() {
-        this.currentChordSources.forEach(chordNote => {
-            try {
-                if (chordNote.source) { // Check if source exists
-                    // Fade out quickly
-                    if (chordNote.gainNode) { // If we have direct access to its gain node
-                        chordNote.gainNode.gain.cancelScheduledValues(this.context.currentTime);
-                        chordNote.gainNode.gain.setValueAtTime(chordNote.gainNode.gain.value, this.context.currentTime);
-                        chordNote.gainNode.gain.exponentialRampToValueAtTime(0.0001, this.context.currentTime + 0.05);
-                        chordNote.source.stop(this.context.currentTime + 0.06);
-                    } else { // Fallback if only source is stored
-                        chordNote.source.stop(this.context.currentTime + 0.05);
-                    }
+    if (playedSound && durationMs > 0) {
+        const noteId = `${bufferKey}_${Date.now()}`; // Unique ID for this note instance
+        AudioContextManager.activePianoNotes[noteId] = playedSound.source;
+        playedSound.source.onended = () => {
+            delete AudioContextManager.activePianoNotes[noteId];
+        };
+        playedSound.source.stop(AudioContextManager.context.currentTime + durationMs / 1000);
+    }
+    return playedSound ? playedSound.source : null;
+}
+
+function stopCurrentChord() {
+    AudioContextManager.currentChordSources.forEach(chordNote => {
+        try {
+            if (chordNote.source) { // Check if source exists
+                // Fade out quickly
+                if (chordNote.gainNode) { // If we have direct access to its gain node
+                    chordNote.gainNode.gain.cancelScheduledValues(AudioContextManager.context.currentTime);
+                    chordNote.gainNode.gain.setValueAtTime(chordNote.gainNode.gain.value, AudioContextManager.context.currentTime);
+                    chordNote.gainNode.gain.exponentialRampToValueAtTime(0.0001, AudioContextManager.context.currentTime + 0.05);
+                    chordNote.source.stop(AudioContextManager.context.currentTime + 0.06);
+                } else { // Fallback if only source is stored
+                    chordNote.source.stop(AudioContextManager.context.currentTime + 0.05);
                 }
-            } catch (e) { /* ignore if already stopped or disconnected */ }
-        });
-        this.currentChordSources = [];
-    },
+            }
+        } catch (e) { /* ignore if already stopped or disconnected */ }
+    });
+    AudioContextManager.currentChordSources = [];
+}
+        
     stopAllPianoNotes() { // For fretboard clicks or other sustained notes
         for (const noteId in this.activePianoNotes) {
             try {
