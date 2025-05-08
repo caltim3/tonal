@@ -1296,34 +1296,6 @@ function stopCurrentChord() {
     });
     AudioContextManager.currentChordSources = [];
 }
-        
-    stopAllPianoNotes() { // For fretboard clicks or other sustained notes
-        for (const noteId in this.activePianoNotes) {
-            try {
-                this.activePianoNotes[noteId].stop(this.context.currentTime);
-            } catch (e) { /* ignore */ }
-        }
-        this.activePianoNotes = {};
-    },
-    stopAllMetronomeSounds() {
-        this.activeMetronomeSounds.forEach(sound => {
-            try {
-                if (sound.source) { // Check if source exists
-                     // Quick fade for metronome sounds
-                    if (sound.gainNode) {
-                        sound.gainNode.gain.cancelScheduledValues(this.context.currentTime);
-                        sound.gainNode.gain.setValueAtTime(sound.gainNode.gain.value, this.context.currentTime);
-                        sound.gainNode.gain.linearRampToValueAtTime(0.0001, this.context.currentTime + 0.02);
-                        sound.source.stop(this.context.currentTime + 0.03);
-                    } else {
-                        sound.source.stop(this.context.currentTime + 0.02);
-                    }
-                }
-            } catch (e) { /* ignore */ }
-        });
-        this.activeMetronomeSounds = [];
-    }
-};
 
 async function playMetronomeSound(baseBeatVolume) {
     if (!await AudioContextManager.ensureAudioContextResumed()) return;
