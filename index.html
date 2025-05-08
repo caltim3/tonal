@@ -632,17 +632,55 @@ const PLAYBACK_OCTAVES = [3, 4]; // Octaves to use for chord playback
 const FILE_FORMAT = 'wav';
 
 function getSampleFileName(note, octave) { return `${note}${octave}.${FILE_FORMAT}`; }
-const SAMPLE_NOTE_MAP = { 'C':'c', 'Db':'cs', 'D':'d', 'Eb':'ds', 'E':'e', 'F':'f', 'Gb':'fs', 'G':'g', 'Ab':'gs', 'A':'a', 'Bb':'as', 'B':'b' };
+const SAMPLE_NOTE_MAP = {
+    'C': 'c',
+    'Db': 'cs', 'C#': 'cs', // Keep C# mapping for potential other uses
+    'D': 'd',
+    'Eb': 'ds', 'D#': 'ds',
+    'E': 'e',
+    'F': 'f',
+    'Gb': 'fs', 'F#': 'fs', // Explicitly map F# used in the constant
+    'G': 'g',
+    'Ab': 'gs', 'G#': 'gs', // Explicitly map G# used in the constant
+    'A': 'a',
+    'Bb': 'as', 'A#': 'as', // Explicitly map A# used in the constant
+    'B': 'b',
+    // Add mappings for the 's' versions if your constant uses them directly
+    'CS': 'cs', // Map Cs (from constant) to cs (sample)
+    'DS': 'ds', // Map Ds to ds
+    'FS': 'fs', // Map Fs to fs
+    'GS': 'gs', // Map Gs to gs
+    'AS': 'as'  // Map As to as
+};
 
 function standardizeNoteName(note) {
-    if (!note) return '';
-    let standardized = note.toUpperCase().trim();
+    if (!note) return ''; // Handle null or empty input
+
+    let standardized = note.toUpperCase().trim(); // Convert to uppercase and trim whitespace
+
+    // Replace common symbols
     standardized = standardized.replace('♭', 'b').replace('♯', '#');
-    const sharpToFlatMap = {'C#':'Db', 'D#':'Eb', 'F#':'Gb', 'G#':'Ab', 'A#':'Bb'};
+
+    // Define the mapping from sharps to flats
+    const sharpToFlatMap = {
+        'C#': 'Db',
+        'D#': 'Eb',
+        'F#': 'Gb',
+        'G#': 'Ab',
+        'A#': 'Bb'
+        // B# would be C, E# would be F - handle these as edge cases if needed, but NOTES array uses flats primarily
+    };
+
+    // Convert sharps to flats using the map
     if (standardized.includes('#')) {
-        return sharpToFlatMap[standardized] || standardized; // Use the correctly named map
+        return sharpToFlatMap[standardized] || standardized; // Return the flat equivalent or original if not in map (e.g., G# -> Ab)
     }
+
+    // For notes without sharps/flats or already using flats,
+    // ensure they match the canonical names in the NOTES array (e.g., handles "FLAT" text, case issues)
     const found = NOTES.find(n => n.toUpperCase() === standardized.toUpperCase());
+
+    // Return the canonical name found in NOTES, or the processed input if not found (handles potential errors)
     return found || standardized;
 }
         
@@ -933,123 +971,109 @@ function createFretboard(container, tuningArr) {
     // --- End Fret Markers ---
 }
         
-function updateFretboardNotes(fretboardContainer, rootNote, scaleName, tuningArray) {
-    // --- Validation & Setup (Keep existing) ---
-    if (!(fretboardContainer instanceof HTMLElement)) { console.error('Invalid fretboardContainer'); return; }
-    const standardizedRoot = standardizeNoteName(rootNote);
-    if (!NOTES.includes(standardizedRoot)) { console.error(`Invalid root note: ${rootNote}`); return; }
-    const scaleData = SCALES[scaleName]; // Use scaleData for clarity
-    if (!scaleData) { console.error(`Invalid scale: ${scaleName}`); return; }
-    if (!Array.isArray(tuningArray) || tuningArray.length !== 6) { // Explicitly check for 6 strings for this mapping
-         console.warn(`updateFretboardNotes: Tuning array length (${tuningArray.length}) doesn't match expected 6 for FRETBOARD_NOTES_OCTAVES mapping. Using approximate octaves.`);
-         // You could potentially add a fallback here using the old approx logic if needed for non-standard tunings displayed
+fretboardContainer.querySelectorAll('.note, .guide-tone-highlight-overlay').forEach(el => el.remove());
+
+// --- Update Scale Display (Keep existing) ---
+if (fretboardContainer.id === 'chord-fretboard' && UI.elements.scaleDisplay) {
+   // (Your existing scale display logic...)
+    const currentMeasureEl = AppState.currentMeasure < UI.elements.measures.children.length ? UI.elements.measures.children[AppState.currentMeasure] : null;
+    if (currentMeasureEl) {
+        const cr = currentMeasureEl.querySelector('.chord-controls .root-note')?.value;
+        const cqRaw = currentMeasureEl.querySelector('.chord-controls .chord-quality')?.value;
+        const cqOpt = currentMeasureEl.querySelector(`.chord-controls .chord-quality option[value="${cqRaw}"]`);
+        const cqDisp = cqOpt ? cqOpt.textContent : cqRaw;
+        const srDisp = currentMeasureEl.querySelector('.scale-controls .second-key')?.value || rootNote;
+        const stRaw = currentMeasureEl.querySelector('.scale-controls .scale-select')?.value || scaleName;
+        const stOpt = currentMeasureEl.querySelector(`.scale-controls .scale-select option[value="${stRaw}"]`);
+        const stDisp = stOpt ? stOpt.textContent : stRaw;
+        UI.elements.scaleDisplay.textContent = `${srDisp} ${stDisp} over ${cr} ${cqDisp}`;
+    } else {
+         UI.elements.scaleDisplay.textContent = `${standardizedRoot} ${scaleName.replace(/([A-Z])/g, ' $1').trim()}`;
     }
-    // --- End Validation ---
-
-    fretboardContainer.querySelectorAll('.note, .guide-tone-highlight-overlay').forEach(el => el.remove());
-
-    // --- Update Scale Display (Keep existing) ---
-    if (fretboardContainer.id === 'chord-fretboard' && UI.elements.scaleDisplay) {
-       // (Your existing scale display logic...)
-        const currentMeasureEl = AppState.currentMeasure < UI.elements.measures.children.length ? UI.elements.measures.children[AppState.currentMeasure] : null;
-        if (currentMeasureEl) {
-            const cr = currentMeasureEl.querySelector('.chord-controls .root-note')?.value;
-            const cqRaw = currentMeasureEl.querySelector('.chord-controls .chord-quality')?.value;
-            const cqOpt = currentMeasureEl.querySelector(`.chord-controls .chord-quality option[value="${cqRaw}"]`);
-            const cqDisp = cqOpt ? cqOpt.textContent : cqRaw;
-            const srDisp = currentMeasureEl.querySelector('.scale-controls .second-key')?.value || rootNote;
-            const stRaw = currentMeasureEl.querySelector('.scale-controls .scale-select')?.value || scaleName;
-            const stOpt = currentMeasureEl.querySelector(`.scale-controls .scale-select option[value="${stRaw}"]`);
-            const stDisp = stOpt ? stOpt.textContent : stRaw;
-            UI.elements.scaleDisplay.textContent = `${srDisp} ${stDisp} over ${cr} ${cqDisp}`;
-        } else {
-             UI.elements.scaleDisplay.textContent = `${standardizedRoot} ${scaleName.replace(/([A-Z])/g, ' $1').trim()}`;
-        }
-    }
-    // --- End Update Scale Display ---
-
-    // --- Scale Note Calculation (Keep existing) ---
-    const rootIdx = NOTES.indexOf(standardizedRoot);
-    const notesInScale = scaleData.map(interval => NOTES[(rootIdx + interval) % 12]);
-    // --- End Scale Note Calculation ---
-
-    const numStrings = tuningArray.length;
-    const numFrets = 12;
-
-    for (let stringIndex = 0; stringIndex < numStrings; stringIndex++) { // stringIndex 0 is high E (visually bottom)
-        const openStringNote = standardizeNoteName(tuningArray[stringIndex]);
-        const openStringNoteIndex = NOTES.indexOf(openStringNote);
-        if (openStringNoteIndex === -1) continue;
-
-        // Determine which string number this corresponds to (1-6) for the lookup map
-        // Since tuningArray has high E at index 0, stringIndex 0 corresponds to string1 (high E)
-        // stringIndex 5 corresponds to string6 (low E)
-        const stringMapKey = `string${stringIndex + 1}`; // Creates 'string1' through 'string6'
-
-        for (let fret = 0; fret <= numFrets; fret++) {
-            const currentNoteIndex = (openStringNoteIndex + fret + 12) % 12;
-            const currentNoteName = NOTES[currentNoteIndex];
-
-            if (notesInScale.includes(currentNoteName)) {
-                const noteElement = document.createElement('div');
-                noteElement.className = 'note';
-                noteElement.textContent = currentNoteName;
-
-                // --- Positioning (Keep corrected versions) ---
-                if (fret === 0) noteElement.style.left = `1.5%`;
-                else noteElement.style.left = `${((fret - 0.5) / numFrets) * 100 + 2}%`;
-                const stringY = 100 - (stringIndex / (numStrings - 1)) * 100;
-                noteElement.style.top = `${stringY}%`;
-                // --- End Positioning ---
-
-
-                // --- Styling (Keep existing) ---
-                if (currentNoteName === standardizedRoot) noteElement.style.backgroundColor = '#BD2031';
-                else { /* ... alternating green ... */ const di = notesInScale.indexOf(currentNoteName); noteElement.style.backgroundColor = (di % 2 === 0) ? '#006400' : '#4CAF50'; }
-                // --- End Styling ---
-
-                // --- ** GET PRECISE NOTE+OCTAVE FOR PLAYBACK ** ---
-                let noteOctaveForPlayback = `${currentNoteName}3`; // Default fallback
-                if (FRETBOARD_NOTES_OCTAVES[stringMapKey] && fret < FRETBOARD_NOTES_OCTAVES[stringMapKey].length) {
-                    // Lookup the precise note+octave string from our constant
-                    const preciseNoteOctave = FRETBOARD_NOTES_OCTAVES[stringMapKey][fret];
-                    // We still need to convert sharps to the 's' format for sample playback if needed
-                    const match = preciseNoteOctave.match(/^([A-G])(#|s?)(\d)$/i); // Match note, accidental, octave
-                    if (match) {
-                        const notePart = match[1];
-                        const accidentalPart = match[2];
-                        const octavePart = match[3];
-                        if (accidentalPart === '#') { // Convert # to 's' from the constant if necessary
-                           noteOctaveForPlayback = `${notePart}s${octavePart}`;
-                        } else {
-                           noteOctaveForPlayback = preciseNoteOctave; // Use as is (e.g., Gs3, A4)
-                        }
-                        // Ensure the note part itself matches our sample naming convention if needed
-                        // (though standardizeNoteNameForSamples in playNote handles this)
-                    } else {
-                        console.warn(`Could not parse precise note: ${preciseNoteOctave}`);
-                    }
-                } else {
-                    console.warn(`Note/octave lookup failed for string ${stringMapKey}, fret ${fret}. Using fallback.`);
-                }
-                noteElement.dataset.note = noteOctaveForPlayback; // Store the precise note+octave
-                // --- ** END PRECISE NOTE+OCTAVE ** ---
-
-                // --- Event Listener (Keep existing) ---
-                noteElement.addEventListener('click', async (e) => { /* ... */ e.stopPropagation(); await AudioContextManager.ensureAudioContext(); const noteToPlay = noteElement.dataset.note; const vol = fretboardContainer.id.startsWith('fretflow-fretboard') ? 0.4 : parseFloat(UI.elements.chordFretboardVolume.value); playNote(noteToPlay, vol, 500); noteElement.style.transform = 'translate(-50%, -50%) scale(1.3)'; setTimeout(() => { noteElement.style.transform = 'translate(-50%, -50%) scale(1)'; }, 150); });
-                // --- End Event Listener ---
-
-                fretboardContainer.appendChild(noteElement);
-            }
-        }
-    }
-
-    // --- Guide Tones (Keep existing) ---
-    if (AppState.guideTonesActive && fretboardContainer.id === 'chord-fretboard') {
-        highlightGuideTones();
-    }
-    // --- End Guide Tones ---
 }
+// --- End Update Scale Display ---
+
+// --- Scale Note Calculation (Keep existing) ---
+const rootIdx = NOTES.indexOf(standardizedRoot);
+const notesInScale = scaleData.map(interval => NOTES[(rootIdx + interval) % 12]);
+// --- End Scale Note Calculation ---
+
+const numStrings = tuningArray.length;
+const numFrets = 12;
+
+for (let stringIndex = 0; stringIndex < numStrings; stringIndex++) { // stringIndex 0 is high E (visually bottom)
+    const openStringNote = standardizeNoteName(tuningArray[stringIndex]);
+    const openStringNoteIndex = NOTES.indexOf(openStringNote);
+    if (openStringNoteIndex === -1) continue;
+
+    // Determine which string number this corresponds to (1-6) for the lookup map
+    // Since tuningArray has high E at index 0, stringIndex 0 corresponds to string1 (high E)
+    // stringIndex 5 corresponds to string6 (low E)
+    const stringMapKey = `string${stringIndex + 1}`; // Creates 'string1' through 'string6'
+
+    for (let fret = 0; fret <= numFrets; fret++) {
+        const currentNoteIndex = (openStringNoteIndex + fret + 12) % 12;
+        const currentNoteName = NOTES[currentNoteIndex];
+
+        if (notesInScale.includes(currentNoteName)) {
+            const noteElement = document.createElement('div');
+            noteElement.className = 'note';
+            noteElement.textContent = currentNoteName;
+
+            // --- Positioning (Keep corrected versions) ---
+            if (fret === 0) noteElement.style.left = `1.5%`;
+            else noteElement.style.left = `${((fret - 0.5) / numFrets) * 100 + 2}%`;
+            const stringY = 100 - (stringIndex / (numStrings - 1)) * 100;
+            noteElement.style.top = `${stringY}%`;
+            // --- End Positioning ---
+
+
+            // --- Styling (Keep existing) ---
+            if (currentNoteName === standardizedRoot) noteElement.style.backgroundColor = '#BD2031';
+            else { /* ... alternating green ... */ const di = notesInScale.indexOf(currentNoteName); noteElement.style.backgroundColor = (di % 2 === 0) ? '#006400' : '#4CAF50'; }
+            // --- End Styling ---
+
+            // --- ** GET PRECISE NOTE+OCTAVE FOR PLAYBACK ** ---
+            let noteOctaveForPlayback = `${currentNoteName}3`; // Default fallback
+            if (FRETBOARD_NOTES_OCTAVES[stringMapKey] && fret < FRETBOARD_NOTES_OCTAVES[stringMapKey].length) {
+                // Lookup the precise note+octave string from our constant
+                const preciseNoteOctave = FRETBOARD_NOTES_OCTAVES[stringMapKey][fret];
+                // We still need to convert sharps to the 's' format for sample playback if needed
+                const match = preciseNoteOctave.match(/^([A-G])(#|s?)(\d)$/i); // Match note, accidental, octave
+                if (match) {
+                    const notePart = match[1];
+                    const accidentalPart = match[2];
+                    const octavePart = match[3];
+                    if (accidentalPart === '#') { // Convert # to 's' from the constant if necessary
+                       noteOctaveForPlayback = `${notePart}s${octavePart}`;
+                    } else {
+                       noteOctaveForPlayback = preciseNoteOctave; // Use as is (e.g., Gs3, A4)
+                    }
+                    // Ensure the note part itself matches our sample naming convention if needed
+                    // (though standardizeNoteNameForSamples in playNote handles this)
+                } else {
+                    console.warn(`Could not parse precise note: ${preciseNoteOctave}`);
+                }
+            } else {
+                console.warn(`Note/octave lookup failed for string ${stringMapKey}, fret ${fret}. Using fallback.`);
+            }
+            noteElement.dataset.note = noteOctaveForPlayback; // Store the precise note+octave
+            // --- ** END PRECISE NOTE+OCTAVE ** ---
+
+            // --- Event Listener (Keep existing) ---
+            noteElement.addEventListener('click', async (e) => { /* ... */ e.stopPropagation(); await AudioContextManager.ensureAudioContext(); const noteToPlay = noteElement.dataset.note; const vol = fretboardContainer.id.startsWith('fretflow-fretboard') ? 0.4 : parseFloat(UI.elements.chordFretboardVolume.value); playNote(noteToPlay, vol, 500); noteElement.style.transform = 'translate(-50%, -50%) scale(1.3)'; setTimeout(() => { noteElement.style.transform = 'translate(-50%, -50%) scale(1)'; }, 150); });
+            // --- End Event Listener ---
+
+            fretboardContainer.appendChild(noteElement);
+        }
+    }
+}
+
+// --- Guide Tones (Keep existing) ---
+if (AppState.guideTonesActive && fretboardContainer.id === 'chord-fretboard') {
+    highlightGuideTones();
+}
+// --- End Guide Tones ---
       
 // Beats creation (mostly unchanged)
 function createBeats() { /* ... (Keep your existing createBeats logic) ... */ const c=document.querySelector('.beats-container');if(!c){console.error("Beats container not found");return;}c.innerHTML='';const ts=parseInt(UI.elements.timeSignature.value);const sot=UI.elements.soundType.value;let tbtd=ts;let sf=1;if(ts===4){tbtd=8;sf=2;}else if(ts===6||ts===12){tbtd=ts;sf=1;} for(let i=0;i<tbtd;i++){const bd=document.createElement('div');bd.className='beat';bd.dataset.beat=i;let bl=`${Math.floor(i/sf)+1}`;if(sf>1&&(i%sf!==0)){bl+="&";}else if((ts===6||ts===12)&&(i%3===0)&&i!==0){bl=`${Math.floor(i/3)+1}`;}bd.textContent=bl;let bs=sot==='drums'?'hihat':sot;let bv=0.3;let col='#4CAF50';const ifbom=(i===0);let isbits=false;if(ts===4){isbits=(i===0||i===4);}else if(ts===3){isbits=(i===0);}else if(ts===2){isbits=(i===0);}else if(ts===6){isbits=(i===0||i===3);}else if(ts===12){isbits=(i===0||i===3||i===6||i===9);}else{isbits=(i===0);} if(isbits){bv=1.0;col='#1F618D';if(sot==='drums'){bs=(i===0||(ts===4&&i===4)||(ts===6&&i===3)||(ts===12&&(i===3||i===6||i===9)))?'kick,hihat':'kick,hihat';if(ts===4&&(i===2||i===6)){bs='snare,hihat';bv=0.8;col='#D9534F';}}}else if(ts===4&&(i===2||i===6)&&sot==='drums'){bs='snare,hihat';bv=0.8;col='#D9534F';}else if(sot==='drums'&&sf>1&&(i%sf!==0)){bs='hihat';bv=0.2;col='#9E9E9E';}else if(sot!=='drums'&&sf>1&&(i%sf!==0)){bs='silent';bv=0;col='#666';} bd.dataset.sound=bs;bd.dataset.baseVolume=bv;bd.dataset.volume=bv;bd.style.backgroundColor=col;bd.addEventListener('click',()=>toggleBeatAccent(bd,sot,sf>1));c.appendChild(bd);}}
