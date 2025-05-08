@@ -657,14 +657,7 @@ input[type="range"]::-moz-range-thumb { /* Common thumb styles for Firefox */
             <input type="range" id="accent-intensity" min="1" max="2" step="0.1" value="1.5" aria-label="Accent intensity">
         </div>
         <!-- Placeholder for Drum Pad Buttons -->
-        <div class="drum-pads" id="drum-pad-container">
-            <button id="kick-button" class="drum-pad">Kick</button>
-            <button id="snare-button" class="drum-pad">Snare</button>
-            <button id="hihat-closed-button" class="drum-pad">HH Closed</button>
-            <button id="hihat-open-button" class="drum-pad">HH Open</button>
-            <button id="crash-button" class="drum-pad">Crash</button>
         </div>
-    </div>
     
     <div class="app-section" id="chord-progression-section">
         <h2>Chord Progression Practice</h2>
@@ -1007,11 +1000,6 @@ const UI = {
     audioLoadingProgress: document.getElementById('audio-loading-progress'), // The specific div from HTML
     audioLoadingText: document.getElementById('audio-loading-text'), // The span inside the above div
     // Drum Pad Buttons
-    kickButton: document.getElementById('kick-button'),
-    snareButton: document.getElementById('snare-button'),
-    hihatClosedButton: document.getElementById('hihat-closed-button'),
-    hihatOpenButton: document.getElementById('hihat-open-button'),
-    crashButton: document.getElementById('crash-button'),
     beatsContainer: document.querySelector('.beats-container') // Added for createBeats
     },
 
@@ -1551,7 +1539,7 @@ async function playChord(root, quality, durationMs = 2000) {
     });
 }
 
-async function playDrumSamplePreview(drumType) { 
+async function  { 
     if (!await AudioContextManager.ensureAudioContextResumed()) return;
     if (!AudioContextManager.samplesFullyLoaded) return;
 
@@ -2298,7 +2286,7 @@ function setupGlobalEventListeners() {
     addSafeListener('drumSetToggleBtn', 'click', () => {
         currentDrumSetIndex = (currentDrumSetIndex + 1) % drumSoundSets.length;
         if (UI.elements.drumSetToggleBtn) UI.elements.drumSetToggleBtn.textContent = drumSoundSets[currentDrumSetIndex].name;
-        playDrumSamplePreview('kick'); // Preview sound from new kit
+         // Preview sound from new kit
     });
 
     // Volume controls are read directly when sounds are played, no specific event handlers needed beyond UI update if any
@@ -2333,11 +2321,11 @@ function setupGlobalEventListeners() {
     addSafeListener('removeMeasureButton', 'click', removeMeasure);
 
     // Drum Pad Button Listeners
-    addSafeListener('kickButton', 'click', () => playDrumSamplePreview('kick'));
-    addSafeListener('snareButton', 'click', () => playDrumSamplePreview('snare'));
-    addSafeListener('hihatClosedButton', 'click', () => playDrumSamplePreview('hihat')); // Assuming 'hihat' is closed
-    // addSafeListener('hihatOpenButton', 'click', () => playDrumSamplePreview('openhat')); // Need 'openhat' sample
-    // addSafeListener('crashButton', 'click', () => playDrumSamplePreview('crash')); // Need 'crash' sample
+    addSafeListener('kickButton', 'click', () => );
+    addSafeListener('snareButton', 'click', () => );
+    addSafeListener('hihatClosedButton', 'click', () => ); // Assuming 'hihat' is closed
+    // addSafeListener('hihatOpenButton', 'click', () => ); // Need 'openhat' sample
+    // addSafeListener('crashButton', 'click', () => ); // Need 'crash' sample
 
 
     // Event delegation for measure controls (drag/drop on container)
