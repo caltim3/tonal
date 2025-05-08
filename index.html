@@ -1586,7 +1586,6 @@ function updateFretboardNotes(container, rootNote, scaleName, tuningArray) {
         UI.elements.scaleDisplay.textContent = `${standardizedRoot} ${displayScaleName}`;
     }
 
-
     const scaleIntervals = SCALES[scaleName];
     const rootIndex = NOTES.indexOf(standardizedRoot);
     const scaleNotesInKey = scaleIntervals.map(interval => NOTES[(rootIndex + interval) % 12]);
@@ -1615,8 +1614,18 @@ function updateFretboardNotes(container, rootNote, scaleName, tuningArray) {
                 const currentOctave = baseOctaveForString + Math.floor(noteAbsIndex / 12);
                 const sampleNoteFilePart = DISPLAY_TO_SAMPLE_NOTE_MAP[currentNoteName];
                 noteElement.dataset.note = `${sampleNoteFilePart}${currentOctave}`; 
-                if (currentNoteName === standardizedRoot) noteElement.classList.add('root-note-highlight');
-                else noteElement.classList.add('scale-note-highlight');
+
+                // --- COLOR LOGIC FROM index (74).html ---
+                const degree = scaleNotesInKey.indexOf(currentNoteName);
+                if (currentNoteName === standardizedRoot) {
+                    noteElement.style.backgroundColor = '#BD2031'; // root: deep red
+                } else if ([2, 4, 6].includes(degree)) {
+                    noteElement.style.backgroundColor = '#006400'; // chord tones: dark green
+                } else {
+                    noteElement.style.backgroundColor = '#4CAF50'; // other scale tones: light green
+                }
+                // --- END COLOR LOGIC ---
+
                 container.appendChild(noteElement);
             }
         }
