@@ -1054,15 +1054,16 @@ const UI = {
 // --- AudioContextManager (Refactored for Preloading) ---
 const AudioContextManager = {
     context: null,
-    soundBuffers: {}, 
+    soundBuffers: {},
     reverbNode: null,
     reverbBuffer: null,
     chordGainNode: null,
-    reverbAmount: 0.2, 
+    reverbAmount: 0.2,
     samplesFullyLoaded: false,
-    currentChordSources: [], 
-    activePianoNotes: {}, // To track individual piano notes for stopping
-    activeMetronomeSounds: [], // To track metronome sounds for stopping
+    currentChordSources: [],
+    activePianoNotes: {},
+    activeMetronomeSounds: [],
+    reverbNodeConnectedToDestination: false,
 
     async initialize() {
         if (this.context) return this.context;
@@ -1071,7 +1072,6 @@ const AudioContextManager = {
             if (this.context.state === 'suspended') {
                 log("AudioContext is suspended. Attempting to resume...");
             }
-            // 🔊 Setup global chord GainNode with live volume control
             this.chordGainNode = this.context.createGain();
             this.chordGainNode.gain.value = parseFloat(UI.elements.chordVolume?.value || 0.75);
             this.chordGainNode.connect(this.context.destination);
@@ -1134,7 +1134,7 @@ const AudioContextManager = {
             });
         });
         Object.entries(METRONOME_SOUND_PATHS).forEach(([name, filePath]) => {
-            samplesToLoad.push({ key: `metronome_${name}`, path: `${METRONOME_SOUND_BASE_PATH}${filePath}`});
+            samplesToLoad.push({ key: `metronome_${name}`, path: `${METRONOME_SOUND_BASE_PATH}${filePath}` });
         });
 
         let loadedCount = 0;
@@ -1182,7 +1182,7 @@ const AudioContextManager = {
     async setupReverb() {
         if (!this.context) return;
         try {
-            const response = await fetch(REVERB_IMPULSE_PATH); 
+            const response = await fetch(REVERB_IMPULSE_PATH);
             if (!response.ok) throw new Error(`HTTP error! Status: ${response.status} for ${REVERB_IMPULSE_PATH}`);
             const arrayBuffer = await response.arrayBuffer();
             this.reverbBuffer = await this.context.decodeAudioData(arrayBuffer);
@@ -1191,10 +1191,10 @@ const AudioContextManager = {
             log("Reverb impulse loaded. Convolver ready.");
         } catch (error) {
             console.error(`${LOG_PREFIX} Failed to set up reverb:`, error);
-            this.reverbNode = null; 
+            this.reverbNode = null;
         }
     },
-    
+
     _playBuffer(bufferKey, volume, destination, pan = 0, pitchBend = 0, isMetronomeSound = false) {
         if (!this.context || this.context.state !== 'running' || !this.soundBuffers[bufferKey]) {
             if (!this.soundBuffers[bufferKey]) console.warn(`${LOG_PREFIX} Buffer not found for key: ${bufferKey}`);
@@ -1259,43 +1259,41 @@ const AudioContextManager = {
             } catch (e) { /* ignore */ }
         });
         this.activeMetronomeSounds = [];
+    },
+
+    playPianoNote(noteNameWithOctave, volume, durationMs = 1000) {
+        const bufferKey = `piano_${noteNameWithOctave.toLowerCase()}`;
+        const playedSound = this._playBuffer(bufferKey, volume, this.context.destination);
+
+        if (playedSound && durationMs > 0) {
+            const noteId = `${bufferKey}_${Date.now()}`;
+            this.activePianoNotes[noteId] = playedSound.source;
+            playedSound.source.onended = () => {
+                delete this.activePianoNotes[noteId];
+            };
+            playedSound.source.stop(this.context.currentTime + durationMs / 1000);
+        }
+        return playedSound ? playedSound.source : null;
+    },
+
+    stopCurrentChord() {
+        this.currentChordSources.forEach(chordNote => {
+            try {
+                if (chordNote.source) {
+                    if (chordNote.gainNode) {
+                        chordNote.gainNode.gain.cancelScheduledValues(this.context.currentTime);
+                        chordNote.gainNode.gain.setValueAtTime(chordNote.gainNode.gain.value, this.context.currentTime);
+                        chordNote.gainNode.gain.exponentialRampToValueAtTime(0.0001, this.context.currentTime + 0.05);
+                        chordNote.source.stop(this.context.currentTime + 0.06);
+                    } else {
+                        chordNote.source.stop(this.context.currentTime + 0.05);
+                    }
+                }
+            } catch (e) { /* ignore if already stopped or disconnected */ }
+        });
+        this.currentChordSources = [];
     }
 }; // <--- End of AudioContextManager object
-
-// Standalone function: playPianoNote
-function playPianoNote(noteNameWithOctave, volume, durationMs = 1000) {
-    const bufferKey = `piano_${noteNameWithOctave.toLowerCase()}`;
-    const playedSound = AudioContextManager._playBuffer(bufferKey, volume, AudioContextManager.context.destination);
-
-    if (playedSound && durationMs > 0) {
-        const noteId = `${bufferKey}_${Date.now()}`; // Unique ID for this note instance
-        AudioContextManager.activePianoNotes[noteId] = playedSound.source;
-        playedSound.source.onended = () => {
-            delete AudioContextManager.activePianoNotes[noteId];
-        };
-        playedSound.source.stop(AudioContextManager.context.currentTime + durationMs / 1000);
-    }
-    return playedSound ? playedSound.source : null;
-}
-
-// Standalone function: stopCurrentChord
-function stopCurrentChord() {
-    AudioContextManager.currentChordSources.forEach(chordNote => {
-        try {
-            if (chordNote.source) {
-                if (chordNote.gainNode) {
-                    chordNote.gainNode.gain.cancelScheduledValues(AudioContextManager.context.currentTime);
-                    chordNote.gainNode.gain.setValueAtTime(chordNote.gainNode.gain.value, AudioContextManager.context.currentTime);
-                    chordNote.gainNode.gain.exponentialRampToValueAtTime(0.0001, AudioContextManager.context.currentTime + 0.05);
-                    chordNote.source.stop(AudioContextManager.context.currentTime + 0.06);
-                } else {
-                    chordNote.source.stop(AudioContextManager.context.currentTime + 0.05);
-                }
-            }
-        } catch (e) { /* ignore if already stopped or disconnected */ }
-    });
-    AudioContextManager.currentChordSources = [];
-}
 
 async function playMetronomeSound(baseBeatVolume) {
     if (!await AudioContextManager.ensureAudioContextResumed()) return;
