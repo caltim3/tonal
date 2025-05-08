@@ -828,10 +828,105 @@ async function playChord(root, quality, startTime, duration) {
 async function playMetronomeSound(baseVol) { /* ... (Keep your existing metronome sound logic) ... */ if (!AudioContextManager.context) return; const mov = parseFloat(UI.elements.metronomeVolume.value); const cv = baseVol * mov; if (cv <= 0) return; const st = UI.elements.soundType.value; const be = document.querySelector(`.beat[data-beat="${AppState.currentBeat}"]`); if (!be) return; const sktp = be.dataset.sound.split(','); const iab = parseFloat(be.dataset.baseVolume) >= 1; const ab = parseFloat(UI.elements.accentIntensity?.value || 1.0); let fvfts = cv; if (iab && (sktp.includes('kick') || sktp.includes('snare') || st === 'click' || st === 'woodblock')) { fvfts = Math.min(cv * ab, 1.0); } for (let sk of sktp) { sk = sk.trim(); if (sk === 'silent') continue; let btp; let esk = sk; if (st === 'drums') { const cs = drumSoundSets[currentDrumSetIndex]; let sfn; switch(sk){case 'kick':sfn=cs.kick;break; case 'snare':sfn=cs.snare;break; case 'hihat':sfn=cs.hihat;break; default:esk='click';sfn=null;} if(sfn){try{if(!AudioContextManager.soundBuffers[sfn]){const r=await fetch(`./${sfn}`);if(!r.ok)throw new Error(`${r.status} for ${sfn}`);const aby=await r.arrayBuffer();AudioContextManager.soundBuffers[sfn]=await AudioContextManager.context.decodeAudioData(aby);}btp=AudioContextManager.soundBuffers[sfn];}catch(e){console.error(`Failed drum sample ${sfn}:`,e);btp=AudioContextManager.soundBuffers[sk]||AudioContextManager.soundBuffers['click'];}}else{btp=AudioContextManager.soundBuffers[esk]||AudioContextManager.soundBuffers['click'];}}else{esk=st;btp=AudioContextManager.soundBuffers[st]||AudioContextManager.soundBuffers['click'];} if(!btp)continue;const src=AudioContextManager.context.createBufferSource();src.buffer=btp;const gn=AudioContextManager.context.createGain();let afv=fvfts;if(st==='drums'){if(esk==='hihat'&&sktp.length>1)afv*=0.6;else if(esk==='kick')afv*=1.0;else if(esk==='snare')afv*=0.9;}gn.gain.setValueAtTime(Math.min(afv,1.0),AudioContextManager.context.currentTime);src.connect(gn);gn.connect(AudioContextManager.context.destination);if(st==='drums'&&AudioContextManager.reverbNode){const rg=AudioContextManager.context.createGain();rg.gain.setValueAtTime(0.05,AudioContextManager.context.currentTime);src.connect(rg);rg.connect(AudioContextManager.reverbNode);}src.start(AudioContextManager.context.currentTime);}}
 function onMetronomeInstrumentChange(selIns){UI.elements.drumSetToggleBtn.style.display=selIns==="drums"?"inline-block":"none";createBeats();}
       
-function createFretboard(container, tuningArr) { /* ... (Keep existing) ... */ container.innerHTML='';const nf=12;const ns=tuningArr.length;for(let i=0;i<=nf;i++){const fl=document.createElement('div');fl.className='fret-line';fl.style.left=`${(i/nf)*100}%`;container.appendChild(fl);if(i>0){const fn=document.createElement('div');fn.className='fret-number';fn.textContent=i;fn.style.left=`${((i-0.5)/nf)*100}%`;container.appendChild(fn);}} for(let i=0;i<ns;i++){const sl=document.createElement('div');sl.className='string-line';sl.style.top=`${(i/(ns-1))*100}%`;container.appendChild(sl);} const mp=[3,5,7,9,12];mp.forEach(fp=>{const m=document.createElement('div');m.className='fret-marker';m.style.left=`${((fp-0.5)/nf)*100}%`;if(fp===12){const tm=m.cloneNode(true);tm.style.top=`${(1/(ns-1))*100*1.5}%`;container.appendChild(tm);const bm=m.cloneNode(true);bm.style.top=`${(1/(ns-1))*100*3.5}%`;container.appendChild(bm);}else{m.style.top='50%';container.appendChild(m);}}); }
+function createFretboard(container, tuningArr) {
+    if (!(container instanceof HTMLElement)) { console.error("Invalid container for createFretboard"); return; }
+    if (!Array.isArray(tuningArr) || tuningArr.length === 0) { console.error("Invalid tuning array for createFretboard"); return; }
+
+    container.innerHTML = ''; // Clear previous content
+    const nf = 12; // Number of frets to display
+    const ns = tuningArr.length; // Number of strings
+
+    // --- Create Fret Lines and Numbers ---
+    for (let i = 0; i <= nf; i++) { // Fret 0 (nut) to 12
+        const fretLine = document.createElement('div');
+        fretLine.className = 'fret-line';
+        // Position fret line slightly left to represent the metal fret itself
+        fretLine.style.left = `${(i / nf) * 100}%`;
+        container.appendChild(fretLine);
+
+        if (i > 0) { // Add numbers for frets 1-12
+            const fretNumber = document.createElement('div');
+            fretNumber.className = 'fret-number';
+            fretNumber.textContent = i;
+            // Center number in the middle of the fret space
+            fretNumber.style.left = `${((i - 0.5) / nf) * 100}%`;
+            container.appendChild(fretNumber);
+        }
+    }
+    // Add a thicker "nut" line at the beginning visually (optional)
+    const nutLine = document.createElement('div');
+    nutLine.className = 'fret-line';
+    nutLine.style.left = '0%';
+    nutLine.style.width = '4px'; // Make nut thicker
+    nutLine.style.background = '#4A3B31'; // Darker color for nut
+    container.appendChild(nutLine);
+    // --- End Fret Lines and Numbers ---
+
+
+    // --- Create String Lines ---
+    for (let i = 0; i < ns; i++) {
+        const stringLine = document.createElement('div');
+        stringLine.className = 'string-line';
+
+        // ** CORRECTED String Line Positioning **
+        // String i=0 (high E in reversed array) should be near bottom (100% top)
+        // String i=5 (low E in reversed array) should be near top (0% top)
+        const stringY = 100 - (i / (ns - 1)) * 100;
+        stringLine.style.top = `${stringY}%`;
+        // Adjust string thickness visually (optional)
+        // stringLine.style.height = `${1 + (i * 0.2)}px`; // Thicker strings towards low E (top)
+        // --- End Correction ---
+
+        container.appendChild(stringLine);
+    }
+    // --- End String Lines ---
+
+
+    // --- Add Fret Markers (Dots) ---
+    const markerPositions = [3, 5, 7, 9, 12];
+    markerPositions.forEach(fretPos => {
+        const marker = document.createElement('div');
+        marker.className = 'fret-marker';
+        // Horizontal position centered in fret space
+        marker.style.left = `${((fretPos - 0.5) / nf) * 100}%`;
+
+        if (fretPos === 12) { // Double dots at 12th fret
+            const topMarker = marker.cloneNode(true);
+            // ** CORRECTED Double Dot Vertical Position **
+            // Position closer to the visually top strings (e.g., between D and G for 6 strings)
+            // Index 2 (G string) is visually higher than index 3 (D string)
+            const topStringIndex = Math.floor(ns / 2) - 1; // e.g., index 2 (G string for 6 strings)
+            const bottomStringIndex = Math.floor(ns / 2); // e.g., index 3 (D string for 6 strings)
+            topMarker.style.top = `${100 - ((topStringIndex + 0.5) / (ns - 1)) * 100}%`; // Midpoint between G and D visually
+            container.appendChild(topMarker);
+
+            const bottomMarker = marker.cloneNode(true);
+            // Position closer to the visually bottom strings (e.g., between G and B)
+            // This calculation might need adjustment based on desired placement
+            // Let's place it symmetrically relative to the center line
+             bottomMarker.style.top = `${100 - ((bottomStringIndex - 0.5) / (ns - 1)) * 100}%`; // Midpoint between D and G visually
+            // Simpler: place relative to center (might look better)
+            // topMarker.style.top = `35%`; // Example fixed positions
+            // bottomMarker.style.top = `65%`;
+            container.appendChild(bottomMarker);
+             // --- End Correction ---
+        } else { // Single dot
+            marker.style.top = '50%'; // Vertically centered
+            container.appendChild(marker);
+        }
+    });
+    // --- End Fret Markers ---
+}
         
 function updateFretboardNotes(fretboardContainer, rootNote, scaleName, tuningArray) {
-    // ... (validate inputs)
+    // --- Validation ---
+    if (!(fretboardContainer instanceof HTMLElement)) { console.error('Invalid fretboardContainer'); return; }
+    const standardizedRoot = standardizeNoteName(rootNote);
+    if (!NOTES.includes(standardizedRoot)) { console.error(`Invalid root note: ${rootNote}`); return; }
+    if (!SCALES[scaleName]) { console.error(`Invalid scale: ${scaleName}`); return; }
+    if (!Array.isArray(tuningArray) || tuningArray.length === 0) { console.error('Invalid tuning array'); return; }
+    // --- End Validation ---
+
     fretboardContainer.querySelectorAll('.note, .guide-tone-highlight-overlay').forEach(el => el.remove()); // Clear notes & overlays
 
     // Update scale display for the main fretboard
@@ -842,32 +937,32 @@ function updateFretboardNotes(fretboardContainer, rootNote, scaleName, tuningArr
             const cqRaw = currentMeasureEl.querySelector('.chord-controls .chord-quality')?.value;
             const cqOpt = currentMeasureEl.querySelector(`.chord-controls .chord-quality option[value="${cqRaw}"]`);
             const cqDisp = cqOpt ? cqOpt.textContent : cqRaw;
-
             const srDisp = currentMeasureEl.querySelector('.scale-controls .second-key')?.value || rootNote;
             const stRaw = currentMeasureEl.querySelector('.scale-controls .scale-select')?.value || scaleName;
             const stOpt = currentMeasureEl.querySelector(`.scale-controls .scale-select option[value="${stRaw}"]`);
             const stDisp = stOpt ? stOpt.textContent : stRaw;
             UI.elements.scaleDisplay.textContent = `${srDisp} ${stDisp} over ${cr} ${cqDisp}`;
         } else {
-             UI.elements.scaleDisplay.textContent = `${standardizeNoteName(rootNote)} ${scaleName.replace(/([A-Z])/g, ' $1').trim()}`;
+             UI.elements.scaleDisplay.textContent = `${standardizedRoot} ${scaleName.replace(/([A-Z])/g, ' $1').trim()}`;
         }
     }
 
-    const standardizedRoot = standardizeNoteName(rootNote);
+    // --- Scale Note Calculation ---
     const scaleIntervals = SCALES[scaleName];
     const rootIdx = NOTES.indexOf(standardizedRoot);
     const notesInScale = scaleIntervals.map(interval => NOTES[(rootIdx + interval) % 12]);
+    // --- End Scale Note Calculation ---
 
     const numStrings = tuningArray.length;
     const numFrets = 12;
 
-    for (let stringIndex = 0; stringIndex < numStrings; stringIndex++) {
-        const openStringNote = standardizeNoteName(tuningArray[stringIndex]); // tuningArray is high E at index 0
+    for (let stringIndex = 0; stringIndex < numStrings; stringIndex++) { // stringIndex 0 is high E in the reversed tuningArray
+        const openStringNote = standardizeNoteName(tuningArray[stringIndex]);
         const openStringNoteIndex = NOTES.indexOf(openStringNote);
         if (openStringNoteIndex === -1) continue;
 
         for (let fret = 0; fret <= numFrets; fret++) {
-            const currentNoteIndex = (openStringNoteIndex + fret + 12) % 12; // Ensure positive
+            const currentNoteIndex = (openStringNoteIndex + fret + 12) % 12;
             const currentNoteName = NOTES[currentNoteIndex];
 
             if (notesInScale.includes(currentNoteName)) {
@@ -875,48 +970,70 @@ function updateFretboardNotes(fretboardContainer, rootNote, scaleName, tuningArr
                 noteElement.className = 'note';
                 noteElement.textContent = currentNoteName;
 
-                // **Fret 0 (Open Note) Positioning Fix**
+                // --- Positioning ---
+                // Horizontal (Left) - Corrected Fret 0 placement
                 if (fret === 0) {
-                    noteElement.style.left = `1.5%`; // Position to the left of the nut line
+                    noteElement.style.left = `1.5%`; // Position open notes left of the nut line
                 } else {
-                    noteElement.style.left = `${((fret - 0.5) / numFrets) * 100 + 2}%`; // Shift right for nut width
+                    // Position fretted notes centered between fret lines, accounting for nut width visually
+                    noteElement.style.left = `${((fret - 0.5) / numFrets) * 100 + 2}%`; // Adjust 2% offset as needed
                 }
-                noteElement.style.top = `${(stringIndex / (numStrings - 1)) * 100}%`;
+
+                // Vertical (Top) - **CORRECTED FOR LOW E AT TOP**
+                // stringIndex 0 (high E) should be near bottom (100%), index 5 (low E) near top (0%)
+                const stringY = 100 - (stringIndex / (numStrings - 1)) * 100;
+                noteElement.style.top = `${stringY}%`;
+                // --- End Positioning ---
 
 
-                if (currentNoteName === standardizedRoot) noteElement.style.backgroundColor = '#BD2031';
-                else {
+                // --- Styling & Data ---
+                if (currentNoteName === standardizedRoot) {
+                    noteElement.style.backgroundColor = '#BD2031'; // Root color
+                } else {
                     const degreeIndex = notesInScale.indexOf(currentNoteName);
-                    noteElement.style.backgroundColor = (degreeIndex % 2 === 0) ? '#006400' : '#4CAF50';
+                    noteElement.style.backgroundColor = (degreeIndex % 2 === 0) ? '#006400' : '#4CAF50'; // Alternating scale colors
                 }
-                
+
                 // Approximate octave for playback
-                let approxOctave = PLAYBACK_OCTAVES[0]; // Default to lowest playback octave
-                // Higher strings (lower index in reversed tuningArray) tend to be higher octave
-                if (stringIndex < numStrings / 2) approxOctave = PLAYBACK_OCTAVES[1] || PLAYBACK_OCTAVES[0];
-                // Higher frets increase octave
-                if (fret > 7 && approxOctave < OCTAVES_FOR_SAMPLES[OCTAVES_FOR_SAMPLES.length - 1]) approxOctave++;
+                let approxOctave = PLAYBACK_OCTAVES[0];
+                if (stringIndex >= numStrings / 2) { // Lower strings (visually top) get lower octave
+                     approxOctave = PLAYBACK_OCTAVES[0]; // e.g., 2 or 3
+                } else { // Higher strings (visually bottom) get higher octave
+                    approxOctave = PLAYBACK_OCTAVES[1] || PLAYBACK_OCTAVES[0]; // e.g., 3 or 4
+                }
+                if (fret > 7 && approxOctave < OCTAVES_FOR_SAMPLES[OCTAVES_FOR_SAMPLES.length - 1]) {
+                     approxOctave++; // Increase octave for higher frets
+                }
+                 // Ensure octave is within available sample range
                 approxOctave = Math.max(OCTAVES_FOR_SAMPLES[0], Math.min(OCTAVES_FOR_SAMPLES[OCTAVES_FOR_SAMPLES.length-1], approxOctave));
-
-
                 noteElement.dataset.note = `${currentNoteName}${approxOctave}`;
-                
+                 // --- End Styling & Data ---
+
+
+                // --- Event Listener ---
                 noteElement.addEventListener('click', async (e) => {
                     e.stopPropagation();
                     await AudioContextManager.ensureAudioContext();
                     const noteToPlay = noteElement.dataset.note;
-                    const vol = fretboardContainer.id === 'chord-fretboard' ? 
-                                parseFloat(UI.elements.chordFretboardVolume.value) : 0.4; // FretFlow volume
-                    playNote(noteToPlay, vol, 500);
+                    // Determine volume based on which fretboard it is
+                    const vol = fretboardContainer.id.startsWith('fretflow-fretboard')
+                                ? 0.4 // Lower volume for FretFlow boards
+                                : parseFloat(UI.elements.chordFretboardVolume.value); // Volume for main board
+                    playNote(noteToPlay, vol, 500); // Play the note
+                    // Visual feedback on click
                     noteElement.style.transform = 'translate(-50%, -50%) scale(1.3)';
                     setTimeout(() => { noteElement.style.transform = 'translate(-50%, -50%) scale(1)'; }, 150);
                 });
+                 // --- End Event Listener ---
+
                 fretboardContainer.appendChild(noteElement);
             }
         }
     }
+
+    // Re-apply guide tone highlights if the feature is active and it's the main fretboard
     if (AppState.guideTonesActive && fretboardContainer.id === 'chord-fretboard') {
-        highlightGuideTones(); // Re-apply guide tones if active
+        highlightGuideTones();
     }
 }
       
