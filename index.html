@@ -2631,36 +2631,81 @@ function setupEventListeners() {
 
 // Initialize the application
 async function initializeApp() {
-    UI.init(); // Cache DOM elements
     try {
-        await AudioContextManager.initialize(); // Initialize audio early if possible (might be suspended)
+        // Initialize UI first to ensure all elements are cached
+        UI.init();
+        if (!UI.elements.measures || !UI.elements.progressionSelect || !UI.elements.keySelect) {
+            throw new Error("Critical UI elements not found");
+        }
+
+        // Initialize audio with proper error handling
+        try {
+            await AudioContextManager.initialize();
+            log("Audio context initialized successfully");
+        } catch (error) {
+            console.warn("Initial AudioContextManager initialization delayed:", error);
+            updateLoadingStatus("Audio will be enabled on first interaction");
+            // Will retry on user interaction via ensureAudioInitializedUserInteraction
+        }
+
+        // Create metronome beats
+        createBeats();
+        if (!document.querySelector('.beats-container .beat')) {
+            console.warn("Beats creation may have failed");
+        }
+
+        // Initialize fretboard with proper error checking
+        const initialTuning = UI.elements.chordTuning?.value 
+            ? TUNINGS[UI.elements.chordTuning.value] 
+            : TUNINGS.standard;
+        
+        if (UI.elements.chordFretboard) {
+            createFretboard(UI.elements.chordFretboard, initialTuning);
+            log("Fretboard created with tuning:", initialTuning);
+        } else {
+            throw new Error("Chord fretboard container not found");
+        }
+
+        // Initialize progression with fallbacks
+        const initialProgression = UI.elements.progressionSelect?.value || 'I V7';
+        const initialKey = UI.elements.keySelect?.value || 
+                          progressions[initialProgression]?.defaultKey || 
+                          "C";
+
+        if (!progressions[initialProgression]) {
+            console.warn(`Progression ${initialProgression} not found, using fallback`);
+        }
+
+        // Load initial progression
+        await loadProgression(initialProgression, initialKey);
+        log(`Loaded initial progression: ${initialProgression} in ${initialKey}`);
+
+        // Initialize additional components
+        initializeFretFlow();
+        initializeScaleSelects();
+        setupEventListeners();
+
+        // Update UI to show initialization complete
+        updateLoadingStatus("Application Ready");
+        log("Application initialization complete");
+
+        // Hide loading indicator smoothly
+        setTimeout(() => {
+            const indicator = document.getElementById('loading-indicator');
+            if (indicator) {
+                indicator.style.opacity = '0';
+                setTimeout(() => {
+                    indicator.style.display = 'none';
+                }, 300); // Hide after fade
+            }
+        }, 1000);
+
     } catch (error) {
-        console.error("Initial AudioContextManager initialization failed:", error);
-        updateLoadingStatus("Audio initialization failed. Click to try enabling.");
-        // We'll try again on first user click via ensureAudioInitializedUserInteraction
+        console.error("Application initialization failed:", error);
+        updateLoadingStatus("Initialization failed. Please refresh the page.");
+        throw error; // Re-throw for global error handling
     }
-
-    createBeats();
-    const initialTuning = TUNINGS[UI.elements.chordTuning.value] || TUNINGS.standard;
-    createFretboard(UI.elements.chordFretboard, initialTuning);
-    
-    // Load the initially selected progression, or a default one
-    const initialProgression = UI.elements.progressionSelect.value || Object.keys(progressions)[0];
-    const initialKey = UI.elements.keySelect.value || progressions[initialProgression]?.defaultKey || "C";
-    loadProgression(initialProgression, initialKey); 
-    
-    initializeFretFlow();
-    initializeScaleSelects(); // Populate FretFlow scale dropdowns
-    setupEventListeners();
-    
-    updateLoadingStatus("Application initialized");
-    setTimeout(() => {
-        const indicator = document.getElementById('loading-indicator');
-        if (indicator) indicator.style.display = 'none'; // Hide instead of remove
-    }, 1000);
-    log("Application initialized.");
 }
-
 // Initial setup when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     initializeApp().catch(error => {
