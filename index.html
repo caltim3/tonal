@@ -1095,7 +1095,60 @@ const CHORD_INTERVALS = {
     'imaj7': [0, 3, 7, 11], // Minor-Major 7th
     'unknown': [0, 4, 7, 10] // Fallback
 };
+async function loadProgression(progressionName, key = null) {
+    if (!progressions[progressionName]) {
+        console.error(`Unknown progression: ${progressionName}`);
+        return;
+    }
 
+    // Clear current song info display
+    UI.elements.currentSongTitle.textContent = progressionName.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    UI.elements.currentSongDescription.textContent = progressions[progressionName].description || '';
+
+    // Use provided key or default from progression definition
+    const progressionKey = key || progressions[progressionName].defaultKey;
+    currentProgressionName = progressionName;
+    
+    // Store the functional progression (Roman numerals)
+    currentFunctionalProgression = progressions[progressionName].progression;
+
+    // Update key select to match
+    if (UI.elements.keySelect) {
+        UI.elements.keySelect.value = progressionKey;
+    }
+
+    // Clear existing measures
+    UI.elements.measures.innerHTML = '';
+
+    // Create measures for each chord in the progression
+    currentFunctionalProgression.forEach((romanChordString, index) => {
+        addMeasure(); // This will create a new measure element
+        const measureElement = UI.elements.measures.children[index];
+        
+        if (measureElement) {
+            const parsedChord = parseRomanNumeralToAbsoluteChord(romanChordString, progressionKey);
+            
+            const rootSelect = measureElement.querySelector('.root-note');
+            const qualitySelect = measureElement.querySelector('.chord-quality');
+            const secondKeySelect = measureElement.querySelector('.scale-controls .second-key');
+            const scaleSelect = measureElement.querySelector('.scale-controls .scale-select');
+
+            if (rootSelect) rootSelect.value = parsedChord.root;
+            if (qualitySelect) qualitySelect.value = parsedChord.quality;
+            if (secondKeySelect) secondKeySelect.value = parsedChord.root;
+            if (scaleSelect) scaleSelect.value = suggestScaleForQuality(parsedChord.quality);
+        }
+    });
+
+    // Reset current measure and beat
+    AppState.updateState({
+        currentMeasure: 0,
+        currentBeat: 0
+    });
+
+    addFirstChordListener();
+    log(`Loaded progression '${progressionName}' in key ${progressionKey}`);
+}
 // State Management
 const AppState = {
     isPlaying: false,
