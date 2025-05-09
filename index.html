@@ -1134,7 +1134,30 @@ function suggestScaleForQuality(quality) { const sm={'maj7':'major','maj':'major
 
 // --- DOM Utilities ---
 function createKeyOptions(selKey='C'){return NOTES.map(n=>`<option value="${n}"${n===standardizeNoteName(selKey)?' selected':''}>${n}</option>`).join('');}
-function createQualityOptions(selQ='maj7'){const Qs=[{v:'maj7',l:'Maj7'},{v:'dom7',l:'7 (Dom)'},{v:'min7',l:'min7'},{v:'min7b5',l:'min7♭5'},{v:'dim7',l:'dim7'},{v:'maj6',l:'Maj6'},{v:'min6',l:'min6'},{v:'dom7b9',l:'7♭9'},{v:'dom7#9',l:'7♯9'},{v:'dom7b5',l:'7♭5'},{v:'alt',l:'Altered'},{v:'dom7sus',l:'7sus4'},{v:'imaj7',l:'m(maj7)'},{v:'maj',l:'Maj(triad)'},{v:'min',l:'min(triad)'},{v:'dim',l:'dim(triad)'},{v:'aug',l:'aug(triad)'},{v:'sus4',l:'sus4(triad)'}]; return Qs.map(q=>`<option value="${q.v}"${q.v===selQ?' selected':''}>${q.l}</option>`).join('');}
+function // Optional: Update createQualityOptions for consistency
+function createQualityOptions(selQ='maj7'){
+    const Qs=[
+        {v:'maj7',l:'maj7'},       // Changed Label
+        {v:'dom7',l:'7'},          // Changed Label
+        {v:'min7',l:'m7'},         // Changed Label
+        {v:'min7b5',l:'m7b5'},     // Changed Label (or m7ø5)
+        {v:'dim7',l:'dim7'},      // Changed Label (or °7)
+        {v:'maj6',l:'maj6'},
+        {v:'min6',l:'m6'},
+        {v:'dom7b9',l:'7b9'},
+        {v:'dom7#9',l:'7#9'},
+        {v:'dom7b5',l:'7b5'},
+        {v:'alt',l:'alt'},
+        {v:'dom7sus',l:'7sus'},
+        {v:'imaj7',l:'m(maj7)'}, // Or 'mM7'
+        {v:'maj',l:'(maj)'},   // Indicate triad, maybe? Or just Root? Label is tricky.
+        {v:'min',l:'m'},       // Minor triad label
+        {v:'dim',l:'dim'},     // Dim triad label
+        {v:'aug',l:'aug'},     // Aug triad label
+        {v:'sus4',l:'sus4'}
+    ];
+    return Qs.map(q=>`<option value="${q.v}"${q.v===selQ?' selected':''}>${q.l}</option>`).join('');
+}
 function createScaleOptions(selS='major'){return Object.keys(SCALES).map(sn=>{const dn=sn.replace(/([A-Z]+)/g,' $1').replace(/([A-Z][a-z])/g,' $1').split(' ').map(s=>s.charAt(0).toUpperCase()+s.substring(1)).join(' ');return`<option value="${sn}"${sn===selS?' selected':''}>${dn}</option>`;}).join('');}
 
 // --- Audio Management (Object MUST be defined AFTER helpers like getSampleFileName) ---
@@ -1158,8 +1181,100 @@ async function playMetronomeSound(baseVol) { if (!AudioContextManager.context) r
 
 // --- Fretboard Drawing ---
 function createFretboard(container, tuningArr) { if (!(container instanceof HTMLElement)) return; if (!Array.isArray(tuningArr) || tuningArr.length === 0) return; container.innerHTML = ''; const nf = 12; const ns = tuningArr.length; for (let i=0;i<=nf;i++){ const fl=document.createElement('div');fl.className='fret-line';fl.style.left=`${(i/nf)*100}%`;container.appendChild(fl); if(i>0){const fn=document.createElement('div');fn.className='fret-number';fn.textContent=i;fn.style.left=`${((i-0.5)/nf)*100}%`;container.appendChild(fn);}} const nut=document.createElement('div');nut.className='fret-line';nut.style.left='0%';nut.style.width='4px';nut.style.background='#4A3B31';container.appendChild(nut); for (let i=0;i<ns;i++){const sl=document.createElement('div');sl.className='string-line';const sy=100-(i/(ns-1))*100;sl.style.top=`${sy}%`;container.appendChild(sl);} const mp=[3,5,7,9,12]; mp.forEach(fp=>{const m=document.createElement('div');m.className='fret-marker';m.style.left=`${((fp-0.5)/nf)*100}%`;if(fp===12){const tm=m.cloneNode(true);const bm=m.cloneNode(true);const tsi=Math.floor(ns/2)-1;const bsi=Math.floor(ns/2);tm.style.top=`${100-((tsi+0.5)/(ns-1))*100}%`;bm.style.top=`${100-((bsi-0.5)/(ns-1))*100}%`;container.appendChild(tm);container.appendChild(bm);}else{m.style.top='50%';container.appendChild(m);}}); }
-function updateFretboardNotes(fretboardContainer, rootNote, scaleName, tuningArray) { if (!(fretboardContainer instanceof HTMLElement)) return; const standardizedRoot=standardizeNoteName(rootNote); if (!NOTES.includes(standardizedRoot)) return; const scaleData=SCALES[scaleName]; if (!scaleData) return; const isStandardTuning=Array.isArray(tuningArray)&&tuningArray.length===6; if (!Array.isArray(tuningArray)||tuningArray.length===0) return; if (!isStandardTuning) console.warn(`Non-standard tuning. Using approx octaves.`); fretboardContainer.querySelectorAll('.note').forEach(el => el.remove()); if (fretboardContainer.id==='chord-fretboard'&&UI.elements.scaleDisplay) { const cme=AppState.currentMeasure<UI.elements.measures.children.length?UI.elements.measures.children[AppState.currentMeasure]:null; if(cme){const cr=cme.querySelector('.root-note')?.value,cqR=cme.querySelector('.chord-quality')?.value,cqo=cme.querySelector(`.chord-quality option[value="${cqR}"]`),cqD=cqo?cqo.textContent:cqR,srD=cme.querySelector('.second-key')?.value||rootNote,stR=cme.querySelector('.scale-select')?.value||scaleName,sto=cme.querySelector(`.scale-select option[value="${stR}"]`),stD=sto?sto.textContent:stR;UI.elements.scaleDisplay.textContent=`${srD} ${stD} over ${cr} ${cqD}`;}else{UI.elements.scaleDisplay.textContent=`${standardizedRoot} ${scaleName.replace(/([A-Z])/g,' $1').trim()}`;}} const rootIdx=NOTES.indexOf(standardizedRoot); const notesInScale=scaleData.map(interval=>NOTES[(rootIdx+interval)%12]); const numStrings=tuningArray.length; const numFrets=12; for(let stringIndex=0;stringIndex<numStrings;stringIndex++){ const openStringNote=standardizeNoteName(tuningArray[stringIndex]); const openStringNoteIndex=NOTES.indexOf(openStringNote); if(openStringNoteIndex===-1)continue; const stringMapKey=`string${stringIndex+1}`; for(let fret=0;fret<=numFrets;fret++){ const currentNoteIndex=(openStringNoteIndex+fret+12)%12; const currentNoteName=NOTES[currentNoteIndex]; if(notesInScale.includes(currentNoteName)){ const noteElement=document.createElement('div');noteElement.className='note'; noteElement.textContent=currentNoteName; if(fret===0)noteElement.style.left=`1.5%`; else noteElement.style.left=`${((fret-0.5)/numFrets)*100+2}%`; const stringY=100-(stringIndex/(numStrings-1))*100;noteElement.style.top=`${stringY}%`; if(currentNoteName===standardizedRoot)noteElement.style.backgroundColor='#BD2031'; else{const di=notesInScale.indexOf(currentNoteName);noteElement.style.backgroundColor=(di%2===0)?'#006400':'#4CAF50';} let noteOctaveForPlayback=`${currentNoteName}3`; if(isStandardTuning&&FRETBOARD_NOTES_OCTAVES[stringMapKey]&&fret<FRETBOARD_NOTES_OCTAVES[stringMapKey].length){noteOctaveForPlayback=FRETBOARD_NOTES_OCTAVES[stringMapKey][fret];} else{ let approxOctave=PLAYBACK_OCTAVES[0]; if(stringIndex<numStrings/2)approxOctave=PLAYBACK_OCTAVES[1]||PLAYBACK_OCTAVES[0]; if(fret>7&&approxOctave<OCTAVES_FOR_SAMPLES[OCTAVES_FOR_SAMPLES.length-1])approxOctave++; approxOctave=Math.max(OCTAVES_FOR_SAMPLES[0],Math.min(OCTAVES_FOR_SAMPLES[OCTAVES_FOR_SAMPLES.length-1],approxOctave)); noteOctaveForPlayback=`${currentNoteName}${approxOctave}`; } noteElement.dataset.note=noteOctaveForPlayback; noteElement.addEventListener('click',async(e)=>{e.stopPropagation();await AudioContextManager.ensureAudioContext();const noteToPlay=noteElement.dataset.note;const vol=fretboardContainer.id.startsWith('fretflow-fretboard')?0.4:parseFloat(UI.elements.chordFretboardVolume.value);playNote(noteToPlay,vol,500);noteElement.style.transform='translate(-50%,-50%) scale(1.3)';setTimeout(()=>{noteElement.style.transform='translate(-50%,-50%) scale(1)';},150);}); fretboardContainer.appendChild(noteElement);}}} if(AppState.guideTonesActive&&fretboardContainer.id==='chord-fretboard'){highlightGuideTones();}}
+function updateFretboardNotes(fretboardContainer, rootNote, scaleName, tuningArray) {
+    // --- Validation & Setup ---
+    if (!(fretboardContainer instanceof HTMLElement)) { console.error('Invalid fretboardContainer'); return; }
+    const standardizedRoot = standardizeNoteName(rootNote);
+    if (!NOTES.includes(standardizedRoot)) { console.error(`Invalid root note: ${rootNote}`); return; }
+    const scaleData = SCALES[scaleName];
+    if (!scaleData) { console.error(`Invalid scale: ${scaleName}`); return; }
+    const isStandardTuning = Array.isArray(tuningArray) && tuningArray.length === 6;
+    if (!Array.isArray(tuningArray) || tuningArray.length === 0) { console.error('Invalid tuning array'); return; }
+    if (!isStandardTuning) { console.warn(`Non-standard tuning. Using approx octaves.`); }
+    // --- End Validation ---
 
+    fretboardContainer.querySelectorAll('.note').forEach(el => el.remove());
+
+    // --- Update Scale Display ---
+    if (fretboardContainer.id === 'chord-fretboard' && UI.elements.scaleDisplay) {
+        const currentMeasureEl = AppState.currentMeasure < UI.elements.measures.children.length ? UI.elements.measures.children[AppState.currentMeasure] : null;
+        if (currentMeasureEl) {
+            const cr = currentMeasureEl.querySelector('.chord-controls .root-note')?.value;
+            const cqRaw = currentMeasureEl.querySelector('.chord-controls .chord-quality')?.value; // e.g., 'dom7', 'maj7', 'min7'
+            const srDisp = currentMeasureEl.querySelector('.scale-controls .second-key')?.value || rootNote;
+            const stRaw = currentMeasureEl.querySelector('.scale-controls .scale-select')?.value || scaleName;
+            const stOpt = currentMeasureEl.querySelector(`.scale-controls .scale-select option[value="${stRaw}"]`);
+            const stDisp = stOpt ? stOpt.textContent : stRaw; // Scale name display
+
+            // *** START Formatting Fixes ***
+            let cqDisp = cqRaw; // Default to the raw value
+            switch (cqRaw) {
+                case 'maj7': cqDisp = 'maj7'; break; // Force lowercase
+                case 'dom7': cqDisp = '7'; break;    // Abbreviate and remove (Dom)
+                case 'min7': cqDisp = 'm7'; break;    // Force lowercase 'm'
+                case 'min7b5': cqDisp = 'm7b5'; break; // Use common jazz notation
+                case 'dim7': cqDisp = 'dim7'; break;  // Or '°7' if preferred
+                case 'maj6': cqDisp = 'maj6'; break;
+                case 'min6': cqDisp = 'm6'; break;
+                // Add other specific formats if needed (e.g., for triads like 'maj', 'min')
+                case 'maj': cqDisp = ''; break; // Major triad often shown just by root
+                case 'min': cqDisp = 'm'; break; // Minor triad often shown just by root + m
+                // ... other qualities if needed ...
+                 default:
+                    // If no specific rule, try getting text from option but remove hints
+                    const cqOpt = currentMeasureEl.querySelector(`.chord-controls .chord-quality option[value="${cqRaw}"]`);
+                    if (cqOpt) {
+                        cqDisp = cqOpt.textContent.split(' ')[0]; // Take only first part (e.g., "7" from "7 (Dom)")
+                    } else {
+                         cqDisp = cqRaw; // Fallback to raw value if option not found
+                    }
+                    break;
+            }
+
+            // Construct the string WITHOUT the space between chord root and quality
+            UI.elements.scaleDisplay.textContent = `${srDisp} ${stDisp} over ${cr}${cqDisp}`;
+            // *** END Formatting Fixes ***
+
+        } else {
+             UI.elements.scaleDisplay.textContent = `${standardizedRoot} ${scaleName.replace(/([A-Z])/g, ' $1').trim()}`;
+        }
+    }
+    // --- End Update Scale Display ---
+
+    // --- Scale Note Calculation & Drawing ---
+    const rootIdx = NOTES.indexOf(standardizedRoot);
+    const notesInScale = scaleData.map(interval => NOTES[(rootIdx + interval) % 12]);
+    const numStrings = tuningArray.length; const numFrets = 12;
+
+    for (let stringIndex = 0; stringIndex < numStrings; stringIndex++) {
+        const openStringNote = standardizeNoteName(tuningArray[stringIndex]);
+        const openStringNoteIndex = NOTES.indexOf(openStringNote);
+        if (openStringNoteIndex === -1) continue;
+        const stringMapKey = `string${stringIndex + 1}`;
+        for (let fret = 0; fret <= numFrets; fret++) {
+            const currentNoteIndex = (openStringNoteIndex + fret + 12) % 12;
+            const currentNoteName = NOTES[currentNoteIndex];
+            if (notesInScale.includes(currentNoteName)) {
+                const noteElement = document.createElement('div'); noteElement.className = 'note';
+                noteElement.textContent = currentNoteName;
+                if (fret === 0) noteElement.style.left = `1.5%`; else noteElement.style.left = `${((fret - 0.5) / numFrets) * 100 + 2}%`;
+                const stringY = 100 - (stringIndex / (numStrings - 1)) * 100; noteElement.style.top = `${stringY}%`;
+                if (currentNoteName === standardizedRoot) noteElement.style.backgroundColor = '#BD2031'; else { const di = notesInScale.indexOf(currentNoteName); noteElement.style.backgroundColor = (di % 2 === 0) ? '#006400' : '#4CAF50'; }
+                let noteOctaveForPlayback = `${currentNoteName}3`;
+                if (isStandardTuning && FRETBOARD_NOTES_OCTAVES[stringMapKey] && fret < FRETBOARD_NOTES_OCTAVES[stringMapKey].length) { noteOctaveForPlayback = FRETBOARD_NOTES_OCTAVES[stringMapKey][fret]; }
+                else { let aO=PLAYBACK_OCTAVES[0]; if(stringIndex<numStrings/2)aO=PLAYBACK_OCTAVES[1]||PLAYBACK_OCTAVES[0]; if(fret>7&&aO<OCTAVES_FOR_SAMPLES[OCTAVES_FOR_SAMPLES.length-1])aO++; aO=Math.max(OCTAVES_FOR_SAMPLES[0],Math.min(OCTAVES_FOR_SAMPLES[OCTAVES_FOR_SAMPLES.length-1],aO)); noteOctaveForPlayback=`${currentNoteName}${aO}`; }
+                noteElement.dataset.note = noteOctaveForPlayback;
+                noteElement.addEventListener('click', async (e) => { e.stopPropagation(); await AudioContextManager.ensureAudioContext(); const ntP=noteElement.dataset.note; const v=fretboardContainer.id.startsWith('fretflow-fretboard')?0.4:parseFloat(UI.elements.chordFretboardVolume.value); playNote(ntP,v,500); noteElement.style.transform='translate(-50%,-50%) scale(1.3)'; setTimeout(()=>{noteElement.style.transform='translate(-50%,-50%) scale(1)';},150); });
+                fretboardContainer.appendChild(noteElement);
+            }
+        }
+    }
+    // --- End Scale Note Calculation & Drawing ---
+
+    // --- Guide Tones ---
+    if (AppState.guideTonesActive && fretboardContainer.id === 'chord-fretboard') { highlightGuideTones(); }
+    // --- End Guide Tones ---
+}
 // --- Metronome Beat Display & Interaction ---
 function createBeats() { const c=document.querySelector('.beats-container');if(!c)return;c.innerHTML=''; if(!UI.elements.timeSignature||!UI.elements.soundType)return; const ts=parseInt(UI.elements.timeSignature.value);const sot=UI.elements.soundType.value;let tbtd=ts;let sf=1;if(ts===4){tbtd=8;sf=2;}else if(ts===6||ts===12){tbtd=ts;sf=1;} for(let i=0;i<tbtd;i++){const bd=document.createElement('div');bd.className='beat';bd.dataset.beat=i;let bl=`${Math.floor(i/sf)+1}`;if(sf>1&&(i%sf!==0)){bl+="&";}else if((ts===6||ts===12)&&(i%3===0)&&i!==0){bl=`${Math.floor(i/3)+1}`;}bd.textContent=bl;let bs=sot==='drums'?'hihat':sot;let bv=0.3;let col='#4CAF50';let isbits=false;if(ts===4){isbits=(i===0||i===4);}else if(ts===3||ts===2){isbits=(i===0);}else if(ts===6){isbits=(i===0||i===3);}else if(ts===12){isbits=(i===0||i===3||i===6||i===9);}else{isbits=(i===0);} if(isbits){bv=1.0;col='#1F618D';if(sot==='drums'){bs='kick,hihat';if(ts===4&&(i===2||i===6)){bs='snare,hihat';bv=0.8;col='#D9534F';}}}else if(ts===4&&(i===2||i===6)&&sot==='drums'){bs='snare,hihat';bv=0.8;col='#D9534F';}else if(sot==='drums'&&sf>1&&(i%sf!==0)){bs='hihat';bv=0.2;col='#9E9E9E';}else if(sot!=='drums'&&sf>1&&(i%sf!==0)){bs='silent';bv=0;col='#666';} bd.dataset.sound=bs;bd.dataset.baseVolume=bv;bd.dataset.volume=bv;bd.style.backgroundColor=col;bd.addEventListener('click',()=>toggleBeatAccent(bd,sot,sf>1));c.appendChild(bd);}}
 function toggleBeatAccent(be, cst, isSub) { const cv=parseFloat(be.dataset.volume);let nv,ns,nc;if(cst==='drums'){const s=['silent','hihat','snare,hihat','kick,hihat'];const cl=['#666','#9E9E9E','#D9534F','#1F618D'];const v=[0,0.3,0.8,1.0];let ci=s.indexOf(be.dataset.sound);if(ci===-1)ci=1;let ni=(ci+1)%s.length;if(isSub&&(s[ni]==='snare,hihat'||s[ni]==='kick,hihat')){if(s[ci]!=='hihat'&&s[ci]!=='silent'){ni=(ci+1)%s.length;}else{ni=(ci+2)%s.length;if(ni===ci)ni=(ni+1)%s.length;}} ns=s[ni];nv=v[ni];nc=cl[ni];}else{const st=[{volume:0,sound:'silent',color:'#666'},{volume:0.3,sound:cst,color:'#9E9E9E'},{volume:1.0,sound:cst,color:'#1F618D'}];let csi=st.findIndex(s=>s.volume===cv);if(csi===-1){if(cv>0.5)csi=2;else if(cv>0)csi=1;else csi=0;} const nst=st[(csi+1)%st.length];nv=nst.volume;ns=nst.sound;nc=nst.color;} be.dataset.volume=nv;be.dataset.sound=ns;be.dataset.baseVolume=nv;be.style.backgroundColor=nc;}
