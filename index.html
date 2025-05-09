@@ -37,322 +37,86 @@
             font-size: 1.2em;
             font-weight: bold;
             text-align: center;
-            margin-bottom: 15px;
+            margin-bottom: 5px; /* Reduced margin */
             color: #333;
+             min-height: 1.5em; /* Reserve space */
         }
-        .controls, .top-controls { /* Added .top-controls */
+         /* Next Chord Display Styling */
+         .next-chord-display {
+            font-size: 0.95em; /* Slightly smaller than scale display */
+            font-style: italic;
+            text-align: center;
+            color: #6c757d; /* Muted gray color */
+            margin-top: -5px; /* Pull it up slightly */
+            margin-bottom: 15px; /* Space below before controls */
+            height: 1.2em; /* Reserve space to prevent layout shift */
+            line-height: 1.2em;
+        }
+        .controls, .top-controls {
             display: flex;
             gap: 10px;
             margin-bottom: 15px;
             flex-wrap: wrap;
             align-items: center;
         }
+        .controls-container { display: flex; gap: 20px; margin-bottom: 20px; }
+        .control-group { display: flex; align-items: center; gap: 10px; }
+        .control-group label { font-weight: bold; }
+        .control-group select { padding: 5px; border-radius: 4px; border: 1px solid #ccc; }
 
-        .controls-container {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
+        .fretboard { position: relative; height: 200px; background-color: #FFCF79; border-radius: 5px; margin-bottom: 30px; border: 2px solid #4A3B31; overflow: visible; }
+        .fret-line { position: absolute; top: 0; height: 100%; width: 2px; background: #A0A0A0; border-right: 1px solid rgba(0,0,0,0.1); z-index: 1; }
+        .string-line { position: absolute; left: 0; width: 100%; height: 1px; background: #C0C0C0; border-bottom: 1px solid rgba(0,0,0,0.1); z-index: 0; }
+        .fret-number { position: absolute; bottom: -25px; font-size: 14px; color: #555; transform: translateX(-50%); font-weight: bold; z-index: 2; width: 20px; text-align: center; }
+        .fret-marker { position: absolute; width: 10px; height: 10px; background-color: #5A4F46; border-radius: 50%; transform: translate(-50%, -50%); z-index: 1; }
+        .note { position: absolute; width: 25px; height: 25px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; color: white; z-index: 3; cursor: pointer; transform: translate(-50%, -50%); transition: transform 0.1s ease, box-shadow 0.1s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+        .note.guide-tone-highlight { box-shadow: 0 0 0 3px orange, 0 1px 3px rgba(0,0,0,0.2); }
+        .note:hover { transform: translate(-50%, -50%) scale(1.2); box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
 
-        .control-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+        .beat { width: 40px; height: 80px; background: #9E9E9E; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; color: white; font-weight: bold; transition: all 0.2s ease; font-size: 14px; margin: 0 2px; }
+        .beats-container { display: flex; justify-content: center; gap: 8px; margin: 20px 0; flex-wrap: nowrap; overflow-x: auto; }
+        .beat.active { transform: translateY(-10px); box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+        #measures { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+        .measure { position: relative; background-color: #e9ecef; padding: 15px; border-radius: 4px; transition: opacity 0.2s ease, background-color 0.2s ease, border 0.2s ease; border: 2px solid transparent; cursor: pointer; }
+        .measure.loop-selected { border: 2px solid #007bff; background-color: #e6f2ff; }
+        .measure.active { background-color: #c3e6cb; border: 2px solid #28a745; }
+        .measure-number { position: absolute; top: 5px; left: 5px; font-size: 12px; color: #333; background-color: rgba(255,255,255,0.7); padding: 2px 4px; border-radius: 3px; }
+        .chord-controls, .scale-controls { display: flex; gap: 10px; margin-bottom: 10px; }
+        .chord-controls select, .scale-controls select { flex: 1; }
 
-        .control-group label {
-            font-weight: bold;
-        }
-
-        .control-group select {
-            padding: 5px;
-            border-radius: 4px;
-            border: 1px solid #ccc;
-        }
-
-        .fretboard {
-            position: relative;
-            height: 200px;
-            background-color: #FFCF79; /* Tan color for fretboard wood */
-            border-radius: 5px;
-            margin-bottom: 30px; /* Space for fret numbers */
-            border: 2px solid #4A3B31; /* Darker wood color for border */
-            overflow: visible; /* Allow fret numbers to show */
-        }
-        .fret-line {
-            position: absolute;
-            top: 0;
-            height: 100%;
-            width: 2px; /* Thinner fret lines */
-            background: #A0A0A0; /* Lighter gray for frets */
-            border-right: 1px solid rgba(0,0,0,0.1); /* Subtle shadow */
-            z-index: 1;
-        }
-        .string-line {
-            position: absolute;
-            left: 0;
-            width: 100%;
-            height: 1px;
-            background: #C0C0C0; /* Silver for strings */
-            border-bottom: 1px solid rgba(0,0,0,0.1); /* Subtle shadow */
-            z-index: 0; /* Behind notes */
-        }
-        .fret-number {
-            position: absolute;
-            bottom: -25px; /* Closer to the fretboard */
-            font-size: 14px; /* Slightly smaller */
-            color: #555; /* Dark gray for numbers */
-            transform: translateX(-50%);
-            font-weight: bold;
-            z-index: 2;
-            width: 20px;
-            text-align: center;
-        }
-        .fret-marker { /* Dot inlays */
-            position: absolute;
-            width: 10px; /* Slightly smaller */
-            height: 10px;
-            background-color: #5A4F46; /* Darker inlay color */
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 1; /* Above strings, below notes if overlapping */
-        }
-        .note {
-            position: absolute;
-            width: 25px;
-            height: 25px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            font-weight: bold;
-            color: white;
-            z-index: 3;
-            cursor: pointer;
-            transform: translate(-50%, -50%);
-            transition: transform 0.1s ease, box-shadow 0.1s ease;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-        }
-        .note.guide-tone-highlight { /* For guide tones */
-            box-shadow: 0 0 0 3px orange, 0 1px 3px rgba(0,0,0,0.2);
-            /* Or use outline: 3px solid orange; */
-        }
-        .note:hover {
-            transform: translate(-50%, -50%) scale(1.2);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-        }
-
-        .beat {
-            width: 40px;
-            height: 80px;
-            background: #9E9E9E;
-            border-radius: 10px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            color: white;
-            font-weight: bold;
-            transition: all 0.2s ease;
-            font-size: 14px;
-            margin: 0 2px;
-        }
-        .beats-container {
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            margin: 20px 0;
-            flex-wrap: nowrap; /* Ensure beats stay in one line */
-            overflow-x: auto; /* Allow horizontal scrolling if too many beats */
-        }
-        .beat.active {
-            transform: translateY(-10px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
-        #measures {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); /* Responsive columns */
-            gap: 20px;
-        }
-        .measure {
-            position: relative;
-            background-color: #e9ecef;
-            padding: 15px;
-            border-radius: 4px;
-            transition: opacity 0.2s ease, background-color 0.2s ease, border 0.2s ease;
-            border: 2px solid transparent; /* For selection border */
-            cursor: pointer; /* Indicate clickable for looping */
-        }
-        .measure.loop-selected {
-            border: 2px solid #007bff; /* Blue border for loop selection */
-            background-color: #e6f2ff;
-        }
-        .measure.dragging {
-            opacity: 0.5;
-        }
-        .measure.active { /* Current playing measure */
-            background-color: #c3e6cb;
-            border: 2px solid #28a745;
-        }
-        .measure-number {
-            position: absolute;
-            top: 5px;
-            left: 5px; /* Moved to top-left for better click target on measure */
-            font-size: 12px;
-            color: #333;
-            background-color: rgba(255,255,255,0.7);
-            padding: 2px 4px;
-            border-radius: 3px;
-        }
-        .chord-controls, .scale-controls {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-        .chord-controls select, .scale-controls select {
-            flex: 1;
-        }
-
-        .fretboard-section {
-            border: 1px solid #ccc;
-            padding: 15px;
-            border-radius: 8px;
-            background-color: #f9f9f9;
-        }
-
-        body.dark-mode .fretboard-section {
-            background-color: #3a441e; /* Adjusted for green dark mode */
-            border-color: #606c38;
-            color: #fefae0;
-        }
-
-        body.dark-mode-2 .fretboard-section {
-            background-color: #001f54;
-            border-color: #1282a2;
-            color: #fefcfb;
-        }
-
-        body.dark-mode-3 .fretboard-section {
-            background-color: #a5a58d;
-            border-color: #cb997e;
-            color: #ffe8d6;
-        }
-
-        .fretboard-controls {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-
-        .control-group label {
-            font-weight: bold;
-            font-size: 0.9em;
-        }
-
-        .control-group select {
-            padding: 4px;
-            border-radius: 4px;
-            border: 1px solid #ccc;
-        }
-
-        @media (max-width: 1200px) {
-            /* #measures grid-template-columns already responsive */
-        }
-        @media (max-width: 600px) {
-            /* #measures grid-template-columns already responsive */
-        }
-        .volume-control {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin: 10px 0;
-        }
-        button, .button-like { /* Added .button-like for styling consistency */
-            padding: 10px 15px; /* Adjusted padding */
-            border: none;
-            border-radius: 5px;
-            background: #4CAF50;
-            color: white;
-            cursor: pointer;
-            font-size: 0.9em;
-            transition: background-color 0.2s ease;
-        }
-        button:hover, .button-like:hover {
-            background: #45a049;
-        }
-        button.secondary { /* For less prominent buttons */
-            background-color: #007bff;
-        }
-        button.secondary:hover {
-            background-color: #0056b3;
-        }
-        button.danger {
-            background-color: #a8dadc;
-        }
-        button.danger:hover {
-            background-color: #c82333;
-        }
-
-
-        select {
-            padding: 8px 10px; /* Increased padding */
-            margin: 5px;
-            border-radius: 5px;
-            border: 1px solid #ddd;
-            background-color: white; /* Default background */
-        }
-        #tempo-display {
-            font-size: 1.2em;
-            font-weight: bold;
-            margin: 0 10px;
-            min-width: 70px; /* Ensure space */
-            text-align: center;
-        }
-        #loading-indicator {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 10px 15px;
-            background: rgba(0,0,0,0.8);
-            color: white;
-            border-radius: 5px;
-            z-index: 1000;
-            font-size: 0.9em;
-            display: none; /* Initially hidden */
-        }
-
-        .checkbox-wrapper { /* Re-evaluate if this specific wrapper is still needed */
-            margin-top: 10px;
-            margin-left: 0; /* Align with other controls */
-            display: flex;
-            align-items: center;
-        }
-
-        .control-button { /* Generic class for toggle buttons */
-            padding: 8px 12px; /* Adjusted padding */
-            font-size: 0.9em;
-            /* background will be handled by .active / :not(.active) for toggle-button */
-        }
-
-        #chordsEnabled { /* Specific ID if needed, but .toggle-button is better */
-            margin-bottom: 10px;
-        }
-        body.dark-mode {
-            background-color: #283618; color: #fefae0; transition: background-color 0.3s ease, color 0.3s ease;
-        }
-        .dark-mode .app-section { background: linear-gradient(145deg, #283618, #606c38); color: #fefae0; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .fretboard-section { border: 1px solid #ccc; padding: 15px; border-radius: 8px; background-color: #f9f9f9; }
+        body.dark-mode .fretboard-section { background-color: #3a441e; border-color: #606c38; color: #fefae0; }
+        body.dark-mode-2 .fretboard-section { background-color: #001f54; border-color: #1282a2; color: #fefcfb; }
+        body.dark-mode-3 .fretboard-section { background-color: #a5a58d; border-color: #cb997e; color: #ffe8d6; }
+        .fretboard-controls { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
+        .control-group label { font-weight: bold; font-size: 0.9em; }
+        .control-group select { padding: 4px; border-radius: 4px; border: 1px solid #ccc; }
+        @media (max-width: 1200px) { /* #measures grid-template-columns already responsive */ }
+        @media (max-width: 600px) { /* #measures grid-template-columns already responsive */ }
+        .volume-control { display: flex; align-items: center; gap: 10px; margin: 10px 0; }
+        button, .button-like { padding: 10px 15px; border: none; border-radius: 5px; background: #4CAF50; color: white; cursor: pointer; font-size: 0.9em; transition: background-color 0.2s ease; }
+        button:hover, .button-like:hover { background: #45a049; }
+        button.secondary { background-color: #007bff; }
+        button.secondary:hover { background-color: #0056b3; }
+        button.danger { background-color: #dc3545; color: white;} /* Changed default danger color */
+        button.danger:hover { background-color: #c82333; }
+        select { padding: 8px 10px; margin: 5px; border-radius: 5px; border: 1px solid #ddd; background-color: white; }
+        #tempo-display { font-size: 1.2em; font-weight: bold; margin: 0 10px; min-width: 70px; text-align: center; }
+        #loading-indicator { position: fixed; top: 20px; right: 20px; padding: 10px 15px; background: rgba(0,0,0,0.8); color: white; border-radius: 5px; z-index: 1000; font-size: 0.9em; display: none; }
+        .checkbox-wrapper { margin-top: 10px; margin-left: 0; display: flex; align-items: center; }
+        .control-button { padding: 8px 12px; font-size: 0.9em; }
+        #chordsEnabled { margin-bottom: 10px; }
+        body.dark-mode { background-color: #283618; color: #fefae0; }
+        .dark-mode .app-section { background: linear-gradient(145deg, #283618, #606c38); color: #fefae0; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
         .dark-mode .fretboard-container { background-color: #606c38; border: 1px solid #dda15e; }
         .dark-mode .fretboard { background-color: #dda15e; border: 2px solid #4b4b4b; }
-        .dark-mode .note { color: #283618; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+        .dark-mode .note { color: #283618; }
         .dark-mode .scale-display { color: #fefae0; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
         .dark-mode button, .dark-mode .button-like { background-color: #dda15e; color: #283618; border: 1px solid #bc6c25; }
         .dark-mode button:hover, .dark-mode .button-like:hover { background-color: #bc6c25; }
         .dark-mode button.secondary { background-color: #a17d40; }
         .dark-mode button.secondary:hover { background-color: #8a6930; }
-        .dark-mode button.danger { background-color: #e44d5a; }
+        .dark-mode button.danger { background-color: #e44d5a; color: white;}
         .dark-mode button.danger:hover { background-color: #d73744; }
         .dark-mode select { background-color: #dda15e; color: #283618; border: 1px solid #bc6c25; }
         .dark-mode select:hover { background-color: #bc6c25; }
@@ -361,7 +125,10 @@
         .dark-mode .measure.loop-selected { border-color: #ffc107; background-color: #7d6830; }
         .dark-mode .beat { background-color: #dda15e; color: #283618; }
         .dark-mode .beat.active { background-color: #bc6c25; transform: translateY(-5px); }
-        .dark-mode .volume-control { color: #fefae0; }
+        .dark-mode .volume-control, .dark-mode .next-chord-display { color: #fefae0; }
+        .dark-mode #current-song-title { color: #fefae0; }
+        .dark-mode #current-song-description { color: #e0daca; }
+        .dark-mode #song-info-display { background-color: #4a542e; border-color: #7a845e; }
         #dark-mode-toggle.active { background-color: #283618; color: #fefae0; border: 1px solid #dda15e; }
 
         .dark-mode-2 { background-color: #0a1128; color: #fefcfb; }
@@ -374,7 +141,7 @@
         .dark-mode-2 button:hover, .dark-mode-2 .button-like:hover { background-color: #0e6c89; }
         .dark-mode-2 button.secondary { background-color: #0c5f7d; }
         .dark-mode-2 button.secondary:hover { background-color: #094b61; }
-        .dark-mode-2 button.danger { background-color: #ff4d4d; }
+        .dark-mode-2 button.danger { background-color: #ff4d4d; color: white;}
         .dark-mode-2 button.danger:hover { background-color: #e83838; }
         .dark-mode-2 select { background-color: #034078; color: #fefcfb; border: 1px solid #1282a2; }
         .dark-mode-2 .measure { background-color: #034078; color: #fefcfb; border: 1px solid #1282a2; }
@@ -382,6 +149,10 @@
         .dark-mode-2 .measure.loop-selected { border-color: #61dafb; background-color: #01325A; }
         .dark-mode-2 .beat { background-color: #1282a2; color: #fefcfb; }
         .dark-mode-2 .beat.active { background-color: #034078; }
+        .dark-mode-2 .volume-control, .dark-mode-2 .next-chord-display { color: #fefcfb; }
+        .dark-mode-2 #current-song-title { color: #fefcfb; }
+        .dark-mode-2 #current-song-description { color: #e0e0df; }
+        .dark-mode-2 #song-info-display { background-color: #023059; border-color: #0f6090; }
         #dark-mode-toggle.active-2 { background-color: #1282a2; color: #fefcfb; border: 1px solid #034078; }
 
         .dark-mode-3 { background-color: #6b705c; color: #ffe8d6; }
@@ -394,7 +165,7 @@
         .dark-mode-3 button:hover, .dark-mode-3 .button-like:hover { background-color: #b2856c; }
         .dark-mode-3 button.secondary { background-color: #b18f7a; }
         .dark-mode-3 button.secondary:hover { background-color: #9a7860; }
-        .dark-mode-3 button.danger { background-color: #d85c5c; }
+        .dark-mode-3 button.danger { background-color: #d85c5c; color: white;}
         .dark-mode-3 button.danger:hover { background-color: #c24a4a; }
         .dark-mode-3 select { background-color: #ddbea9; color: #6b705c; border: 1px solid #cb997e; }
         .dark-mode-3 .measure { background-color: #a5a58d; color: #ffe8d6; border: 1px solid #cb997e; }
@@ -402,62 +173,27 @@
         .dark-mode-3 .measure.loop-selected { border-color: #e7ad99; background-color: #BDA290; }
         .dark-mode-3 .beat { background-color: #ddbea9; color: #6b705c; }
         .dark-mode-3 .beat.active { background-color: #cb997e; }
+        .dark-mode-3 .volume-control, .dark-mode-3 .next-chord-display { color: #ffe8d6; }
+        .dark-mode-3 #current-song-title { color: #ffe8d6; }
+        .dark-mode-3 #current-song-description { color: #f0d8c6; }
+        .dark-mode-3 #song-info-display { background-color: #8a8a75; border-color: #b6a191; }
         #dark-mode-toggle.active-3 { background-color: #cb997e; color: #ffe8d6; border: 1px solid #6b705c; }
 
         .dark-mode #fretflow-section { background: linear-gradient(145deg, #283618, #606c38); color: #fefae0; }
         .dark-mode-2 #fretflow-section { background: linear-gradient(145deg, #001f54, #034078); color: #fefcfb; }
         .dark-mode-3 #fretflow-section { background: linear-gradient(145deg, #6b705c, #a5a58d); color: #ffe8d6; }
 
-        .toggle-button { /* General toggle button styling */
-            padding: 8px 12px; /* Consistent padding */
-            border: none;
-            border-radius: 5px;
-            color: white;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-            font-size: 0.9em;
-        }
-        .toggle-button.active {
-            background: #4CAF50; /* Green when active */
-        }
-        .toggle-button:not(.active) {
-            background: #9E9E9E; /* Grey when inactive */
-        }
+        .toggle-button { padding: 8px 12px; border: none; border-radius: 5px; color: white; cursor: pointer; transition: background-color 0.3s ease; font-size: 0.9em; }
+        .toggle-button.active { background: #4CAF50; }
+        .toggle-button:not(.active) { background: #9E9E9E; }
 
-        /* Styling for song info display */
-        #song-info-display {
-            background-color: #f8f9fa;
-            padding: 10px 15px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            border: 1px solid #e0e0e0;
-        }
-        body.dark-mode #song-info-display { background-color: #4a542e; border-color: #7a845e; color: #fefae0; }
-        body.dark-mode-2 #song-info-display { background-color: #023059; border-color: #0f6090; color: #fefcfb; }
-        body.dark-mode-3 #song-info-display { background-color: #8a8a75; border-color: #b6a191; color: #ffe8d6; }
-
-        #current-song-title {
-            font-size: 1.4em; font-weight: bold; margin-top: 0; margin-bottom: 5px; color: #212529;
-        }
-        body.dark-mode #current-song-title { color: #fefae0; }
-        body.dark-mode-2 #current-song-title { color: #fefcfb; }
-        body.dark-mode-3 #current-song-title { color: #ffe8d6; }
-
-        #current-song-description {
-            font-size: 0.95em; margin-top: 0; margin-bottom: 0; line-height: 1.4; color: #495057;
-        }
-        body.dark-mode #current-song-description { color: #e0daca; }
-        body.dark-mode-2 #current-song-description { color: #e0e0df; }
-        body.dark-mode-3 #current-song-description { color: #f0d8c6; }
-
-        /* User songs section */
         #user-songs-section { margin-top: 15px; }
         #user-songs-section label { margin-right: 5px; }
 
     </style>
 </head>
 <body>
-    <div class="top-controls app-section"> <!-- Moved some top-level controls here -->
+    <div class="top-controls app-section">
         <button id="dark-mode-toggle" aria-label="Toggle dark mode">Dark Mode</button>
         <button id="guide-tones-toggle" class="toggle-button" aria-label="Toggle guide tones">Guide Tones Off</button>
         <button id="loop-selected-toggle" class="toggle-button" aria-label="Toggle measure looping">Looping Off</button>
@@ -472,6 +208,7 @@
         </div>
         <div class="fretboard-container">
             <div class="scale-display" id="scale-display">Select a progression and key.</div>
+            <div class="next-chord-display" id="next-chord-display"></div>
             <div class="controls">
                 <select class="tuning-select" id="chord-tuning" aria-label="Select guitar tuning">
                     <option value="standard">Standard (EADGBE)</option>
@@ -507,7 +244,7 @@
             <button id="start-stop" aria-label="Start or stop metronome">Start</button>
         </div>
         <div class="beats-container"></div>
-         <div class="volume-control"> <!-- Moved accent intensity here -->
+         <div class="volume-control">
             <label for="accent-intensity">Accent Intensity:</label>
             <input type="range" id="accent-intensity" min="1" max="2" step="0.1" value="1.5" aria-label="Accent intensity">
         </div>
@@ -520,31 +257,14 @@
             <p id="current-song-description"></p>
         </div>
         <h3>Create a progression or pick one from the dropdown. Choose which key and scale to go with it.</h3>
-        <div class="controls"> <!-- Wrapped selects in a controls div -->
+        <div class="controls">
             <label for="progression-select">Select Progression:</label>
             <select id="progression-select" aria-label="Select chord progression">
-                <option value="I V7">I-V7</option> <option value="jazz_blues">Jazz Blues</option> <option value="minor_blues">Minor Blues</option>
-                <option value="rhythm_changes">Rhythm Changes</option> <option value="2_5_1">II-V-I</option> <option value="6_2_5_1">VI-II-V-I</option>
-                <option value="minor_2_5_1">Minor iim-V7-im</option> <option value="dark_eyes">Dark Eyes</option>
-                <option value="ill_see_you_in_my_dreams">I'll See You In My Dreams</option> <option value="rose_room">Rose Room</option>
-                <option value="black_orpheus">Black Orpheus</option> <option value="all_the_things_you_are">All The Things You Are</option>
-                <option value="all_of_me">All of Me</option> <option value="stella_by_starlight">Stella By Starlight</option>
-                <option value="autumn_leaves">Autumn Leaves</option> <option value="summertime">Summertime</option>
-                <option value="girl_from_ipanema">Girl From Ipanema</option> <option value="coltrane_changes">Coltrane Changes</option>
-                <option value="bird_blues">Bird Blues</option> <option value="just_friends">Just Friends</option>
-                <option value="blue_bossa">Blue Bossa</option> <option value="on_green_dolphin_street">On Green Dolphin Street</option>
-                <option value="solar">Solar</option> <option value="misty">Misty</option>
-                <option value="days_of_wine_and_roses">Days of Wine and Roses</option> <option value="cherokee">Cherokee</option>
-                <option value="caravan">Caravan</option> <option value="nows_the_time">Now's The Time</option> <option value="tenor_madness">Tenor Madness</option>
+                <option value="I V7">I-V7</option> <option value="jazz_blues">Jazz Blues</option> <option value="minor_blues">Minor Blues</option> <option value="rhythm_changes">Rhythm Changes</option> <option value="2_5_1">II-V-I</option> <option value="6_2_5_1">VI-II-V-I</option> <option value="minor_2_5_1">Minor iim-V7-im</option> <option value="dark_eyes">Dark Eyes</option> <option value="ill_see_you_in_my_dreams">I'll See You In My Dreams</option> <option value="rose_room">Rose Room</option> <option value="black_orpheus">Black Orpheus</option> <option value="all_the_things_you_are">All The Things You Are</option> <option value="all_of_me">All of Me</option> <option value="stella_by_starlight">Stella By Starlight</option> <option value="autumn_leaves">Autumn Leaves</option> <option value="summertime">Summertime</option> <option value="girl_from_ipanema">Girl From Ipanema</option> <option value="coltrane_changes">Coltrane Changes</option> <option value="bird_blues">Bird Blues</option> <option value="just_friends">Just Friends</option> <option value="blue_bossa">Blue Bossa</option> <option value="on_green_dolphin_street">On Green Dolphin Street</option> <option value="solar">Solar</option> <option value="misty">Misty</option> <option value="days_of_wine_and_roses">Days of Wine and Roses</option> <option value="cherokee">Cherokee</option> <option value="caravan">Caravan</option> <option value="nows_the_time">Now's The Time</option> <option value="tenor_madness">Tenor Madness</option>
             </select>
             <label for="keySelect">Select Key:</label>
             <select id="keySelect" aria-label="Select key">
-              <option value="C">C</option> <option value="Cm">Cm</option> <option value="Db">Db</option> <option value="Dbm">Dbm</option>
-              <option value="D">D</option> <option value="Dm">Dm</option> <option value="Eb">Eb</option> <option value="Ebm">Ebm</option>
-              <option value="E">E</option> <option value="Em">Em</option> <option value="F">F</option> <option value="Fm">Fm</option>
-              <option value="Gb">Gb</option> <option value="Gbm">Gbm</option> <option value="G">G</option> <option value="Gm">Gm</option>
-              <option value="Ab">Ab</option> <option value="Abm">Abm</option> <option value="A">A</option> <option value="Am">Am</option>
-              <option value="Bb">Bb</option> <option value="Bbm">Bbm</option> <option value="B">B</option> <option value="Bm">Bm</option>
+              <option value="C">C</option> <option value="Cm">Cm</option> <option value="Db">Db</option> <option value="Dbm">Dbm</option> <option value="D">D</option> <option value="Dm">Dm</option> <option value="Eb">Eb</option> <option value="Ebm">Ebm</option> <option value="E">E</option> <option value="Em">Em</option> <option value="F">F</option> <option value="Fm">Fm</option> <option value="Gb">Gb</option> <option value="Gbm">Gbm</option> <option value="G">G</option> <option value="Gm">Gm</option> <option value="Ab">Ab</option> <option value="Abm">Abm</option> <option value="A">A</option> <option value="Am">Am</option> <option value="Bb">Bb</option> <option value="Bbm">Bbm</option> <option value="B">B</option> <option value="Bm">Bm</option>
             </select>
         </div>
         <div id="user-songs-section" class="controls">
@@ -581,7 +301,6 @@
 </div>
 
     <script>
-
 // ==================================
 // === UTILITY FUNCTIONS ==========
 // ==================================
@@ -598,9 +317,8 @@ const ALL_NOTES_FOR_SAMPLES = ['a', 'as', 'b', 'c', 'cs', 'd', 'ds', 'e', 'f', '
 const OCTAVES_FOR_SAMPLES = [2, 3, 4, 5];
 const PLAYBACK_OCTAVES = [3, 4];
 const FILE_FORMAT = 'wav';
-// *** Corrected Placement for getSampleFileName ***
+// *** Function moved BEFORE use ***
 function getSampleFileName(note, octave) { return `${note}${octave}.${FILE_FORMAT}`; }
-// *** End Corrected Placement ***
 const SAMPLE_NOTE_MAP = { 'C':'c', 'Db':'cs', 'C#':'cs', 'D':'d', 'Eb':'ds', 'D#':'ds', 'E':'e', 'F':'f', 'Gb':'fs', 'F#':'fs', 'G':'g', 'Ab':'gs', 'G#':'gs', 'A':'a', 'Bb':'as', 'A#':'as', 'B':'b', 'CS':'cs', 'DS':'ds', 'FS':'fs', 'GS':'gs', 'AS':'as' };
 const FRETBOARD_NOTES_OCTAVES = { string1: ['E4', 'F4', 'Fs4', 'G4', 'Gs4', 'A4', 'As4', 'B4', 'C5', 'Cs5', 'D5', 'Ds5', 'E5'], string2: ['B3', 'C4', 'Cs4', 'D4', 'Ds4', 'E4', 'F4', 'Fs4', 'G4', 'Gs4', 'A4', 'As4', 'B4'], string3: ['G3', 'Gs3', 'A3', 'As3', 'B3', 'C4', 'Cs4', 'D4', 'Ds4', 'E4', 'F4', 'Fs4', 'G4'], string4: ['D3', 'Ds3', 'E3', 'F3', 'Fs3', 'G3', 'Gs3', 'A3', 'As3', 'B3', 'C4', 'Cs4', 'D4'], string5: ['A2', 'As2', 'B2', 'C3', 'Cs3', 'D3', 'Ds3', 'E3', 'F3', 'Fs3', 'G3', 'Gs3', 'A3'], string6: ['E2', 'F2', 'Fs2', 'G2', 'Gs2', 'A2', 'As2', 'B2', 'C3', 'Cs3', 'D3', 'Ds3', 'E3'] };
 const SCALES = { major: [0,2,4,5,7,9,11], minor: [0,2,3,5,7,8,10], harmonicMinor: [0,2,3,5,7,8,11], melodicMinor: [0,2,3,5,7,9,11], dorian: [0,2,3,5,7,9,10], phrygian: [0,1,3,5,7,8,10], lydian: [0,2,4,6,7,9,11], mixolydian: [0,2,4,5,7,9,10], locrian: [0,1,3,5,6,8,10], bebopDominant: [0,2,4,5,7,9,10,11], bebopMajor: [0,2,4,5,7,8,9,11], bebopDorian: [0,2,3,4,5,7,9,10], bebopPhrygian: [0,1,2,3,5,7,8,10], altered: [0,1,3,4,6,8,10], lydianDominant: [0,2,4,6,7,9,10], diminishedWH: [0,2,3,5,6,8,9,11], diminishedHW: [0,1,3,4,6,7,9,10], wholeTone: [0,2,4,6,8,10], pentatonicMajor: [0,2,4,7,9], pentatonicMinor: [0,3,5,7,10], blues: [0,3,5,6,7,10], majorBlues: [0,2,3,4,7,9], harmonicMajor: [0,2,4,5,7,8,11], doubleHarmonic: [0,1,4,5,7,8,11], enigmatic:[0,1,4,6,8,10,11], persian:[0,1,4,5,6,8,11], arabic:[0,2,4,5,6,8,10], japanese:[0,2,5,7,8], egyptian:[0,2,5,7,10] };
@@ -618,7 +336,7 @@ let currentDrumSetIndex = 0;
 // --- UI Management ---
 const UI = {
     elements: {},
-    init() { this.elements = { chordFretboard:document.getElementById('chord-fretboard'), measures:document.getElementById('measures'), tempoDisplay:document.getElementById('tempo-display'), startStopButton:document.getElementById('start-stop'), progressionSelect:document.getElementById('progression-select'), keySelect:document.getElementById('keySelect'), scaleDisplay:document.getElementById('scale-display'), chordTuning:document.getElementById('chord-tuning'), timeSignature:document.getElementById('time-signature'), soundType:document.getElementById('sound-type'), metronomeVolume:document.getElementById('metronome-volume'), tempo:document.getElementById('tempo'), tapTempo:document.getElementById('tap-tempo'), chordFretboardVolume:document.getElementById('chord-fretboard-volume'), chordVolume:document.getElementById('chord-volume'), chordsEnabled:document.getElementById('chordsEnabled'), fretboardsGrid:document.querySelector('.fretboards-grid'), darkModeToggle:document.getElementById('dark-mode-toggle'), accentIntensity:document.getElementById('accent-intensity'), drumSetToggleBtn:document.getElementById('drumSetToggleBtn'), reverbDial:document.getElementById('reverb-dial'), reverbDialValue:document.getElementById('reverb-dial-value'), currentSongTitle:document.getElementById('current-song-title'), currentSongDescription:document.getElementById('current-song-description'), userProgressionSelect:document.getElementById('user-progression-select'), saveProgressionButton:document.getElementById('save-progression-button'), deleteUserSongButton:document.getElementById('delete-user-song-button'), guideTonesToggle:document.getElementById('guide-tones-toggle'), loopSelectedToggle:document.getElementById('loop-selected-toggle') }; Object.entries(this.elements).forEach(([k,el])=> { if(!el && k!=='reverbDialValue') console.warn(`Missing DOM: ${k}`);}); log("UI elements cached."); }
+    init() { this.elements = { chordFretboard:document.getElementById('chord-fretboard'), measures:document.getElementById('measures'), tempoDisplay:document.getElementById('tempo-display'), startStopButton:document.getElementById('start-stop'), progressionSelect:document.getElementById('progression-select'), keySelect:document.getElementById('keySelect'), scaleDisplay:document.getElementById('scale-display'), nextChordDisplay:document.getElementById('next-chord-display'), chordTuning:document.getElementById('chord-tuning'), timeSignature:document.getElementById('time-signature'), soundType:document.getElementById('sound-type'), metronomeVolume:document.getElementById('metronome-volume'), tempo:document.getElementById('tempo'), tapTempo:document.getElementById('tap-tempo'), chordFretboardVolume:document.getElementById('chord-fretboard-volume'), chordVolume:document.getElementById('chord-volume'), chordsEnabled:document.getElementById('chordsEnabled'), fretboardsGrid:document.querySelector('.fretboards-grid'), darkModeToggle:document.getElementById('dark-mode-toggle'), accentIntensity:document.getElementById('accent-intensity'), drumSetToggleBtn:document.getElementById('drumSetToggleBtn'), reverbDial:document.getElementById('reverb-dial'), reverbDialValue:document.getElementById('reverb-dial-value'), currentSongTitle:document.getElementById('current-song-title'), currentSongDescription:document.getElementById('current-song-description'), userProgressionSelect:document.getElementById('user-progression-select'), saveProgressionButton:document.getElementById('save-progression-button'), deleteUserSongButton:document.getElementById('delete-user-song-button'), guideTonesToggle:document.getElementById('guide-tones-toggle'), loopSelectedToggle:document.getElementById('loop-selected-toggle') }; Object.entries(this.elements).forEach(([k,el])=> { if(!el && k!=='reverbDialValue') console.warn(`Missing DOM: ${k}`);}); log("UI elements cached."); }
 };
 
 // --- Music Theory Helpers ---
@@ -697,29 +415,30 @@ async function playBeat() {
     if (AppState.currentBeat === 0) {
         if (AppState.loopingActive && AppState.loopStartMeasure !== -1 && AppState.loopEndMeasure !== -1) { AppState.currentMeasure++; if (AppState.currentMeasure > AppState.loopEndMeasure) AppState.currentMeasure = AppState.loopStartMeasure; }
         else if (measures.length > 0) { AppState.currentMeasure = (AppState.currentMeasure + 1) % measures.length; }
+        // Update next chord display AFTER measure potentially changes
+        updateNextChordDisplay(); // Moved here
         if (AppState.guideTonesActive) highlightGuideTones();
     }
-}
-async function startPlayback() { try { await AudioContextManager.ensureAudioContext(); if (AppState.isPlaying) return; const measures = UI.elements.measures.children; const tsn = parseInt(UI.elements.timeSignature.value); let ims = (60 / AppState.tempo) * 1000; if (tsn === 4) ims /= 2; AppState.currentBeat = 0; if (!AppState.intervalId) { AppState.currentMeasure = (AppState.loopingActive && AppState.loopStartMeasure !== -1) ? AppState.loopStartMeasure : 0; await playBeat(); const tbuid = document.querySelectorAll('.beat').length; if (tbuid > 0) { AppState.currentBeat = (AppState.currentBeat + 1) % tbuid; if (AppState.currentBeat === 0) { if (AppState.loopingActive && AppState.loopStartMeasure !== -1 && AppState.loopEndMeasure !== -1) { AppState.currentMeasure++; if (AppState.currentMeasure > AppState.loopEndMeasure) AppState.currentMeasure = AppState.loopStartMeasure; } else if (measures.length > 0) { AppState.currentMeasure = (AppState.currentMeasure + 1) % measures.length; } } } } clearInterval(AppState.intervalId); AppState.intervalId = setInterval(async () => { await playBeat(); }, ims); AppState.updateState({ isPlaying: true }); UI.elements.startStopButton.textContent = 'Stop'; log("Playback started."); } catch (e) { console.error('Failed start playback:', e); stopPlayback(); alert("Error starting playback."); } }
-function stopPlayback() { clearInterval(AppState.intervalId); AppState.intervalId = null; AppState.updateState({ isPlaying: false }); document.querySelectorAll('.beat.active').forEach(b => b.classList.remove('active')); document.querySelectorAll('.measure.active').forEach(m => m.classList.remove('active')); if (AudioContextManager.currentChordGain && AudioContextManager.context) { try { const now = AudioContextManager.context.currentTime; if (AudioContextManager.currentChordGain.gain) { AudioContextManager.currentChordGain.gain.setValueAtTime(AudioContextManager.currentChordGain.gain.value, now); AudioContextManager.currentChordGain.gain.exponentialRampToValueAtTime(0.001, now + 0.1); } } catch (rampError) { console.warn("Gain ramp error:", rampError); } finally { AudioContextManager.currentChordGain = null; } } UI.elements.startStopButton.textContent = 'Start'; log("Playback stopped."); }
+} // --- End of playBeat function ---
 
-// --- Progression Management ---
-function loadProgression(progName, overrideKey = null, isUserSong = false) { const sTe = UI.elements.currentSongTitle, sDe = UI.elements.currentSongDescription; let pD; if (isUserSong) { const uS=JSON.parse(localStorage.getItem('userBebopProgressions')||'{}'); pD=uS[progName]; } else { pD=progressions[progName]; } if (!progName||!pD) { currentProgressionName=""; currentFunctionalProgression=[]; UI.elements.measures.innerHTML='<p>Select.</p>'; if(sTe)sTe.textContent=""; if(sDe)sDe.textContent=""; return; } currentProgressionName=progName; currentFunctionalProgression=pD.progression; const aK=overrideKey||pD.defaultKey||"C"; if(sTe)sTe.textContent=pD.displayName||progName.replace(/_/g,' '); if(sDe)sDe.textContent=pD.description||""; if(UI.elements.keySelect)UI.elements.keySelect.value=aK; UI.elements.measures.innerHTML=''; resetLoop(); currentFunctionalProgression.forEach((rcs,idx)=>{ const pc=parseRomanNumeralToAbsoluteChord(rcs,aK); const md=document.createElement('div'); md.className='measure'; md.draggable=true; md.dataset.measureIndex=idx; md.innerHTML=`<span class="measure-number" data-measure-idx="${idx}">${idx+1}</span><div class="chord-controls"><select class="root-note">${createKeyOptions(pc.root)}</select><select class="chord-quality">${createQualityOptions(pc.quality)}</select></div><div class="scale-controls"><select class="second-key">${createKeyOptions(pc.root)}</select><select class="scale-select">${createScaleOptions(suggestScaleForQuality(pc.quality))}</select></div>`; UI.elements.measures.appendChild(md); md.querySelectorAll('select').forEach(sel=>sel.addEventListener('change',()=>handleMeasureControlChange(md))); md.addEventListener('click',(e)=>{if(e.target.tagName!=='SELECT')toggleMeasureLoopSelection(idx);}); md.addEventListener('dragstart',dragStart); }); updateMeasureNumbers(); addFirstChordListener(); log(`Loaded ${isUserSong?'user':'std'}: ${progName} in ${aK}`); }
-function updateProgressionKey(newKey) { const st=UI.elements.currentSongTitle, sd=UI.elements.currentSongDescription; if(!currentFunctionalProgression||currentFunctionalProgression.length===0){if(UI.elements.measures.children.length===0){const t=TUNINGS[UI.elements.chordTuning.value];updateFretboardNotes(UI.elements.chordFretboard,newKey,'major',t);if(UI.elements.scaleDisplay)UI.elements.scaleDisplay.textContent=`${newKey} Major`;if(st)st.textContent="";if(sd)sd.textContent="";}return;} Array.from(UI.elements.measures.children).forEach((me,ix)=>{if(ix<currentFunctionalProgression.length){const rcs=currentFunctionalProgression[ix];const pc=parseRomanNumeralToAbsoluteChord(rcs,newKey);const rs=me.querySelector('.root-note'),qs=me.querySelector('.chord-quality'),sks=me.querySelector('.second-key'),ss=me.querySelector('.scale-select');if(rs)rs.value=pc.root;if(qs)qs.value=pc.quality;if(sks)sks.value=pc.root;if(ss)ss.value=suggestScaleForQuality(pc.quality);}});addFirstChordListener();log(`Progression '${currentProgressionName}' re-keyed to: ${newKey}`);}
-function addMeasure(r='C',q='maj7',sr='C',st='major'){const mc=UI.elements.measures.children.length;const md=document.createElement('div');md.className='measure';md.draggable=true;md.dataset.measureIndex=mc;md.innerHTML=`<span class="measure-number" data-measure-idx="${mc}">${mc+1}</span><div class="chord-controls"><select class="root-note">${createKeyOptions(r)}</select><select class="chord-quality">${createQualityOptions(q)}</select></div><div class="scale-controls"><select class="second-key">${createKeyOptions(sr)}</select><select class="scale-select">${createScaleOptions(st)}</select></div>`;UI.elements.measures.appendChild(md);md.querySelectorAll('select').forEach(sel=>sel.addEventListener('change',()=>handleMeasureControlChange(md)));md.addEventListener('click',(e)=>{if(e.target.tagName!=='SELECT')toggleMeasureLoopSelection(mc);});md.addEventListener('dragstart',dragStart);updateMeasureNumbers();if(mc===0)addFirstChordListener();log(`Added measure ${mc+1}`);}
-function removeMeasure(){const m=UI.elements.measures.children;if(m.length>0){const removedIdx=m.length-1;if(AppState.loopStartMeasure===removedIdx||AppState.loopEndMeasure===removedIdx)resetLoop();m[m.length-1].remove();updateMeasureNumbers();if(m.length>0)addFirstChordListener();else if(UI.elements.scaleDisplay)UI.elements.scaleDisplay.textContent="";log('Removed last measure');}}
+async function startPlayback() { try { await AudioContextManager.ensureAudioContext(); if (AppState.isPlaying) return; const measures = UI.elements.measures.children; const tsn = parseInt(UI.elements.timeSignature.value); let ims = (60 / AppState.tempo) * 1000; if (tsn === 4) ims /= 2; AppState.currentBeat = 0; if (!AppState.intervalId) { AppState.currentMeasure = (AppState.loopingActive && AppState.loopStartMeasure !== -1) ? AppState.loopStartMeasure : 0; await playBeat(); const tbuid = document.querySelectorAll('.beat').length; if (tbuid > 0) { AppState.currentBeat = (AppState.currentBeat + 1) % tbuid; if (AppState.currentBeat === 0) { if (AppState.loopingActive && AppState.loopStartMeasure !== -1 && AppState.loopEndMeasure !== -1) { AppState.currentMeasure++; if (AppState.currentMeasure > AppState.loopEndMeasure) AppState.currentMeasure = AppState.loopStartMeasure; } else if (measures.length > 0) { AppState.currentMeasure = (AppState.currentMeasure + 1) % measures.length; } } } } clearInterval(AppState.intervalId); AppState.intervalId = setInterval(async () => { await playBeat(); }, ims); AppState.updateState({ isPlaying: true }); UI.elements.startStopButton.textContent = 'Stop'; log("Playback started."); } catch (e) { console.error('Failed start playback:', e); stopPlayback(); alert("Error starting playback."); } }
+function stopPlayback() { clearInterval(AppState.intervalId); AppState.intervalId = null; AppState.updateState({ isPlaying: false }); document.querySelectorAll('.beat.active').forEach(b => b.classList.remove('active')); document.querySelectorAll('.measure.active').forEach(m => m.classList.remove('active')); if (AudioContextManager.currentChordGain && AudioContextManager.context) { try { const now = AudioContextManager.context.currentTime; if (AudioContextManager.currentChordGain.gain) { AudioContextManager.currentChordGain.gain.setValueAtTime(AudioContextManager.currentChordGain.gain.value, now); AudioContextManager.currentChordGain.gain.exponentialRampToValueAtTime(0.001, now + 0.1); } } catch (rampError) { console.warn("Gain ramp error:", rampError); } finally { AudioContextManager.currentChordGain = null; } } if (UI.elements.nextChordDisplay) UI.elements.nextChordDisplay.textContent = ""; UI.elements.startStopButton.textContent = 'Start'; log("Playback stopped."); }
+
+// --- Progression Management & UI Updates ---
+function updateNextChordDisplay(currentMeasureIndex = AppState.currentMeasure) { const nextChordEl = UI.elements.nextChordDisplay; if (!nextChordEl) return; const measures = UI.elements.measures.children; if (measures.length < 2) { nextChordEl.textContent = ""; return; } let nextMeasureIdx; if (AppState.loopingActive && AppState.loopStartMeasure !== -1 && AppState.loopEndMeasure !== -1) { nextMeasureIdx = currentMeasureIndex + 1; if (nextMeasureIdx > AppState.loopEndMeasure) nextMeasureIdx = AppState.loopStartMeasure; nextMeasureIdx = Math.max(AppState.loopStartMeasure, Math.min(AppState.loopEndMeasure, nextMeasureIdx)); } else { nextMeasureIdx = (currentMeasureIndex + 1) % measures.length; } const nextMeasureElement = measures[nextMeasureIdx]; if (!nextMeasureElement) { nextChordEl.textContent = ""; return; } const root = nextMeasureElement.querySelector('.root-note')?.value, qualityRaw = nextMeasureElement.querySelector('.chord-quality')?.value; if (root && qualityRaw) { let qualityDisplay = qualityRaw; const qOpt = nextMeasureElement.querySelector(`.chord-quality option[value="${qualityRaw}"]`); if (qOpt) qualityDisplay = qOpt.textContent; else { if (qualityRaw==='dom7') qualityDisplay='7'; else if(qualityRaw==='maj7') qualityDisplay='Maj7'; else if(qualityRaw==='min7') qualityDisplay='m7'; else if(qualityRaw==='min7b5') qualityDisplay='m7ø5'; else if(qualityRaw==='dim7') qualityDisplay='°7'; } nextChordEl.textContent = `Next: ${root}${qualityDisplay}`; } else { nextChordEl.textContent = ""; } }
+function loadProgression(progName, overrideKey = null, isUserSong = false) { const sTe = UI.elements.currentSongTitle, sDe = UI.elements.currentSongDescription; let pD; if (isUserSong) { const uS=JSON.parse(localStorage.getItem('userBebopProgressions')||'{}'); pD=uS[progName]; } else { pD=progressions[progName]; } if (!progName||!pD) { currentProgressionName=""; currentFunctionalProgression=[]; UI.elements.measures.innerHTML='<p>Select.</p>'; if(sTe)sTe.textContent=""; if(sDe)sDe.textContent=""; return; } currentProgressionName=progName; currentFunctionalProgression=pD.progression; const aK=overrideKey||pD.defaultKey||"C"; if(sTe)sTe.textContent=pD.displayName||progName.replace(/_/g,' '); if(sDe)sDe.textContent=pD.description||""; if(UI.elements.keySelect)UI.elements.keySelect.value=aK; UI.elements.measures.innerHTML=''; resetLoop(); currentFunctionalProgression.forEach((rcs,idx)=>{ const pc=parseRomanNumeralToAbsoluteChord(rcs,aK); const md=document.createElement('div'); md.className='measure'; /* Removed draggable=true */ md.dataset.measureIndex=idx; md.innerHTML=`<span class="measure-number" data-measure-idx="${idx}">${idx+1}</span><div class="chord-controls"><select class="root-note">${createKeyOptions(pc.root)}</select><select class="chord-quality">${createQualityOptions(pc.quality)}</select></div><div class="scale-controls"><select class="second-key">${createKeyOptions(pc.root)}</select><select class="scale-select">${createScaleOptions(suggestScaleForQuality(pc.quality))}</select></div>`; UI.elements.measures.appendChild(md); md.querySelectorAll('select').forEach(sel=>sel.addEventListener('change',()=>handleMeasureControlChange(md))); md.addEventListener('click',(e)=>{if(e.target.tagName!=='SELECT')toggleMeasureLoopSelection(idx);}); /* Removed dragstart listener */ }); updateMeasureNumbers(); addFirstChordListener(); updateNextChordDisplay(0); log(`Loaded ${isUserSong?'user':'std'}: ${progName} in ${aK}`); }
+function updateProgressionKey(newKey) { const st=UI.elements.currentSongTitle, sd=UI.elements.currentSongDescription; if(!currentFunctionalProgression||currentFunctionalProgression.length===0){if(UI.elements.measures.children.length===0){const t=TUNINGS[UI.elements.chordTuning.value];updateFretboardNotes(UI.elements.chordFretboard,newKey,'major',t);if(UI.elements.scaleDisplay)UI.elements.scaleDisplay.textContent=`${newKey} Major`;if(st)st.textContent="";if(sd)sd.textContent=""; updateNextChordDisplay();}return;} Array.from(UI.elements.measures.children).forEach((me,ix)=>{if(ix<currentFunctionalProgression.length){const rcs=currentFunctionalProgression[ix];const pc=parseRomanNumeralToAbsoluteChord(rcs,newKey);const rs=me.querySelector('.root-note'),qs=me.querySelector('.chord-quality'),sks=me.querySelector('.second-key'),ss=me.querySelector('.scale-select');if(rs)rs.value=pc.root;if(qs)qs.value=pc.quality;if(sks)sks.value=pc.root;if(ss)ss.value=suggestScaleForQuality(pc.quality);}});addFirstChordListener();updateNextChordDisplay();log(`Progression '${currentProgressionName}' re-keyed to: ${newKey}`);}
+function addMeasure(r='C',q='maj7',sr='C',st='major'){const mc=UI.elements.measures.children.length;const md=document.createElement('div');md.className='measure'; /* Removed draggable=true */ md.dataset.measureIndex=mc;md.innerHTML=`<span class="measure-number" data-measure-idx="${mc}">${mc+1}</span><div class="chord-controls"><select class="root-note">${createKeyOptions(r)}</select><select class="chord-quality">${createQualityOptions(q)}</select></div><div class="scale-controls"><select class="second-key">${createKeyOptions(sr)}</select><select class="scale-select">${createScaleOptions(st)}</select></div>`;UI.elements.measures.appendChild(md);md.querySelectorAll('select').forEach(sel=>sel.addEventListener('change',()=>handleMeasureControlChange(md)));md.addEventListener('click',(e)=>{if(e.target.tagName!=='SELECT')toggleMeasureLoopSelection(mc);}); /* Removed dragstart listener */ updateMeasureNumbers();if(mc===0)addFirstChordListener();updateNextChordDisplay();log(`Added measure ${mc+1}`);}
+function removeMeasure(){const m=UI.elements.measures.children;if(m.length>0){const removedIdx=m.length-1;if(AppState.loopStartMeasure===removedIdx||AppState.loopEndMeasure===removedIdx)resetLoop();m[m.length-1].remove();updateMeasureNumbers();if(m.length>0)addFirstChordListener();else if(UI.elements.scaleDisplay)UI.elements.scaleDisplay.textContent="";updateNextChordDisplay();log('Removed last measure');}}
 function updateMeasureNumbers(){Array.from(UI.elements.measures.children).forEach((m,i)=>{const n=m.querySelector('.measure-number');if(n){n.textContent=i+1; m.dataset.measureIndex = i; n.dataset.measureIdx = i;}});}
-function dragStart(e){e.dataTransfer.setData('text/plain',e.target.dataset.measureIndex);setTimeout(()=>e.target.classList.add('dragging'),0);}
-function dragOver(e){e.preventDefault();}
-function drop(e){e.preventDefault();const di=parseInt(e.dataTransfer.getData('text/plain'));const te=e.target.closest('.measure');if(!te)return;const ti=parseInt(te.dataset.measureIndex);if(di===ti||isNaN(di)||isNaN(ti))return;const ma=Array.from(UI.elements.measures.children);const dm=ma[di];if(di<ti)te.after(dm);else te.before(dm);updateMeasureNumbers();if(currentFunctionalProgression.length>0&&di<currentFunctionalProgression.length&&ti<currentFunctionalProgression.length){const movedItem=currentFunctionalProgression.splice(di,1)[0];if(movedItem)currentFunctionalProgression.splice(ti,0,movedItem);}addFirstChordListener();resetLoop();log(`Moved measure ${di+1} to ${ti+1}`);}
-function dragEnd(e){e.target.classList.remove('dragging');}
-function handleMeasureControlChange(me) { const rs=me.querySelector('.root-note'),qs=me.querySelector('.chord-quality'),sks=me.querySelector('.second-key'),ss=me.querySelector('.scale-select');if(rs&&qs&&sks&&ss){sks.value=rs.value;ss.value=suggestScaleForQuality(qs.value);}if(me===UI.elements.measures.firstElementChild)addFirstChordListener();const mix=Array.from(UI.elements.measures.children).indexOf(me);if(AppState.isPlaying&&mix===AppState.currentMeasure){const t=TUNINGS[UI.elements.chordTuning.value];updateFretboardNotes(UI.elements.chordFretboard,sks.value,ss.value,t);}}
+function handleMeasureControlChange(me) { const rs=me.querySelector('.root-note'),qs=me.querySelector('.chord-quality'),sks=me.querySelector('.second-key'),ss=me.querySelector('.scale-select');if(rs&&qs&&sks&&ss){sks.value=rs.value;ss.value=suggestScaleForQuality(qs.value);}if(me===UI.elements.measures.firstElementChild)addFirstChordListener();updateNextChordDisplay(); const mix=Array.from(UI.elements.measures.children).indexOf(me);if(AppState.isPlaying&&mix===AppState.currentMeasure){const t=TUNINGS[UI.elements.chordTuning.value];updateFretboardNotes(UI.elements.chordFretboard,sks.value,ss.value,t);}}
+// Drag & Drop Functions REMOVED: dragStart, dragOver, drop, dragEnd
 
 // --- User Progression Save/Load ---
 function saveCurrentProgression() { const m=Array.from(UI.elements.measures.children);if(m.length===0){alert("No progression to save!");return;} let pn=prompt("Name:",currentProgressionName||"My Song");if(!pn||pn.trim()===""){alert("Save cancelled.");return;} pn=pn.trim(); const pts=m.map(me=>{const mi=parseInt(me.dataset.measureIndex);if(currentFunctionalProgression&&mi<currentFunctionalProgression.length&&!isUserSongCurrentlyLoaded()){return currentFunctionalProgression[mi];} const r=me.querySelector('.root-note').value, q=me.querySelector('.chord-quality').value; return`${r}${q}`;}); const uS=JSON.parse(localStorage.getItem('userBebopProgressions')||'{}'); uS[pn]={progression:pts,defaultKey:UI.elements.keySelect.value,description:`Saved ${new Date().toLocaleDateString()}`,displayName:pn}; localStorage.setItem('userBebopProgressions',JSON.stringify(uS)); populateUserSongsDropdown(); alert(`"${pn}" saved!`); log(`Saved: ${pn}`); }
 function isUserSongCurrentlyLoaded() { const uS=JSON.parse(localStorage.getItem('userBebopProgressions')||'{}'); return uS.hasOwnProperty(currentProgressionName); }
 function populateUserSongsDropdown() { const sE=UI.elements.userProgressionSelect;sE.innerHTML='<option value="">-- Select a saved song --</option>'; const uS=JSON.parse(localStorage.getItem('userBebopProgressions')||'{}'); Object.keys(uS).sort().forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=uS[n].displayName||n;sE.appendChild(o);}); }
-function deleteSelectedUserSong() { const ssn=UI.elements.userProgressionSelect.value;if(!ssn){alert("Select song to delete.");return;} if(confirm(`Delete "${ssn}"?`)){ const uS=JSON.parse(localStorage.getItem('userBebopProgressions')||'{}');delete uS[ssn]; localStorage.setItem('userBebopProgressions',JSON.stringify(uS)); populateUserSongsDropdown(); if(currentProgressionName===ssn){UI.elements.measures.innerHTML='';UI.elements.currentSongTitle.textContent='';UI.elements.currentSongDescription.textContent='';currentProgressionName="";currentFunctionalProgression=[];} alert(`"${ssn}" deleted.`);log(`Deleted: ${ssn}`);}}
+function deleteSelectedUserSong() { const ssn=UI.elements.userProgressionSelect.value;if(!ssn){alert("Select song to delete.");return;} if(confirm(`Delete "${ssn}"?`)){ const uS=JSON.parse(localStorage.getItem('userBebopProgressions')||'{}');delete uS[ssn]; localStorage.setItem('userBebopProgressions',JSON.stringify(uS)); populateUserSongsDropdown(); if(currentProgressionName===ssn){UI.elements.measures.innerHTML='';UI.elements.currentSongTitle.textContent='';UI.elements.currentSongDescription.textContent='';currentProgressionName="";currentFunctionalProgression=[]; resetLoop();} alert(`"${ssn}" deleted.`);log(`Deleted: ${ssn}`);}} // Also reset loop if deleted song was active
 
 // --- Looper Functionality ---
 function toggleMeasureLoopSelection(mIdx) { if(!AppState.loopingActive)toggleLoopingMode(); const me=UI.elements.measures.children[mIdx];if(!me)return; me.classList.toggle('loop-selected'); const si=Array.from(UI.elements.measures.children).map((m,i)=>m.classList.contains('loop-selected')?i:-1).filter(i=>i!==-1).sort((a,b)=>a-b); if(si.length>0){AppState.loopStartMeasure=si[0];AppState.loopEndMeasure=si[si.length-1]; Array.from(UI.elements.measures.children).forEach(m=>m.classList.remove('loop-selected')); for(let i=AppState.loopStartMeasure;i<=AppState.loopEndMeasure;i++){if(UI.elements.measures.children[i])UI.elements.measures.children[i].classList.add('loop-selected');}}else{resetLoop();} log(`Loop: ${AppState.loopStartMeasure} to ${AppState.loopEndMeasure}`);}
@@ -736,7 +455,7 @@ function initializeFretFlow() { const fg=UI.elements.fretboardsGrid;if(!fg)retur
 
 // --- Event Handling Helpers ---
 function addFirstChordListener() { const fm=UI.elements.measures.firstElementChild;if(fm){const srs=fm.querySelector('.scale-controls .second-key');const sts=fm.querySelector('.scale-controls .scale-select');const ts=UI.elements.chordTuning;const u=()=>{if(srs&&sts&&ts){const t=TUNINGS[ts.value];updateFretboardNotes(UI.elements.chordFretboard,srs.value,sts.value,t);}};u();}else{const t=TUNINGS[UI.elements.chordTuning.value];updateFretboardNotes(UI.elements.chordFretboard,"C","major",t);if(UI.elements.scaleDisplay)UI.elements.scaleDisplay.textContent="C Major (Default)";}}
-function handleMeasureControlChange(me) { const rs=me.querySelector('.root-note'),qs=me.querySelector('.chord-quality'),sks=me.querySelector('.second-key'),ss=me.querySelector('.scale-select');if(rs&&qs&&sks&&ss){sks.value=rs.value;ss.value=suggestScaleForQuality(qs.value);}if(me===UI.elements.measures.firstElementChild)addFirstChordListener();const mix=Array.from(UI.elements.measures.children).indexOf(me);if(AppState.isPlaying&&mix===AppState.currentMeasure){const t=TUNINGS[UI.elements.chordTuning.value];updateFretboardNotes(UI.elements.chordFretboard,sks.value,ss.value,t);}}
+function handleMeasureControlChange(me) { const rs=me.querySelector('.root-note'),qs=me.querySelector('.chord-quality'),sks=me.querySelector('.second-key'),ss=me.querySelector('.scale-select');if(rs&&qs&&sks&&ss){sks.value=rs.value;ss.value=suggestScaleForQuality(qs.value);}if(me===UI.elements.measures.firstElementChild)addFirstChordListener();updateNextChordDisplay();const mix=Array.from(UI.elements.measures.children).indexOf(me);if(AppState.isPlaying&&mix===AppState.currentMeasure){const t=TUNINGS[UI.elements.chordTuning.value];updateFretboardNotes(UI.elements.chordFretboard,sks.value,ss.value,t);}}
 
 // --- Event Listeners Setup ---
 function setupEventListeners() {
@@ -758,30 +477,25 @@ function setupEventListeners() {
     if (UI.elements.deleteUserSongButton) UI.elements.deleteUserSongButton.addEventListener('click', deleteSelectedUserSong);
     if (UI.elements.guideTonesToggle) UI.elements.guideTonesToggle.addEventListener('click', toggleGuideTones);
     if (UI.elements.loopSelectedToggle) UI.elements.loopSelectedToggle.addEventListener('click', toggleLoopingMode);
-    UI.elements.measures.addEventListener('dragover', dragOver);
-    UI.elements.measures.addEventListener('drop', drop);
+    // Removed Drag/Drop listeners for UI.elements.measures
     log("Event listeners set up.");
 }
 
 // --- Initialize App ---
 async function initializeApp() {
     UI.init();
-    // Define functions FIRST
-    createBeats();
+    createBeats(); // MUST be after UI.init()
     const initTuning = TUNINGS[UI.elements.chordTuning.value] || TUNINGS.standard;
-    createFretboard(UI.elements.chordFretboard, initTuning);
-    populateUserSongsDropdown();
+    createFretboard(UI.elements.chordFretboard, initTuning); // MUST be after UI.init()
+    populateUserSongsDropdown(); // MUST be after UI.init()
     const initProg = UI.elements.progressionSelect.value || Object.keys(progressions)[0];
     const initKey = UI.elements.keySelect.value || progressions[initProg]?.defaultKey || "C";
-    loadProgression(initProg, initKey, false);
-    initializeFretFlow();
-    setupEventListeners(); // Setup listeners AFTER other UI setup
+    loadProgression(initProg, initKey, false); // MUST be after UI.init()
+    initializeFretFlow(); // MUST be after UI.init()
+    setupEventListeners(); // MUST be after UI.init()
 
-    try {
-        await AudioContextManager.initialize(); // Initialize audio (now includes tiered loading)
-    } catch (e) {
-         updateLoadingStatus("Audio init failed. Click to try.", true);
-    }
+    try { await AudioContextManager.initialize(); }
+    catch (e) { updateLoadingStatus("Audio init failed. Click to try.", true); }
 
     updateLoadingStatus("Application initialized", true);
     setTimeout(() => updateLoadingStatus("", false), 1500);
