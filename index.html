@@ -1134,7 +1134,7 @@ function suggestScaleForQuality(quality) { const sm={'maj7':'major','maj':'major
 
 // --- DOM Utilities ---
 function createKeyOptions(selKey='C'){return NOTES.map(n=>`<option value="${n}"${n===standardizeNoteName(selKey)?' selected':''}>${n}</option>`).join('');}
-function // Optional: Update createQualityOptions for consistency
+
 function createQualityOptions(selQ='maj7'){
     const Qs=[
         {v:'maj7',l:'maj7'},       // Changed Label
