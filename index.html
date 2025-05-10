@@ -2943,18 +2943,21 @@ function clearGuideToneHighlights() {
 
 
 // --- FretFlow ---
+// --- FretFlow ---
 function initializeFretFlow() {
     const fretboardsGrid = UI.elements.fretboardsGrid;
     if (!fretboardsGrid) return;
 
     fretboardsGrid.innerHTML = ''; // Clear previous
+    // Ensure display is grid and gap is set.
+    // The CSS rule for .fretboards-grid (repeat(2, 1fr)) will now dictate the 2-column layout.
     fretboardsGrid.style.display = 'grid';
-    fretboardsGrid.style.gridTemplateColumns = 'repeat(auto-fit, minmax(300px, 1fr))'; // Responsive columns
     fretboardsGrid.style.gap = '20px';
+    // REMOVED/COMMENTED OUT: fretboardsGrid.style.gridTemplateColumns = 'repeat(auto-fit, minmax(300px, 1fr))';
 
-    for (let i = 0; i < 4; i++) { // Create 4 FretFlow sections
+    for (let i = 0; i < 4; i++) { // Create 4 FretFlow sections, which will form a 2x2 grid
         const fretboardSectionDiv = document.createElement('div');
-        fretboardSectionDiv.className = 'fretboard-section'; // For styling individual sections
+        fretboardSectionDiv.className = 'fretboard-section';
 
         const scaleOptionsHTML = Object.entries(SCALES).map(([scaleKey, _]) => {
             const displayName = scaleKey.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase()).trim();
@@ -2996,7 +2999,7 @@ function initializeFretFlow() {
             const selectedKey = keySelectElement.value;
             const selectedScale = scaleSelectElement.value;
             const selectedTuningValue = tuningSelectElement.value;
-            const selectedTuningArray = TUNINGS[selectedTuningValue]; // TUNINGS is already reversed
+            const selectedTuningArray = TUNINGS[selectedTuningValue];
 
             if (!selectedTuningArray) {
                 console.error("Invalid tuning selected for FretFlow instance.");
@@ -3013,10 +3016,9 @@ function initializeFretFlow() {
         scaleSelectElement.addEventListener('change', updateFretflowFretboard);
         tuningSelectElement.addEventListener('change', updateFretflowFretboard);
 
-        // Initial call to draw the fretboard
         updateFretflowFretboard();
     }
-    log("FretFlow initialized with multiple fretboards.");
+    log("FretFlow initialized with 2x2 grid.");
 }
 
 // --- Event Handling Helpers ---
