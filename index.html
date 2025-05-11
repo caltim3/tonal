@@ -7,298 +7,387 @@
     <link rel="icon" type="image/png" href="jazzmaster.png">
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Lato', sans-serif;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f0f0f0; /* Lighter default background */
-        }
-        .app-section {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
-        .fretboards-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        .fretboard-container {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        /* Song Info Display Styling (Item 1) */
-        #song-info-display-fretboard {
-            margin-bottom: 10px; /* Space before scale display */
-        }
-        #song-info-display-fretboard h4,
-        #song-info-display-fretboard p {
-            text-align: left;
-            margin-top: 0;
-            margin-bottom: 5px;
-        }
-        #song-info-display-fretboard h4 {
-            font-size: 1.1em;
-            color: #333;
-        }
-        #song-info-display-fretboard p {
-            font-size: 0.9em;
-            color: #555;
-            font-style: italic;
-        }
+    body {
+        font-family: 'Lato', sans-serif;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: var(--bg-color, #f0f0f0); /* Lighter default background */
+        color: var(--text-color, #333);
 
-        .scale-display {
-            font-size: 1.2em;
-            font-weight: bold;
-            text-align: center;
-            margin-bottom: 5px; /* Reduced margin */
-            color: #333;
-             min-height: 1.5em; /* Reserve space */
-        }
-         /* Next Chord Display Styling */
-         .next-chord-display {
-            font-size: 0.95em; /* Slightly smaller than scale display */
-            font-style: italic;
-            text-align: center;
-            color: #6c757d; /* Muted gray color */
-            margin-top: -5px; /* Pull it up slightly */
-            margin-bottom: 15px; /* Space below before controls */
-            height: 1.2em; /* Reserve space to prevent layout shift */
-            line-height: 1.2em;
-        }
-        .controls, .top-controls {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-        .controls-container { display: flex; gap: 20px; margin-bottom: 20px; }
-        .control-group { display: flex; align-items: center; gap: 10px; }
-        .control-group label { font-weight: bold; }
-        .control-group select { padding: 5px; border-radius: 4px; border: 1px solid #ccc; }
+        /* Light Theme (Default) Guide Tone Colors */
+        --guide-tone-bg-color: #007bff;       /* Bright Blue */
+        --guide-tone-text-color: white;
+        --guide-tone-border-color: #0056b3;    /* Darker Blue */
+    }
+    .app-section {
+        background: var(--section-bg-color, white);
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+        color: var(--section-text-color, inherit);
+    }
+    .fretboards-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    .fretboard-container {
+        background: var(--fretboard-container-bg, white);
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        border: 1px solid var(--fretboard-container-border, transparent);
+    }
+    /* Song Info Display Styling (Item 1) */
+    #song-info-display-fretboard {
+        margin-bottom: 10px; /* Space before scale display */
+    }
+    #song-info-display-fretboard h4,
+    #song-info-display-fretboard p {
+        text-align: left;
+        margin-top: 0;
+        margin-bottom: 5px;
+    }
+    #song-info-display-fretboard h4 {
+        font-size: 1.1em;
+        color: var(--song-info-h4-color, #333);
+    }
+    #song-info-display-fretboard p {
+        font-size: 0.9em;
+        color: var(--song-info-p-color, #555);
+        font-style: italic;
+    }
 
-        .fretboard { position: relative; height: 200px; background-color: #FFCF79; border-radius: 5px; margin-bottom: 30px; border: 2px solid #4A3B31; overflow: visible; }
-        .fret-line { position: absolute; top: 0; height: 100%; width: 2px; background: #A0A0A0; border-right: 1px solid rgba(0,0,0,0.1); z-index: 1; }
-        .string-line { position: absolute; left: 0; width: 100%; height: 1px; background: #C0C0C0; border-bottom: 1px solid rgba(0,0,0,0.1); z-index: 0; }
-        .fret-number { position: absolute; bottom: -25px; font-size: 14px; color: #555; transform: translateX(-50%); font-weight: bold; z-index: 2; width: 20px; text-align: center; }
-        .fret-marker { position: absolute; width: 10px; height: 10px; background-color: #5A4F46; border-radius: 50%; transform: translate(-50%, -50%); z-index: 1; }
-        .note { position: absolute; width: 25px; height: 25px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; color: white; z-index: 3; cursor: pointer; transform: translate(-50%, -50%); transition: transform 0.1s ease, box-shadow 0.1s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
-        .note.guide-tone-highlight { box-shadow: 0 0 0 3px orange, 0 1px 3px rgba(0,0,0,0.2); } /* Ensure this is specific enough */
-        .note:hover { transform: translate(-50%, -50%) scale(1.2); box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+    .scale-display {
+        font-size: 1.2em;
+        font-weight: bold;
+        text-align: center;
+        margin-bottom: 5px; /* Reduced margin */
+        color: var(--scale-display-color, #333);
+        min-height: 1.5em; /* Reserve space */
+    }
+    /* Next Chord Display Styling */
+    .next-chord-display {
+        font-size: 0.95em; /* Slightly smaller than scale display */
+        font-style: italic;
+        text-align: center;
+        color: var(--next-chord-color, #6c757d); /* Muted gray color */
+        margin-top: -5px; /* Pull it up slightly */
+        margin-bottom: 15px; /* Space below before controls */
+        height: 1.2em; /* Reserve space to prevent layout shift */
+        line-height: 1.2em;
+    }
+    .controls, .top-controls {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+    .controls-container { display: flex; gap: 20px; margin-bottom: 20px; }
+    .control-group { display: flex; align-items: center; gap: 10px; }
+    .control-group label { font-weight: bold; }
+    .control-group select { padding: 5px; border-radius: 4px; border: 1px solid #ccc; }
 
-        .beat { width: 40px; height: 80px; background: #9E9E9E; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; color: white; font-weight: bold; transition: all 0.2s ease; font-size: 14px; margin: 0 2px; }
-        .beats-container { display: flex; justify-content: center; gap: 8px; margin: 20px 0; flex-wrap: nowrap; overflow-x: auto; }
-        .beat.active { transform: translateY(-10px); box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
-        #measures { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
-        .measure { position: relative; background-color: #e9ecef; padding: 15px; border-radius: 4px; transition: opacity 0.2s ease, background-color 0.2s ease, border 0.2s ease; border: 2px solid transparent; cursor: pointer; }
-        .measure.loop-selected { border: 2px solid #007bff; background-color: #e6f2ff; }
-        .measure.active { background-color: #c3e6cb; border: 2px solid #28a745; }
-        .measure-number { position: absolute; top: 5px; left: 5px; font-size: 12px; color: #333; background-color: rgba(255,255,255,0.7); padding: 2px 4px; border-radius: 3px; }
-        .chord-controls, .scale-controls { display: flex; gap: 10px; margin-bottom: 10px; }
-        .chord-controls select, .scale-controls select { flex: 1; }
+    .fretboard {
+        position: relative;
+        height: 200px;
+        background-color: var(--fretboard-bg, #FFCF79);
+        border-radius: 5px;
+        margin-bottom: 30px;
+        border: 2px solid var(--fretboard-border, #4A3B31);
+        overflow: visible;
+    }
+    .fret-line { position: absolute; top: 0; height: 100%; width: 2px; background: #A0A0A0; border-right: 1px solid rgba(0,0,0,0.1); z-index: 1; }
+    .string-line { position: absolute; left: 0; width: 100%; height: 1px; background: #C0C0C0; border-bottom: 1px solid rgba(0,0,0,0.1); z-index: 0; }
+    .fret-number { position: absolute; bottom: -25px; font-size: 14px; color: #555; transform: translateX(-50%); font-weight: bold; z-index: 2; width: 20px; text-align: center; }
+    .fret-marker { position: absolute; width: 10px; height: 10px; background-color: #5A4F46; border-radius: 50%; transform: translate(-50%, -50%); z-index: 1; }
+    
+    .note {
+        position: absolute;
+        width: 25px;
+        height: 25px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: bold;
+        color: var(--note-text-color, white); /* Default note text color */
+        z-index: 3;
+        cursor: pointer;
+        transform: translate(-50%, -50%);
+        transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.2s ease, color 0.2s ease, outline 0.2s ease;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        /* background-color is set by JS for regular notes */
+    }
 
-        .fretboard-section { border: 1px solid #ccc; padding: 15px; border-radius: 8px; background-color: #f9f9f9; }
-        body.dark-mode .fretboard-section { background-color: #3a441e; border-color: #606c38; color: #fefae0; }
-        body.dark-mode-2 .fretboard-section { background-color: #001f54; border-color: #1282a2; color: #fefcfb; }
-        body.dark-mode-3 .fretboard-section { background-color: #a5a58d; border-color: #cb997e; color: #ffe8d6; }
-        .fretboard-controls { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
-        /* .control-group label { font-weight: bold; font-size: 0.9em; } */ /* Duplicate, defined above */
-        /* .control-group select { padding: 4px; border-radius: 4px; border: 1px solid #ccc; } */ /* Duplicate, defined above */
-        @media (max-width: 1200px) { /* #measures grid-template-columns already responsive */ }
-        @media (max-width: 600px) { /* #measures grid-template-columns already responsive */ }
-        
-        .volume-control {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin: 5px 0; /* Adjusted margin for stacking */
-        }
-        #metronome-volume-controls-stack {
-            display: flex;
-            flex-direction: column;
-            gap: 8px; /* Spacing between stacked controls */
-            max-width: 400px; /* Adjust for optimal layout */
-            margin: 15px auto 20px auto; /* Top margin, auto for horizontal centering, bottom margin */
-        }
-        #metronome-volume-controls-stack .volume-control {
-            width: 100%; /* Make each control take full width of the stack */
-            justify-content: space-between; 
-        }
-        #metronome-volume-controls-stack .volume-control label,
-        #metronome-volume-controls-stack .volume-control span {
-            margin-right: 10px; /* Space between label and slider */
-            white-space: nowrap; /* Prevent labels from wrapping unnecessarily */
-            flex-shrink: 0; 
-        }
-        #metronome-volume-controls-stack .volume-control input[type="range"] {
-            flex-grow: 1; /* Allow slider to take available space */
-            min-width: 150px; /* Ensure slider has a decent minimum width */
-            max-width: 250px; /* Prevent slider from becoming too wide */
-        }
+    /* UPDATED GUIDE TONE STYLING */
+    .note.guide-tone-highlight {
+        background-color: var(--guide-tone-bg-color) !important;
+        color: var(--guide-tone-text-color) !important;
+        outline: 3px solid var(--guide-tone-border-color) !important;
+        box-shadow: 0 0 8px 2px var(--guide-tone-border-color) !important; /* Optional: glow effect */
+        transform: translate(-50%, -50%) scale(1.15) !important; /* Make them slightly larger */
+        z-index: 10 !important; /* Ensure they are on top */
+        font-weight: bold !important;
+        border-radius: 50%; /* Ensure background color fills the circle */
+    }
+    .note:hover {
+        /* Don't override guide tone hover if it's special, otherwise allow general hover */
+        transform: translate(-50%, -50%) scale(1.2);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    }
+    .note.guide-tone-highlight:hover { /* Specific hover for guide tones if needed */
+        transform: translate(-50%, -50%) scale(1.25) !important;
+        box-shadow: 0 0 10px 3px var(--guide-tone-border-color) !important;
+    }
 
 
-        button, .button-like { padding: 10px 15px; border: none; border-radius: 5px; background: #4CAF50; color: white; cursor: pointer; font-size: 0.9em; transition: background-color 0.2s ease; }
-        button:hover, .button-like:hover { background: #45a049; }
-        button.secondary { background-color: #007bff; }
-        button.secondary:hover { background-color: #0056b3; }
-        button.danger { background-color: #6b705c; } /* Changed default danger color */
-        button.danger:hover { background-color: #c82333; }
-        select { padding: 8px 10px; margin: 5px; border-radius: 5px; border: 1px solid #ddd; background-color: white; }
-        #tempo-display { font-size: 1.2em; font-weight: bold; margin: 0 10px; min-width: 70px; text-align: center; }
-        #loading-indicator { position: fixed; top: 20px; right: 20px; padding: 10px 15px; background: rgba(0,0,0,0.8); color: white; border-radius: 5px; z-index: 1000; font-size: 0.9em; display: none; }
-        .checkbox-wrapper { margin-top: 10px; margin-left: 0; display: flex; align-items: center; }
-        .control-button { padding: 8px 12px; font-size: 0.9em; }
-        #chordsEnabled { margin-bottom: 10px; }
+    .beat { width: 40px; height: 80px; background: #9E9E9E; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; color: white; font-weight: bold; transition: all 0.2s ease; font-size: 14px; margin: 0 2px; }
+    .beats-container { display: flex; justify-content: center; gap: 8px; margin: 20px 0; flex-wrap: nowrap; overflow-x: auto; }
+    .beat.active { transform: translateY(-10px); box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+    #measures { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+    .measure { position: relative; background-color: var(--measure-bg, #e9ecef); padding: 15px; border-radius: 4px; transition: opacity 0.2s ease, background-color 0.2s ease, border 0.2s ease; border: 2px solid transparent; cursor: pointer; color: var(--measure-text-color, #333); }
+    .measure.loop-selected { border: 2px solid var(--measure-loop-border, #007bff); background-color: var(--measure-loop-bg, #e6f2ff); }
+    .measure.active { background-color: var(--measure-active-bg, #c3e6cb); border: 2px solid var(--measure-active-border, #28a745); }
+    .measure-number { position: absolute; top: 5px; left: 5px; font-size: 12px; color: #333; background-color: rgba(255,255,255,0.7); padding: 2px 4px; border-radius: 3px; }
+    .chord-controls, .scale-controls { display: flex; gap: 10px; margin-bottom: 10px; }
+    .chord-controls select, .scale-controls select { flex: 1; }
 
-        /* Start Button Prominence (Item 4) */
-        #start-stop {
-            padding: 12px 25px !important; /* Larger padding */
-            font-size: 1.1em !important;   /* Larger font */
-            font-weight: bold !important;
-            background-color: #28a745 !important; /* A distinct green */
-            border: 2px solid #1e7e34 !important;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
-        }
-        #start-stop:hover {
-            background-color: #218838 !important;
-            border-color: #1c6c2e !important;
-        }
+    .fretboard-section { border: 1px solid #ccc; padding: 15px; border-radius: 8px; background-color: #f9f9f9; }
+    body.dark-mode .fretboard-section { background-color: #3a441e; border-color: #606c38; color: #fefae0; }
+    body.dark-mode-2 .fretboard-section { background-color: #001f54; border-color: #1282a2; color: #fefcfb; }
+    body.dark-mode-3 .fretboard-section { background-color: #a5a58d; border-color: #cb997e; color: #ffe8d6; }
+    .fretboard-controls { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
+    
+    .volume-control {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 5px 0;
+        color: var(--volume-control-text-color, inherit);
+    }
+    #metronome-volume-controls-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-width: 400px;
+        margin: 15px auto 20px auto;
+    }
+    #metronome-volume-controls-stack .volume-control {
+        width: 100%;
+        justify-content: space-between; 
+    }
+    #metronome-volume-controls-stack .volume-control label,
+    #metronome-volume-controls-stack .volume-control span {
+        margin-right: 10px;
+        white-space: nowrap;
+        flex-shrink: 0; 
+    }
+    #metronome-volume-controls-stack .volume-control input[type="range"] {
+        flex-grow: 1;
+        min-width: 150px;
+        max-width: 250px;
+    }
 
-        body.dark-mode { background-color: #283618; color: #fefae0; }
-        .dark-mode .app-section { background: linear-gradient(145deg, #283618, #606c38); color: #fefae0; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-        .dark-mode .fretboard-container { background-color: #606c38; border: 1px solid #dda15e; }
-        /* Song Info Display Dark Mode (Item 1) */
-        .dark-mode #song-info-display-fretboard h4 { color: #fefae0; }
-        .dark-mode #song-info-display-fretboard p { color: #e0daca; }
+    button, .button-like { padding: 10px 15px; border: none; border-radius: 5px; background: var(--button-bg, #4CAF50); color: var(--button-text-color, white); cursor: pointer; font-size: 0.9em; transition: background-color 0.2s ease; }
+    button:hover, .button-like:hover { background: var(--button-hover-bg, #45a049); }
+    button.secondary { background-color: var(--button-secondary-bg, #007bff); }
+    button.secondary:hover { background-color: var(--button-secondary-hover-bg, #0056b3); }
+    button.danger { background-color: var(--button-danger-bg, #6b705c); }
+    button.danger:hover { background-color: var(--button-danger-hover-bg, #c82333); }
+    select { padding: 8px 10px; margin: 5px; border-radius: 5px; border: 1px solid var(--select-border-color, #ddd); background-color: var(--select-bg-color, white); color: var(--select-text-color, inherit); }
+    #tempo-display { font-size: 1.2em; font-weight: bold; margin: 0 10px; min-width: 70px; text-align: center; }
+    #loading-indicator { position: fixed; top: 20px; right: 20px; padding: 10px 15px; background: rgba(0,0,0,0.8); color: white; border-radius: 5px; z-index: 1000; font-size: 0.9em; display: none; }
+    .checkbox-wrapper { margin-top: 10px; margin-left: 0; display: flex; align-items: center; }
+    .control-button { padding: 8px 12px; font-size: 0.9em; }
+    #chordsEnabled { margin-bottom: 10px; }
 
-        .dark-mode .fretboard { background-color: #dda15e; border: 2px solid #4b4b4b; }
-        .dark-mode .note { color: #283618; }
-        .dark-mode .scale-display { color: #fefae0; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
-        .dark-mode button, .dark-mode .button-like { background-color: #dda15e; color: #283618; border: 1px solid #bc6c25; }
-        .dark-mode button:hover, .dark-mode .button-like:hover { background-color: #bc6c25; }
-        .dark-mode button.secondary { background-color: #a17d40; }
-        .dark-mode button.secondary:hover { background-color: #8a6930; }
-        .dark-mode button.danger { background-color: #6b705c; }
-        .dark-mode button.danger:hover { background-color: #d73744; }
-        /* Start Button Dark Mode 1 (Item 4) */
-        .dark-mode #start-stop {
-            background-color: #fca311 !important; /* Distinct orange/yellow */
-            border-color: #e79002 !important;
-            color: #283618 !important;
-        }
-        .dark-mode #start-stop:hover {
-            background-color: #e79002 !important;
-            border-color: #c87800 !important;
-        }
+    #start-stop {
+        padding: 12px 25px !important;
+        font-size: 1.1em !important;
+        font-weight: bold !important;
+        background-color: var(--start-stop-bg, #28a745) !important;
+        border: 2px solid var(--start-stop-border, #1e7e34) !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
+        color: var(--start-stop-text-color, white) !important;
+    }
+    #start-stop:hover {
+        background-color: var(--start-stop-hover-bg, #218838) !important;
+        border-color: var(--start-stop-hover-border, #1c6c2e) !important;
+    }
 
-        .dark-mode select { background-color: #dda15e; color: #283618; border: 1px solid #bc6c25; }
-        .dark-mode select:hover { background-color: #bc6c25; }
-        .dark-mode .measure { background-color: #606c38; color: #fefae0; border: 1px solid #dda15e; }
-        .dark-mode .measure.active { background-color: #dda15e; border-color: #bc6c25; }
-        .dark-mode .measure.loop-selected { border-color: #ffc107; background-color: #7d6830; }
-        .dark-mode .beat { background-color: #dda15e; color: #283618; }
-        .dark-mode .beat.active { background-color: #bc6c25; transform: translateY(-5px); }
-        .dark-mode .volume-control, .dark-mode .next-chord-display { color: #fefae0; }
-        .dark-mode #current-song-title { color: #fefae0; } /* Kept for original location, though it's moved */
-        .dark-mode #current-song-description { color: #e0daca; } /* Kept for original location */
-        .dark-mode #song-info-display { background-color: #4a542e; border-color: #7a845e; } /* Kept for original location */
-        #dark-mode-toggle.active { background-color: #283618; color: #fefae0; border: 1px solid #dda15e; }
+    /* --- Dark Mode 1 --- */
+    body.dark-mode {
+        --bg-color: #283618;
+        --text-color: #fefae0;
+        --section-bg-color: linear-gradient(145deg, #283618, #606c38);
+        --section-text-color: #fefae0;
+        --fretboard-container-bg: #606c38;
+        --fretboard-container-border: #dda15e;
+        --song-info-h4-color: #fefae0;
+        --song-info-p-color: #e0daca;
+        --fretboard-bg: #dda15e;
+        --fretboard-border: #4b4b4b;
+        --note-text-color: #283618; /* Note text on fretboard */
+        --scale-display-color: #fefae0;
+        --button-bg: #dda15e;
+        --button-text-color: #283618;
+        --button-hover-bg: #bc6c25;
+        --button-secondary-bg: #a17d40;
+        --button-secondary-hover-bg: #8a6930;
+        --button-danger-bg: #6b705c;
+        --button-danger-hover-bg: #d73744;
+        --start-stop-bg: #fca311;
+        --start-stop-border: #e79002;
+        --start-stop-text-color: #283618;
+        --start-stop-hover-bg: #e79002;
+        --start-stop-hover-border: #c87800;
+        --select-bg-color: #dda15e;
+        --select-text-color: #283618;
+        --select-border-color: #bc6c25;
+        --measure-bg: #606c38;
+        --measure-text-color: #fefae0;
+        --measure-border: #dda15e; /* Default border for measure */
+        --measure-active-bg: #dda15e;
+        --measure-active-border: #bc6c25;
+        --measure-loop-bg: #7d6830;
+        --measure-loop-border: #ffc107;
+        --beat-bg: #dda15e;
+        --beat-text-color: #283618;
+        --beat-active-bg: #bc6c25;
+        --volume-control-text-color: #fefae0;
+        --next-chord-color: #fefae0;
 
-        .dark-mode-2 { background-color: #0a1128; color: #fefcfb; }
-        .dark-mode-2 .app-section { background: linear-gradient(145deg, #001f54, #034078); color: #fefcfb; }
-        .dark-mode-2 .fretboard-container { background-color: #034078; border: 1px solid #1282a2; }
-        /* Song Info Display Dark Mode 2 (Item 1) */
-        .dark-mode-2 #song-info-display-fretboard h4 { color: #fefcfb; }
-        .dark-mode-2 #song-info-display-fretboard p { color: #e0e0df; }
+        /* Dark Mode 1 Guide Tone Colors */
+        --guide-tone-bg-color: #61dafb;      /* Light Cyan/Aqua */
+        --guide-tone-text-color: #0a1128;    /* Very Dark Blue/Black */
+        --guide-tone-border-color: #4ac9e8;   /* Slightly Darker Cyan */
+    }
+    .dark-mode .app-section { box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+    .dark-mode .scale-display { text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
+    .dark-mode .beat.active { transform: translateY(-5px); }
+    #dark-mode-toggle.active { background-color: #283618; color: #fefae0; border: 1px solid #dda15e; }
 
-        .dark-mode-2 .fretboard { background-color: #001f54; border: 2px solid #1282a2; }
-        .dark-mode-2 .note { color: #fefcfb; } /* Notes on fretboard */
-        .dark-mode-2 .scale-display { color: #fefcfb; }
-        .dark-mode-2 button, .dark-mode-2 .button-like { background-color: #1282a2; color: #fefcfb; border: 1px solid #034078; }
-        .dark-mode-2 button:hover, .dark-mode-2 .button-like:hover { background-color: #0e6c89; }
-        .dark-mode-2 button.secondary { background-color: #0c5f7d; }
-        .dark-mode-2 button.secondary:hover { background-color: #094b61; }
-        .dark-mode-2 button.danger { background-color: #6b705c;}
-        .dark-mode-2 button.danger:hover { background-color: #e83838; }
-        /* Start Button Dark Mode 2 (Item 4) */
-        .dark-mode-2 #start-stop {
-            background-color: #61dafb !important; /* Distinct light blue */
-            border-color: #4ac9e8 !important;
-            color: #0a1128 !important;
-        }
-        .dark-mode-2 #start-stop:hover {
-            background-color: #4ac9e8 !important;
-            border-color: #32b6d4 !important;
-        }
+    /* --- Dark Mode 2 --- */
+    body.dark-mode-2 {
+        --bg-color: #0a1128;
+        --text-color: #fefcfb;
+        --section-bg-color: linear-gradient(145deg, #001f54, #034078);
+        --section-text-color: #fefcfb;
+        --fretboard-container-bg: #034078;
+        --fretboard-container-border: #1282a2;
+        --song-info-h4-color: #fefcfb;
+        --song-info-p-color: #e0e0df;
+        --fretboard-bg: #001f54;
+        --fretboard-border: #1282a2;
+        --note-text-color: #fefcfb; /* Note text on fretboard */
+        --scale-display-color: #fefcfb;
+        --button-bg: #1282a2;
+        --button-text-color: #fefcfb;
+        --button-hover-bg: #0e6c89;
+        --button-secondary-bg: #0c5f7d;
+        --button-secondary-hover-bg: #094b61;
+        --button-danger-bg: #6b705c;
+        --button-danger-hover-bg: #e83838;
+        --start-stop-bg: #61dafb;
+        --start-stop-border: #4ac9e8;
+        --start-stop-text-color: #0a1128;
+        --start-stop-hover-bg: #4ac9e8;
+        --start-stop-hover-border: #32b6d4;
+        --select-bg-color: #034078;
+        --select-text-color: #fefcfb;
+        --select-border-color: #1282a2;
+        --measure-bg: #034078;
+        --measure-text-color: #fefcfb;
+        --measure-border: #1282a2;
+        --measure-active-bg: #1282a2;
+        --measure-active-border: #fefcfb;
+        --measure-loop-bg: #01325A;
+        --measure-loop-border: #61dafb;
+        --beat-bg: #1282a2;
+        --beat-text-color: #fefcfb;
+        --beat-active-bg: #034078;
+        --volume-control-text-color: #fefcfb;
+        --next-chord-color: #fefcfb;
 
-        .dark-mode-2 select { background-color: #034078; color: #fefcfb; border: 1px solid #1282a2; }
-        .dark-mode-2 .measure { background-color: #034078; color: #fefcfb; border: 1px solid #1282a2; }
-        .dark-mode-2 .measure.active { background-color: #1282a2; border-color: #fefcfb; }
-        .dark-mode-2 .measure.loop-selected { border-color: #61dafb; background-color: #01325A; }
-        .dark-mode-2 .beat { background-color: #1282a2; color: #fefcfb; }
-        .dark-mode-2 .beat.active { background-color: #034078; }
-        .dark-mode-2 .volume-control, .dark-mode-2 .next-chord-display { color: #fefcfb; }
-        .dark-mode-2 #current-song-title { color: #fefcfb; }
-        .dark-mode-2 #current-song-description { color: #e0e0df; }
-        .dark-mode-2 #song-info-display { background-color: #023059; border-color: #0f6090; }
-        #dark-mode-toggle.active-2 { background-color: #1282a2; color: #fefcfb; border: 1px solid #034078; }
+        /* Dark Mode 2 Guide Tone Colors */
+        --guide-tone-bg-color: #fca311;      /* Bright Orange/Yellow */
+        --guide-tone-text-color: #001f54;    /* Dark Blue (contrasts with bg) */
+        --guide-tone-border-color: #e79002;   /* Darker Orange */
+    }
+    #dark-mode-toggle.active-2 { background-color: #1282a2; color: #fefcfb; border: 1px solid #034078; }
 
-        .dark-mode-3 { background-color: #6b705c; color: #ffe8d6; }
-        .dark-mode-3 .app-section { background: linear-gradient(145deg, #6b705c, #a5a58d); color: #ffe8d6; }
-        .dark-mode-3 .fretboard-container { background-color: #a5a58d; border: 1px solid #cb997e; }
-        /* Song Info Display Dark Mode 3 (Item 1) */
-        .dark-mode-3 #song-info-display-fretboard h4 { color: #ffe8d6; }
-        .dark-mode-3 #song-info-display-fretboard p { color: #f0d8c6; }
+    /* --- Dark Mode 3 --- */
+    body.dark-mode-3 {
+        --bg-color: #6b705c;
+        --text-color: #ffe8d6;
+        --section-bg-color: linear-gradient(145deg, #6b705c, #a5a58d);
+        --section-text-color: #ffe8d6;
+        --fretboard-container-bg: #a5a58d;
+        --fretboard-container-border: #cb997e;
+        --song-info-h4-color: #ffe8d6;
+        --song-info-p-color: #f0d8c6;
+        --fretboard-bg: #cb997e;
+        --fretboard-border: #6b705c;
+        --note-text-color: #6b705c; /* Note text on fretboard */
+        --scale-display-color: #ffe8d6;
+        --button-bg: #cb997e;
+        --button-text-color: #6b705c;
+        --button-hover-bg: #b2856c;
+        --button-secondary-bg: #b18f7a;
+        --button-secondary-hover-bg: #9a7860;
+        --button-danger-bg: #6b705c;
+        --button-danger-text-color: white; /* Specific for this button */
+        --button-danger-hover-bg: #c24a4a;
+        --start-stop-bg: #e7ad99;
+        --start-stop-border: #d09882;
+        --start-stop-text-color: #6b705c;
+        --start-stop-hover-bg: #d09882;
+        --start-stop-hover-border: #b9836c;
+        --select-bg-color: #ddbea9;
+        --select-text-color: #6b705c;
+        --select-border-color: #cb997e;
+        --measure-bg: #a5a58d;
+        --measure-text-color: #ffe8d6;
+        --measure-border: #cb997e;
+        --measure-active-bg: #ddbea9;
+        --measure-active-border: #cb997e;
+        --measure-loop-bg: #BDA290;
+        --measure-loop-border: #e7ad99;
+        --beat-bg: #ddbea9;
+        --beat-text-color: #6b705c;
+        --beat-active-bg: #cb997e;
+        --volume-control-text-color: #ffe8d6;
+        --next-chord-color: #ffe8d6;
 
-        .dark-mode-3 .fretboard { background-color: #cb997e; border: 2px solid #6b705c; }
-        .dark-mode-3 .note { color: #6b705c; }
-        .dark-mode-3 .scale-display { color: #ffe8d6; }
-        .dark-mode-3 button, .dark-mode-3 .button-like { background-color: #cb997e; color: #6b705c; border: 1px solid #6b705c; }
-        .dark-mode-3 button:hover, .dark-mode-3 .button-like:hover { background-color: #b2856c; }
-        .dark-mode-3 button.secondary { background-color: #b18f7a; }
-        .dark-mode-3 button.secondary:hover { background-color: #9a7860; }
-        .dark-mode-3 button.danger { background-color: #6b705c; color: white;}
-        .dark-mode-3 button.danger:hover { background-color: #c24a4a; }
-        /* Start Button Dark Mode 3 (Item 4) */
-        .dark-mode-3 #start-stop {
-            background-color: #e7ad99 !important; /* Distinct salmon/peach */
-            border-color: #d09882 !important;
-            color: #6b705c !important;
-        }
-        .dark-mode-3 #start-stop:hover {
-            background-color: #d09882 !important;
-            border-color: #b9836c !important;
-        }
+        /* Dark Mode 3 Guide Tone Colors */
+        --guide-tone-bg-color: #EF233C;      /* Bright Red/Pink */
+        --guide-tone-text-color: #ffe8d6;    /* Light Peach (theme text color) */
+        --guide-tone-border-color: #D90429;   /* Darker Red */
+    }
+    .dark-mode-3 button.danger { color: var(--button-danger-text-color, white); } /* Ensure text color is applied */
+    #dark-mode-toggle.active-3 { background-color: #cb997e; color: #ffe8d6; border: 1px solid #6b705c; }
 
-        .dark-mode-3 select { background-color: #ddbea9; color: #6b705c; border: 1px solid #cb997e; }
-        .dark-mode-3 .measure { background-color: #a5a58d; color: #ffe8d6; border: 1px solid #cb997e; }
-        .dark-mode-3 .measure.active { background-color: #ddbea9; border-color: #cb997e; }
-        .dark-mode-3 .measure.loop-selected { border-color: #e7ad99; background-color: #BDA290; }
-        .dark-mode-3 .beat { background-color: #ddbea9; color: #6b705c; }
-        .dark-mode-3 .beat.active { background-color: #cb997e; }
-        .dark-mode-3 .volume-control, .dark-mode-3 .next-chord-display { color: #ffe8d6; }
-        .dark-mode-3 #current-song-title { color: #ffe8d6; }
-        .dark-mode-3 #current-song-description { color: #f0d8c6; }
-        .dark-mode-3 #song-info-display { background-color: #8a8a75; border-color: #b6a191; }
-        #dark-mode-toggle.active-3 { background-color: #cb997e; color: #ffe8d6; border: 1px solid #6b705c; }
+    /* Fretflow Section Theming (ensure these are after main theme blocks if they don't use vars from body) */
+    .dark-mode #fretflow-section { background: linear-gradient(145deg, #283618, #606c38); color: #fefae0; }
+    .dark-mode-2 #fretflow-section { background: linear-gradient(145deg, #001f54, #034078); color: #fefcfb; }
+    .dark-mode-3 #fretflow-section { background: linear-gradient(145deg, #6b705c, #a5a58d); color: #ffe8d6; }
 
-        .dark-mode #fretflow-section { background: linear-gradient(145deg, #283618, #606c38); color: #fefae0; }
-        .dark-mode-2 #fretflow-section { background: linear-gradient(145deg, #001f54, #034078); color: #fefcfb; }
-        .dark-mode-3 #fretflow-section { background: linear-gradient(145deg, #6b705c, #a5a58d); color: #ffe8d6; }
+    .toggle-button { padding: 8px 12px; border: none; border-radius: 5px; color: white; cursor: pointer; transition: background-color 0.3s ease; font-size: 0.9em; }
+    .toggle-button.active { background: #4CAF50; }
+    .toggle-button:not(.active) { background: #9E9E9E; }
 
-        .toggle-button { padding: 8px 12px; border: none; border-radius: 5px; color: white; cursor: pointer; transition: background-color 0.3s ease; font-size: 0.9em; }
-        .toggle-button.active { background: #4CAF50; }
-        .toggle-button:not(.active) { background: #9E9E9E; }
+    #user-songs-section { margin-top: 15px; }
+    #user-songs-section label { margin-right: 5px; }
 
-        #user-songs-section { margin-top: 15px; }
-        #user-songs-section label { margin-right: 5px; }
+    /* Media Queries (keep at the end) */
+    @media (max-width: 1200px) { /* #measures grid-template-columns already responsive */ }
+    @media (max-width: 600px) { /* #measures grid-template-columns already responsive */ }
 
     </style>
 </head>
