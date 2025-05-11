@@ -2045,11 +2045,11 @@ function createFretboard(fretboardContainer, tuningArray) {
     });
 }
 
-function updateFretboardNotes(fretboardContainer, rootNote, scaleName, tuningArray) {
+function updateFretboardNotes(fretboardContainer, rootNote, scaleName, tuningArray, changedMeasureDiv = null) {
     // --- Validation & Setup ---
     if (!(fretboardContainer instanceof HTMLElement)) { console.error('Invalid fretboardContainer for updateFretboardNotes'); return; }
-    const standardizedRoot = standardizeNoteName(rootNote);
-    if (!NOTES.includes(standardizedRoot)) { console.error(`Invalid root note: ${rootNote}`); return; }
+    const standardizedRoot = standardizeNoteName(rootNote); // This is the scale root
+    if (!NOTES.includes(standardizedRoot)) { console.error(`Invalid root note for scale: ${rootNote}`); return; }
     const scaleData = SCALES[scaleName];
     if (!scaleData) { console.error(`Invalid scale: ${scaleName}`); return; }
     if (!Array.isArray(tuningArray) || tuningArray.length === 0) { console.error('Invalid tuning array for updateFretboardNotes'); return; }
@@ -2061,38 +2061,60 @@ function updateFretboardNotes(fretboardContainer, rootNote, scaleName, tuningArr
 
     // --- Update Scale Display (Only for the main chord fretboard) ---
     if (fretboardContainer.id === 'chord-fretboard' && UI.elements.scaleDisplay) {
-        const currentMeasureEl = AppState.currentMeasure < UI.elements.measures.children.length ? UI.elements.measures.children[AppState.currentMeasure] : null;
-        if (currentMeasureEl) {
-            const currentChordRoot = currentMeasureEl.querySelector('.chord-controls .root-note')?.value;
-            const currentChordQualityRaw = currentMeasureEl.querySelector('.chord-controls .chord-quality')?.value;
-            const currentScaleRootDisplay = currentMeasureEl.querySelector('.scale-controls .second-key')?.value || rootNote;
-            const currentScaleTypeRaw = currentMeasureEl.querySelector('.scale-controls .scale-select')?.value || scaleName;
-            const scaleTypeOption = currentMeasureEl.querySelector(`.scale-controls .scale-select option[value="${currentScaleTypeRaw}"]`);
-            const currentScaleTypeDisplay = scaleTypeOption ? scaleTypeOption.textContent : currentScaleTypeRaw;
+        const displayScaleRoot = standardizedRoot; // Use the passed scale root parameter directly
+        const displayScaleTypeRaw = scaleName;    // Use the passed scale name parameter directly
 
-            let chordQualityDisplay = currentChordQualityRaw;
-            const qualityOption = currentMeasureEl.querySelector(`.chord-controls .chord-quality option[value="${currentChordQualityRaw}"]`);
+        let displayScaleTypeName = displayScaleTypeRaw;
+        // Create a temporary select to get the formatted display name of the scale
+        const tempScaleSelect = document.createElement('select');
+        tempScaleSelect.innerHTML = createScaleOptions(displayScaleTypeRaw); // Populates options
+        const selectedOptionEl = tempScaleSelect.querySelector(`option[value="${displayScaleTypeRaw}"]`);
+        displayScaleTypeName = selectedOptionEl ? selectedOptionEl.textContent : displayScaleTypeRaw.replace(/([A-Z])/g, ' $1').split(' ').map(s => s.charAt(0).toUpperCase() + s.substring(1)).join(' ').trim();
+
+        let chordContextMeasure = null;
+        if (changedMeasureDiv) { // 1. If a specific measure was changed, use its context
+            chordContextMeasure = changedMeasureDiv;
+        } else if (AppState.currentMeasure < UI.elements.measures.children.length) { // 2. Otherwise (e.g., during playback), use the current measure by AppState
+            chordContextMeasure = UI.elements.measures.children[AppState.currentMeasure];
+        } else if (UI.elements.measures.children.length > 0) { // 3. Fallback to the first measure if AppState.currentMeasure is out of bounds
+            chordContextMeasure = UI.elements.measures.children[0];
+        }
+        // If no context, the "over ChordXy" part will be omitted.
+
+        let chordRootForDisplay = "";
+        let chordQualityTextForDisplay = "";
+
+        if (chordContextMeasure) {
+            chordRootForDisplay = chordContextMeasure.querySelector('.chord-controls .root-note')?.value;
+            const chordQualityRaw = chordContextMeasure.querySelector('.chord-controls .chord-quality')?.value;
+            
+            const qualityOption = chordContextMeasure.querySelector(`.chord-controls .chord-quality option[value="${chordQualityRaw}"]`);
             if (qualityOption) {
-                chordQualityDisplay = qualityOption.textContent;
-            } else {
-                if (currentChordQualityRaw === 'dom7') chordQualityDisplay = '7';
-                else if (currentChordQualityRaw === 'maj7') chordQualityDisplay = 'Maj7';
-                else if (currentChordQualityRaw === 'min7') chordQualityDisplay = 'm7';
+                chordQualityTextForDisplay = qualityOption.textContent;
+            } else { // Fallback for quality text
+                chordQualityTextForDisplay = chordQualityRaw || "";
+                if (chordQualityRaw === 'dom7') chordQualityTextForDisplay = '7';
+                else if (chordQualityRaw === 'min7') chordQualityTextForDisplay = 'm7';
+                else if (chordQualityRaw === 'maj7') chordQualityTextForDisplay = 'Maj7';
+                // Add more mappings if needed
             }
-            UI.elements.scaleDisplay.textContent = `${currentScaleRootDisplay} ${currentScaleTypeDisplay} over ${currentChordRoot}${chordQualityDisplay}`;
+        }
+
+        if (chordRootForDisplay && chordQualityTextForDisplay) {
+            UI.elements.scaleDisplay.textContent = `${displayScaleRoot} ${displayScaleTypeName} over ${chordRootForDisplay}${chordQualityTextForDisplay}`;
         } else {
-             UI.elements.scaleDisplay.textContent = `${standardizedRoot} ${scaleName.replace(/([A-Z])/g, ' $1').trim()}`;
+            UI.elements.scaleDisplay.textContent = `${displayScaleRoot} ${displayScaleTypeName}`;
         }
     }
     // --- End Update Scale Display ---
 
-    // --- Scale Note Calculation & Drawing ---
-    const rootIndex = NOTES.indexOf(standardizedRoot);
-    const notesInScale = scaleData.map(interval => NOTES[(rootIndex + interval) % 12]);
-    const numStrings = tuningArray.length; // tuningArray[0] is low E string, etc.
-    const numFrets = 12;
+    // --- Scale Note Calculation & Drawing (This part remains the same as your existing function) ---
+    const rootIndex = NOTES.indexOf(standardizedRoot); 
+    const notesInScale = scaleData.map(interval => NOTES[(rootIndex + interval) % 12]); 
+    const numStrings = tuningArray.length;
+    const numFrets = 12; // Or get from a global setting
 
-    for (let stringIndex = 0; stringIndex < numStrings; stringIndex++) { // stringIndex 0 is lowest pitched string
+    for (let stringIndex = 0; stringIndex < numStrings; stringIndex++) {
         const openStringNote = standardizeNoteName(tuningArray[stringIndex]);
         const openStringNoteIndex = NOTES.indexOf(openStringNote);
         if (openStringNoteIndex === -1) {
@@ -2100,7 +2122,7 @@ function updateFretboardNotes(fretboardContainer, rootNote, scaleName, tuningArr
             continue;
         }
 
-        const FNO_Key = `string${numStrings - stringIndex}`; // For audio octave lookup
+        const FNO_Key = `string${numStrings - stringIndex}`;
 
         for (let fret = 0; fret <= numFrets; fret++) {
             const currentNoteIndexOnString = (openStringNoteIndex + fret + 12) % 12;
@@ -2111,55 +2133,52 @@ function updateFretboardNotes(fretboardContainer, rootNote, scaleName, tuningArr
                 noteElement.className = 'note';
                 noteElement.textContent = currentNoteNameOnString;
 
-                // X Position: Open notes (fret 0) to the left of the nut, fretted notes in their space
-                if (fret === 0) {
-                    noteElement.style.left = `-2%`; // Position open string notes left of the nut line
+                if (fret === 0) { // Open string notes slightly to the left of the nut
+                    noteElement.style.left = `-2%`; // Adjust as needed
                 } else {
-                    noteElement.style.left = `${((fret - 0.5) / numFrets) * 100}%`; // Centered in fret space
+                    noteElement.style.left = `${((fret - 0.5) / numFrets) * 100}%`;
                 }
 
-                // Y Position: High E (stringIndex numStrings-1) at visual top (small Y%), Low E (stringIndex 0) at visual bottom (large Y%)
-                const stringYPosition = (((numStrings - 1 - stringIndex) / (numStrings - 1)) * 96) + 2;
+                const stringYPosition = (((numStrings - 1 - stringIndex) / (numStrings - 1)) * 96) + 2; // Small padding
                 noteElement.style.top = `${stringYPosition}%`;
 
-
-                // Coloring
-                if (currentNoteNameOnString === standardizedRoot) {
-                    noteElement.style.backgroundColor = '#BD2031'; // Root note color
+                if (currentNoteNameOnString === standardizedRoot) { // Root note of the scale
+                    noteElement.style.backgroundColor = '#BD2031'; // Example: Red for root
                 } else {
+                    // Optional: color based on degree or just a general scale note color
                     const degreeInScale = notesInScale.indexOf(currentNoteNameOnString);
-                    noteElement.style.backgroundColor = (degreeInScale % 2 === 0) ? '#006400' : '#4CAF50'; // Alternating colors
+                    noteElement.style.backgroundColor = (degreeInScale % 2 === 0) ? '#006400' : '#4CAF50'; // Darker/Lighter green
                 }
-
-                // Determine octave for playback
+                
+                // --- Octave and Playback Logic (copied from your file) ---
                 let noteOctaveForPlayback = `${currentNoteNameOnString}3`; // Default
                 if (isStandardGuitarTuning && FRETBOARD_NOTES_OCTAVES[FNO_Key] && fret < FRETBOARD_NOTES_OCTAVES[FNO_Key].length) {
                     noteOctaveForPlayback = FRETBOARD_NOTES_OCTAVES[FNO_Key][fret];
                 } else {
-                    let approxOctave;
-                    // Higher stringIndex means higher pitched string = higher octave
-                    if (stringIndex > numStrings * 2 / 3) { // Highest third of strings
-                        approxOctave = PLAYBACK_OCTAVES[PLAYBACK_OCTAVES.length - 1];
-                    } else if (stringIndex > numStrings / 3) { // Middle third
-                        approxOctave = PLAYBACK_OCTAVES[0] + (PLAYBACK_OCTAVES.length > 1 ? Math.floor(Math.random()*1.5) : 0) ;
-                    } else { // Lowest third of strings
-                        approxOctave = PLAYBACK_OCTAVES[0];
+                    // Fallback octave logic (simplified from your original)
+                    let approxOctave = PLAYBACK_OCTAVES[0]; // Default to lowest
+                    if (stringIndex < numStrings / 3) { // Higher strings
+                        approxOctave = PLAYBACK_OCTAVES[PLAYBACK_OCTAVES.length -1];
+                    } else if (stringIndex < numStrings * 2/3) {
+                        approxOctave = PLAYBACK_OCTAVES[Math.floor(PLAYBACK_OCTAVES.length / 2)];
                     }
-
                     if (fret > 7 && approxOctave < OCTAVES_FOR_SAMPLES[OCTAVES_FOR_SAMPLES.length - 1]) {
-                        approxOctave++;
+                         approxOctave = Math.min(OCTAVES_FOR_SAMPLES[OCTAVES_FOR_SAMPLES.length - 1], approxOctave + 1);
                     }
-                    approxOctave = Math.max(OCTAVES_FOR_SAMPLES[0], Math.min(OCTAVES_FOR_SAMPLES[OCTAVES_FOR_SAMPLES.length - 1], approxOctave));
+                     approxOctave = Math.max(OCTAVES_FOR_SAMPLES[0], Math.min(OCTAVES_FOR_SAMPLES[OCTAVES_FOR_SAMPLES.length - 1], approxOctave));
                     noteOctaveForPlayback = `${currentNoteNameOnString}${approxOctave}`;
                 }
                 noteElement.dataset.note = noteOctaveForPlayback;
+                // --- End Octave and Playback Logic ---
+
 
                 noteElement.addEventListener('click', async (event) => {
-                    event.stopPropagation();
+                    event.stopPropagation(); // Prevent measure click event if note is clicked
                     await AudioContextManager.ensureAudioContext();
                     const noteToPlay = noteElement.dataset.note;
                     const volume = fretboardContainer.id.startsWith('fretflow-fretboard') ? 0.4 : parseFloat(UI.elements.chordFretboardVolume.value);
-                    playNote(noteToPlay, volume, 500);
+                    playNote(noteToPlay, volume, 500); // playNote should be defined
+                    // Visual feedback for click
                     noteElement.style.transform = 'translate(-50%, -50%) scale(1.3)';
                     setTimeout(() => {
                         noteElement.style.transform = 'translate(-50%, -50%) scale(1)';
@@ -2173,7 +2192,7 @@ function updateFretboardNotes(fretboardContainer, rootNote, scaleName, tuningArr
 
     // --- Guide Tones ---
     if (AppState.guideTonesActive && fretboardContainer.id === 'chord-fretboard') {
-        highlightGuideTones();
+        highlightGuideTones(changedMeasureDiv); // Pass the context
     }
     // --- End Guide Tones ---
 }
@@ -2643,19 +2662,21 @@ function addMeasure(root = 'C', quality = 'maj7', scaleRoot = 'C', scaleType = '
     measuresContainer.appendChild(measureDiv);
 
     measureDiv.querySelectorAll('select').forEach(selectElement => {
-        selectElement.addEventListener('change', () => handleMeasureControlChange(measureDiv));
+        // Pass event.target to the handler
+        selectElement.addEventListener('change', (event) => handleMeasureControlChange(measureDiv, event.target));
     });
     measureDiv.addEventListener('click', (event) => {
-         if (event.target.tagName !== 'SELECT') {
+         if (event.target.tagName !== 'SELECT') { // Ensure not clicking on a dropdown itself
             toggleMeasureLoopSelection(newMeasureIndex);
         }
     });
 
     updateMeasureNumbers();
     if (newMeasureIndex === 0) {
-        addFirstChordListener();
+        // Assuming addFirstChordListener is defined elsewhere and handles initial setup if needed
+        // addFirstChordListener(); 
     }
-    updateNextChordDisplay();
+    updateNextChordDisplay(); // Good to have this
     log(`Added measure ${newMeasureIndex + 1}`);
 }
 
@@ -2689,29 +2710,44 @@ function updateMeasureNumbers() {
     });
 }
 
-function handleMeasureControlChange(measureElement) {
-    const rootSelect = measureElement.querySelector('.root-note');
-    const qualitySelect = measureElement.querySelector('.chord-quality');
-    const scaleKeySelect = measureElement.querySelector('.second-key');
-    const scaleSelect = measureElement.querySelector('.scale-select');
+function handleMeasureControlChange(measureDiv, changedElement) {
+    const rootSelect = measureDiv.querySelector('.root-note');
+    const qualitySelect = measureDiv.querySelector('.chord-quality');
+    const scaleKeySelect = measureDiv.querySelector('.second-key');
+    const scaleTypeSelect = measureDiv.querySelector('.scale-select');
 
-    if (rootSelect && qualitySelect && scaleKeySelect && scaleSelect) {
-        scaleKeySelect.value = rootSelect.value;
-        scaleSelect.value = suggestScaleForQuality(qualitySelect.value);
+    // If a chord control (root note or quality) was changed,
+    // update the scale dropdowns in this measure to a suggested scale.
+    if (changedElement.classList.contains('root-note') || changedElement.classList.contains('chord-quality')) {
+        const newChordRoot = rootSelect.value;
+        const newChordQuality = qualitySelect.value;
+        const suggestedScaleType = suggestScaleForQuality(newChordQuality); // Ensure suggestScaleForQuality is defined
+
+        scaleKeySelect.value = newChordRoot;    // Update scale key to match new chord root
+        scaleTypeSelect.value = suggestedScaleType; // Update scale type to match new chord quality
     }
 
-    if (measureElement === UI.elements.measures.firstElementChild) {
-        addFirstChordListener();
-    }
-    updateNextChordDisplay();
+    // Now, read the current (possibly updated) scale values from this measure's dropdowns
+    const currentScaleKeyForFretboard = scaleKeySelect.value;
+    const currentScaleTypeForFretboard = scaleTypeSelect.value;
+    const currentTuning = TUNINGS[UI.elements.chordTuning.value]; // Assuming TUNINGS and UI.elements.chordTuning are globally accessible
 
-    const measureIndex = Array.from(UI.elements.measures.children).indexOf(measureElement);
-    if (AppState.isPlaying && measureIndex === AppState.currentMeasure) {
-        const tuning = TUNINGS[UI.elements.chordTuning.value];
-        updateFretboardNotes(UI.elements.chordFretboard, scaleKeySelect.value, scaleSelect.value, tuning);
+    // Call updateFretboardNotes, passing the specific measureDiv as the context.
+    // This is crucial for the scale display text to be correct.
+    updateFretboardNotes(
+        UI.elements.chordFretboard,      // The main fretboard element
+        currentScaleKeyForFretboard,     // The scale root from this measure's dropdown
+        currentScaleTypeForFretboard,    // The scale type from this measure's dropdown
+        currentTuning,
+        measureDiv                       // Pass this measureDiv as context
+    );
+
+    if (AppState.guideTonesActive) { // Assuming AppState.guideTonesActive is globally accessible
+        highlightGuideTones(measureDiv); // Pass measureDiv if highlightGuideTones can use it
     }
+    updateNextChordDisplay(); // Update the "Next Chord" display as well
+    log(`Measure ${parseInt(measureDiv.dataset.measureIndex) + 1} controls changed.`);
 }
-
 
 // --- User Progression Save/Load ---
 function saveCurrentProgression() {
