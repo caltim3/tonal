@@ -2051,14 +2051,13 @@ function getChordVoicing(baseNotes, quality) {
 }
         
 // ==================================
-// === MODIFIED playChord FUNCTION ===
+// === MODIFIED playChord FUNCTION (for two hits) ===
 // ==================================
-
 async function playChord(root, quality, startTime, duration) {
     if (!UI.elements.chordsEnabled.classList.contains('active') || !AudioContextManager.samplesLoaded) {
         return;
     }
-    await AudioContextManager.ensureAudioContext(); 
+    await AudioContextManager.ensureAudioContext();
 
     const baseNotesInRootPosition = getChordNotes(root, quality);
     if (!baseNotesInRootPosition || baseNotesInRootPosition.length === 0) {
@@ -2066,94 +2065,100 @@ async function playChord(root, quality, startTime, duration) {
         return;
     }
 
-    // Get a specific voicing (inversion, possibly drop voicing)
-    const selectedVoicingNotes = getChordVoicing([...baseNotesInRootPosition], quality);
-
-    const overallVolume = parseFloat(UI.elements.chordVolume.value) * 0.7; 
+    const overallVolume = parseFloat(UI.elements.chordVolume.value) * 0.7;
     if (overallVolume <= 0) return;
 
+    // --- Logic for the FIRST chord hit ---
+    const firstVoicingNotes = getChordVoicing([...baseNotesInRootPosition], quality);
+    
+    // Fade out previous overall chord gain node *before* creating new ones
     if (AudioContextManager.currentChordGain) {
         try {
             AudioContextManager.currentChordGain.gain.setValueAtTime(AudioContextManager.currentChordGain.gain.value, startTime);
-            AudioContextManager.currentChordGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.05); 
+            AudioContextManager.currentChordGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.05);
         } catch (e) {
-            console.warn("Error fading out previous chord:", e);
+            console.warn("Error fading out previous chord gain:", e);
         }
     }
 
-    const mainGain = AudioContextManager.context.createGain();
-    mainGain.gain.setValueAtTime(0, startTime); 
-    mainGain.gain.linearRampToValueAtTime(overallVolume, startTime + 0.02); 
-    mainGain.connect(AudioContextManager.context.destination); 
-    AudioContextManager.currentChordGain = mainGain;
+    // Create a NEW main gain node for THIS ENTIRE CHORD DURATION (to manage master volume and reverb send)
+    // This will be used by both hits.
+    const chordMasterGain = AudioContextManager.context.createGain();
+    chordMasterGain.gain.setValueAtTime(0, startTime); // Start silent
+    chordMasterGain.gain.linearRampToValueAtTime(overallVolume, startTime + 0.02); // Quick fade in
+    chordMasterGain.connect(AudioContextManager.context.destination); // Dry signal
+    AudioContextManager.currentChordGain = chordMasterGain; // Store this as the one to fade next time
 
+    // Reverb send (only once per chord symbol, from the master gain)
     if (AudioContextManager.reverbNode && AudioContextManager.reverbAmount > 0) {
         const reverbDryWet = AudioContextManager.context.createGain();
-        reverbDryWet.gain.value = AudioContextManager.reverbAmount; 
-        mainGain.connect(reverbDryWet); 
+        reverbDryWet.gain.value = AudioContextManager.reverbAmount;
+        chordMasterGain.connect(reverbDryWet);
         reverbDryWet.connect(AudioContextManager.reverbNode);
-         if (!AudioContextManager.reverbNodeConnected && AudioContextManager.context.destination) {
+        if (!AudioContextManager.reverbNodeConnected && AudioContextManager.context.destination) {
             AudioContextManager.reverbNode.connect(AudioContextManager.context.destination);
             AudioContextManager.reverbNodeConnected = true;
         }
     }
 
-    // Assign octaves to the selected voicing notes
-    const assignedNotesWithOctaves = [];
-    let previousNoteIndex = -1; // Chromatic index of the previously assigned note
-    let currentOctave = PLAYBACK_OCTAVES[0]; // Start with the lower preferred octave
+    // Function to play a single instance of the chord (a "hit")
+    function playChordInstance(voicingNotes, instanceStartTime, instanceDuration, connectToGainNode) {
+        const assignedNotesWithOctaves = voicingNotes.map((noteName, index) => {
+            let octave = PLAYBACK_OCTAVES[0];
+            if (index > 0 && PLAYBACK_OCTAVES.length > 1) {
+                octave = PLAYBACK_OCTAVES[index % PLAYBACK_OCTAVES.length];
+            }
+            if (index > 0 && NOTES.indexOf(standardizeNoteName(noteName)) < NOTES.indexOf(standardizeNoteName(voicingNotes[0])) && PLAYBACK_OCTAVES.length > 1) {
+                if (octave !== PLAYBACK_OCTAVES[PLAYBACK_OCTAVES.length - 1]) {
+                    octave = PLAYBACK_OCTAVES[1] || PLAYBACK_OCTAVES[0];
+                }
+            }
+            if (!OCTAVES_FOR_SAMPLES.includes(octave)) {
+                octave = OCTAVES_FOR_SAMPLES.find(o => o >= PLAYBACK_OCTAVES[0]) || OCTAVES_FOR_SAMPLES[0];
+            }
+            octave = Math.max(OCTAVES_FOR_SAMPLES[0], Math.min(OCTAVES_FOR_SAMPLES[OCTAVES_FOR_SAMPLES.length - 1], octave));
+            return { name: noteName, octave: octave };
+        });
 
-    for (let i = 0; i < selectedVoicingNotes.length; i++) {
-        const noteName = selectedVoicingNotes[i];
-        const noteChromaticIndex = NOTES.indexOf(standardizeNoteName(noteName));
+        assignedNotesWithOctaves.forEach(noteObj => {
+            const samplePitchClass = standardizeNoteNameForSamples(noteObj.name);
+            const finalSampleOctave = Math.max(OCTAVES_FOR_SAMPLES[0], Math.min(OCTAVES_FOR_SAMPLES[OCTAVES_FOR_SAMPLES.length - 1], noteObj.octave));
+            const sampleKey = `${samplePitchClass}${finalSampleOctave}`;
+            const buffer = AudioContextManager.pianoSampleBuffers[sampleKey];
 
-        if (previousNoteIndex !== -1 && noteChromaticIndex < previousNoteIndex) {
-            currentOctave++;
-        }
-        
-        let finalOctave = Math.max(OCTAVES_FOR_SAMPLES[0], currentOctave);
-        finalOctave = Math.min(OCTAVES_FOR_SAMPLES[OCTAVES_FOR_SAMPLES.length - 1], finalOctave);
-        
-        if (finalOctave < PLAYBACK_OCTAVES[0]) finalOctave = PLAYBACK_OCTAVES[0];
-        if (PLAYBACK_OCTAVES.length > 1 && finalOctave > PLAYBACK_OCTAVES[PLAYBACK_OCTAVES.length -1] && selectedVoicingNotes.length > 2) {
-             finalOctave = PLAYBACK_OCTAVES[PLAYBACK_OCTAVES.length -1];
-        }
+            if (!buffer) return;
 
-        assignedNotesWithOctaves.push({ name: noteName, octave: finalOctave });
-        previousNoteIndex = noteChromaticIndex;
-        currentOctave = finalOctave; 
+            const source = AudioContextManager.context.createBufferSource();
+            source.buffer = buffer;
+
+            // Each hit will connect to the main chordMasterGain
+            // No need for individual gain nodes per hit if volume is uniform for the symbol
+            source.connect(connectToGainNode);
+
+            const timingVariance = Math.random() * 0.03;
+            source.start(instanceStartTime + timingVariance);
+            // Duration of each hit is now half the total symbol duration if there are two hits
+            source.stop(instanceStartTime + instanceDuration + timingVariance);
+        });
     }
-    
-    assignedNotesWithOctaves.sort((a, b) => {
-        const pitchA = NOTES.indexOf(a.name) + a.octave * 12;
-        const pitchB = NOTES.indexOf(b.name) + b.octave * 12;
-        return pitchA - pitchB;
-    });
 
-    assignedNotesWithOctaves.forEach(noteObj => {
-        const samplePitchClass = standardizeNoteNameForSamples(noteObj.name);
-        const finalSampleOctave = Math.max(OCTAVES_FOR_SAMPLES[0], Math.min(OCTAVES_FOR_SAMPLES[OCTAVES_FOR_SAMPLES.length - 1], noteObj.octave));
-        const sampleKey = `${samplePitchClass}${finalSampleOctave}`;
-        const buffer = AudioContextManager.pianoSampleBuffers[sampleKey];
+    // Play the first hit
+    playChordInstance(firstVoicingNotes, startTime, duration / 2, chordMasterGain);
 
-        if (!buffer) {
-            // console.warn(`Chord Playback: No sample for ${sampleKey} (root: ${root}, quality: ${quality}, note: ${noteObj.name}${noteObj.octave} -> ${finalSampleOctave})`);
-            return;
-        }
+    // --- Logic for the SECOND chord hit (if applicable) ---
+    // For split measures, the `duration` passed to playChord is already for half a measure.
+    // So, we only do two "hits" if the duration suggests it's a full measure chord.
+    // A simple heuristic: if duration is longer than typical two beats at current tempo.
+    const beatDurationSec = 60 / AppState.tempo;
+    const timeSigNum = parseInt(UI.elements.timeSignature.value);
+    const isLikelyFullMeasureChord = (timeSigNum === 4 && duration > (beatDurationSec * 2.5)) || (timeSigNum !== 4 && duration > (beatDurationSec * (timeSigNum / 2 + 0.5)));
 
-        const source = AudioContextManager.context.createBufferSource();
-        source.buffer = buffer;
 
-        const noteSpecificGain = AudioContextManager.context.createGain();
-        noteSpecificGain.gain.value = 0.8 + (Math.random() * 0.2); 
-
-        source.connect(noteSpecificGain);
-        noteSpecificGain.connect(mainGain); 
-
-        const timingVariance = Math.random() * 0.03; 
-        source.start(startTime + timingVariance);
-        source.stop(startTime + duration + timingVariance); 
-    });
+    if (isLikelyFullMeasureChord) { // Only play a second hit for longer chord durations (likely full measures)
+        const secondVoicingNotes = getChordVoicing([...baseNotesInRootPosition], quality); // Get a potentially different voicing
+        const secondHitStartTime = startTime + duration / 2;
+        playChordInstance(secondVoicingNotes, secondHitStartTime, duration / 2, chordMasterGain);
+    }
 }
         
 async function playMetronomeSound(baseVolume) { // baseVolume is from beatElement.dataset.volume
