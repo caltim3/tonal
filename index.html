@@ -1978,102 +1978,184 @@ function playNote(noteNameWithOctave, volume = 0.5, duration = 500) {
     }
 }
 
+// ==================================
+// === NEW HELPER FUNCTIONS FOR VOICING ===
+// ==================================
+
+/**
+ * Generates various inversions for a given set of chord notes.
+ * @param {string[]} baseNotes - Array of note names in root position (e.g., ['C', 'E', 'G', 'Bb'])
+ * @returns {string[][]} An array of voicings (each voicing is an array of note names).
+ */
+function generateInversions(baseNotes) {
+    const voicings = [];
+    voicings.push([...baseNotes]); // Root position
+
+    for (let i = 1; i < baseNotes.length; i++) {
+        const inverted = [...baseNotes.slice(i), ...baseNotes.slice(0, i)];
+        voicings.push(inverted);
+    }
+    return voicings;
+}
+
+/**
+ * Attempts to create a drop 2 voicing for a 4-note chord.
+ * (Drops the second note from the top by an octave).
+ * @param {string[]} rootPositionNotes - Chord notes in root position.
+ * @returns {string[]|null} The drop 2 voiced notes, or null if not applicable.
+ */
+function generateDrop2Voicing(rootPositionNotes) {
+    if (rootPositionNotes.length !== 4) return null;
+
+    // A Drop 2 voicing could be formed by notes at indices [0, 2, 3, 1] where the '1' is an octave higher.
+    // For C E G B -> C G B E (with E an octave higher than the root pos E)
+    const voicing = [
+        rootPositionNotes[0], // Root
+        rootPositionNotes[2], // 5th
+        rootPositionNotes[3], // 7th
+        rootPositionNotes[1]  // 3rd (will be placed in a higher octave later)
+    ];
+    return voicing;
+}
+
+
+/**
+ * Selects a voicing for the chord, considering inversions and a chance for drop voicings.
+ * @param {string[]} baseNotes - Chord notes in root position.
+ * @param {string} quality - The chord quality.
+ * @returns {string[]} The selected array of note names for the voicing.
+ */
+function getChordVoicing(baseNotes, quality) {
+    let potentialVoicings = generateInversions(baseNotes);
+
+    // Add a chance for a drop 2 voicing if it's a 4-note chord (typically 7ths)
+    if (baseNotes.length === 4 && Math.random() < 0.25) { // 25% chance for drop 2
+        const drop2 = generateDrop2Voicing(baseNotes);
+        if (drop2) {
+            potentialVoicings.push(drop2);
+        }
+    }
+    // A very simplified "open" voicing for 4-note chords: root, 7th, 3rd, 5th (3rd and 5th up an octave)
+    if (baseNotes.length === 4 && Math.random() < 0.10) { // 10% chance for this wider voicing
+        const wideVoicing = [
+            baseNotes[0], // Root
+            baseNotes[3], // 7th
+            baseNotes[1], // 3rd
+            baseNotes[2]  // 5th
+        ];
+        potentialVoicings.push(wideVoicing);
+    }
+
+    // Randomly select one of the generated voicings
+    return potentialVoicings[Math.floor(Math.random() * potentialVoicings.length)];
+}
+        
+// ==================================
+// === MODIFIED playChord FUNCTION ===
+// ==================================
+
 async function playChord(root, quality, startTime, duration) {
     if (!UI.elements.chordsEnabled.classList.contains('active') || !AudioContextManager.samplesLoaded) {
         return;
     }
-    await AudioContextManager.ensureAudioContext(); // Ensure context is running
+    await AudioContextManager.ensureAudioContext(); 
 
-    const baseNotes = getChordNotes(root, quality);
-    if (!baseNotes || baseNotes.length === 0) {
+    const baseNotesInRootPosition = getChordNotes(root, quality);
+    if (!baseNotesInRootPosition || baseNotesInRootPosition.length === 0) {
         console.warn(`Cannot play chord for ${root}${quality}: No notes found.`);
         return;
     }
 
-    const overallVolume = parseFloat(UI.elements.chordVolume.value) * 0.7; // Adjust max volume
+    // Get a specific voicing (inversion, possibly drop voicing)
+    const selectedVoicingNotes = getChordVoicing([...baseNotesInRootPosition], quality);
+
+    const overallVolume = parseFloat(UI.elements.chordVolume.value) * 0.7; 
     if (overallVolume <= 0) return;
 
-    // Fade out previous chord
     if (AudioContextManager.currentChordGain) {
         try {
             AudioContextManager.currentChordGain.gain.setValueAtTime(AudioContextManager.currentChordGain.gain.value, startTime);
-            AudioContextManager.currentChordGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.05); // Quick fade
+            AudioContextManager.currentChordGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.05); 
         } catch (e) {
             console.warn("Error fading out previous chord:", e);
         }
     }
 
-    // Create a new main gain node for the current chord
     const mainGain = AudioContextManager.context.createGain();
-    mainGain.gain.setValueAtTime(0, startTime); // Start silent
-    mainGain.gain.linearRampToValueAtTime(overallVolume, startTime + 0.02); // Quick fade in
-    mainGain.connect(AudioContextManager.context.destination); // Dry signal
+    mainGain.gain.setValueAtTime(0, startTime); 
+    mainGain.gain.linearRampToValueAtTime(overallVolume, startTime + 0.02); 
+    mainGain.connect(AudioContextManager.context.destination); 
     AudioContextManager.currentChordGain = mainGain;
 
-    // Reverb send
     if (AudioContextManager.reverbNode && AudioContextManager.reverbAmount > 0) {
         const reverbDryWet = AudioContextManager.context.createGain();
-        reverbDryWet.gain.value = AudioContextManager.reverbAmount; // Control reverb level
-        mainGain.connect(reverbDryWet); // Send from chord's main gain
+        reverbDryWet.gain.value = AudioContextManager.reverbAmount; 
+        mainGain.connect(reverbDryWet); 
         reverbDryWet.connect(AudioContextManager.reverbNode);
-        // Ensure reverb node is connected to destination (should be done in setupReverb)
          if (!AudioContextManager.reverbNodeConnected && AudioContextManager.context.destination) {
             AudioContextManager.reverbNode.connect(AudioContextManager.context.destination);
             AudioContextManager.reverbNodeConnected = true;
         }
     }
 
-    // Simple voicing: spread notes across preferred octaves
-    let voicing = [...baseNotes]; // Create a mutable copy
-    // Basic inversion to avoid overly muddy low chords - random for now
-    const inversion = Math.floor(Math.random() * voicing.length);
-    for (let i = 0; i < inversion; i++) {
-        voicing.push(voicing.shift());
+    // Assign octaves to the selected voicing notes
+    const assignedNotesWithOctaves = [];
+    let previousNoteIndex = -1; // Chromatic index of the previously assigned note
+    let currentOctave = PLAYBACK_OCTAVES[0]; // Start with the lower preferred octave
+
+    for (let i = 0; i < selectedVoicingNotes.length; i++) {
+        const noteName = selectedVoicingNotes[i];
+        const noteChromaticIndex = NOTES.indexOf(standardizeNoteName(noteName));
+
+        if (previousNoteIndex !== -1 && noteChromaticIndex < previousNoteIndex) {
+            currentOctave++;
+        }
+        
+        let finalOctave = Math.max(OCTAVES_FOR_SAMPLES[0], currentOctave);
+        finalOctave = Math.min(OCTAVES_FOR_SAMPLES[OCTAVES_FOR_SAMPLES.length - 1], finalOctave);
+        
+        if (finalOctave < PLAYBACK_OCTAVES[0]) finalOctave = PLAYBACK_OCTAVES[0];
+        if (PLAYBACK_OCTAVES.length > 1 && finalOctave > PLAYBACK_OCTAVES[PLAYBACK_OCTAVES.length -1] && selectedVoicingNotes.length > 2) {
+             finalOctave = PLAYBACK_OCTAVES[PLAYBACK_OCTAVES.length -1];
+        }
+
+        assignedNotesWithOctaves.push({ name: noteName, octave: finalOctave });
+        previousNoteIndex = noteChromaticIndex;
+        currentOctave = finalOctave; 
     }
-
-    const assignedNotesWithOctaves = voicing.map((noteName, index) => {
-        let octave = PLAYBACK_OCTAVES[0]; // Default to lower preferred octave
-        // Try to spread notes: if current note is lower than first note, push to higher octave
-        if (index > 0 && NOTES.indexOf(noteName) < NOTES.indexOf(voicing[0]) && PLAYBACK_OCTAVES.length > 1) {
-            octave = PLAYBACK_OCTAVES[1];
-        } else if (PLAYBACK_OCTAVES.length > 1 && index > 1) { // Alternate octaves for remaining notes
-            octave = PLAYBACK_OCTAVES[index % PLAYBACK_OCTAVES.length];
-        }
-        // Ensure the chosen octave is within the loadable sample range
-        if (!OCTAVES_FOR_SAMPLES.includes(octave)) {
-             octave = OCTAVES_FOR_SAMPLES.find(o => o >= PLAYBACK_OCTAVES[0]) || OCTAVES_FOR_SAMPLES[0];
-        }
-        return { name: noteName, octave: octave };
+    
+    assignedNotesWithOctaves.sort((a, b) => {
+        const pitchA = NOTES.indexOf(a.name) + a.octave * 12;
+        const pitchB = NOTES.indexOf(b.name) + b.octave * 12;
+        return pitchA - pitchB;
     });
-
 
     assignedNotesWithOctaves.forEach(noteObj => {
         const samplePitchClass = standardizeNoteNameForSamples(noteObj.name);
-        const sampleKey = `${samplePitchClass}${noteObj.octave}`;
+        const finalSampleOctave = Math.max(OCTAVES_FOR_SAMPLES[0], Math.min(OCTAVES_FOR_SAMPLES[OCTAVES_FOR_SAMPLES.length - 1], noteObj.octave));
+        const sampleKey = `${samplePitchClass}${finalSampleOctave}`;
         const buffer = AudioContextManager.pianoSampleBuffers[sampleKey];
 
         if (!buffer) {
-            // console.warn(`Chord Playback: No sample for ${sampleKey} (root: ${root}, quality: ${quality})`);
+            // console.warn(`Chord Playback: No sample for ${sampleKey} (root: ${root}, quality: ${quality}, note: ${noteObj.name}${noteObj.octave} -> ${finalSampleOctave})`);
             return;
         }
 
         const source = AudioContextManager.context.createBufferSource();
         source.buffer = buffer;
 
-        // Slight humanization of volume per note
         const noteSpecificGain = AudioContextManager.context.createGain();
-        noteSpecificGain.gain.value = 0.8 + (Math.random() * 0.2); // Vary volume slightly
+        noteSpecificGain.gain.value = 0.8 + (Math.random() * 0.2); 
 
         source.connect(noteSpecificGain);
-        noteSpecificGain.connect(mainGain); // Connect to the chord's main gain node
+        noteSpecificGain.connect(mainGain); 
 
-        // Slight humanization of timing
-        const timingVariance = Math.random() * 0.03; // up to 30ms
+        const timingVariance = Math.random() * 0.03; 
         source.start(startTime + timingVariance);
-        source.stop(startTime + duration + timingVariance); // Ensure it plays for the full chord duration
+        source.stop(startTime + duration + timingVariance); 
     });
 }
-
+        
 async function playMetronomeSound(baseVolume) { // baseVolume is from beatElement.dataset.volume
     if (!AudioContextManager.context) return;
 
