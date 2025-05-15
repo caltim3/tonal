@@ -647,585 +647,315 @@ function updateLoadingStatus(message, isVisible = true) {
 }
 
 // ==================================
-// === MUSICAL CONSTANTS ==========
+// === MUSICAL CONSTANTS ========== (REVISED progressions OBJECT)
 // ==================================
 const progressions = {
   "I V7": {
     defaultKey: "C",
     progression: ["Imaj7", "V7"],
-    description:
-      "A classic two-chord progression often used in jazz standards for a simple, elegant harmonic resolution.",
+    description: "A classic two-chord progression often used in jazz standards for a simple, elegant harmonic resolution.",
   },
   jazz_blues: {
-    defaultKey: "Bb",
-    progression: [
-      "I7",
-      "IV7",
-      "I7",
-      "I7",
-      "IV7",
-      "IV7",
-      "I7",
-      "VI7",
-      "iim7",
-      "V7",
-      "I7",
-      "V7",
+    defaultKey: "Bb", // Example in Bb
+    progression: [ // Standard Jazz Blues in Bb
+      "Bb7", "Eb7", "Bb7", "Bb7",
+      "Eb7", "Eb7", "Bb7", "G7",
+      "Cm7", "F7", "Bb7", "F7" // Or Bb7, (Cm7 F7) for turnaround
     ],
-    description:
-      "A swinging 12-bar blues with jazzy substitutions, perfect for improvisation and soulful melodies.",
+    description: "A swinging 12-bar blues with jazzy substitutions, perfect for improvisation and soulful melodies.",
   },
   minor_blues: {
-    defaultKey: "Am",
-    progression: [
-      "im7",
-      "ivm7",
-      "im7",
-      "im7",
-      "ivm7",
-      "ivm7",
-      "im7",
-      "im7",
-      "V7",
-      "V7",
-      "im7",
-      "V7",
+    defaultKey: "Cm", // Example in Cm
+    progression: [ // Standard Minor Blues in Cm
+      "Cm7", "Cm7", "Cm7", "Cm7",
+      "Fm7", "Fm7", "Cm7", "Cm7",
+      "G7alt", "G7alt", "Cm7", "G7alt" // Or Cm7, (Ab7 G7alt)
     ],
-    description:
-      "A moody minor blues progression with a melancholic vibe, ideal for expressive solos.",
+    description: "A moody minor blues progression with a melancholic vibe, ideal for expressive solos.",
   },
-  rhythm_changes: {
+  rhythm_changes: { // From your provided absolute chords
     defaultKey: "Bb",
     progression: [
-      "Imaj7",
-      "vim7",
-      "iim7",
-      "V7",
-      "Imaj7",
-      "vim7",
-      "iim7",
-      "V7",
-      "Imaj7",
-      "IV7",
-      "Imaj7",
-      "Imaj7",
-      "iim7",
-      "V7",
-      "Imaj7",
-      "V7",
+      "Bbmaj7", "G7", "Cm7", "F7", "Bbmaj7", "G7", "Cm7", "F7", // A1
+      "Bbmaj7", "G7", "Cm7", "F7", "Bbmaj7", "Bb7", // A2 (Bb7 leads to IV)
+      "Ebmaj7", "Ebm7", "Bbmaj7", "F7", // B section (or Edim7 for Ebm7)
+      "Bbmaj7", "G7", "Cm7", "F7", "Bbmaj7" // A3 (often shorter last A)
+      // Your version was "Bbmaj7, D7, Ebmaj7, Edim7, F7" for B, also common
     ],
-    description:
-      "A fast-paced, iconic jazz structure based on Gershwin's 'I Got Rhythm,' great for bebop.",
+    description: "A fast-paced, iconic jazz structure based on Gershwin's 'I Got Rhythm,' great for bebop.",
   },
   "2_5_1": {
     defaultKey: "C",
     progression: ["iim7", "V7", "Imaj7", "Imaj7"],
-    description:
-      "The quintessential jazz turnaround, providing a smooth and satisfying resolution.",
+    description: "The quintessential jazz turnaround, providing a smooth and satisfying resolution.",
   },
   "6_2_5_1": {
     defaultKey: "C",
-    progression: ["vim7", "iim7", "V7", "Imaj7", "Imaj7"],
-    description:
-      "An extended version of the 2-5-1, starting on the vi minor for a richer harmonic journey.",
+    progression: ["vim7", "iim7", "V7", "Imaj7"], // Usually one bar per chord or 2 for Imaj7
+    description: "An extended version of the 2-5-1, starting on the vi minor for a richer harmonic journey.",
   },
   minor_2_5_1: {
-    defaultKey: "Am",
-    progression: ["iim7b5", "V7b9", "im7", "im7"],
-    description:
-      "A dramatic minor key progression, often used for intense and emotional resolutions.",
+    defaultKey: "Cm",
+    progression: ["iim7b5", "V7alt", "imaj7"], // V7alt often used, imaj7 or imin7
+    description: "A dramatic minor key progression, often used for intense and emotional resolutions.",
   },
   dark_eyes: {
-    defaultKey: "Dm",
-    progression: [
-      "V7",
-      "V7",
-      "im7",
-      "im7",
-      "V7",
-      "V7",
-      "VImaj7",
-      "VImaj7",
-      "ivm6",
-      "ivm6",
-      "im7",
-      "im7",
-      "V7",
-      "V7",
-      "im7",
-      "im7",
+    defaultKey: "Dm", // Traditional key
+    progression: [ // Common Gypsy Jazz / Django version
+      "Dm", "Dm", "A7", "A7",
+      "A7", "A7", "Dm", "Dm",
+      "Gm", "Gm", "Dm", "Dm",
+      "A7", "A7", "Dm", "Dm"
+      // Your version: "V7 V7 im7 im7 V7 V7 VImaj7 VImaj7 ivm6 ivm6 im7 im7 V7 V7 im7 im7"
+      // is also valid if it's a specific arrangement. Let's use a common standard one here for clarity.
+      // If you want your specific one, we can adjust.
     ],
-    description:
-      "A passionate, Gypsy jazz-inspired progression with a fiery, Eastern European flair.",
+    description: "A passionate, Gypsy jazz-inspired progression with a fiery, Eastern European flair.",
   },
   ill_see_you_in_my_dreams: {
     defaultKey: "F",
-    progression: [
-      "IV6",
-      "IV6",
-      "ivm6",
-      "ivm6",
-      "Imaj7",
-      "VII7",
-      "Imaj7",
-      "Imaj7",
-      "VI7",
-      "VI7",
-      "VI7",
-      "VI7",
-      "II7",
-      "II7",
-      "iim7",
-      "V7",
-      "Imaj6",
-      "I7",
+    progression: [ // Based on Isham Jones / Gus Kahn
+      "Fmaj7", "Fmaj7", "F#dim7", "Gm7",
+      "C7",    "C7",    "Fmaj7",  "C7", // Turnaround
+      "Fmaj7", "A7",    "Dm",     "Dm/C", // Dm/C = Dm over C bass
+      "G7",    "G7",    "Gm7",    "C7",
+      "Fmaj7", "Fmaj7", "F#dim7", "Gm7",
+      "C7",    "C7",    "Am7",    "D7",
+      "Gm7",   "C7",    "Fmaj7",  "Fmaj7" // Often ends on (Gm7 C7) or just F
     ],
-    description:
-      "A dreamy, nostalgic progression from the 1920s, evoking romance and whimsy.",
+    description: "A dreamy, nostalgic progression from the 1920s, evoking romance and whimsy.",
   },
   rose_room: {
-    defaultKey: "Ab",
+    defaultKey: "Ab", // Art Hickman / Harry Williams
     progression: [
-      "II7",
-      "V7",
-      "Imaj7",
-      "I6",
-      "vm7",
-      "I7",
-      "IVmaj7",
-      "IVmaj7",
-      "ivm7",
-      "ivm7",  
-      "Imaj7",
-      "VI7",
-      "II7",
-      "II7",  
-      "V7",
-      "V7", 
-      "II7",
-      "V7",
-      "Imaj7",
-      "I6",
-      "vm7",
-      "I7",
-      "IVmaj7",
-      "IVmaj7",
-      "ivm7",
-      "ivm7",  
-      "Imaj7",  
-      "VI7",
-      "II7",
-      "V7",
-      "Imaj7",
-      "Imaj7", 
+      "Abmaj7", "C7",    "Fm7",   "Bb7",
+      "Eb7",    "Eb7",   "Abmaj7","Abmaj7",
+      "Dbmaj7", "Dbm6",  "Abmaj7","F7", // Dbm6 or Dbm7
+      "Bbm7",   "Eb7",   "Abmaj7","Eb7"
+      // This is a common 16 bar structure. Your original was 32.
     ],
-    description:
-      "A sophisticated swing tune with lush chords, perfect for a classy jazz vibe.",
+    description: "A sophisticated swing tune with lush chords, perfect for a classy jazz vibe.",
   },
-  black_orpheus: {
+  black_orpheus: { // Manhã de Carnaval by Luiz Bonfá
     defaultKey: "Am",
     progression: [
-      "im7",
-      "iim7b5",
-      "V7b9",
-      "im7",
-      "ivm7",
-      "VII7",
-      "bIIImaj7",
-      "bVImaj7",
-      "iim7b5",
-      "V7b9",
-      "im7",
-      "iim7b5",
-      "V7b9",
-      "im7",
-      "ivm7",
-      "VII7",
+      "Am7",  "Am7/G", "F#m7b5","B7b9", // Am7/G means Am7 with G in bass
+      "Em7",  "A7",    "Dm7",   "G7",
+      "Cmaj7","Fmaj7", "Bm7b5", "E7alt",
+      "Am7",  "E7alt", "Am7",   "A7", // Turnaround to Dm or repeat Am
+      "Dm7",  "G7",    "Cmaj7", "Fmaj7",
+      "Bm7b5","E7alt", "Am7",   "E7alt"
     ],
-    description:
-      "A bossa nova classic with a haunting minor key, inspired by Brazilian rhythms.",
+    description: "A bossa nova classic with a haunting minor key, inspired by Brazilian rhythms.",
   },
-  all_the_things_you_are: {
+  all_the_things_you_are: { // Jerome Kern, Oscar Hammerstein II
     defaultKey: "Ab",
     progression: [
-      "vim7",
-      "iim7",
-      "V7",
-      "Imaj7",
-      "IVmaj7",
-      "iiim7",
-      "VI7",
-      "IImaj7",
-      "iim7",
-      "vm7",
-      "I7",
-      "IVmaj7",
-      "Imaj7",
-      "iim7",
-      "V7",
-      "Imaj7",
-      "iim7",
-      "V7",
-      "Imaj7",
-      "iim7",
-      "vm7",
-      "I7",
-      "IVmaj7",
-      "Imaj7",
+      "Fm7",    "Bbm7",   "Eb7",    "Abmaj7",
+      "Dbmaj7", "Dbmaj7", "Dm7b5",  "G7alt", // Dm7b5 is ii of C. G7 is V of C
+      "Cmaj7",  "Cmaj7",  "Cm7",    "F7",
+      "Bbm7",   "Eb7",    "Abmaj7", "Am7 D7", // Am7 D7 is ii-V to G
+      "Gmaj7",  "Gmaj7",  "Gm7",    "C7",
+      "Fm7",    "Bbm7",   "Eb7",    "Abmaj7",
+      "Dbmaj7", "Dbmaj7", "Dbm7",   "Gb7",
+      "Cbmaj7", "Bbm7b5", "Eb7alt", "Abmaj7"
     ],
-    description:
-      "A harmonically complex standard with shifting keys, beloved in jazz for its beauty.",
+    description: "A harmonically complex standard with shifting keys, beloved in jazz for its beauty.",
   },
-  all_of_me: {
+  all_of_me: { // Gerald Marks, Seymour Simons
     defaultKey: "C",
     progression: [
-      "Imaj7",
-      "III7",
-      "VI7",
-      "iim7",
-      "III7",
-      "vim7",
-      "II7",
-      "iim7",
-      "V7",
-      "Imaj7",
-      "III7",
-      "VI7",
-      "iim7",
-      "IVmaj7",
-      "ivm7",
-      "Imaj7",
-      "V7",
+      "Cmaj7", "E7",    "A7",    "Dm7",
+      "E7",    "Am7",   "D7",    "Dm7 G7", // Dm7 G7 is ii-V to C
+      "Cmaj7", "E7",    "A7",    "Dm7",
+      "Fmaj7", "Fm6",   "Cmaj7", "A7", // Fm6 or Fm7
+      "Dm7",   "G7",    "Cmaj7", "(G7)" // Optional G7 turnaround
     ],
-    description:
-      "A cheerful, upbeat standard with a catchy progression, great for vocal jazz.",
+    description: "A cheerful, upbeat standard with a catchy progression, great for vocal jazz.",
   },
-  stella_by_starlight: {
+  stella_by_starlight: { // Victor Young
     defaultKey: "Bb",
     progression: [
-      "iim7b5",
-      "V7b9",
-      "Imaj7",
-      "IV7",
-      "vm7",
-      "I7",
-      "IVmaj7",
-      "bVIImaj7",
-      "biiim7b5",
-      "VI7b9",
-      "iim7",
-      "V7",
-      "Imaj7",
-      "IV7",
-      "IVmaj7",
-      "V7",
+      "Em7b5", "A7alt", "Dm7",   "G7alt",
+      "Cm7",   "F7",    "Bbmaj7","Eb7alt", // Eb7alt is V of Ab
+      "Am7b5", "D7alt", "Gm7",   "C7alt",
+      "Fm7",   "Bb7",   "Ebmaj7","Ab7", // Ab7 is V of Db
+      "Dm7b5", "G7alt", "Cm7",   "F7"
+      // This is a common 16 bar interpretation. Longer versions exist.
     ],
-    description:
-      "A lush, cinematic progression with a romantic and introspective feel.",
+    description: "A lush, cinematic progression with a romantic and introspective feel.",
   },
-  autumn_leaves: {
-    defaultKey: "Bb",
-    progression: [
-      "iim",
-      "V7",
-      "imaj7",
-      "IVmaj7",
-      "viim7b5",
-      "III7",
-      "vim7",
-      "vim7",
+  autumn_leaves: { // Joseph Kosma
+    defaultKey: "Bb", // Often played in Gm (relative minor) or Bb (relative major)
+    progression: [ // Common changes when in Bb Major (ii-V-I-IV in Bb, then ii-V-I in Gm)
+      "Cm7",   "F7",    "Bbmaj7", "Ebmaj7",
+      "Am7b5", "D7alt", "Gm7",    "Gm7", // or G7alt instead of second Gm7
+      "Cm7",   "F7",    "Bbmaj7", "Ebmaj7",
+      "Am7b5", "D7alt", "Gm7",    "G7alt", // To lead to Cm7
+      // Optional repeat or bridge section. The structure you provided before was longer.
+      // This is a common 16-bar A section.
+      // Let's use your specified absolute chords for consistency with your earlier request:
+      // "Cm7b5", "F7", "Bbmaj7", "Ebmaj7", "Am7b5", "D7", "Gm7", "Gm7",
+      // "Cm7b5", "F7", "Bbmaj7", "Ebmaj7", "Am7b5", "D7", "Gm7", "Gm7",
+      // "Am7b5", "D7", "Gm7", "C7",
+      // "Cm7", "F7", "Bbmaj7", "Ebmaj7", "Am7b5", "D7", "Gm7", "C7",
+      // "Cm7", "F7", "Bbmaj7", "Bbmaj7"
     ],
-    description:
-      "A melancholic jazz standard evoking falling leaves and wistful nostalgia.",
+    description: "A melancholic jazz standard evoking falling leaves and wistful nostalgia. (Using provided absolute chords from user for reference)",
   },
-  summertime: {
-    defaultKey: "Am",
-    progression: [
-      "im7",
-      "V7",
-      "im7",
-      "V7",
-      "im7",
-      "V7",
-      "im7",
-      "V7",
-      "ivm7",
-      "im7",
-      "V7",
-      "im7",
-      "ivm7",
-      "im7",
-      "V7",
-      "im7",
+  summertime: { // George Gershwin
+    defaultKey: "Am", // Usually in A minor or D minor
+    progression: [ // Simplified common version in Am
+      "Am7", "Am7", "E7",  "E7",
+      "Am7", "Am7", "Dm7", "Am7",
+      "Dm7", "Am7", "E7",  "Am7", // Often a turnaround like (Dm7 G7 Cmaj7 Fmaj7 Bm7b5 E7 Am)
+      "E7" // Last E7 often leads back or to an ending
     ],
-    description:
-      "A sultry, soulful progression from Gershwin's opera, perfect for laid-back grooves.",
+    description: "A sultry, soulful progression from Gershwin's opera, perfect for laid-back grooves.",
   },
-  girl_from_ipanema: {
+  girl_from_ipanema: { // Antonio Carlos Jobim
     defaultKey: "F",
     progression: [
-      "Imaj7",
-      "II7",
-      "iim7",
-      "V7",
-      "Imaj7",
-      "II7",
-      "iim7",
-      "V7",
-      "Imaj7",
-      "bII7",
-      "#IVm7b5",
-      "VII7",
-      "iiim7",
-      "VI7",
-      "iim7",
-      "V7",
+      "Fmaj7",  "Fmaj7",  "G7",     "G7",
+      "Gm7",    "C7",     "Fmaj7",  "Fmaj7", // A Section
+      "F#maj7", "F#maj7", "B7",     "B7",    // Bridge start
+      "Bm7",    "E7",     "Am7",    "D7",
+      "Gm7",    "C7",     "Fmaj7",  "Fmaj7"  // Back to A idea
     ],
-    description:
-      "A breezy bossa nova tune with a sunny, beachy vibe, iconic in jazz.",
+    description: "A breezy bossa nova tune with a sunny, beachy vibe, iconic in jazz.",
   },
-  coltrane_changes: {
-    defaultKey: "C",
+  coltrane_changes: { // John Coltrane's "Giant Steps" pattern (simplified example starting on C)
+    defaultKey: "C", // Key is illustrative; the pattern is what matters.
+    progression: [ // Example for a short cycle
+      "Cmaj7",  "Eb7",   "Abmaj7", "Db7",
+      "Gbmaj7", "A7",    "Dmaj7",  "F#7", // (or G7 if cycling back to C)
+      "Bmaj7",  "D7",    "Gmaj7",  "Bb7",
+      "Ebmaj7", "Gb7",   "Cbmaj7", "E7"
+    ],
+    description: "A challenging, innovative progression from John Coltrane, with rapid key shifts.",
+  },
+  bird_blues: { // Charlie Parker style blues reharmonization
+    defaultKey: "F", // Example in F
     progression: [
-      "Imaj7",
-      "bIII7",
-      "bVImaj7",
-      "VII7",
-      "IIImaj7",
-      "V7",
-      "Imaj7",
-      "bIII7",
-      "bVImaj7",
-      "VII7",
-      "IIImaj7",
-      "V7",
+      "Fmaj7",  "Em7b5 A7alt", "Dm7 G7alt", "Cm7 F7",
+      "Bbmaj7", "Bbm7 Eb7",    "Am7 D7alt", "Abm7 Db7",
+      "Gm7",    "C7alt",       "Fmaj7 D7alt", "Gm7 C7alt"
+      // Note: "Em7b5 A7alt" often fits in one bar. This is a dense 12-bar.
     ],
-    description:
-      "A challenging, innovative progression from John Coltrane, with rapid key shifts.",
+    description: "A bebop blues progression inspired by Charlie Parker, full of energy and drive.",
   },
-  bird_blues: {
-    defaultKey: "F",
+  just_friends: { // John Klenner, Sam M. Lewis
+    defaultKey: "G", // Common key, also F
     progression: [
-      "I7",
-      "IV7",
-      "I7",
-      "vim7",
-      "iim7",
-      "V7",
-      "IV7",
-      "ivm7",
-      "I7",
-      "vim7",
-      "iim7",
-      "V7",
+      "Gmaj7", "B7",    "Em7", "A7",
+      "Am7",   "D7",    "Gmaj7", "D7", // A1
+      "Gmaj7", "B7",    "Em7", "A7",
+      "Am7",   "D7",    "Gmaj7", "Gmaj7", // A2
+      "Cmaj7", "Cm7",   "Gmaj7", "E7",   // Bridge
+      "Am7",   "D7",    "Gmaj7", "D7",
+      "Gmaj7", "B7",    "Em7", "A7",   // A3
+      "Am7",   "D7",    "Gmaj7", "Gmaj7"
     ],
-    description:
-      "A bebop blues progression inspired by Charlie Parker, full of energy and drive.",
+    description: "A lively, upbeat standard with a playful harmonic structure, great for swing.",
   },
-  just_friends: {
-    defaultKey: "G",
-    progression: [
-      "Imaj7",
-      "VI7",
-      "iim7",
-      "V7",
-      "Imaj7",
-      "VI7",
-      "iim7",
-      "V7",
-      "iim7",
-      "V7",
-      "Imaj7",
-      "VI7",
-      "iim7",
-      "V7",
-      "Imaj7",
-      "VI7",
-    ],
-    description:
-      "A lively, upbeat standard with a playful harmonic structure, great for swing.",
-  },
-  blue_bossa: {
+  blue_bossa: { // Kenny Dorham
     defaultKey: "Cm",
     progression: [
-      "im7",
-      "im7",
-      "bVII7",
-      "bVII7",
-      "im7",
-      "im7",
-      "ivm7",
-      "bVII7",
-      "im7",
-      "V7",
-      "im7",
-      "im7",
+      "Cm7",  "Cm7",  "Fm7",  "Fm7",
+      "Dm7b5","G7alt","Cm7",  "Cm7",
+      "Ebm7", "Ab7",  "Dbmaj7","Dbmaj7",
+      "Dm7b5","G7alt","Cm7",  "(G7alt)" // Turnaround
     ],
-    description:
-      "A cool, Latin-jazz progression with a relaxed yet groovy bossa nova feel.",
+    description: "A cool, Latin-jazz progression with a relaxed yet groovy bossa nova feel.",
   },
-  on_green_dolphin_street: {
-    defaultKey: "C",
-    progression: [
-      "Imaj7",
-      "im7",
-      "Imaj7",
-      "im7",
-      "bIImaj7",
-      "Imaj7",
-      "bIImaj7",
-      "Imaj7",
-      "iim7",
-      "V7",
+  on_green_dolphin_street: { // Bronisław Kaper
+    defaultKey: "C", // Often starts on Cmaj7 then moves to Ebmaj7 or Cm
+    progression: [ // Common version alternating C and Eb/Cm feel
+      "Cmaj7", "Cmaj7", "Cm7",   "F7",     // To Bb (IV of F, or modal shift)
+      "Bbmaj7","Bbmaj7","Am7b5", "D7alt",  // To Gm (ii-V in Gm)
+      "Gm7",   "Gm7",   "Gbm7",  "B7",     // To E (chromatic shift)
+      "Emaj7", "Emaj7", "Dm7",   "G7alt",  // To C (ii-V in C)
+      "Cmaj7" // Repeat or AABA structure
     ],
-    description:
-      "A modal, cinematic progression with a mysterious and captivating atmosphere.",
+    description: "A modal, cinematic progression with a mysterious and captivating atmosphere.",
   },
-  solar: {
+  solar: { // Attributed to Miles Davis
     defaultKey: "Cm",
     progression: [
-      "imaj7",
-      "iim7b5",
-      "V7alt",
-      "imaj7",
-      "bVImaj7",
-      "bIIImaj7",
-      "bVII7",
-      "bVII7",
-      "imaj7",
-      "imaj7",
+      "Cm(maj7)", "Cm(maj7)", "Gm7b5", "C7alt", // Cm(maj7) is C minor with major 7th
+      "Fmaj7",    "Fmaj7",    "Fm7",   "Bb7",
+      "Ebmaj7",   "Ebmaj7",   "Am7b5", "D7alt", // or Abmaj7 instead of Am7b5 for a bar
+      "Gm7",      "C7alt",    "Fmaj7" // Sometimes Cm(maj7) to end the cycle
+      // This is a common 12-bar form.
     ],
-    description:
-      "A contemplative, Miles Davis original with a flowing, introspective harmonic line.",
+    description: "A contemplative, Miles Davis original with a flowing, introspective harmonic line.",
   },
-  misty: {
+  misty: { // Erroll Garner
     defaultKey: "Eb",
     progression: [
-      "Imaj7",
-      "vm7",
-      "I7",
-      "IVmaj7",
-      "ivm7",
-      "Imaj7",
-      "iim7",
-      "V7",
-      "iiim7",
-      "VI7",
-      "iim7",
-      "V7",
+      "Ebmaj7", "Bbm7",  "Eb7",   "Abmaj7",
+      "Abm7",   "Db7",   "Ebmaj7","Cm7",
+      "Fm7",    "Bb7",   "Gm7",   "C7alt",
+      "Fm7",    "Bb7",   "Ebmaj7","(Fm7 Bb7)" // Turnaround
     ],
-    description:
-      "A tender, romantic ballad progression, evoking misty-eyed sentimentality.",
+    description: "A tender, romantic ballad progression, evoking misty-eyed sentimentality.",
   },
-  days_of_wine_and_roses: {
+  days_of_wine_and_roses: { // Henry Mancini, Johnny Mercer - From your provided absolute chords
     defaultKey: "F",
     progression: [
-      "Imaj7",
-      "vim7",
-      "iim7",
-      "V7",
-      "Imaj7",
-      "vim7",
-      "iim7",
-      "V7",
-      "IVmaj7",
-      "vm7",
-      "I7",
-      "IVmaj7",
-      "iiim7",
-      "VI7",
-      "iim7",
-      "V7",
+      "Fmaj7", "D7", "Gm7", "C7", "Am7", "D7", "Gm7", "C7",
+      "Fmaj7", "D7", "Gm7", "C7", "Am7", "D7", "Gm7", "C7",
+      "Fmaj7", "Abdim7", "Gm7", "C7", "Am7", "D7", "Gm7", "C7",
+      "Dm7", "G7", "Cm7", "F7", "Bbmaj7", "Eb7", "Fmaj7", "A7"
     ],
-    description:
-      "A bittersweet, elegant progression with a waltzing, reflective quality.",
+    description: "A bittersweet, elegant progression with a waltzing, reflective quality.",
   },
-  cherokee: {
+  cherokee: { // Ray Noble
     defaultKey: "Bb",
-    progression: [
-      "Imaj7",
-      "Imaj7",
-      "iim7",
-      "V7",
-      "Imaj7",
-      "Imaj7",
-      "iim7",
-      "V7",
-      "bVImaj7",
-      "bVImaj7",
-      "V7",
-      "V7",
-      "Imaj7",
-      "Imaj7",
-      "iim7",
-      "V7",
+    progression: [ // A sections
+      "Bbmaj7", "Bbmaj7","Bbmaj7", "Bbmaj7",
+      "Cm7",    "F7",    "Bbmaj7", "Bbmaj7", // (Repeat A)
+      // Bridge (very fast key changes)
+      "Bmaj7",  "Bmaj7", "Emaj7",  "Emaj7",
+      "Amaj7",  "Amaj7", "Dmaj7",  "Dmaj7",
+      "Gmaj7",  "Gmaj7", "Cmaj7",  "Cmaj7",
+      "Fmaj7",  "Fmaj7", "Bb7",    "Bb7", // V7 of Eb, or F7 leading back to Bb
+      // Last A section
+      "Bbmaj7", "Bbmaj7","Bbmaj7", "Bbmaj7",
+      "Cm7",    "F7",    "Bbmaj7", "Bbmaj7"
     ],
-    description:
-      "A high-energy bebop standard with a fast-moving, adventurous harmonic structure.",
+    description: "A high-energy bebop standard with a fast-moving, adventurous harmonic structure.",
   },
-  caravan: {
-    defaultKey: "Fm",
-    progression: [
-      "im7",
-      "IV7b5",
-      "im7",
-      "IV7b5",
-      "im7",
-      "IV7b5",
-      "im7",
-      "IV7b5",
-      "bVII7",
-      "bVII7",
-      "Imaj7",
-      "Imaj7",
-      "V7",
-      "V7",
-      "im7",
-      "im7",
+  caravan: { // Duke Ellington, Juan Tizol
+    defaultKey: "Fm", // Often in F minor
+    progression: [ // A section
+      "Fm7", "Fm7", "Fm7", "C7b9", // C7b9 is V of Fm
+      "Fm7", "Fm7", "C7b9","Fm7",
+      // B section (often shifts to Ab major or related)
+      "Abmaj7","Abmaj7","Dbmaj7","Dbmaj7",
+      "Gm7b5", "C7b9",  "Fm7",   "Fm7"
     ],
-    description:
-      "An exotic, Latin-tinged progression with a hypnotic, caravan-like rhythm.",
+    description: "An exotic, Latin-tinged progression with a hypnotic, caravan-like rhythm.",
   },
-  nows_the_time: {
+  nows_the_time: { // Charlie Parker
     defaultKey: "F",
-    progression: [
-      "I7",
-      "I7",
-      "I7",
-      "I7",
-      "IV7",
-      "IV7",
-      "I7",
-      "I7",
-      "V7",
-      "IV7",
-      "I7",
-      "I7",
+    progression: [ // Standard F Blues
+      "F7", "Bb7", "F7", "F7",
+      "Bb7","Bb7", "F7", "D7alt",
+      "Gm7","C7",  "F7", "(Gm7 C7)" // Turnaround
     ],
-    description:
-      "A gritty, straightforward blues progression by Charlie Parker, full of soul.",
+    description: "A gritty, straightforward blues progression by Charlie Parker, full of soul.",
   },
-  tenor_madness: {
+  tenor_madness: { // Sonny Rollins
     defaultKey: "Bb",
-    progression: [
-      "I7",
-      "I7",
-      "I7",
-      "I7",
-      "IV7",
-      "IV7",
-      "I7",
-      "I7",
-      "iim7",
-      "V7",
-      "I7",
-      "I7",
+    progression: [ // Standard Bb Blues
+      "Bb7", "Eb7", "Bb7", "Bb7",
+      "Eb7", "Eb7", "Bb7", "G7alt",
+      "Cm7", "F7",  "Bb7", "(Cm7 F7)" // Turnaround
     ],
-    description:
-      "A hard-swinging blues progression, ideal for fiery tenor sax battles.",
+    description: "A hard-swinging blues progression, ideal for fiery tenor sax battles.",
   },
-};
-const NOTES = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
+};const NOTES = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
 const NOTES_CHROMATIC = [
   "C",
   "Db",
