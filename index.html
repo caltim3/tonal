@@ -1517,7 +1517,9 @@ function createScaleOptions(selectedScale = 'major') {
     }).join('');
 }
 
-
+function getSampleFileName(note, octave) {
+  return `${note}${octave}.${FILE_FORMAT}`; // FILE_FORMAT should be defined globally (it is)
+}
 // ==================================
 // === AUDIO MANAGEMENT ===========
 // ==================================
