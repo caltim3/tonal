@@ -893,16 +893,21 @@ const progressions = { // From previous step, already includes user's specific v
     ],
     description: "A bossa nova classic with a haunting minor key, inspired by Brazilian rhythms."
   },
-  all_the_things_you_are: { 
-    defaultKey: "Ab",
-    progression: [
-      "Fm7",    "Bbm7",   "Eb7",    "Abmaj7", "Dbmaj7", "G7",     "Cmaj7",  "Cmaj7",
-      "Cm7",    "Fm7",    "Bb7",    "Ebmaj7", "Abmaj7", "D7",     "Gmaj7",  "Gmaj7",
-      "Am7",    "D7",     "Gmaj7",  "Gmaj7",  "F#m7",   "B7",     "Emaj7",  "C7alt",
-      "Fm7",    "Bbm7",   "Eb7",    "Abmaj7", "Dbmaj7", "Gb7",    "Cmaj7",  "Bm7 E7"
-    ],
-    description: "A harmonically complex standard with shifting keys, beloved in jazz for its beauty.",
-  },
+    all_the_things_you_are: {
+        defaultKey: "Ab",
+        progression: [
+          "Fm7",    "Bbm7",   "Eb7",    "Abmaj7", // Bars 1-4
+          "Dbmaj7", "Dm7b5",  "G7",     "Cmaj7",  // Bars 5-8
+          "Cm7",    "Fm7",    "Bb7",    "Ebmaj7", // Bars 9-12 (A1)
+          "Abmaj7", "Am7b5",  "D7b9",   "Gmaj7",  // Bars 13-16
+          "Gmaj7",  "Am7",    "D7",     "Gmaj7",  // Bars 17-20 (B section start)
+          "Gmaj7",  "F#m7b5", "B7b9",   "Emaj7",  // Bars 21-24
+          "C7b13",  "Fm7",    "Bbm7",   "Eb7",    // Bars 25-28 (A2 section start)
+          "Abmaj7", "Dbm7",   "Cm7",    "Bdim7",  // Bars 29-32
+          "Bbm7",   "Eb7",    "Abmaj6", "Abmaj6"  // Bars 33-36
+        ],
+        description: "Kern & Hammerstein standard. Note: Qualities like (b9), (b13) will be played as base 7th chords by current parser.",
+      },
   all_of_me: { 
     defaultKey: "C",
     progression: [
