@@ -1751,7 +1751,7 @@ function transposeChordData(chordData, originalSongKeyRoot, targetGlobalKeyRoot)
 
     console.log(`  -> transpositionInterval=${transpositionInterval}, origChordRootIdx=${originalChordRootIndex}, transposedChordRootIdx=${transposedChordRootIndex}, transposedRoot=${transposedRoot}`); // DEBUG LOG NEAR THE BOTTOM
     return { root: transposedRoot, quality: chordData.quality };
-        
+      }  
 function standardizeNoteName(note) {
     if (!note || typeof note !== 'string') return '';
     let standardized = note.toUpperCase().trim().replace('♭', 'b').replace('♯', '#');
