@@ -1712,12 +1712,36 @@ const UI = {
 // ==================================
 // === MUSIC THEORY HELPERS =======
 // ==================================
-
 /**
- * Standardizes a note name (e.g., C#, Db, Dbb).
- * @param {string} note - The note name string.
- * @returns {string} The standardized note name (e.g., Db).
+ * Transposes parsed chord data from an original key context to a target key context.
+ * @param {object} chordData - An object { root: string, quality: string } representing the chord in the original key context.
+ * @param {string} originalSongKeyRoot - The root note of the song's original default key (e.g., "Ab").
+ * @param {string} targetGlobalKeyRoot - The root note of the new global key selected by the user (e.g., "C").
+ * @returns {object} An object { root: string (transposed), quality: string (original) }.
  */
+function transposeChordData(chordData, originalSongKeyRoot, targetGlobalKeyRoot) {
+    const originalKeyRootIndex = NOTES_CHROMATIC.indexOf(standardizeNoteName(originalSongKeyRoot));
+    const targetKeyRootIndex = NOTES_CHROMATIC.indexOf(standardizeNoteName(targetGlobalKeyRoot));
+
+    if (originalKeyRootIndex === -1 || targetKeyRootIndex === -1) {
+        console.error(`Invalid key for transposition: Original '${originalSongKeyRoot}', Target '${targetGlobalKeyRoot}'. Returning original chord.`);
+        return { ...chordData }; // Return original if keys are invalid
+    }
+
+    const transpositionInterval = (targetKeyRootIndex - originalKeyRootIndex + 12) % 12;
+
+    const originalChordRootIndex = NOTES_CHROMATIC.indexOf(standardizeNoteName(chordData.root));
+    if (originalChordRootIndex === -1) {
+        console.error(`Invalid original chord root for transposition: '${chordData.root}'. Returning original chord.`);
+        return { ...chordData }; // Return original if chord root is invalid
+    }
+
+    const transposedChordRootIndex = (originalChordRootIndex + transpositionInterval + 12) % 12;
+    const transposedRoot = NOTES_CHROMATIC[transposedChordRootIndex];
+
+    return { root: transposedRoot, quality: chordData.quality };
+}
+        
 function standardizeNoteName(note) {
     if (!note || typeof note !== 'string') return '';
     let standardized = note.toUpperCase().trim().replace('♭', 'b').replace('♯', '#');
@@ -3074,96 +3098,283 @@ function loadProgression(progressionName, overrideKey = null, isUserSong = false
     }
 
     if (!progressionName || !progressionData) {
-        currentProgressionName = ""; currentFunctionalProgression = [];
+        currentProgressionName = "";
+        currentFunctionalProgression = [];
         UI.elements.measures.innerHTML = '<p>Select a progression.</p>';
         if (songTitleElem) songTitleElem.textContent = "";
         if (songDescElem) songDescElem.textContent = "";
+        if (UI.elements.scaleDisplay) UI.elements.scaleDisplay.textContent = "Select a progression and key.";
+        updateNextChordDisplay();
+        resetLoop();
         return;
     }
 
     currentProgressionName = progressionName;
-    currentFunctionalProgression = progressionData.progression; // Raw strings from data
-    const activeKey = overrideKey || progressionData.defaultKey || "C";
+    currentFunctionalProgression = progressionData.progression; // Store the raw definition strings
+    
+    const targetGlobalKey = overrideKey || progressionData.defaultKey || "C";
+    const originalSongDefaultKey = progressionData.defaultKey || "C"; // Fallback if missing
 
+    const originalSongDefaultKeyRoot = standardizeNoteName(originalSongDefaultKey.replace('m', ''));
+    const targetGlobalKeyRoot = standardizeNoteName(targetGlobalKey.replace('m', ''));
+
+    // Update UI elements for song info and key selection
     if (songTitleElem) songTitleElem.textContent = progressionData.displayName || progressionName.replace(/_/g, ' ');
     if (songDescElem) songDescElem.textContent = progressionData.description || "";
-    if (UI.elements.keySelect) UI.elements.keySelect.value = activeKey;
+    if (UI.elements.keySelect) UI.elements.keySelect.value = targetGlobalKey; // Set the global key selector
 
     UI.elements.measures.innerHTML = '';
     resetLoop();
 
-    currentFunctionalProgression.forEach((rawChordString, index) => {
-        const isSplitFromData = (isUserSong && progressionData.splitStatus && progressionData.splitStatus[index]) ||
-                                (!isUserSong && rawChordString.includes('/')); // Stock songs imply split with '/'
+    // Iterate through the functional progression definition
+    currentFunctionalProgression.forEach((rawChordStringFromDefinition, index) => {
+        let partsToProcessBasedOnOriginalDefinition = [];
+        let isSplitInOriginalDefinition = false;
 
-        let partsData = [];
-        if (isSplitFromData && rawChordString.includes('/')) {
-            const partStrings = rawChordString.split('/');
-            partStrings.forEach(partStr => {
-                const parsed = parseRomanNumeralToAbsoluteChord(partStr.trim(), activeKey);
-                partsData.push({ root: parsed.root, quality: parsed.quality, scaleRoot: parsed.root, scaleType: suggestScaleForQuality(parsed.quality) });
+        // Determine how to interpret the rawChordStringFromDefinition
+        // This string is from the `progressions` object or saved user song's `progression` array.
+        // It represents the chord(s) in the context of `originalSongDefaultKey`.
+        if (isUserSong && progressionData.parts && progressionData.parts[index]) {
+            // User song with detailed parts data
+            isSplitInOriginalDefinition = progressionData.splitStatus[index];
+            progressionData.parts[index].forEach(userPartData => {
+                // userPartData.originalRoman is crucial: it's how the chord was defined in its original saved key context.
+                const parsedOriginal = parseRomanNumeralToAbsoluteChord(userPartData.originalRoman || `${userPartData.root}${userPartData.quality}`, originalSongDefaultKey);
+                partsToProcessBasedOnOriginalDefinition.push({
+                    parsedInOriginalContext: parsedOriginal,
+                    originalScaleRoot: userPartData.scaleRoot, // Preserve user's chosen scale root (relative to original key)
+                    originalScaleType: userPartData.scaleType  // Preserve user's chosen scale type
+                });
             });
-        } else if (isUserSong && isSplitFromData && progressionData.parts && progressionData.parts[index]) {
-            // User song saved with detailed parts structure
-            progressionData.parts[index].forEach(pData => {
-                 const parsed = parseRomanNumeralToAbsoluteChord(`${pData.root}${pData.quality}`, activeKey); // Re-parse for key
-                 partsData.push({ root: parsed.root, quality: parsed.quality, scaleRoot: pData.scaleRoot, scaleType: pData.scaleType });
-            });
-        } else { // Single chord or non-split user song part
-            const parsed = parseRomanNumeralToAbsoluteChord(rawChordString, activeKey);
-            partsData.push({ root: parsed.root, quality: parsed.quality, scaleRoot: parsed.root, scaleType: suggestScaleForQuality(parsed.quality) });
-            if (isSplitFromData && partsData.length === 1) { // Was marked split but only one part found, duplicate
-                partsData.push({...partsData[0]});
+        } else {
+            // Standard progression or simple user song (just a string like "Fm7" or "Fm7 / Bbm7")
+            // Check for "Chord / Chord" structure (indicating split) vs. "Chord/Bass" (which parseChord handles)
+            const potentialSplit = rawChordStringFromDefinition.split('/');
+            // A simple heuristic: if split by '/' AND it's not a recognized single chord format (like C/G)
+            // AND the parts look like independent chords, treat as split.
+            if (potentialSplit.length === 2 &&
+                !parseChord(rawChordStringFromDefinition) && // The whole thing isn't one chord like "Am7/G"
+                parseChord(potentialSplit[0].trim()) && parseChord(potentialSplit[1].trim())) { // Both parts parse as chords
+                isSplitInOriginalDefinition = true;
+                partsToProcessBasedOnOriginalDefinition.push({
+                    parsedInOriginalContext: parseRomanNumeralToAbsoluteChord(potentialSplit[0].trim(), originalSongDefaultKey)
+                });
+                partsToProcessBasedOnOriginalDefinition.push({
+                    parsedInOriginalContext: parseRomanNumeralToAbsoluteChord(potentialSplit[1].trim(), originalSongDefaultKey)
+                });
+            } else {
+                // Single chord for the measure (or a slash chord like Am7/G)
+                isSplitInOriginalDefinition = false;
+                partsToProcessBasedOnOriginalDefinition.push({
+                    parsedInOriginalContext: parseRomanNumeralToAbsoluteChord(rawChordStringFromDefinition, originalSongDefaultKey)
+                });
             }
         }
-        addMeasure(partsData[0].root, partsData[0].quality, partsData[0].scaleRoot, partsData[0].scaleType, isSplitFromData, partsData[1]);
+
+        // Now, transpose each part to the targetGlobalKey
+        let finalPartsDataForMeasure = [];
+        partsToProcessBasedOnOriginalDefinition.forEach(originalPart => {
+            const transposedChord = transposeChordData(originalPart.parsedInOriginalContext, originalSongDefaultKeyRoot, targetGlobalKeyRoot);
+            
+            let finalScaleRoot, finalScaleType;
+            if (originalPart.originalScaleRoot && originalPart.originalScaleType) {
+                // If a specific scale was defined (likely from a user song), transpose its root
+                const originalScaleRootData = { root: originalPart.originalScaleRoot, quality: 'maj' }; // Use dummy quality for transposition
+                const transposedScaleRootInfo = transposeChordData(originalScaleRootData, originalSongDefaultKeyRoot, targetGlobalKeyRoot);
+                finalScaleRoot = transposedScaleRootInfo.root;
+                finalScaleType = originalPart.originalScaleType;
+            } else {
+                // Default: suggest scale based on the transposed chord
+                finalScaleRoot = transposedChord.root;
+                finalScaleType = suggestScaleForQuality(transposedChord.quality);
+            }
+
+            finalPartsDataForMeasure.push({
+                root: transposedChord.root,
+                quality: transposedChord.quality,
+                scaleRoot: finalScaleRoot,
+                scaleType: finalScaleType
+            });
+        });
+
+        // If the original definition implied a split measure but we only have one part processed (e.g. user song error), duplicate it.
+        if (isSplitInOriginalDefinition && finalPartsDataForMeasure.length === 1) {
+            finalPartsDataForMeasure.push({ ...finalPartsDataForMeasure[0] });
+        }
+        
+        // Add the measure to the UI
+        addMeasure(
+            finalPartsDataForMeasure[0].root,
+            finalPartsDataForMeasure[0].quality,
+            finalPartsDataForMeasure[0].scaleRoot,
+            finalPartsDataForMeasure[0].scaleType,
+            isSplitInOriginalDefinition, // Use the split status derived from the original definition
+            finalPartsDataForMeasure.length > 1 ? finalPartsDataForMeasure[1] : null
+        );
     });
 
     updateMeasureNumbers();
-    addFirstChordListener();
-    updateNextChordDisplay(0);
-    log(`Loaded ${isUserSong ? 'user song' : 'standard progression'}: ${progressionName} in key ${activeKey}`);
+    addFirstChordListener(); // This will set up the initial fretboard display
+    updateNextChordDisplay();
+    log(`Loaded ${isUserSong ? 'user song' : 'standard progression'}: ${progressionName} in key ${targetGlobalKey}`);
 }
-
 /**
  * Updates the entire progression when the key is changed.
  * @param {string} newKey - The new key to apply.
  */
 function updateProgressionKey(newKey) {
-    if (!currentFunctionalProgression || currentFunctionalProgression.length === 0) {
-        if (UI.elements.measures.children.length === 0) { // No measures, just update default fretboard
-            const tuning = TUNINGS[UI.elements.chordTuning.value];
-            updateFretboardNotes(UI.elements.chordFretboard, newKey, 'major', tuning);
-            if (UI.elements.scaleDisplay) UI.elements.scaleDisplay.textContent = `${newKey} Major`;
+    // If no progression is currently loaded (e.g., currentFunctionalProgression is empty or measures are empty)
+    // just update the default fretboard if needed.
+    if (!currentFunctionalProgression || currentFunctionalProgression.length === 0 || UI.elements.measures.children.length === 0) {
+        const targetGlobalKeyRoot_noProg = standardizeNoteName(newKey.replace('m', ''));
+        const initialTuning = TUNINGS[UI.elements.chordTuning.value];
+        // Attempt to get a sensible default scale type if a single chord is somehow displayed.
+        // Otherwise, default to 'major'.
+        let defaultScaleType = 'major';
+        const firstMeasurePartForDefault = UI.elements.measures.children[0]?.querySelector('.measure-part');
+        if (firstMeasurePartForDefault) {
+            defaultScaleType = firstMeasurePartForDefault.querySelector('.scale-select')?.value || 'major';
+        }
+        
+        updateFretboardNotes(UI.elements.chordFretboard, targetGlobalKeyRoot_noProg, defaultScaleType, initialTuning, firstMeasurePartForDefault);
+        if (UI.elements.scaleDisplay) {
+            const scaleTypeName = firstMeasurePartForDefault ? (UI.elements.chordFretboard.querySelector('.scale-select option:checked')?.textContent || defaultScaleType) : 'Major';
+            UI.elements.scaleDisplay.textContent = `${targetGlobalKeyRoot_noProg} ${scaleTypeName}`;
+        }
+        log(`No active progression. Fretboard updated for key: ${newKey}`);
+        return;
+    }
+
+    // Get the original song data to find its 'defaultKey'
+    const songDataForOriginalKey = progressions[currentProgressionName] ||
+                                  JSON.parse(localStorage.getItem('userBebopProgressions') || '{}')[currentProgressionName];
+
+    if (!songDataForOriginalKey || !songDataForOriginalKey.defaultKey) {
+        console.warn(`Cannot re-key progression '${currentProgressionName}': Original defaultKey information is missing. Fretboard might not update correctly for all chords.`);
+        // As a fallback, if original default key is unknown, we might try to infer it,
+        // or simply apply the new key directly to the first chord for the main fretboard.
+        // This situation should ideally be avoided by ensuring all progressionData has a defaultKey.
+        const firstMeasurePart = UI.elements.measures.children[0]?.querySelector('.measure-part');
+        if (firstMeasurePart) {
+            const newTargetGlobalKeyRoot_fallback = standardizeNoteName(newKey.replace('m', ''));
+            firstMeasurePart.querySelector('.root-note').value = newTargetGlobalKeyRoot_fallback;
+            firstMeasurePart.querySelector('.second-key').value = newTargetGlobalKeyRoot_fallback;
+            // Potentially re-suggest scale type
+            const quality = firstMeasurePart.querySelector('.chord-quality').value;
+            firstMeasurePart.querySelector('.scale-select').value = suggestScaleForQuality(quality);
+            handleMeasureControlChange(firstMeasurePart, firstMeasurePart.querySelector('.root-note'));
         }
         return;
     }
-    
+
+    const originalSongDefaultKey = songDataForOriginalKey.defaultKey;
+    const originalSongDefaultKeyRoot = standardizeNoteName(originalSongDefaultKey.replace('m', ''));
+    const newTargetGlobalKeyRoot = standardizeNoteName(newKey.replace('m', ''));
+
+    // Iterate through each measure displayed in the UI
     Array.from(UI.elements.measures.children).forEach((measureElement, measureIndex) => {
+        // Ensure we don't go out of bounds if UI has more measures than definition (e.g., user added some)
         if (measureIndex < currentFunctionalProgression.length) {
-            const originalRawChordString = currentFunctionalProgression[measureIndex];
+            const rawChordStringFromOriginalDefinition = currentFunctionalProgression[measureIndex];
             const measurePartsUI = measureElement.querySelectorAll('.measure-part');
-            const isSplit = measureElement.dataset.isSplit === 'true';
-            const rawPartsStrings = isSplit && originalRawChordString.includes('/') ? 
-                                    originalRawChordString.split('/').map(s => s.trim()) : [originalRawChordString];
+            
+            let originalPartsToProcess = [];
+            let isSplitInOriginalDefinition = false;
 
-            measurePartsUI.forEach((partElement, partIndex) => {
-                let partOriginalString = rawPartsStrings[partIndex] || rawPartsStrings[0]; // Fallback
-                // For user songs, if 'parts' data exists, use its originalRoman for re-parsing
-                const userSongs = JSON.parse(localStorage.getItem('userBebopProgressions') || '{}');
-                if (isUserSongCurrentlyLoaded() && userSongs[currentProgressionName]?.parts?.[measureIndex]?.[partIndex]?.originalRoman) {
-                    partOriginalString = userSongs[currentProgressionName].parts[measureIndex][partIndex].originalRoman;
+            // Re-interpret the original definition string for this measure
+            if (isUserSongCurrentlyLoaded() && songDataForOriginalKey.parts && songDataForOriginalKey.parts[measureIndex]) {
+                isSplitInOriginalDefinition = songDataForOriginalKey.splitStatus[measureIndex];
+                songDataForOriginalKey.parts[measureIndex].forEach(userPartData => {
+                    const parsedOriginal = parseRomanNumeralToAbsoluteChord(userPartData.originalRoman || `${userPartData.root}${userPartData.quality}`, originalSongDefaultKey);
+                    originalPartsToProcess.push({
+                        parsedInOriginalContext: parsedOriginal,
+                        originalScaleRoot: userPartData.scaleRoot,
+                        originalScaleType: userPartData.scaleType
+                    });
+                });
+            } else {
+                const potentialSplit = rawChordStringFromOriginalDefinition.split('/');
+                if (potentialSplit.length === 2 &&
+                    !parseChord(rawChordStringFromOriginalDefinition) &&
+                    parseChord(potentialSplit[0].trim()) && parseChord(potentialSplit[1].trim())) {
+                    isSplitInOriginalDefinition = true;
+                    originalPartsToProcess.push({
+                        parsedInOriginalContext: parseRomanNumeralToAbsoluteChord(potentialSplit[0].trim(), originalSongDefaultKey)
+                    });
+                    originalPartsToProcess.push({
+                        parsedInOriginalContext: parseRomanNumeralToAbsoluteChord(potentialSplit[1].trim(), originalSongDefaultKey)
+                    });
+                } else {
+                    isSplitInOriginalDefinition = false;
+                    originalPartsToProcess.push({
+                        parsedInOriginalContext: parseRomanNumeralToAbsoluteChord(rawChordStringFromOriginalDefinition, originalSongDefaultKey)
+                    });
                 }
+            }
 
-                const parsedChord = parseRomanNumeralToAbsoluteChord(partOriginalString, newKey);
-                partElement.querySelector('.root-note').value = parsedChord.root;
-                partElement.querySelector('.chord-quality').value = parsedChord.quality;
-                partElement.querySelector('.second-key').value = parsedChord.root;
-                partElement.querySelector('.scale-select').value = suggestScaleForQuality(parsedChord.quality);
+            // Update each part in the UI
+            measurePartsUI.forEach((partElement, partIndex) => {
+                if (partIndex < originalPartsToProcess.length) {
+                    const originalPart = originalPartsToProcess[partIndex];
+                    const transposedChord = transposeChordData(originalPart.parsedInOriginalContext, originalSongDefaultKeyRoot, newTargetGlobalKeyRoot);
+
+                    partElement.querySelector('.root-note').value = transposedChord.root;
+                    partElement.querySelector('.chord-quality').value = transposedChord.quality; // Quality doesn't change with transposition
+
+                    let finalScaleRoot, finalScaleType;
+                    if (originalPart.originalScaleRoot && originalPart.originalScaleType) {
+                        const originalScaleRootData = { root: originalPart.originalScaleRoot, quality: 'maj' };
+                        const transposedScaleRootInfo = transposeChordData(originalScaleRootData, originalSongDefaultKeyRoot, newTargetGlobalKeyRoot);
+                        finalScaleRoot = transposedScaleRootInfo.root;
+                        finalScaleType = originalPart.originalScaleType;
+                    } else {
+                        finalScaleRoot = transposedChord.root;
+                        finalScaleType = suggestScaleForQuality(transposedChord.quality);
+                    }
+                    partElement.querySelector('.second-key').value = finalScaleRoot;
+                    partElement.querySelector('.scale-select').value = finalScaleType;
+                } else if (originalPartsToProcess.length > 0) {
+                    // If UI has more parts than original definition (e.g. user split a non-split measure),
+                    // try to use the last valid original part for transposition.
+                    const lastOriginalPart = originalPartsToProcess[originalPartsToProcess.length - 1];
+                    const transposedChord = transposeChordData(lastOriginalPart.parsedInOriginalContext, originalSongDefaultKeyRoot, newTargetGlobalKeyRoot);
+                     partElement.querySelector('.root-note').value = transposedChord.root;
+                    partElement.querySelector('.chord-quality').value = transposedChord.quality;
+                    partElement.querySelector('.second-key').value = transposedChord.root;
+                    partElement.querySelector('.scale-select').value = suggestScaleForQuality(transposedChord.quality);
+                }
             });
+        } else {
+            // This measure was likely added by the user and is not part of the original song definition.
+            // How to handle its transposition?
+            // Option 1: Leave it as is (it's "absolute" in the context of the key it was added in).
+            // Option 2: Attempt to transpose it assuming its current state was relative to the *previous* global key.
+            // For now, let's implement Option 2 as it's more consistent with "everything transposes".
+            const previousGlobalKey = measureElement.dataset.lastKeyContext || originalSongDefaultKey; // Need to store this, or use original as a guess
+            const previousGlobalKeyRoot = standardizeNoteName(previousGlobalKey.replace('m', ''));
+            
+            measureElement.querySelectorAll('.measure-part').forEach(partElement => {
+                const currentRoot = partElement.querySelector('.root-note').value;
+                const currentQuality = partElement.querySelector('.chord-quality').value;
+                const currentScaleRoot = partElement.querySelector('.second-key').value;
+                const currentScaleType = partElement.querySelector('.scale-select').value;
+
+                const chordToTranspose = { root: currentRoot, quality: currentQuality };
+                const transposedChord = transposeChordData(chordToTranspose, previousGlobalKeyRoot, newTargetGlobalKeyRoot);
+                
+                partElement.querySelector('.root-note').value = transposedChord.root;
+                partElement.querySelector('.chord-quality').value = transposedChord.quality;
+
+                const scaleRootToTranspose = {root: currentScaleRoot, quality: 'maj'};
+                const transposedScale = transposeChordData(scaleRootToTranspose, previousGlobalKeyRoot, newTargetGlobalKeyRoot);
+                partElement.querySelector('.second-key').value = transposedScale.root;
+                partElement.querySelector('.scale-select').value = currentScaleType; // Keep user's scale type choice for user-added measures
+            });
+            measureElement.dataset.lastKeyContext = newKey; // Store the new key context for next time
         }
     });
-    addFirstChordListener();
+
+    addFirstChordListener(); // Updates the main fretboard based on the potentially new first measure's content
     updateNextChordDisplay();
     log(`Progression '${currentProgressionName}' re-keyed to: ${newKey}`);
 }
