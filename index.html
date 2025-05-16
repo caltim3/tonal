@@ -585,70 +585,78 @@
         <h3>Create a progression or pick one from the dropdown. Choose which key and scale to go with it.</h3>
         <div class="controls">
             <label for="progression-select">Select Progression:</label>
-          <select id="progression-select" aria-label="Select chord progression">
-                <option value="a_night_in_tunisia">A Night in Tunisia</option>
-                <option value="after_youve_gone_gypsy">After You've Gone (Gypsy)</option>
-                <option value="all_of_me">All of Me</option>
-                <option value="all_the_things_you_are">All The Things You Are</option>
-                <option value="autumn_leaves">Autumn Leaves</option>
-                <option value="belleville_gypsy">Belleville (Gypsy)</option>
-                <option value="bird_blues">Bird Blues (Parker Blues)</option>
-                <option value="black_orpheus">Black Orpheus (Manhã de Carnaval)</option>
-                <option value="blue_bossa">Blue Bossa</option>
-                <option value="blue_monk">Blue Monk</option>
-                <option value="body_and_soul">Body and Soul</option>
-                <option value="caravan">Caravan</option>
-                <option value="cherokee">Cherokee</option>
-                <option value="coltrane_changes">Coltrane Changes (Giant Steps Cycle)</option>
-                <option value="confirmation">Confirmation</option>
-                <option value="dark_eyes">Dark Eyes</option>
-                <option value="days_of_wine_and_roses">Days of Wine and Roses</option>
-                <option value="djangology">Djangology</option>
-                <option value="dolphin_dance">Dolphin Dance (Main 16-bar theme)</option>
-                <option value="donna_lee">Donna Lee</option>
-                <option value="douce_ambiance_gypsy">Douce Ambiance (Gypsy)</option>
-                <option value="embraceable_you">Embraceable You</option>
-                <option value="footprints">Footprints (12-bar modal blues)</option>
-                <option value="girl_from_ipanema">Girl From Ipanema (Authentic Bossa)</option>
-                <option value="girl_from_ipanema_jazz">Girl From Ipanema (Jazz Variant)</option>
-                <option value="how_high_the_moon">How High the Moon</option>
-                <option value="I V7">I-V7</option>
-                <option value="2_5_1">II-V-I</option>
-                <option value="ill_see_you_in_my_dreams_alternate">I'll See You In My Dreams (Django Alt.)</option>
-                <option value="ill_see_you_in_my_dreams">I'll See You In My Dreams (Django)</option>
-                <option value="impressions">Impressions</option>
-                <option value="in_a_sentimental_mood">In a Sentimental Mood</option>
-                <option value="jattendrai_gypsy">J'attendrai (Gypsy)</option>
-                <option value="jazz_blues">Jazz Blues</option>
-                <option value="just_friends">Just Friends</option>
-                <option value="limehouse_blues_gypsy">Limehouse Blues (Gypsy)</option>
-                <option value="minor_blues">Minor Blues</option>
-                <option value="minor_swing">Minor Swing</option>
-                <option value="minor_2_5_1">Minor iim-V7-im</option>
-                <option value="misty">Misty</option>
-                <option value="moments_notice">Moment's Notice (Main 16-bar theme)</option>
-                <option value="my_funny_valentine">My Funny Valentine</option>
-                <option value="nows_the_time">Now's The Time (Parker F Blues)</option>
-                <option value="nuages">Nuages</option>
-                <option value="oleo">Oleo (Rhythm Changes)</option>
-                <option value="on_green_dolphin_street">On Green Dolphin Street</option>
-                <option value="recorda_me">Recorda Me (Main 16-bar theme)</option>
-                <option value="rhythm_changes_bebop">Rhythm Changes (Bebop)</option>
-                <option value="rhythm_changes">Rhythm Changes (Standard)</option>
-                <option value="rose_room_django">Rose Room (Django)</option>
-                <option value="rose_room">Rose Room (Traditional)</option>
-                <option value="so_what">So What</option>
-                <option value="solar">Solar</option>
-                <option value="someday_my_prince_will_come">Someday My Prince Will Come</option>
-                <option value="stella_by_starlight">Stella By Starlight</option>
-                <option value="straight_no_chaser">Straight, No Chaser</option>
-                <option value="summertime">Summertime</option>
-                <option value="sweet_georgia_brown_gypsy">Sweet Georgia Brown (Gypsy)</option>
-                <option value="swing_42_gypsy">Swing 42 (Gypsy)</option>
-                <option value="take_the_a_train">Take the "A" Train</option>
-                <option value="tenor_madness">Tenor Madness (Rollins Bb Blues)</option>
-                <option value="there_will_never_be_another_you">There Will Never Be Another You</option>
-                <option value="6_2_5_1">VI-II-V-I</option>
+            <select id="progression-select" aria-label="Select chord progression">
+                <optgroup label="Practice Progressions">
+                    <option value="I V7">I-V7</option>
+                    <option value="2_5_1">II-V-I</option>
+                    <option value="6_2_5_1">VI-II-V-I</option>
+                    <option value="minor_2_5_1">Minor iim-V7-im</option>
+                    <option value="jazz_blues">Jazz Blues</option>
+                    <option value="minor_blues">Minor Blues</option>
+                    <option value="bird_blues">Bird Blues (Parker Blues)</option>
+                    <option value="nows_the_time">Now's The Time (Parker F Blues)</option>
+                    <option value="tenor_madness">Tenor Madness (Rollins Bb Blues)</option>
+                    <option value="blue_monk">Blue Monk</option>
+                    <option value="straight_no_chaser">Straight, No Chaser</option>
+                    <option value="rhythm_changes">Rhythm Changes (Standard)</option>
+                    <option value="rhythm_changes_bebop">Rhythm Changes (Bebop)</option>
+                    <option value="oleo">Oleo (Rhythm Changes)</option>
+                </optgroup>
+                <optgroup label="Easy Jazz Standards">
+                    <option value="all_of_me">All of Me</option>
+                    <option value="autumn_leaves">Autumn Leaves</option>
+                    <option value="blue_bossa">Blue Bossa</option>
+                    <option value="embraceable_you">Embraceable You</option>
+                    <option value="girl_from_ipanema">Girl From Ipanema (Authentic Bossa)</option>
+                    <option value="girl_from_ipanema_jazz">Girl From Ipanema (Jazz Variant)</option>
+                    <option value="in_a_sentimental_mood">In a Sentimental Mood</option>
+                    <option value="just_friends">Just Friends</option>
+                    <option value="misty">Misty</option>
+                    <option value="my_funny_valentine">My Funny Valentine</option>
+                    <option value="someday_my_prince_will_come">Someday My Prince Will Come</option>
+                    <option value="summertime">Summertime</option>
+                    <option value="take_the_a_train">Take the "A" Train</option>
+                    <option value="there_will_never_be_another_you">There Will Never Be Another You</option>
+                </optgroup>
+                <optgroup label="Gypsy Jazz Standards">
+                    <option value="after_youve_gone_gypsy">After You've Gone (Gypsy)</option>
+                    <option value="belleville_gypsy">Belleville (Gypsy)</option>
+                    <option value="dark_eyes">Dark Eyes</option>
+                    <option value="djangology">Djangology</option>
+                    <option value="douce_ambiance_gypsy">Douce Ambiance (Gypsy)</option>
+                    <option value="ill_see_you_in_my_dreams">I'll See You In My Dreams (Django)</option>
+                    <option value="ill_see_you_in_my_dreams_alternate">I'll See You In My Dreams (Django Alt.)</option>
+                    <option value="jattendrai_gypsy">J'attendrai (Gypsy)</option>
+                    <option value="limehouse_blues_gypsy">Limehouse Blues (Gypsy)</option>
+                    <option value="minor_swing">Minor Swing</option>
+                    <option value="nuages">Nuages</option>
+                    <option value="rose_room_django">Rose Room (Django)</option>
+                    <option value="sweet_georgia_brown_gypsy">Sweet Georgia Brown (Gypsy)</option>
+                    <option value="swing_42_gypsy">Swing 42 (Gypsy)</option>
+                </optgroup>
+                <optgroup label="More Complex Jazz Standards">
+                    <option value="a_night_in_tunisia">A Night in Tunisia</option>
+                    <option value="all_the_things_you_are">All The Things You Are</option>
+                    <option value="black_orpheus">Black Orpheus (Manhã de Carnaval)</option>
+                    <option value="body_and_soul">Body and Soul</option>
+                    <option value="caravan">Caravan</option>
+                    <option value="cherokee">Cherokee</option>
+                    <option value="coltrane_changes">Coltrane Changes (Giant Steps Cycle)</option>
+                    <option value="confirmation">Confirmation</option>
+                    <option value="days_of_wine_and_roses">Days of Wine and Roses</option>
+                    <option value="dolphin_dance">Dolphin Dance (Main 16-bar theme)</option>
+                    <option value="donna_lee">Donna Lee</option>
+                    <option value="footprints">Footprints (12-bar modal blues)</option>
+                    <option value="how_high_the_moon">How High the Moon</option>
+                    <option value="impressions">Impressions</option>
+                    <option value="moments_notice">Moment's Notice (Main 16-bar theme)</option>
+                    <option value="on_green_dolphin_street">On Green Dolphin Street</option>
+                    <option value="recorda_me">Recorda Me (Main 16-bar theme)</option>
+                    <option value="rose_room">Rose Room (Traditional)</option>
+                    <option value="so_what">So What</option>
+                    <option value="solar">Solar</option>
+                    <option value="stella_by_starlight">Stella By Starlight</option>
+                </optgroup>
             </select>
             <label for="keySelect">Select Key:</label>
             <select id="keySelect" aria-label="Select key">
@@ -3582,55 +3590,89 @@ function handleMeasureControlChange(measurePartDiv, changedElement) {
  */
 function saveCurrentProgression() {
     const measures = Array.from(UI.elements.measures.children);
-    if (measures.length === 0) { alert("No progression to save!"); return; }
+    if (measures.length === 0) {
+        alert("No progression to save!");
+        return;
+    }
 
-    let progressionName = prompt("Enter a name for this progression:", currentProgressionName || "My Custom Song");
-    if (!progressionName || progressionName.trim() === "") { alert("Save cancelled or empty name provided."); return; }
-    progressionName = progressionName.trim();
+    // Suggest a name: if a known song is loaded, suggest its name, otherwise a generic one.
+    let suggestedName = "My Custom Song";
+    if (currentProgressionName && (progressions[currentProgressionName] || JSON.parse(localStorage.getItem('userBebopProgressions') || '{}')[currentProgressionName])) {
+        const currentSongData = progressions[currentProgressionName] || JSON.parse(localStorage.getItem('userBebopProgressions') || '{}')[currentProgressionName];
+        suggestedName = currentSongData.displayName || currentProgressionName.replace(/_/g, ' ');
+    }
+
+    let progressionNameInput = prompt("Enter a name for this progression:", suggestedName);
+    if (!progressionNameInput || progressionNameInput.trim() === "") {
+        alert("Save cancelled or empty name provided.");
+        return;
+    }
+    progressionNameInput = progressionNameInput.trim();
+
+    // The key currently selected in the UI will be the 'defaultKey' for this saved version.
+    const keyForSaving = UI.elements.keySelect.value;
 
     const savedProgressionData = {
-        progression: [], parts: [], splitStatus: [],
-        defaultKey: UI.elements.keySelect.value,
+        progression: [],    // This will store simplified string representations for each measure
+        parts: [],          // This will store detailed data for each part of each measure
+        splitStatus: [],    // This will store whether each measure is split
+        defaultKey: keyForSaving,
         description: `User saved song - ${new Date().toLocaleDateString()}`,
-        displayName: progressionName
+        displayName: progressionNameInput
     };
 
     measures.forEach(measureEl => {
         const isSplit = measureEl.dataset.isSplit === 'true';
         savedProgressionData.splitStatus.push(isSplit);
-        const measurePartsData = [];
-        let measureChordString = "";
+
+        const measurePartsDataForStorage = [];
+        let measureCombinedString = ""; // For the simpler 'progression' array
 
         measureEl.querySelectorAll('.measure-part').forEach((partEl, partIdx) => {
             const root = partEl.querySelector('.root-note').value;
             const qualityValue = partEl.querySelector('.chord-quality').value;
+            const scaleRoot = partEl.querySelector('.second-key').value;
+            const scaleType = partEl.querySelector('.scale-select').value;
+
+            // Get the display text for the quality (e.g., "maj7", "m7", "7")
             const qualityOption = partEl.querySelector(`.chord-quality option[value="${qualityValue}"]`);
-            const qualityText = qualityOption ? qualityOption.textContent : qualityValue;
+            const qualityDisplayText = qualityOption ? qualityOption.textContent : qualityValue;
             
-            measurePartsData.push({
-                root: root, quality: qualityValue,
-                scaleRoot: partEl.querySelector('.second-key').value,
-                scaleType: partEl.querySelector('.scale-select').value,
-                originalRoman: `${root}${qualityText}` // Store as absolute for re-parsing during key changes
+            // The 'originalRoman' here stores the ABSOLUTE CHORD as seen in the UI.
+            // Its function is implicitly relative to the `savedProgressionData.defaultKey`.
+            const absoluteChordStringForStorage = `${root}${qualityDisplayText}`;
+
+            measurePartsDataForStorage.push({
+                root: root,                     // Absolute root from UI
+                quality: qualityValue,          // Selected quality value from UI
+                originalRoman: absoluteChordStringForStorage, // Store the UI absolute chord
+                scaleRoot: scaleRoot,
+                scaleType: scaleType
             });
-            if (partIdx > 0) measureChordString += " / ";
-            measureChordString += `${root}${qualityText}`;
+
+            if (partIdx > 0) {
+                measureCombinedString += " / ";
+            }
+            measureCombinedString += absoluteChordStringForStorage;
         });
-        savedProgressionData.progression.push(measureChordString); // For simple re-keying of Roman numerals
-        savedProgressionData.parts.push(measurePartsData); // For detailed structure
+
+        savedProgressionData.parts.push(measurePartsDataForStorage);
+        savedProgressionData.progression.push(measureCombinedString);
     });
 
     const userSongs = JSON.parse(localStorage.getItem('userBebopProgressions') || '{}');
-    userSongs[progressionName] = savedProgressionData;
+    userSongs[progressionNameInput] = savedProgressionData;
     localStorage.setItem('userBebopProgressions', JSON.stringify(userSongs));
 
     populateUserSongsDropdown();
-    UI.elements.userProgressionSelect.value = progressionName;
-    alert(`Progression "${progressionName}" saved!`);
-    log(`User progression saved: ${progressionName}`);
-    
-    currentProgressionName = progressionName;
-    currentFunctionalProgression = savedProgressionData.progression; 
+    UI.elements.userProgressionSelect.value = progressionNameInput; // Select the newly saved song
+
+    // Update current app state to reflect that this saved version is now active
+    currentProgressionName = progressionNameInput;
+    currentFunctionalProgression = savedProgressionData.progression; // Update with the simplified strings
+
+    alert(`Progression "${progressionNameInput}" saved!`);
+    log(`User progression saved: ${progressionNameInput} with defaultKey: ${keyForSaving}`);
 }
 
 /**
