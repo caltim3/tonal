@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -955,7 +954,7 @@ const progressions = {
     description: "An extended version of the 2-5-1, starting on the vi minor for a richer harmonic journey.",
   },
   minor_2_5_1: {
-    defaultKey: "Gm", // Corrected based on your previous input
+    defaultKey: "Gm", 
     displayName: "Minor iim-V7-im",
     progression: ["Am7b5", "D7alt", "Gm7", "Gm7"],
     description: "A dramatic minor key progression, often used for intense and emotional resolutions.",
@@ -964,19 +963,19 @@ const progressions = {
     defaultKey: "Dm",
     displayName: "Dark Eyes",
     progression: [
-      "Dm", "Dm", "A7", "A7", "A7", "A7", "Bbmaj7", "Bbmaj7", // Corrected from Dm to Bbmaj7 for variation
+      "Dm", "Dm", "A7", "A7", "A7", "A7", "Bbmaj7", "Bbmaj7", 
       "Gm", "Gm", "Dm", "Dm", "A7", "A7", "Dm", "Dm"
     ],
     description: "A passionate, Gypsy jazz-inspired progression with a fiery, Eastern European flair.",
   },
   ill_see_you_in_my_dreams: { 
-    defaultKey: "F", // Often played in F or G by Django, original is Bb
+    defaultKey: "F", 
     displayName: "I'll See You In My Dreams (Django)",
-     progression: [ // Simplified a bit for common Django versions
+     progression: [ 
       "F6", "F6", "Fm6", "Fm6", "C6",  "B7", "C6",  "C6",
       "A7", "A7", "D7", "D7", "G7", "G7", "C7", "C7",
       "F6", "F6", "Fm6", "Fm6", "C6",  "B7", "F6",  "D7",
-      "Gm7", "C7", "F6", "F6" // Simplified ending
+      "Gm7", "C7", "F6", "F6" 
     ],
     description: "A popular Django Reinhardt arrangement, characterized by 6th chords."
   },
@@ -992,9 +991,9 @@ const progressions = {
     description: "An alternate Django-style arrangement featuring both the characteristic 6th chords and the passing diminished chords often used in Gypsy jazz interpretations."
   },
   rose_room: { 
-    defaultKey: "Ab", // Traditional key
+    defaultKey: "Ab", 
     displayName: "Rose Room (Traditional)",
-    progression: [ // Based on the 1917 version
+    progression: [ 
       "Abmaj7","Abmaj7","Dbmaj7","Dbmaj7", "Abmaj7","Eb7",   "Abmaj7","Abmaj7",
       "Abmaj7","Abmaj7","Dbmaj7","Dbmaj7", "Fm7",   "Bb7",   "Ebmaj7","Eb7",
       "Abmaj7","Abmaj7","Dbmaj7","Dbmaj7", "Abmaj7","Cm7b5 F7","Bbm7",  "Eb7",
@@ -1003,7 +1002,7 @@ const progressions = {
     description: "The authentic 'Rose Room' progression with the traditional harmonization favored by swing and early jazz players."
   },
   rose_room_django: { 
-    defaultKey: "Ab", // Django also played it in Ab
+    defaultKey: "Ab", 
     displayName: "Rose Room (Django)",
     progression: [
       "Ab6",    "Eb7",    "Ab6", "Ab6", "Bbm6",   "Eb7",    "Ab6", "Ab6",
@@ -1031,11 +1030,10 @@ const progressions = {
         "Dbmaj7", "Dm7b5",  "G7",     "Cmaj7",
         "Cm7",    "Fm7",    "Bb7",    "Ebmaj7",
         "Abmaj7", "Am7b5",  "D7b9",   "Gmaj7",
-        "Gmaj7",  "Am7",    "D7",     "Gmaj7", // Often Gmaj7 for 2 bars here in solos
-        "Gmaj7",  "F#m7b5", "B7b9",   "Emaj7", // Often Emaj7 for 2 bars here
-        "Emaj7",  "Am7 D7", "Gmaj7 C7","Fm7 Bb7", // Bridge back to A, or more complex changes
-        "Ebmaj7 Abmaj7","Dbmaj7 G7","Cmaj7", "(Cmaj7)" // Ending variations exist
-      // Simplified the ending part from the original overly long one you had
+        "Gmaj7",  "Am7",    "D7",     "Gmaj7", 
+        "Gmaj7",  "F#m7b5", "B7b9",   "Emaj7", 
+        "Emaj7",  "Am7 D7", "Gmaj7 C7","Fm7 Bb7", 
+        "Ebmaj7 Abmaj7","Dbmaj7 G7","Cmaj7", "(Cmaj7)" 
     ],
     description: "Kern & Hammerstein standard. A cornerstone of the jazz repertoire known for its modulations.",
   },
@@ -1046,7 +1044,7 @@ const progressions = {
       "Cmaj7", "E7",    "A7",    "Dm7",
       "E7",    "Am7",   "D7",    "Dm7 G7",
       "Cmaj7", "E7",    "A7",    "Dm7",
-      "Fmaj7", "Fm6",   "Cmaj7 G7", "C6 (A7 Dm7 G7)" // Common turnaround added
+      "Fmaj7", "Fm6",   "Cmaj7 G7", "C6 (A7 Dm7 G7)" 
     ],
     description: "A cheerful, upbeat standard with a catchy progression, great for vocal jazz.",
   },
@@ -1055,33 +1053,33 @@ const progressions = {
     displayName: "Stella By Starlight",
     progression: [
       "Em7b5", "A7alt",  "Cm7",    "F7",
-      "Fm7",   "Bb7",    "Ebmaj7", "Ab7", // Ab7 or Abmaj7
-      "Dm7b5", "G7alt",  "Cmaj7",  "Am7 D7", // Often Am7 D7 instead of Cmaj7 for 2
+      "Fm7",   "Bb7",    "Ebmaj7", "Ab7", 
+      "Dm7b5", "G7alt",  "Cmaj7",  "Am7 D7", 
       "Gm7",   "C7",     "Fm7",    "Bb7",
       "Ebmaj7", "Ebdim7", "Dm7",    "G7alt",
-      "Cm7",   "F7",     "Bbmaj7", "Bbmaj7 (Em7b5 A7alt for repeat)" // Or F#dim7 B7 to loop to Ebmaj7
+      "Cm7",   "F7",     "Bbmaj7", "Bbmaj7 (Em7b5 A7alt for repeat)"
     ],
     description: "A lush, cinematic progression with a romantic and introspective feel."
   },
   autumn_leaves: { 
-    defaultKey: "Gm", // More common jazz key for this tune than Bb major
+    defaultKey: "Gm", 
     displayName: "Autumn Leaves",
     progression: [
       "Cm7",   "F7",    "Bbmaj7", "Ebmaj7",
       "Am7b5", "D7alt", "Gm7",    "Gm7 (C7 for turnaround to F7)",
       "Cm7",   "F7",    "Bbmaj7", "Ebmaj7",
-      "Am7b5", "D7alt", "Gm7 G7alt", "Cm7 F7 (or Gm for end)" // G7alt leading to Cm7
+      "Am7b5", "D7alt", "Gm7 G7alt", "Cm7 F7 (or Gm for end)" 
     ],
     description: "A melancholic jazz standard evoking falling leaves and wistful nostalgia."
   },
   summertime: { 
-    defaultKey: "Am", // Or Dm
+    defaultKey: "Am", 
     displayName: "Summertime",
     progression: [
       "Am7", "Am7", "E7",  "E7",
       "Am7", "Am7", "Dm7", "Am7",
       "Dm7", "Am7", "E7",  "Am7 (E7alt for repeat)",
-      "Am7" // Add extra bar for common 16 bar form
+      "Am7" 
     ],
     description: "A sultry, soulful progression from Gershwin's opera, perfect for laid-back grooves."
   },
@@ -1089,14 +1087,14 @@ const progressions = {
     defaultKey: "F",
     displayName: "Girl From Ipanema (Authentic Bossa)",
     progression: [
-      "Fmaj7",  "Fmaj7",  "G7", "G7", // G7 or G7#11
-      "Gm7",    "Gb7#11",    "Fmaj7", "Gb7#11", // or Fmaj7 for 2 bars
+      "Fmaj7",  "Fmaj7",  "G7", "G7", 
+      "Gm7",    "Gb7#11",    "Fmaj7", "Gb7#11", 
       "Fmaj7",  "Fmaj7",  "G7", "G7",
-      "Gm7",    "C7",     "Fmaj7", "Fmaj7", // A section ends
-      "F#maj7", "F#maj7", "B7",   "B7",    // Bridge
+      "Gm7",    "C7",     "Fmaj7", "Fmaj7", 
+      "F#maj7", "F#maj7", "B7",   "B7",    
       "Bm7",    "E7",     "Amaj7","Amaj7",
       "Abm7",   "Db7",    "Gbmaj7","Gbmaj7",
-      "Gm7",    "C7",     "Fmaj7", "Fmaj7"  // Back to A or end
+      "Gm7",    "C7",     "Fmaj7", "Fmaj7"  
     ],
     description: "The authentic bossa nova classic by Antonio Carlos Jobim with the traditional modulation."
   },
@@ -1105,24 +1103,24 @@ const progressions = {
     displayName: "Girl From Ipanema (Jazz Variant)",
     progression: [
       "Fmaj7",  "D7alt",  "Gm9",    "C13",
-      "Am9",    "D7b9",   "Gm9",    "C13", // Repeated A section
+      "Am9",    "D7b9",   "Gm9",    "C13", 
       "Fmaj7",  "D7alt",  "Gm9",    "C13",
       "Am9",    "D7b9",   "Gm9",    "C13",
-      "F#maj7", "C#7alt", "Bbm9",   "Eb13", // Jazzier bridge changes
+      "F#maj7", "C#7alt", "Bbm9",   "Eb13", 
       "Abm9",   "Db7b9",  "Bbm9",   "Eb13",
-      "Fmaj7",  "D7alt",  "Gm9",    "C13",  // Back to A
+      "Fmaj7",  "D7alt",  "Gm9",    "C13",  
       "Am9",    "D7b9",   "Gm9",    "C13"
     ],
     description: "A jazzier interpretation of 'Girl From Ipanema' with extended harmonies and common jazz substitutions."
   },
   coltrane_changes: { 
-    defaultKey: "Bb", // Giant Steps is often in Bb or Eb
+    defaultKey: "Bb", 
     displayName: "Coltrane Changes (Giant Steps Cycle)",
     progression: [
       "Bbmaj7", "D7",    "Gmaj7",  "Bb7",
-      "Ebmaj7", "Gb7",   "Cbmaj7", "E7", // Cbmaj7 or Bmaj7
+      "Ebmaj7", "Gb7",   "Cbmaj7", "E7", 
       "Amaj7",  "C7",    "Fmaj7",  "Ab7",
-      "Dbmaj7", "E7",    "Amaj7",  "C7" // Loop or resolve
+      "Dbmaj7", "E7",    "Amaj7",  "C7" 
     ],
     description: "A challenging, innovative progression from John Coltrane, with rapid key shifts based on major thirds."
   },
@@ -1137,7 +1135,7 @@ const progressions = {
     description: "A bebop blues progression inspired by Charlie Parker, full of energy and drive."
   },
   just_friends: { 
-    defaultKey: "F", // Often played in F or G
+    defaultKey: "F", 
     displayName: "Just Friends",
     progression: [
       "Fmaj7", "A7",    "Dm7", "G7",
@@ -1145,7 +1143,7 @@ const progressions = {
       "Fmaj7", "A7",    "Dm7", "G7",
       "Gm7",   "C7",    "Fmaj7", "Fmaj7",
       "Bbmaj7","Bbm7",  "Fmaj7", "D7",
-      "Gm7",   "C7",    "Am7 D7", "Gm7 C7", // Common bridge variations
+      "Gm7",   "C7",    "Am7 D7", "Gm7 C7", 
       "Fmaj7", "A7",    "Dm7", "G7",
       "Gm7",   "C7",    "Fmaj7", "Fmaj7"
     ],
@@ -1156,20 +1154,20 @@ const progressions = {
     displayName: "Blue Bossa",
     progression: [
       "Cm7",  "Cm7",  "Fm7",  "Fm7",
-      "Dm7b5","G7alt","Cm7",  "Cm7 (Ab7 for bridge)", // Ab7 leads to Dbmaj7
+      "Dm7b5","G7alt","Cm7",  "Cm7 (Ab7 for bridge)", 
       "Ebm7", "Ab7",  "Dbmaj7","Dbmaj7",
       "Dm7b5","G7alt","Cm7",  "(G7alt for repeat or Cm7 for end)"
     ],
     description: "A cool, Latin-jazz progression with a relaxed yet groovy bossa nova feel."
   },
   on_green_dolphin_street: { 
-    defaultKey: "Eb", // Common key, though C is also used
+    defaultKey: "Eb", 
     displayName: "On Green Dolphin Street",
     progression: [
-      "Ebmaj7", "Ebmaj7", "Ebm7",  "Ab7",   // Or Dmaj7, Dm7, G7 for C version
+      "Ebmaj7", "Ebmaj7", "Ebm7",  "Ab7",   
       "Dbmaj7", "Dbmaj7", "Dm7b5", "G7alt",
       "Cm7",    "Cm7",    "Fm7",   "Bb7",
-      "Ebmaj7", "Am7b5 D7b9", "Gm7", "C7alt", // Turnaround
+      "Ebmaj7", "Am7b5 D7b9", "Gm7", "C7alt", 
       "Fm7",    "Bb7",    "Ebmaj7", "Ebmaj7"
     ],
     description: "A modal, cinematic progression with a mysterious and captivating atmosphere."
@@ -1180,7 +1178,7 @@ const progressions = {
     progression: [
       "Cm(maj7)", "Cm(maj7)", "Gm7b5",  "C7alt",
       "Fmaj7",    "Fmaj7",    "Fm7",    "Bb7",
-      "Ebmaj7",   "Ebmaj7",   "Am7b5",  "D7alt", // Or Ebm7 Ab7 for a variation
+      "Ebmaj7",   "Ebmaj7",   "Am7b5",  "D7alt", 
       "Gm7",      "C7alt",    "Fmaj7",  "Fmaj7 (or turnaround)"
     ],
     description: "A contemplative, Miles Davis original with a flowing, introspective harmonic line."
@@ -1200,7 +1198,7 @@ const progressions = {
     defaultKey: "F",
     displayName: "Days of Wine and Roses",
     progression: [
-      "Fmaj7", "Eb7#11", "Dm7",   "G7#11", // Common subs
+      "Fmaj7", "Eb7#11", "Dm7",   "G7#11", 
       "Cm7",   "F7",     "Bbmaj7","Bbm7 Eb7",
       "Am7",   "D7",     "Gm7",   "C7",
       "Fmaj7", "Dm7 Gm7","C7sus C7","F6"
@@ -1212,11 +1210,9 @@ const progressions = {
     displayName: "Cherokee",
     progression: [ 
       "Bbmaj7", "Bbmaj7","Bbmaj7", "Bbmaj7", "Cm7",    "F7",    "Bbmaj7", "Bbmaj7",
-      "Bbmaj7", "Bbmaj7","Bbmaj7", "Bbmaj7", "Cm7",    "F7",    "Bbmaj7", "Bb7", // Bb7 leads to bridge
-      // Bridge
+      "Bbmaj7", "Bbmaj7","Bbmaj7", "Bbmaj7", "Cm7",    "F7",    "Bbmaj7", "Bb7", 
       "Bmaj7",  "Bmaj7", "Emaj7",  "Emaj7",  "Amaj7",  "Amaj7", "Dmaj7",  "Dmaj7",
       "Gmaj7",  "Gmaj7", "Cmaj7",  "Cmaj7",  "Fmaj7",  "Fmaj7", "Bb7",    "Bb7",
-      // Back to A
       "Bbmaj7", "Bbmaj7","Bbmaj7", "Bbmaj7", "Cm7",    "F7",    "Bbmaj7", "Bbmaj7"
     ],
     description: "A high-energy bebop standard with a fast-moving, adventurous harmonic structure."
@@ -1225,8 +1221,8 @@ const progressions = {
     defaultKey: "Fm",
     displayName: "Caravan",
     progression: [ 
-      "Fm7", "Fm7", "Fm7", "C7b9", "Fm7", "Fm7", "C7b9","Fm7", // A Section
-      "Abmaj7","Abmaj7","Dbmaj7","Dbmaj7","Gm7b5", "C7b9",  "Fm7",   "Fm7"  // B Section
+      "Fm7", "Fm7", "Fm7", "C7b9", "Fm7", "Fm7", "C7b9","Fm7", 
+      "Abmaj7","Abmaj7","Dbmaj7","Dbmaj7","Gm7b5", "C7b9",  "Fm7",   "Fm7"  
     ],
     description: "An exotic, Latin-tinged progression with a hypnotic, caravan-like rhythm."
   },
@@ -1323,21 +1319,21 @@ const progressions = {
     progression: [
       "Gmaj7", "Gmaj7", "Gm7", "C7",
       "Fmaj7", "Fmaj7", "Fm7", "Bb7",
-      "Ebmaj7", "Am7b5", "D7", "Gmaj7", // Simplified B section start
-      "Gmaj7", "Gm7", "C7", "Fmaj7",   // Common changes
+      "Ebmaj7", "Am7b5", "D7", "Gmaj7", 
+      "Gmaj7", "Gm7", "C7", "Fmaj7",   
       "Fmaj7", "Fm7", "Bb7", "Ebmaj7",
       "Am7b5", "D7alt", "Gmaj7", "Gmaj7 (D7alt)"
     ],
     description: "A popular jazz standard with a memorable cycle of dominants, a favorite for bebop improvisers."
   },
   a_night_in_tunisia: {
-    defaultKey: "Dm", // Often played in Dm for solos, head in Fm
+    defaultKey: "Dm", 
     displayName: "A Night in Tunisia",
-    progression: [ // Solo section (usually Dm based)
-      "Eb7", "Dm7", "Eb7", "Dm7", // Vamp
+    progression: [ 
+      "Eb7", "Dm7", "Eb7", "Dm7", 
       "Eb7", "Dm7", "Eb7", "Dm7",
-      "Gm7", "C7", "Fmaj7", "Fmaj7", // Bridge
-      "Em7b5", "A7alt", "Dm7", "A7alt"  // Turnaround
+      "Gm7", "C7", "Fmaj7", "Fmaj7", 
+      "Em7b5", "A7alt", "Dm7", "A7alt"  
     ],
     description: "Dizzy Gillespie's Afro-Cuban jazz classic, known for its exotic melody and rhythm. (Solo changes shown)"
   },
@@ -1369,7 +1365,7 @@ const progressions = {
       "Bbmaj7", "Am7 Dm7", "Gm7 C7", "Fmaj7 (Gm7 C7)",
       "Fmaj7", "Em7b5 A7alt", "Dm7 G7alt", "Cm7 F7",
       "Bbmaj7", "Am7 Dm7", "Gm7 C7", "Fmaj7 (Gm7 C7)",
-      "Em7b5 A7alt", "Dm7", "Dbm7 Gb7", "Bmaj7", // Or Cbmaj7
+      "Em7b5 A7alt", "Dm7", "Dbm7 Gb7", "Bmaj7", 
       "Bbm7 Eb7", "Abmaj7", "Gm7 C7", "Fmaj7 (Gm7 C7)",
       "Fmaj7", "Em7b5 A7alt", "Dm7 G7alt", "Cm7 F7",
       "Bbmaj7", "Am7 Dm7", "Gm7 C7", "Fmaj7"
@@ -1384,7 +1380,7 @@ const progressions = {
       "Abmaj7", "F7", "Bbm7", "Eb7",
       "Abmaj7", "Abmaj7", "Fm7 Bb7", "Eb7",
       "Abmaj7", "F7", "Bbm7", "Abmaj7 (Ebm7 Ab7)",
-      "Dbmaj7", "Dbmaj7", "Dbm7 Gb7", "Bmaj7", // Or Cbmaj7
+      "Dbmaj7", "Dbmaj7", "Dbm7 Gb7", "Bmaj7", 
       "Bbm7 Eb7", "Abmaj7", "F7", "Bbm7 Eb7",
       "Abmaj7", "Abmaj7", "Fm7 Bb7", "Eb7",
       "Abmaj7", "F7", "Bbm7", "Abmaj7"
@@ -1392,24 +1388,24 @@ const progressions = {
     description: "A quintessential bebop head attributed to Charlie Parker, based on the changes of 'Indiana'."
   },
   moments_notice: { 
-    defaultKey: "Eb", // Another common key for this
+    defaultKey: "Eb", 
     displayName: "Moment's Notice",
-    progression: [ // Main 16-bar A section
+    progression: [ 
       "Ebm7", "Ab7", "Dbmaj7", "Gb7",
-      "Bmaj7", "Am7b5 D7b9", "Gm7", "C7b9", // Bmaj7 or Cbmaj7
+      "Bmaj7", "Am7b5 D7b9", "Gm7", "C7b9", 
       "Fm7", "Bb7", "Ebmaj7", "A7b9",
-      "Dmaj7", "Am7 D7", "Gm7 C7alt", "Fm7 Bb7" // Turnaround
+      "Dmaj7", "Am7 D7", "Gm7 C7alt", "Fm7 Bb7" 
     ],
     description: "John Coltrane's intricate composition with rapid key center shifts, a test of harmonic navigation."
   },
   recorda_me: { 
     defaultKey: "Am",
     displayName: "Recorda Me",
-    progression: [ // Main 16-bar A section
+    progression: [ 
       "Am7", "Am7", "Cm7", "F7",
       "Bbmaj7", "Bbmaj7", "Ebm7", "Ab7",
       "Am7", "Am7", "Cm7", "F7",
-      "Bbmaj7", "Ebm7 Ab7", "Dm7 G7", "Cmaj7 Fmaj7" // Common variation at end of form
+      "Bbmaj7", "Ebm7 Ab7", "Dm7 G7", "Cmaj7 Fmaj7" 
     ],
     description: "Joe Henderson's Bossa-influenced classic, known for its smooth melody and distinctive harmony."
   },
@@ -1446,15 +1442,15 @@ const progressions = {
   footprints: { 
     defaultKey: "Cm",
     displayName: "Footprints",
-    progression: [ // 12-bar modal blues (each slot can be 1 bar of 6/4 or 2 bars of 3/4)
+    progression: [ 
       "Cm11", "Cm11", "Cm11", "Cm11",
-      "Fm11", "Fm11", "Cm11", "Cm11", // Often Cm11 instead of Fm11 for all 4 bars
-      "D7#9#5", "D7#9#5", "Cm11", "G7alt" // Common altered dominant
+      "Fm11", "Fm11", "Cm11", "Cm11", 
+      "D7#9#5", "D7#9#5", "Cm11", "G7alt" 
     ],
     description: "Wayne Shorter's influential modal jazz composition, often played in a 6/4 feel."
   },
   in_a_sentimental_mood: {
-    defaultKey: "Dm", // Common key
+    defaultKey: "Dm", 
     displayName: "In a Sentimental Mood",
     progression: [
       "Dm7 G7", "Cmaj7 Fmaj7", "Dm7 G7", "Cmaj7 A7alt",
@@ -1471,7 +1467,7 @@ const progressions = {
   dolphin_dance: { 
     defaultKey: "Eb",
     displayName: "Dolphin Dance",
-    progression: [ // Main 16-bar theme
+    progression: [ 
       "Eb7sus", "Ab7alt/Eb", "Dm7b5/Eb", "G7alt/Eb", 
       "Cm7", "F9sus F7b9", "Bbmaj7sus", "Bb7",
       "Ebm7", "Ab7sus Ab7", "Dbmaj7", "Am7 D7",
@@ -1503,7 +1499,7 @@ const progressions = {
       "Ebmaj7", "Ebmaj7", "Fm7", "Bb7",
       "Ebmaj7", "Cm7", "Fm7 Bb7", "Ebmaj7",
       "Ebm7", "Ab7", "Dbmaj7", "Dbmaj7",
-      "Dbm7", "Gb7", "Bmaj7", "Bb7sus Bb7", // Bmaj7 or Cbmaj7
+      "Dbm7", "Gb7", "Bmaj7", "Bb7sus Bb7", 
       "Ebmaj7", "Ebmaj7", "Fm7", "Bb7",
       "Ebmaj7", "Cm7", "Fm7 Bb7", "Ebmaj7"
     ],
@@ -1585,14 +1581,14 @@ const progressions = {
     description: "A popular early jazz standard given a vibrant treatment in the Gypsy Jazz tradition."
   },
   limehouse_blues_gypsy: {
-    defaultKey: "G", // Often played in G or Ab
+    defaultKey: "G", 
     displayName: "Limehouse Blues (Gypsy)",
     progression: [
       "G", "G", "C", "G",
       "D7", "D7", "G", "D7",
       "G", "G", "C", "G",
       "D7", "D7", "G", "G",
-      "F", "F", "Bb", "F", // Bridge often modulates down a step
+      "F", "F", "Bb", "F", 
       "C7", "C7", "F", "C7",
       "G", "G", "C", "G",
       "D7", "D7", "G", "G"
@@ -1745,7 +1741,6 @@ const UI = {
             reverbDialValue: document.getElementById('reverb-dial-value'),
             darkModeToggle: document.getElementById('dark-mode-toggle'),
             loadingIndicator: document.getElementById('loading-indicator'),
-            // NEW placeholders for global controls (optional to add here if not immediately used by JS)
             swingToggle: document.getElementById('swing-toggle'),
             noteNamingConvention: document.getElementById('note-naming-convention'),
         };
@@ -1759,182 +1754,20 @@ const UI = {
 };
 
 // ==================================
-// === MUSIC THEORY HELPERS =======
+// === AUDIO MANAGEMENT ===========
 // ==================================
-function transposeChordData(chordData, originalSongKeyRoot, targetGlobalKeyRoot) {
-    // console.log(`TRANSPOSE CALL: chordData=${JSON.stringify(chordData)}, origKeyRoot=${originalSongKeyRoot}, targetKeyRoot=${targetGlobalKeyRoot}`);
-    const originalKeyRootIndex = NOTES_CHROMATIC.indexOf(standardizeNoteName(originalSongKeyRoot));
-    const targetKeyRootIndex = NOTES_CHROMATIC.indexOf(standardizeNoteName(targetGlobalKeyRoot));
-    if (originalKeyRootIndex === -1 || targetKeyRootIndex === -1) {
-        console.error(`Invalid key for transposition: Original '${originalSongKeyRoot}', Target '${targetGlobalKeyRoot}'. Returning original chord.`);
-        return { ...chordData };
-    }
-    const transpositionInterval = (targetKeyRootIndex - originalKeyRootIndex + 12) % 12;
-    const originalChordRootIndex = NOTES_CHROMATIC.indexOf(standardizeNoteName(chordData.root));
-    if (originalChordRootIndex === -1) {
-        console.error(`Invalid original chord root for transposition: '${chordData.root}'. Returning original chord.`);
-        return { ...chordData };
-    }
-    const transposedChordRootIndex = (originalChordRootIndex + transpositionInterval + 12) % 12;
-    const transposedRoot = NOTES_CHROMATIC[transposedChordRootIndex];
-    // console.log(`  -> transpositionInterval=${transpositionInterval}, origChordRootIdx=${originalChordRootIndex}, transposedChordRootIdx=${transposedChordRootIndex}, transposedRoot=${transposedRoot}`);
-    return { root: transposedRoot, quality: chordData.quality };
-}  
-        
-function standardizeNoteName(note) {
-    if (!note || typeof note !== 'string') return '';
-    let standardized = note.trim().replace('♭', 'b').replace('♯', '#');
-    if (standardized === "Bbb" || standardized === "bbb") return "A";
-    if (standardized === "E##" || standardized === "e##") return "Gb";
-    if (standardized === "B##" || standardized === "b##") return "Db";
-    standardized = standardized.toUpperCase();
-    const sharpToFlatMap = { 'C#': 'Db', 'D#': 'Eb', 'F#': 'Gb', 'G#': 'Ab', 'A#': 'Bb' };
-    if (sharpToFlatMap[standardized]) {
-        return sharpToFlatMap[standardized];
-    }
-    const foundNote = NOTES_CHROMATIC.find(n_chromatic => n_chromatic.toUpperCase() === standardized);
-    if (foundNote) return foundNote;
-    if (NOTES_CHROMATIC.includes(note.charAt(0).toUpperCase() + note.slice(1))) {
-        return note.charAt(0).toUpperCase() + note.slice(1);
-    }
-    return standardized;
-}
+const AudioContextManager = { // Correctly defined object
+    context: null,
+    soundBuffers: {},
+    pianoSampleBuffers: {},
+    reverbNode: null,
+    samplesLoaded: false,
+    reverbAmount: 0.2,
+    currentChordGain: null,
+    secondaryLoadStarted: false,
+    reverbNodeConnected: false
+};
 
-function standardizeNoteNameForSamples(note) {
-    const stdNote = standardizeNoteName(note);
-    return SAMPLE_NOTE_MAP[stdNote] || SAMPLE_NOTE_MAP[note.toUpperCase()] || note.toLowerCase();
-}
-
-function getStandardQuality(rawQualityInput) {
-    if (!rawQualityInput || typeof rawQualityInput !== 'string') return 'maj7';
-    let quality = rawQualityInput.toLowerCase().trim();
-    quality = quality.split('/')[0].trim();
-    if (quality === 'alt' || quality === '7alt') return 'alt';
-    if (quality === '7b9' || quality === 'dom7b9') return 'dom7b9';
-    if (quality === '7#9' || quality === 'dom7#9') return 'dom7#9';
-    if (quality === '7b5' || quality === 'dom7b5') return 'dom7b5';
-    if (quality === '7sus' || quality === '7sus4' || quality === 'dom7sus') return 'dom7sus';
-    if (quality === 'imaj7' || quality === 'm(maj7)' || quality === 'minmaj7' || quality === 'mmaj7') return 'imaj7';
-    if (quality === 'm7b5' || quality === 'min7b5' || quality === 'ø' || quality === 'mi7b5' || quality.startsWith('m7b5')) return 'min7b5';
-    if (quality === 'dim7' || quality === '°7' || (quality.startsWith('dim') && quality.includes('7'))) return 'dim7';
-    if (quality === 'maj7' || quality === 'ma7' || quality === 'Δ' || quality.startsWith('maj7') || quality.startsWith('ma7')) return 'maj7';
-    if (quality === '7' || quality === 'dom7' || quality === 'dom' || (quality.startsWith('7') && !quality.startsWith('7b') && !quality.startsWith('7#') && !quality.startsWith('7s'))) return 'dom7';
-    if (quality === 'm7' || quality === 'min7' || quality === 'mi7' || quality.startsWith('m7') || quality.startsWith('min7')) return 'min7';
-    if (quality === 'maj6' || quality === 'ma6' || quality === '6' || quality.startsWith('maj6') || quality.startsWith('ma6')) return 'maj6';
-    if (quality === 'm6' || quality === 'min6' || quality === 'mi6' || quality.startsWith('m6') || quality.startsWith('min6')) return 'min6';
-    if (quality === '6/9' || quality.startsWith('6/9')) return 'maj6';
-    if (quality === 'maj' || quality === '') return 'maj';
-    if (quality === 'm' || quality === 'min' || quality === 'mi') return 'min';
-    if (quality === 'dim' || quality === '°') return 'dim';
-    if (quality === 'aug' || quality === '+') return 'aug';
-    if (quality === 'sus4' || quality === 'sus') return 'sus4';
-    if (quality === 'sus2') return 'sus2';
-    if (CHORD_INTERVALS[rawQualityInput]) return rawQualityInput;
-    if (CHORD_INTERVALS[quality]) return quality;
-    console.warn(`getStandardQuality: Unstandardized quality "${rawQualityInput}". Defaulting to 'maj7'.`);
-    return 'maj7';
-}
-
-function parseChord(chordString) {
-    if (typeof chordString !== 'string' || !chordString.trim()) {
-        return null;
-    }
-    chordString = chordString.trim();
-    const match = chordString.match(/^([A-G][#b]?)(.*)$/);
-    if (!match) {
-        return null;
-    }
-    const root = standardizeNoteName(match[1]);
-    const qualityString = match[2].trim(); 
-    const quality = getStandardQuality(qualityString);
-    return { root: root, quality: quality, originalString: chordString };
-}
-
-function parseRomanNumeralToAbsoluteChord(romanString, key) {
-    const isMinorKey = key.includes('m');
-    const normalizedKeyRoot = standardizeNoteName(key.replace('m', ''));
-    const keyRootIndex = NOTES_CHROMATIC.indexOf(normalizedKeyRoot);
-    if (keyRootIndex === -1) {
-        console.error(`Invalid key for Roman numeral parsing: ${key}`);
-        return { root: 'C', quality: 'maj7', originalRoman: romanString };
-    }
-    const firstChordInSplit = romanString.split('/')[0].trim();
-    const absoluteChordAttempt = parseChord(firstChordInSplit);
-    if (absoluteChordAttempt && absoluteChordAttempt.root && CHORD_INTERVALS[absoluteChordAttempt.quality]) {
-        return { ...absoluteChordAttempt, originalRoman: romanString };
-    }
-    const romanMatch = firstChordInSplit.match(/^(b|#)?([IViv]+)(.*)$/);
-    if (!romanMatch) {
-        console.warn(`Could not parse Roman numeral or absolute chord: "${firstChordInSplit}" in key ${key}. Assuming Imaj7 of key.`);
-        return { root: normalizedKeyRoot, quality: 'maj7', originalRoman: romanString };
-    }
-    const accidental = romanMatch[1];
-    const numeral = romanMatch[2];
-    let qualitySuffix = romanMatch[3].trim();
-    const majorScaleIntervals = { 'I': 0, 'II': 2, 'III': 4, 'IV': 5, 'V': 7, 'VI': 9, 'VII': 11 };
-    const minorScaleIntervals = { 'i': 0, 'ii': 2, 'III': 3, 'iv': 5, 'v': 7, 'VI': 8, 'VII': 10 };
-    let degreeInterval;
-    const isUpperCaseNumeral = numeral === numeral.toUpperCase();
-    if (isMinorKey) {
-        degreeInterval = minorScaleIntervals[numeral.toLowerCase()];
-        if (isUpperCaseNumeral && numeral.toLowerCase() === 'v') degreeInterval = majorScaleIntervals['V'];
-        if (isUpperCaseNumeral && numeral.toLowerCase() === 'iv') degreeInterval = majorScaleIntervals['IV'];
-    } else {
-        degreeInterval = majorScaleIntervals[numeral.toUpperCase()];
-    }
-    if (degreeInterval === undefined) {
-        console.warn(`Unknown Roman numeral base: ${numeral} in "${firstChordInSplit}". Assuming I of key.`);
-        return { root: normalizedKeyRoot, quality: 'maj7', originalRoman: romanString };
-    }
-    let chordRootIndex = (keyRootIndex + degreeInterval) % 12;
-    if (accidental === 'b') chordRootIndex = (chordRootIndex - 1 + 12) % 12;
-    else if (accidental === '#') chordRootIndex = (chordRootIndex + 1) % 12;
-    const chordRoot = NOTES_CHROMATIC[chordRootIndex];
-    let finalQuality = getStandardQuality(qualitySuffix);
-    if (!qualitySuffix) {
-        if (numeral.toLowerCase() === 'v' && (isMinorKey || !qualitySuffix)) {
-            finalQuality = 'dom7';
-        } else if (numeral.toLowerCase() === 'vii' && !isUpperCaseNumeral) {
-            finalQuality = 'min7b5';
-        } else {
-            finalQuality = isUpperCaseNumeral ? 'maj7' : 'min7';
-        }
-    } else if (!CHORD_INTERVALS[finalQuality]) {
-        console.warn(`Quality suffix "${qualitySuffix}" for Roman ${firstChordInSplit} not fully resolved. Defaulting based on numeral.`);
-        finalQuality = isUpperCaseNumeral ? 'maj7' : 'min7';
-    }
-    return { root: chordRoot, quality: finalQuality, originalRoman: romanString };
-}
-
-function getChordNotes(root, quality) {
-    let intervals = CHORD_INTERVALS[quality];
-    if (!intervals) {
-        console.warn(`Quality "${quality}" for root "${root}" not found. Defaulting to dom7 intervals.`);
-        intervals = CHORD_INTERVALS['dom7'];
-    }
-    const standardizedRoot = standardizeNoteName(root);
-    const rootIndex = NOTES.indexOf(standardizedRoot);
-    if (rootIndex === -1) {
-        console.error(`Invalid root note for getChordNotes: ${root}`);
-        return [standardizedRoot];
-    }
-    return intervals.map(interval => NOTES[(rootIndex + interval + 12) % 12]);
-}
-
-function suggestScaleForQuality(quality) {
-    const scaleMap = {
-        'maj7': 'major', 'maj': 'major', 'maj6': 'major', 'maj9': 'major',
-        'dom7': 'mixolydian', 'dom9': 'mixolydian', 'dom7b9': 'diminishedWH',
-        'dom7#9': 'altered', 'alt': 'altered', 'dom7sus': 'mixolydian',
-        'min7': 'dorian', 'min': 'dorian', 'min9': 'dorian', 'min6': 'dorian',
-        'min7b5': 'locrian', 'dim7': 'diminishedWH',
-        'imaj7': 'melodicMinor',
-    };
-    return scaleMap[quality] || 'major';
-}
-
-// ... (Rest of Music Theory Helpers, Chord Voicing, DOM Utilities, Audio Management (ensure AudioContextManager is complete)) ...
-// --- PASTE THE FULL AudioContextManager OBJECT HERE (from previous steps, it's quite long) ---
 AudioContextManager.initialize = async function() {
     if (this.context && this.context.state !== 'closed') {
         return this.context;
@@ -2062,6 +1895,14 @@ AudioContextManager.loadPianoSamplesSpecific = async function(octavesToLoad) {
     this.samplesLoaded = Object.keys(this.pianoSampleBuffers).length > 0;
 };
 AudioContextManager.createDrumSound = async function(type) { 
+    if (!this.context) { 
+        console.warn("AudioContext not available for createDrumSound, attempting init.");
+        await this.ensureAudioContext();
+        if (!this.context) {
+            console.error("AudioContext could not be initialized for createDrumSound.");
+            return new AudioBuffer({length:1, sampleRate: 44100}); 
+        }
+    }
     const sampleRate = this.context.sampleRate;
     const duration = type === 'hihat' ? 0.05 : 0.2; 
     const buffer = this.context.createBuffer(1, sampleRate * duration, sampleRate);
@@ -2126,26 +1967,1639 @@ AudioContextManager.setupReverb = async function() {
     }
 };
 
+// ==================================
+// === MUSIC THEORY HELPERS =======
+// ==================================
+function transposeChordData(chordData, originalSongKeyRoot, targetGlobalKeyRoot) {
+    // console.log(`TRANSPOSE CALL: chordData=${JSON.stringify(chordData)}, origKeyRoot=${originalSongKeyRoot}, targetKeyRoot=${targetGlobalKeyRoot}`);
+    const originalKeyRootIndex = NOTES_CHROMATIC.indexOf(standardizeNoteName(originalSongKeyRoot));
+    const targetKeyRootIndex = NOTES_CHROMATIC.indexOf(standardizeNoteName(targetGlobalKeyRoot));
+    if (originalKeyRootIndex === -1 || targetKeyRootIndex === -1) {
+        console.error(`Invalid key for transposition: Original '${originalSongKeyRoot}', Target '${targetGlobalKeyRoot}'. Returning original chord.`);
+        return { ...chordData };
+    }
+    const transpositionInterval = (targetKeyRootIndex - originalKeyRootIndex + 12) % 12;
+    const originalChordRootIndex = NOTES_CHROMATIC.indexOf(standardizeNoteName(chordData.root));
+    if (originalChordRootIndex === -1) {
+        console.error(`Invalid original chord root for transposition: '${chordData.root}'. Returning original chord.`);
+        return { ...chordData };
+    }
+    const transposedChordRootIndex = (originalChordRootIndex + transpositionInterval + 12) % 12;
+    const transposedRoot = NOTES_CHROMATIC[transposedChordRootIndex];
+    // console.log(`  -> transpositionInterval=${transpositionInterval}, origChordRootIdx=${originalChordRootIndex}, transposedChordRootIdx=${transposedChordRootIndex}, transposedRoot=${transposedRoot}`);
+    return { root: transposedRoot, quality: chordData.quality };
+}  
+        
+function standardizeNoteName(note) {
+    if (!note || typeof note !== 'string') return '';
+    let standardized = note.trim().replace('♭', 'b').replace('♯', '#');
+    if (standardized === "Bbb" || standardized === "bbb") return "A";
+    if (standardized === "E##" || standardized === "e##") return "Gb";
+    if (standardized === "B##" || standardized === "b##") return "Db";
+    standardized = standardized.toUpperCase();
+    const sharpToFlatMap = { 'C#': 'Db', 'D#': 'Eb', 'F#': 'Gb', 'G#': 'Ab', 'A#': 'Bb' };
+    if (sharpToFlatMap[standardized]) {
+        return sharpToFlatMap[standardized];
+    }
+    const foundNote = NOTES_CHROMATIC.find(n_chromatic => n_chromatic.toUpperCase() === standardized);
+    if (foundNote) return foundNote;
+    if (NOTES_CHROMATIC.includes(note.charAt(0).toUpperCase() + note.slice(1))) {
+        return note.charAt(0).toUpperCase() + note.slice(1);
+    }
+    return standardized;
+}
 
-// ... (Audio Playback functions: playNote, playChord, playMetronomeSound) ...
-// ... (Fretboard UI functions: createFretboard, updateFretboardNotes) ...
-// ... (Metronome UI & Logic: createBeats, toggleBeatAccent, onMetronomeInstrumentChange) ...
-// ... (Playback Engine: playBeat, startPlayback, stopPlayback) ...
+function standardizeNoteNameForSamples(note) {
+    const stdNote = standardizeNoteName(note);
+    return SAMPLE_NOTE_MAP[stdNote] || SAMPLE_NOTE_MAP[note.toUpperCase()] || note.toLowerCase();
+}
+
+function getStandardQuality(rawQualityInput) {
+    if (!rawQualityInput || typeof rawQualityInput !== 'string') return 'maj7';
+    let quality = rawQualityInput.toLowerCase().trim();
+    quality = quality.split('/')[0].trim();
+    if (quality === 'alt' || quality === '7alt') return 'alt';
+    if (quality === '7b9' || quality === 'dom7b9') return 'dom7b9';
+    if (quality === '7#9' || quality === 'dom7#9') return 'dom7#9';
+    if (quality === '7b5' || quality === 'dom7b5') return 'dom7b5';
+    if (quality === '7sus' || quality === '7sus4' || quality === 'dom7sus') return 'dom7sus';
+    if (quality === 'imaj7' || quality === 'm(maj7)' || quality === 'minmaj7' || quality === 'mmaj7') return 'imaj7';
+    if (quality === 'm7b5' || quality === 'min7b5' || quality === 'ø' || quality === 'mi7b5' || quality.startsWith('m7b5')) return 'min7b5';
+    if (quality === 'dim7' || quality === '°7' || (quality.startsWith('dim') && quality.includes('7'))) return 'dim7';
+    if (quality === 'maj7' || quality === 'ma7' || quality === 'Δ' || quality.startsWith('maj7') || quality.startsWith('ma7')) return 'maj7';
+    if (quality === '7' || quality === 'dom7' || quality === 'dom' || (quality.startsWith('7') && !quality.startsWith('7b') && !quality.startsWith('7#') && !quality.startsWith('7s'))) return 'dom7';
+    if (quality === 'm7' || quality === 'min7' || quality === 'mi7' || quality.startsWith('m7') || quality.startsWith('min7')) return 'min7';
+    if (quality === 'maj6' || quality === 'ma6' || quality === '6' || quality.startsWith('maj6') || quality.startsWith('ma6')) return 'maj6';
+    if (quality === 'm6' || quality === 'min6' || quality === 'mi6' || quality.startsWith('m6') || quality.startsWith('min6')) return 'min6';
+    if (quality === '6/9' || quality.startsWith('6/9')) return 'maj6';
+    if (quality === 'maj' || quality === '') return 'maj';
+    if (quality === 'm' || quality === 'min' || quality === 'mi') return 'min';
+    if (quality === 'dim' || quality === '°') return 'dim';
+    if (quality === 'aug' || quality === '+') return 'aug';
+    if (quality === 'sus4' || quality === 'sus') return 'sus4';
+    if (quality === 'sus2') return 'sus2';
+    if (CHORD_INTERVALS[rawQualityInput]) return rawQualityInput;
+    if (CHORD_INTERVALS[quality]) return quality;
+    console.warn(`getStandardQuality: Unstandardized quality "${rawQualityInput}". Defaulting to 'maj7'.`);
+    return 'maj7';
+}
+
+function parseChord(chordString) {
+    if (typeof chordString !== 'string' || !chordString.trim()) {
+        return null;
+    }
+    chordString = chordString.trim();
+    const match = chordString.match(/^([A-G][#b]?)(.*)$/);
+    if (!match) {
+        return null;
+    }
+    const root = standardizeNoteName(match[1]);
+    const qualityString = match[2].trim(); 
+    const quality = getStandardQuality(qualityString);
+    return { root: root, quality: quality, originalString: chordString };
+}
+
+function parseRomanNumeralToAbsoluteChord(romanString, key) {
+    const isMinorKey = key.includes('m');
+    const normalizedKeyRoot = standardizeNoteName(key.replace('m', ''));
+    const keyRootIndex = NOTES_CHROMATIC.indexOf(normalizedKeyRoot);
+    if (keyRootIndex === -1) {
+        console.error(`Invalid key for Roman numeral parsing: ${key}`);
+        return { root: 'C', quality: 'maj7', originalRoman: romanString };
+    }
+    const firstChordInSplit = romanString.split('/')[0].trim();
+    const absoluteChordAttempt = parseChord(firstChordInSplit);
+    if (absoluteChordAttempt && absoluteChordAttempt.root && CHORD_INTERVALS[absoluteChordAttempt.quality]) {
+        return { ...absoluteChordAttempt, originalRoman: romanString };
+    }
+    const romanMatch = firstChordInSplit.match(/^(b|#)?([IViv]+)(.*)$/);
+    if (!romanMatch) {
+        // console.warn(`Could not parse Roman numeral or absolute chord: "${firstChordInSplit}" in key ${key}. Assuming Imaj7 of key.`);
+        return { root: normalizedKeyRoot, quality: 'maj7', originalRoman: romanString };
+    }
+    const accidental = romanMatch[1];
+    const numeral = romanMatch[2];
+    let qualitySuffix = romanMatch[3].trim();
+    const majorScaleIntervals = { 'I': 0, 'II': 2, 'III': 4, 'IV': 5, 'V': 7, 'VI': 9, 'VII': 11 };
+    const minorScaleIntervals = { 'i': 0, 'ii': 2, 'III': 3, 'iv': 5, 'v': 7, 'VI': 8, 'VII': 10 };
+    let degreeInterval;
+    const isUpperCaseNumeral = numeral === numeral.toUpperCase();
+    if (isMinorKey) {
+        degreeInterval = minorScaleIntervals[numeral.toLowerCase()];
+        if (isUpperCaseNumeral && numeral.toLowerCase() === 'v') degreeInterval = majorScaleIntervals['V'];
+        if (isUpperCaseNumeral && numeral.toLowerCase() === 'iv') degreeInterval = majorScaleIntervals['IV'];
+    } else {
+        degreeInterval = majorScaleIntervals[numeral.toUpperCase()];
+    }
+    if (degreeInterval === undefined) {
+        console.warn(`Unknown Roman numeral base: ${numeral} in "${firstChordInSplit}". Assuming I of key.`);
+        return { root: normalizedKeyRoot, quality: 'maj7', originalRoman: romanString };
+    }
+    let chordRootIndex = (keyRootIndex + degreeInterval) % 12;
+    if (accidental === 'b') chordRootIndex = (chordRootIndex - 1 + 12) % 12;
+    else if (accidental === '#') chordRootIndex = (chordRootIndex + 1) % 12;
+    const chordRoot = NOTES_CHROMATIC[chordRootIndex];
+    let finalQuality = getStandardQuality(qualitySuffix);
+    if (!qualitySuffix) {
+        if (numeral.toLowerCase() === 'v' && (isMinorKey || !qualitySuffix)) {
+            finalQuality = 'dom7';
+        } else if (numeral.toLowerCase() === 'vii' && !isUpperCaseNumeral) {
+            finalQuality = 'min7b5';
+        } else {
+            finalQuality = isUpperCaseNumeral ? 'maj7' : 'min7';
+        }
+    } else if (!CHORD_INTERVALS[finalQuality]) {
+        console.warn(`Quality suffix "${qualitySuffix}" for Roman ${firstChordInSplit} not fully resolved. Defaulting based on numeral.`);
+        finalQuality = isUpperCaseNumeral ? 'maj7' : 'min7';
+    }
+    return { root: chordRoot, quality: finalQuality, originalRoman: romanString };
+}
+
+function getChordNotes(root, quality) {
+    let intervals = CHORD_INTERVALS[quality];
+    if (!intervals) {
+        console.warn(`Quality "${quality}" for root "${root}" not found. Defaulting to dom7 intervals.`);
+        intervals = CHORD_INTERVALS['dom7'];
+    }
+    const standardizedRoot = standardizeNoteName(root);
+    const rootIndex = NOTES.indexOf(standardizedRoot);
+    if (rootIndex === -1) {
+        console.error(`Invalid root note for getChordNotes: ${root}`);
+        return [standardizedRoot];
+    }
+    return intervals.map(interval => NOTES[(rootIndex + interval + 12) % 12]);
+}
+
+function suggestScaleForQuality(quality) {
+    const scaleMap = {
+        'maj7': 'major', 'maj': 'major', 'maj6': 'major', 'maj9': 'major',
+        'dom7': 'mixolydian', 'dom9': 'mixolydian', 'dom7b9': 'diminishedWH',
+        'dom7#9': 'altered', 'alt': 'altered', 'dom7sus': 'mixolydian',
+        'min7': 'dorian', 'min': 'dorian', 'min9': 'dorian', 'min6': 'dorian',
+        'min7b5': 'locrian', 'dim7': 'diminishedWH',
+        'imaj7': 'melodicMinor',
+    };
+    return scaleMap[quality] || 'major';
+}
+
+// ==================================
+// === CHORD VOICING HELPERS ======
+// ==================================
+function generateInversions(baseNotes) {
+    const voicings = [];
+    voicings.push([...baseNotes]); 
+    for (let i = 1; i < baseNotes.length; i++) {
+        voicings.push([...baseNotes.slice(i), ...baseNotes.slice(0, i)]);
+    }
+    return voicings;
+}
+
+function generateDrop2Voicing(rootPositionNotes) {
+    if (rootPositionNotes.length !== 4) return null;
+    return [ rootPositionNotes[0], rootPositionNotes[2], rootPositionNotes[3], rootPositionNotes[1] ];
+}
+
+function getChordVoicing(baseNotesInRootPosition, quality) {
+    let potentialVoicings = [];
+    const simpleInversions = generateInversions(baseNotesInRootPosition);
+    potentialVoicings.push(...simpleInversions);
+
+    if (baseNotesInRootPosition.length === 4) {
+        if (Math.random() < 0.25) { 
+            const drop2 = generateDrop2Voicing(baseNotesInRootPosition);
+            if (drop2) potentialVoicings.push(drop2);
+        }
+        if (Math.random() < 0.10) { 
+            potentialVoicings.push([ baseNotesInRootPosition[0], baseNotesInRootPosition[3], baseNotesInRootPosition[1], baseNotesInRootPosition[2] ]);
+        }
+    }
+    return potentialVoicings[Math.floor(Math.random() * potentialVoicings.length)];
+}
+
+// ==================================
+// === DOM UTILITIES & UI UPDATERS ==
+// ==================================
+function createKeyOptions(selectedKey = 'C') {
+    return NOTES.map(note =>
+        `<option value="${note}"${note === standardizeNoteName(selectedKey) ? ' selected' : ''}>${note}</option>`
+    ).join('');
+}
+
+function createQualityOptions(selectedQuality = 'maj7') {
+    const qualityDisplayOrder = [
+        { value: 'maj7', label: 'maj7' }, { value: 'dom7', label: '7' }, { value: 'min7', label: 'm7' },
+        { value: 'min7b5', label: 'm7b5' }, { value: 'dim7', label: 'dim7' }, { value: 'maj6', label: 'maj6' },
+        { value: 'min6', label: 'm6' }, { value: 'dom7b9', label: '7b9' }, { value: 'dom7#9', label: '7#9' },
+        { value: 'dom7b5', label: '7b5' }, { value: 'alt', label: 'alt' }, { value: 'dom7sus', label: '7sus' },
+        { value: 'imaj7', label: 'm(maj7)' }, { value: 'maj', label: 'maj' }, { value: 'min', label: 'min' },
+        { value: 'dim', label: 'dim' }, { value: 'aug', label: 'aug' }, { value: 'sus4', label: 'sus4' },
+        { value: 'sus2', label: 'sus2' }
+    ];
+    return qualityDisplayOrder.map(q =>
+        `<option value="${q.value}"${q.value === selectedQuality ? ' selected' : ''}>${q.label}</option>`
+    ).join('');
+}
+
+function createScaleOptions(selectedScale = 'major') {
+    return Object.keys(SCALES).map(scaleName => {
+        const displayName = scaleName.replace(/([A-Z]+)/g, ' $1').replace(/([A-Z][a-z])/g, ' $1')
+                                   .split(' ').map(s => s.charAt(0).toUpperCase() + s.substring(1)).join(' ').trim();
+        return `<option value="${scaleName}"${scaleName === selectedScale ? ' selected' : ''}>${displayName}</option>`;
+    }).join('');
+}
+
+function getSampleFileName(note, octave) {
+  return `${note}${octave}.${FILE_FORMAT}`;
+}
+
+// ==================================
+// === AUDIO PLAYBACK ============= (ensureAudioInitializedUserInteraction, playNote, playChord, playMetronomeSound)
+// ==================================
+async function ensureAudioInitializedUserInteraction() {
+    if (!AppState.audioInitialized) {
+        try {
+            await AudioContextManager.initialize();
+            log("Audio context initialized on user interaction.");
+        } catch (e) {
+            console.error('Audio initialization failed on user interaction:', e);
+        }
+    }
+}
+
+function playNote(noteNameWithOctave, volume = 0.5, duration = 500) {
+    if (!AudioContextManager.context || !AudioContextManager.samplesLoaded || !noteNameWithOctave) {
+        return;
+    }
+    const match = noteNameWithOctave.match(/^([A-G][#bs]?)(\d)$/i);
+    if (!match) {
+        console.warn(`Invalid note format for playback: ${noteNameWithOctave}`);
+        return;
+    }
+    let [, pitchClass, octaveStr] = match;
+    const samplePitchClass = standardizeNoteNameForSamples(pitchClass);
+    const octave = Math.max(OCTAVES_FOR_SAMPLES[0], Math.min(OCTAVES_FOR_SAMPLES[OCTAVES_FOR_SAMPLES.length - 1], parseInt(octaveStr)));
+    const sampleKey = `${samplePitchClass}${octave}`;
+    const buffer = AudioContextManager.pianoSampleBuffers[sampleKey];
+
+    if (!buffer) return;
+
+    try {
+        const source = AudioContextManager.context.createBufferSource();
+        source.buffer = buffer;
+        const gainNode = AudioContextManager.context.createGain();
+        gainNode.gain.setValueAtTime(volume, AudioContextManager.context.currentTime);
+        source.connect(gainNode);
+        gainNode.connect(AudioContextManager.context.destination);
+        source.start(AudioContextManager.context.currentTime);
+        source.stop(AudioContextManager.context.currentTime + duration / 1000);
+    } catch (e) {
+        console.error('Error playing note:', e);
+    }
+}
+
+async function playChord(root, quality, startTime, duration) {
+    if (!UI.elements.chordsEnabled.classList.contains('active') || !AudioContextManager.samplesLoaded) {
+        return;
+    }
+    await AudioContextManager.ensureAudioContext();
+
+    const baseNotesInRootPosition = getChordNotes(root, quality);
+    if (!baseNotesInRootPosition || baseNotesInRootPosition.length === 0) {
+        console.warn(`Cannot play chord for ${root}${quality}: No notes found.`);
+        return;
+    }
+
+    const overallVolume = parseFloat(UI.elements.chordVolume.value) * 0.7;
+    if (overallVolume <= 0) return;
+
+    const firstVoicingNotes = getChordVoicing([...baseNotesInRootPosition], quality);
+    
+    if (AudioContextManager.currentChordGain) {
+        try {
+            AudioContextManager.currentChordGain.gain.setValueAtTime(AudioContextManager.currentChordGain.gain.value, startTime);
+            AudioContextManager.currentChordGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.05);
+        } catch (e) { console.warn("Error fading out previous chord gain:", e); }
+    }
+
+    const chordMasterGain = AudioContextManager.context.createGain();
+    chordMasterGain.gain.setValueAtTime(0, startTime);
+    chordMasterGain.gain.linearRampToValueAtTime(overallVolume, startTime + 0.02);
+    chordMasterGain.connect(AudioContextManager.context.destination);
+    AudioContextManager.currentChordGain = chordMasterGain;
+
+    if (AudioContextManager.reverbNode && AudioContextManager.reverbAmount > 0) {
+        const reverbDryWet = AudioContextManager.context.createGain();
+        reverbDryWet.gain.value = AudioContextManager.reverbAmount;
+        chordMasterGain.connect(reverbDryWet);
+        reverbDryWet.connect(AudioContextManager.reverbNode);
+        if (!AudioContextManager.reverbNodeConnected && AudioContextManager.context.destination) {
+            AudioContextManager.reverbNode.connect(AudioContextManager.context.destination);
+            AudioContextManager.reverbNodeConnected = true;
+        }
+    }
+
+    function playChordInstance(voicingNotes, instanceStartTime, instanceDuration, connectToGainNode) {
+        const assignedNotesWithOctaves = voicingNotes.map((noteName, index) => {
+            let octave = PLAYBACK_OCTAVES[0];
+            if (index > 0 && PLAYBACK_OCTAVES.length > 1) {
+                octave = PLAYBACK_OCTAVES[index % PLAYBACK_OCTAVES.length];
+            }
+            if (index > 0 && NOTES.indexOf(standardizeNoteName(noteName)) < NOTES.indexOf(standardizeNoteName(voicingNotes[0])) && PLAYBACK_OCTAVES.length > 1) {
+                if (octave !== PLAYBACK_OCTAVES[PLAYBACK_OCTAVES.length - 1]) {
+                    octave = PLAYBACK_OCTAVES[1] || PLAYBACK_OCTAVES[0];
+                }
+            }
+            if (!OCTAVES_FOR_SAMPLES.includes(octave)) {
+                octave = OCTAVES_FOR_SAMPLES.find(o => o >= PLAYBACK_OCTAVES[0]) || OCTAVES_FOR_SAMPLES[0];
+            }
+            octave = Math.max(OCTAVES_FOR_SAMPLES[0], Math.min(OCTAVES_FOR_SAMPLES[OCTAVES_FOR_SAMPLES.length - 1], octave));
+            return { name: noteName, octave: octave };
+        });
+
+        assignedNotesWithOctaves.forEach(noteObj => {
+            const samplePitchClass = standardizeNoteNameForSamples(noteObj.name);
+            const finalSampleOctave = Math.max(OCTAVES_FOR_SAMPLES[0], Math.min(OCTAVES_FOR_SAMPLES[OCTAVES_FOR_SAMPLES.length - 1], noteObj.octave));
+            const sampleKey = `${samplePitchClass}${finalSampleOctave}`;
+            const buffer = AudioContextManager.pianoSampleBuffers[sampleKey];
+            if (!buffer) return;
+
+            const source = AudioContextManager.context.createBufferSource();
+            source.buffer = buffer;
+            source.connect(connectToGainNode);
+            const timingVariance = Math.random() * 0.03;
+            source.start(instanceStartTime + timingVariance);
+            source.stop(instanceStartTime + instanceDuration + timingVariance);
+        });
+    }
+
+    playChordInstance(firstVoicingNotes, startTime, duration / 2, chordMasterGain);
+
+    const beatDurationSec = 60 / AppState.tempo;
+    const timeSigNum = parseInt(UI.elements.timeSignature.value);
+    const isLikelyFullMeasureChord = (timeSigNum === 4 && duration > (beatDurationSec * 2.5)) || (timeSigNum !== 4 && duration > (beatDurationSec * (timeSigNum / 2 + 0.5)));
+
+    if (isLikelyFullMeasureChord) {
+        const secondVoicingNotes = getChordVoicing([...baseNotesInRootPosition], quality);
+        const secondHitStartTime = startTime + duration / 2;
+        playChordInstance(secondVoicingNotes, secondHitStartTime, duration / 2, chordMasterGain);
+    }
+}
+        
+async function playMetronomeSound(baseVolume) { 
+    if (!AudioContextManager.context) return;
+
+    const metronomeOverallVolume = parseFloat(UI.elements.metronomeVolume.value);
+    const soundTypeSetting = UI.elements.soundType.value;
+    const beatElement = UI.elements.beatsContainer.querySelector(`.beat[data-beat="${AppState.currentBeat}"]`);
+    if (!beatElement) return;
+
+    const soundsToPlayThisBeat = beatElement.dataset.sound.split(',');
+    const beatSpecificVolumeFactor = parseFloat(beatElement.dataset.volume); 
+    const isStrongBeatForAccent = parseFloat(beatElement.dataset.baseVolume) >= 0.9; 
+    const accentMultiplier = isStrongBeatForAccent ? parseFloat(UI.elements.accentIntensity?.value || 1.0) : 1.0;
+
+    for (let soundKey of soundsToPlayThisBeat) {
+        soundKey = soundKey.trim();
+        if (soundKey === 'silent') continue;
+
+        let bufferToPlay;
+        let effectiveSoundKey = soundKey;
+        let soundSpecificMixLevel = 1.0;
+
+        if (soundTypeSetting === 'drums') {
+            const currentDrumSet = drumSoundSets[currentDrumSetIndex];
+            let soundFilename;
+            switch (soundKey) {
+                case 'kick':
+                    soundFilename = currentDrumSet.kick;
+                    if (UI.elements.kickVolume) soundSpecificMixLevel = parseFloat(UI.elements.kickVolume.value);
+                    break;
+                case 'snare':
+                    soundFilename = currentDrumSet.snare;
+                    if (UI.elements.snareVolume) soundSpecificMixLevel = parseFloat(UI.elements.snareVolume.value);
+                    break;
+                case 'hihat':
+                    soundFilename = currentDrumSet.hihat;
+                    if (UI.elements.hihatVolume) soundSpecificMixLevel = parseFloat(UI.elements.hihatVolume.value);
+                    break;
+                default: 
+                    effectiveSoundKey = 'click';
+                    soundFilename = null; 
+                    soundSpecificMixLevel = 1.0; 
+                    break;
+            }
+
+            if (soundFilename) { 
+                effectiveSoundKey = soundFilename; 
+                if (!AudioContextManager.soundBuffers[soundFilename]) {
+                    try {
+                        const response = await fetch(`./${soundFilename}`);
+                        if (!response.ok) throw new Error(`HTTP ${response.status} for ${soundFilename}`);
+                        const arrayBuffer = await response.arrayBuffer();
+                        AudioContextManager.soundBuffers[soundFilename] = await AudioContextManager.context.decodeAudioData(arrayBuffer);
+                    } catch (e) {
+                        console.error(`Failed to load drum sample ${soundFilename} on-the-fly:`, e);
+                        bufferToPlay = AudioContextManager.soundBuffers[soundKey] || AudioContextManager.soundBuffers['click'];
+                        effectiveSoundKey = soundKey; 
+                    }
+                }
+                bufferToPlay = AudioContextManager.soundBuffers[soundFilename];
+            } else { 
+                 bufferToPlay = AudioContextManager.soundBuffers[effectiveSoundKey] || AudioContextManager.soundBuffers['click'];
+            }
+        } else { 
+            effectiveSoundKey = soundTypeSetting; 
+            bufferToPlay = AudioContextManager.soundBuffers[soundTypeSetting] || AudioContextManager.soundBuffers['click'];
+            soundSpecificMixLevel = 1.0; 
+        }
+
+        if (!bufferToPlay) continue;
+
+        let actualFinalVolume = metronomeOverallVolume * beatSpecificVolumeFactor * soundSpecificMixLevel * accentMultiplier;
+        actualFinalVolume = Math.min(actualFinalVolume, 1.0); 
+
+        if (actualFinalVolume <= 0.001) continue; 
+
+        const source = AudioContextManager.context.createBufferSource();
+        source.buffer = bufferToPlay;
+        const gainNode = AudioContextManager.context.createGain();
+
+        gainNode.gain.setValueAtTime(actualFinalVolume, AudioContextManager.context.currentTime);
+        source.connect(gainNode);
+        gainNode.connect(AudioContextManager.context.destination);
+
+        if (soundTypeSetting === 'drums' && AudioContextManager.reverbNode && AudioContextManager.reverbAmount > 0.01) {
+            const reverbSendGain = AudioContextManager.context.createGain();
+            reverbSendGain.gain.setValueAtTime(0.05 * AudioContextManager.reverbAmount, AudioContextManager.context.currentTime); 
+            gainNode.connect(reverbSendGain); 
+            reverbSendGain.connect(AudioContextManager.reverbNode);
+        }
+        source.start(AudioContextManager.context.currentTime);
+    }
+}
+
+// ==================================
+// === FRETBOARD UI ===============
+// ==================================
+function createFretboard(fretboardContainer, tuningArray) {
+    if (!(fretboardContainer instanceof HTMLElement)) {
+        console.error("Invalid fretboard container provided to createFretboard.");
+        return;
+    }
+    if (!Array.isArray(tuningArray) || tuningArray.length === 0) {
+        console.error("Invalid or empty tuning array provided to createFretboard.");
+        return;
+    }
+
+    fretboardContainer.innerHTML = '';
+    const numFrets = 12;
+    const numStrings = tuningArray.length;
+
+    const nutElement = document.createElement('div');
+    nutElement.className = 'fret-line';
+    nutElement.style.left = '0%';
+    nutElement.style.width = '4px';
+    nutElement.style.backgroundColor = '#4A3B31';
+    nutElement.style.zIndex = '1';
+    fretboardContainer.appendChild(nutElement);
+
+    for (let i = 1; i <= numFrets; i++) {
+        const fretLine = document.createElement('div');
+        fretLine.className = 'fret-line';
+        fretLine.style.left = `${(i / numFrets) * 100}%`;
+        fretboardContainer.appendChild(fretLine);
+
+        const fretNumber = document.createElement('div');
+        fretNumber.className = 'fret-number';
+        fretNumber.textContent = i;
+        fretNumber.style.left = `${((i - 0.5) / numFrets) * 100}%`;
+        fretboardContainer.appendChild(fretNumber);
+    }
+
+    for (let stringIndex = 0; stringIndex < numStrings; stringIndex++) {
+        const stringLine = document.createElement('div');
+        stringLine.className = 'string-line';
+        const stringYPosition = (((numStrings - 1 - stringIndex) / (numStrings - 1)) * 96) + 2;
+        stringLine.style.top = `${stringYPosition}%`;
+        fretboardContainer.appendChild(stringLine);
+    }
+
+    const markerPositions = [3, 5, 7, 9, 12];
+    markerPositions.forEach(fretPos => {
+        const marker = document.createElement('div');
+        marker.className = 'fret-marker';
+        marker.style.left = `${((fretPos - 0.5) / numFrets) * 100}%`;
+        if (fretPos === 12) {
+            const topMarker = marker.cloneNode(true);
+            topMarker.style.top = `33%`;
+            fretboardContainer.appendChild(topMarker);
+            marker.style.top = `67%`;
+        } else {
+            marker.style.top = '50%';
+        }
+        fretboardContainer.appendChild(marker);
+    });
+}
+
+function updateFretboardNotes(fretboardContainer, rootNote, scaleName, tuningArray, measureContext = null) {
+    if (!(fretboardContainer instanceof HTMLElement)) { console.error('Invalid fretboardContainer'); return; }
+    const standardizedRoot = standardizeNoteName(rootNote);
+    if (!NOTES.includes(standardizedRoot)) { console.error(`Invalid scale root: ${rootNote}`); return; }
+    const scaleData = SCALES[scaleName];
+    if (!scaleData) { console.error(`Invalid scale: ${scaleName}`); return; }
+    if (!Array.isArray(tuningArray) || tuningArray.length === 0) { console.error('Invalid tuning array'); return; }
+
+    clearGuideToneHighlights();
+    fretboardContainer.querySelectorAll('.note').forEach(el => el.remove());
+
+    if (fretboardContainer.id === 'chord-fretboard' && UI.elements.scaleDisplay) {
+        let displayScaleTypeName = scaleName;
+        const tempScaleSelect = document.createElement('select');
+        tempScaleSelect.innerHTML = createScaleOptions(scaleName);
+        const selectedOptionEl = tempScaleSelect.querySelector(`option[value="${scaleName}"]`);
+        displayScaleTypeName = selectedOptionEl ? selectedOptionEl.textContent : scaleName.replace(/([A-Z])/g, ' $1').split(' ').map(s => s.charAt(0).toUpperCase() + s.substring(1)).join(' ').trim();
+
+        let chordRootForDisplay = "", chordQualityTextForDisplay = "";
+        let actualMeasurePartContext = measureContext;
+        if (measureContext && measureContext.classList.contains('measure')) {
+            actualMeasurePartContext = measureContext.querySelector('.measure-part.part-active') || measureContext.querySelector('.measure-part');
+        }
+
+        if (actualMeasurePartContext) {
+            chordRootForDisplay = actualMeasurePartContext.querySelector('.chord-controls .root-note')?.value;
+            const chordQualityRaw = actualMeasurePartContext.querySelector('.chord-controls .chord-quality')?.value;
+            const qualityOptionEl = actualMeasurePartContext.querySelector(`.chord-controls .chord-quality option[value="${chordQualityRaw}"]`);
+            chordQualityTextForDisplay = qualityOptionEl ? qualityOptionEl.textContent : (chordQualityRaw || "");
+        } else {
+            const firstMeasurePart = UI.elements.measures.children[0]?.querySelector('.measure-part');
+            if (firstMeasurePart) {
+                chordRootForDisplay = firstMeasurePart.querySelector('.chord-controls .root-note')?.value;
+                const chordQualityRaw = firstMeasurePart.querySelector('.chord-controls .chord-quality')?.value;
+                const qualityOptionEl = firstMeasurePart.querySelector(`.chord-controls .chord-quality option[value="${chordQualityRaw}"]`);
+                chordQualityTextForDisplay = qualityOptionEl ? qualityOptionEl.textContent : (chordQualityRaw || "");
+            }
+        }
+        UI.elements.scaleDisplay.textContent = chordRootForDisplay && chordQualityTextForDisplay ?
+            `${standardizedRoot} ${displayScaleTypeName} over ${chordRootForDisplay}${chordQualityTextForDisplay}` :
+            `${standardizedRoot} ${displayScaleTypeName}`;
+    }
+
+    const rootIndex = NOTES.indexOf(standardizedRoot); 
+    const notesInScale = scaleData.map(interval => NOTES[(rootIndex + interval) % 12]); 
+    const numStrings = tuningArray.length;
+    const numFrets = 12; 
+
+    for (let stringIndex = 0; stringIndex < numStrings; stringIndex++) {
+        const openStringNote = standardizeNoteName(tuningArray[stringIndex]);
+        const openStringNoteIndex = NOTES.indexOf(openStringNote);
+        if (openStringNoteIndex === -1) { console.warn(`Invalid open string: ${tuningArray[stringIndex]}`); continue; }
+
+        const FNO_Key = `string${numStrings - stringIndex}`; 
+
+        for (let fret = 0; fret <= numFrets; fret++) {
+            const currentNoteNameOnString = NOTES[(openStringNoteIndex + fret + 12) % 12];
+            if (notesInScale.includes(currentNoteNameOnString)) {
+                const noteElement = document.createElement('div');
+                noteElement.className = 'note';
+                noteElement.textContent = currentNoteNameOnString;
+                noteElement.style.left = (fret === 0) ? `-2%` : `${((fret - 0.5) / numFrets) * 100}%`;
+                
+                const stringYPosition = (((numStrings - 1 - stringIndex) / (numStrings - 1)) * 96) + 2;
+                noteElement.style.top = `${stringYPosition}%`;
+
+                noteElement.style.backgroundColor = (currentNoteNameOnString === standardizedRoot) ? '#BD2031' : 
+                    (notesInScale.indexOf(currentNoteNameOnString) % 2 === 0) ? '#006400' : '#4CAF50';
+                
+                let noteOctaveForPlayback = `${currentNoteNameOnString}3`;
+                const isStandardGuitarTuning = tuningArray.length === 6 && tuningArray.join('') === "EADGBE";
+                if (isStandardGuitarTuning && FRETBOARD_NOTES_OCTAVES[FNO_Key] && fret < FRETBOARD_NOTES_OCTAVES[FNO_Key].length) {
+                    noteOctaveForPlayback = FRETBOARD_NOTES_OCTAVES[FNO_Key][fret];
+                } else {
+                    let approxOctave = PLAYBACK_OCTAVES[0];
+                    if (stringIndex >= numStrings * 2/3 ) approxOctave = PLAYBACK_OCTAVES[PLAYBACK_OCTAVES.length -1];
+                    else if (stringIndex >= numStrings / 3) approxOctave = PLAYBACK_OCTAVES[Math.floor(PLAYBACK_OCTAVES.length / 2)];
+                    if (fret > 7 && approxOctave < OCTAVES_FOR_SAMPLES[OCTAVES_FOR_SAMPLES.length - 1]) {
+                        approxOctave = Math.min(OCTAVES_FOR_SAMPLES[OCTAVES_FOR_SAMPLES.length - 1], approxOctave + 1);
+                    }
+                    approxOctave = Math.max(OCTAVES_FOR_SAMPLES[0], Math.min(OCTAVES_FOR_SAMPLES[OCTAVES_FOR_SAMPLES.length - 1], approxOctave));
+                    noteOctaveForPlayback = `${currentNoteNameOnString}${approxOctave}`;
+                }
+                noteElement.dataset.note = noteOctaveForPlayback;
+
+                noteElement.addEventListener('click', async (event) => {
+                    event.stopPropagation(); 
+                    await AudioContextManager.ensureAudioContext();
+                    const volume = fretboardContainer.id.startsWith('fretflow-fretboard') ? 0.4 : parseFloat(UI.elements.chordFretboardVolume.value);
+                    playNote(noteElement.dataset.note, volume, 500); 
+                    noteElement.style.transform = 'translate(-50%, -50%) scale(1.3)';
+                    setTimeout(() => {
+                        const isHighlighted = noteElement.classList.contains('guide-tone-highlight') || noteElement.classList.contains('root-highlight-for-guides');
+                        noteElement.style.transform = `translate(-50%, -50%) scale(${isHighlighted ? 0.95 : 1})`;
+                    }, 150);
+                });
+                fretboardContainer.appendChild(noteElement);
+            }
+        }
+    }
+    if (AppState.guideTonesActive && fretboardContainer.id === 'chord-fretboard') {
+        highlightGuideTones(measureContext);
+    }
+}
+
+// ==================================
+// === METRONOME UI & LOGIC =======
+// ==================================
+function createBeats() {
+    const beatsContainer = UI.elements.beatsContainer;
+    if (!beatsContainer) { console.error("Beats container not found"); return; }
+    beatsContainer.innerHTML = '';
+
+    const timeSignatureNum = parseInt(UI.elements.timeSignature.value);
+    const soundType = UI.elements.soundType.value;
+    let beatsToDisplay = timeSignatureNum;
+    let subdivisionFactor = 1;
+
+    if (timeSignatureNum === 4) {
+        beatsToDisplay = 8; subdivisionFactor = 2;
+    } else if ([2,3,6,7,8,12].includes(timeSignatureNum)) {
+        subdivisionFactor = (timeSignatureNum === 6 || timeSignatureNum === 12) ? 3 : 1;
+        beatsToDisplay = timeSignatureNum;
+    }
+
+    for (let i = 0; i < beatsToDisplay; i++) {
+        const beatDiv = document.createElement('div');
+        beatDiv.className = 'beat';
+        beatDiv.dataset.beat = i;
+
+        let beatLabel = `${Math.floor(i / subdivisionFactor) + 1}`;
+        if (subdivisionFactor > 1 && (i % subdivisionFactor !== 0)) { 
+            if (timeSignatureNum === 4 && subdivisionFactor === 2) beatLabel += "&";
+        }
+        beatDiv.innerHTML = beatLabel;
+
+        let defaultSound = soundType === 'drums' ? 'hihat' : soundType;
+        let baseVolume = 0.3;
+        let color = '#4CAF50';
+
+        if (timeSignatureNum === 4 && beatsToDisplay === 8) { 
+            if (i === 0 || i === 4) { baseVolume = 1.0; color = '#1F618D'; if (soundType === 'drums') defaultSound = 'kick,hihat'; }
+            else if (i === 2 || i === 6) { baseVolume = 0.8; color = '#D9534F'; if (soundType === 'drums') defaultSound = 'snare,hihat'; }
+            else { baseVolume = 0.2; color = '#9E9E9E'; if (soundType === 'drums') defaultSound = 'hihat'; else defaultSound = 'silent';}
+        } else { 
+            if (i === 0) { baseVolume = 1.0; color = '#1F618D'; if (soundType === 'drums') defaultSound = 'kick,hihat'; }
+            else if ((timeSignatureNum === 6 && i === 3) || (timeSignatureNum === 12 && (i === 3 || i === 6 || i === 9))) {
+                 baseVolume = 0.8; color = '#2ECC71'; if (soundType === 'drums') defaultSound = 'kick,hihat';
+            }
+            else { baseVolume = 0.3; color = '#9E9E9E'; if (soundType === 'drums') defaultSound = 'hihat'; }
+        }
+
+        beatDiv.dataset.sound = defaultSound;
+        beatDiv.dataset.baseVolume = baseVolume;
+        beatDiv.dataset.volume = baseVolume;
+        beatDiv.style.backgroundColor = color;
+        beatDiv.addEventListener('click', () => toggleBeatAccent(beatDiv, soundType, subdivisionFactor > 1 && (i % subdivisionFactor !== 0)));
+        beatsContainer.appendChild(beatDiv);
+    }
+}
+
+function toggleBeatAccent(beatElement, currentSoundType, isSubdivision) {
+    const currentVolume = parseFloat(beatElement.dataset.volume);
+    let newVolume, newSound, newColor;
+
+    if (currentSoundType === 'drums') {
+        const drumCycle = [
+            { sound: 'silent',      volume: 0,   color: '#666' },
+            { sound: 'hihat',       volume: 0.3, color: '#9E9E9E' },
+            { sound: 'snare,hihat', volume: 0.8, color: '#D9534F' },
+            { sound: 'kick,hihat',  volume: 1.0, color: '#1F618D' }
+        ];
+        let currentIndex = drumCycle.findIndex(s => s.sound === beatElement.dataset.sound && Math.abs(s.volume - currentVolume) < 0.01);
+        if (currentIndex === -1) currentIndex = 1; 
+
+        let nextIndex = (currentIndex + 1) % drumCycle.length;
+        if (isSubdivision) {
+            const currentIsHeavy = beatElement.dataset.sound.includes('kick') || beatElement.dataset.sound.includes('snare');
+            let nextIsHeavy = drumCycle[nextIndex].sound.includes('kick') || drumCycle[nextIndex].sound.includes('snare');
+            if (nextIsHeavy && !currentIsHeavy) { 
+                nextIndex = drumCycle.findIndex(s => s.sound === 'hihat') ?? 1;
+            }
+        }
+        newSound = drumCycle[nextIndex].sound; newVolume = drumCycle[nextIndex].volume; newColor = drumCycle[nextIndex].color;
+    } else {
+        const simpleCycle = [
+            { volume: 0,   sound: 'silent',         color: '#666' },
+            { volume: 0.3, sound: currentSoundType, color: '#9E9E9E' },
+            { volume: 1.0, sound: currentSoundType, color: '#1F618D' }
+        ];
+        let currentIndex = simpleCycle.findIndex(s => Math.abs(s.volume - currentVolume) < 0.01 && (s.sound === beatElement.dataset.sound || (s.sound === 'silent' && currentVolume === 0)));
+        if (currentIndex === -1) currentIndex = (currentVolume > 0.5) ? 2 : (currentVolume > 0) ? 1 : 0;
+        
+        const nextState = simpleCycle[(currentIndex + 1) % simpleCycle.length];
+        newVolume = nextState.volume; newSound = nextState.sound; newColor = nextState.color;
+    }
+    beatElement.dataset.volume = newVolume;
+    beatElement.dataset.sound = newSound;
+    beatElement.dataset.baseVolume = newVolume;
+    beatElement.style.backgroundColor = newColor;
+}
+
+function onMetronomeInstrumentChange(selectedInstrument) {
+    const showDrumsUI = selectedInstrument === "drums";
+    if (UI.elements.drumSetToggleBtn) UI.elements.drumSetToggleBtn.style.display = showDrumsUI ? "inline-block" : "none";
+    if (UI.elements.kickVolumeContainer) UI.elements.kickVolumeContainer.style.display = showDrumsUI ? "flex" : "none";
+    if (UI.elements.snareVolumeContainer) UI.elements.snareVolumeContainer.style.display = showDrumsUI ? "flex" : "none";
+    if (UI.elements.hihatVolumeContainer) UI.elements.hihatVolumeContainer.style.display = showDrumsUI ? "flex" : "none";
+    createBeats();
+}
+
+// ==================================
+// === PLAYBACK ENGINE ============
+// ==================================
+async function playBeat() {
+    const beatsUI = UI.elements.beatsContainer.querySelectorAll('.beat');
+    const measures = UI.elements.measures.children;
+    if (beatsUI.length === 0) return;
+
+    let measureToPlayIndex = AppState.currentMeasure;
+    if (AppState.loopingActive && AppState.loopStartMeasure !== -1 && AppState.loopEndMeasure !== -1) {
+        if (AppState.currentMeasure < AppState.loopStartMeasure || AppState.currentMeasure > AppState.loopEndMeasure) {
+            AppState.currentMeasure = AppState.loopStartMeasure;
+        }
+        measureToPlayIndex = AppState.currentMeasure;
+    }
+
+    beatsUI.forEach(b => b.classList.remove('active'));
+    const currentBeatElement = beatsUI[AppState.currentBeat];
+    if (currentBeatElement) {
+        currentBeatElement.classList.add('active');
+        const volume = parseFloat(currentBeatElement.dataset.volume); 
+        if (volume > 0 || (UI.elements.soundType.value === 'drums' && currentBeatElement.dataset.sound !== 'silent') ) { 
+            await playMetronomeSound(volume); 
+        }
+    }
+
+    if (measures.length > 0 && measureToPlayIndex < measures.length) {
+        const currentMeasureElement = measures[measureToPlayIndex];
+        Array.from(measures).forEach((m, idx) => m.classList.toggle('active', idx === measureToPlayIndex));
+        
+        const timeSigNum = parseInt(UI.elements.timeSignature.value);
+        const isSplitMeasure = currentMeasureElement.dataset.isSplit === 'true';
+        const is44Time = timeSigNum === 4;
+        const numDisplayedBeats = beatsUI.length;
+
+        let activePartIndex = 0;
+        let playChordOnThisBeat = AppState.currentBeat === 0;
+
+        if (is44Time && isSplitMeasure && numDisplayedBeats === 8) {
+            activePartIndex = (AppState.currentBeat < 4) ? 0 : 1;
+            playChordOnThisBeat = (AppState.currentBeat === 0 || AppState.currentBeat === 4);
+        }
+        
+        currentMeasureElement.querySelectorAll('.measure-part').forEach((part, idx) => {
+            part.classList.toggle('part-active', idx === activePartIndex);
+        });
+
+        const activeMeasurePart = currentMeasureElement.querySelectorAll('.measure-part')[activePartIndex];
+        if (activeMeasurePart) {
+            const root = activeMeasurePart.querySelector('.root-note')?.value;
+            const quality = activeMeasurePart.querySelector('.chord-quality')?.value;
+            const scaleRoot = activeMeasurePart.querySelector('.second-key')?.value;
+            const scaleType = activeMeasurePart.querySelector('.scale-select')?.value;
+
+            if (root && quality && scaleRoot && scaleType) {
+                const tuning = TUNINGS[UI.elements.chordTuning.value];
+                if (playChordOnThisBeat || (is44Time && isSplitMeasure && (AppState.currentBeat === 0 || AppState.currentBeat === 4))) {
+                    updateFretboardNotes(UI.elements.chordFretboard, scaleRoot, scaleType, tuning, activeMeasurePart);
+                    if (AppState.guideTonesActive) highlightGuideTones(activeMeasurePart);
+                }
+
+                if (playChordOnThisBeat) {
+                    const beatDurationSec = 60 / AppState.tempo;
+                    let chordPlayDurationSec = beatDurationSec * timeSigNum;
+                    if (is44Time && numDisplayedBeats === 8) {
+                         chordPlayDurationSec = beatDurationSec * (isSplitMeasure ? 2 : 4); 
+                    }
+                    await playChord(root, quality, AudioContextManager.context.currentTime, chordPlayDurationSec);
+                }
+            }
+        }
+    }
+
+    AppState.currentBeat = (AppState.currentBeat + 1) % beatsUI.length;
+    if (AppState.currentBeat === 0) { 
+        if (AppState.loopingActive && AppState.loopStartMeasure !== -1 && AppState.loopEndMeasure !== -1) {
+            AppState.currentMeasure = (AppState.currentMeasure >= AppState.loopEndMeasure) ? AppState.loopStartMeasure : AppState.currentMeasure + 1;
+        } else if (measures.length > 0) {
+            AppState.currentMeasure = (AppState.currentMeasure + 1) % measures.length;
+        }
+        updateNextChordDisplay();
+    }
+}
+
+async function startPlayback() {
+    try {
+        await AudioContextManager.ensureAudioContext();
+        if (AppState.isPlaying) return;
+
+        const timeSignatureNumerator = parseInt(UI.elements.timeSignature.value);
+        let intervalMs = (60 / AppState.tempo) * 1000;
+        if (timeSignatureNumerator === 4 && UI.elements.beatsContainer.querySelectorAll('.beat').length === 8) {
+            intervalMs /= 2;
+        }
+
+        AppState.currentBeat = 0;
+        if (!AppState.intervalId) { 
+            AppState.currentMeasure = (AppState.loopingActive && AppState.loopStartMeasure !== -1) ? AppState.loopStartMeasure : 0;
+        }
+        
+        await playBeat(); 
+        clearInterval(AppState.intervalId); 
+        AppState.intervalId = setInterval(async () => { await playBeat(); }, intervalMs);
+
+        AppState.updateState({ isPlaying: true });
+        UI.elements.startStopButton.textContent = 'Stop';
+        log("Playback started.");
+    } catch (e) {
+        console.error('Failed to start playback:', e);
+        stopPlayback();
+        alert("Error starting playback. Audio system might not be available.");
+    }
+}
+
+function stopPlayback() {
+    clearInterval(AppState.intervalId);
+    AppState.intervalId = null;
+    AppState.updateState({ isPlaying: false });
+
+    UI.elements.beatsContainer.querySelectorAll('.beat.active').forEach(b => b.classList.remove('active'));
+    UI.elements.measures.querySelectorAll('.measure.active').forEach(m => m.classList.remove('active'));
+    UI.elements.measures.querySelectorAll('.measure-part.part-active').forEach(p => p.classList.remove('part-active'));
+
+    if (AudioContextManager.currentChordGain && AudioContextManager.context) {
+        try {
+            const now = AudioContextManager.context.currentTime;
+            if (AudioContextManager.currentChordGain.gain) {
+                AudioContextManager.currentChordGain.gain.setValueAtTime(AudioContextManager.currentChordGain.gain.value, now);
+                AudioContextManager.currentChordGain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+            }
+        } catch (rampError) { console.warn("Gain ramp error on stop:", rampError.message); }
+        finally { AudioContextManager.currentChordGain = null; }
+    }
+    if (UI.elements.nextChordDisplay) UI.elements.nextChordDisplay.textContent = "";
+    UI.elements.startStopButton.textContent = 'Start';
+    log("Playback stopped.");
+}
 
 // ==================================
 // === PROGRESSION MANAGEMENT =====
 // ==================================
-// (Make sure loadProgression, updateProgressionKey, saveCurrentProgression are the versions with transposition logic)
-// (And ensure createMeasurePartHTML, addMeasure, toggleSplitMeasure, removeMeasure, updateMeasureNumbers, handleMeasureControlChange are present)
-// (And User Progression Save/Load: isUserSongCurrentlyLoaded, populateUserSongsDropdown, deleteSelectedUserSong)
-// (And Looper Functionality: toggleMeasureLoopSelection, resetLoop, toggleLoopingMode)
-// (And Guide Tones: toggleGuideTones, highlightGuideTones, clearGuideToneHighlights)
-// (And FretFlow: initializeFretFlow)
+function updateNextChordDisplay(currentMeasureIndex = AppState.currentMeasure) {
+    const nextChordDisplayElement = UI.elements.nextChordDisplay;
+    if (!nextChordDisplayElement) return;
 
-// ==================================
-// === EVENT LISTENERS SETUP ======
-// ==================================
-// ... (addFirstChordListener) ...
+    const measures = UI.elements.measures.children;
+    if (measures.length === 0) {
+        nextChordDisplayElement.textContent = ""; return;
+    }
+
+    let upcomingChords = [];
+    let displayCount = 0;
+    let tempMeasureIdx = currentMeasureIndex;
+    let tempPartIdx = 0;
+    const displayedBeats = UI.elements.beatsContainer.querySelectorAll('.beat'); 
+
+    const currentMeasureEl = measures[currentMeasureIndex];
+    if (currentMeasureEl && currentMeasureEl.dataset.isSplit === 'true' && parseInt(UI.elements.timeSignature.value) === 4 && displayedBeats.length === 8) {
+        if (AppState.currentBeat < 4) { 
+            tempPartIdx = 1; 
+        } else { 
+            tempMeasureIdx = (currentMeasureIndex + 1);
+            tempPartIdx = 0;
+        }
+    } else { 
+        tempMeasureIdx = (currentMeasureIndex + 1);
+        tempPartIdx = 0;
+    }
+
+    while (displayCount < 4) {
+        if (AppState.loopingActive && AppState.loopStartMeasure !== -1 && AppState.loopEndMeasure !== -1) {
+            if (tempMeasureIdx > AppState.loopEndMeasure || tempMeasureIdx < AppState.loopStartMeasure) {
+                tempMeasureIdx = AppState.loopStartMeasure;
+                tempPartIdx = 0;
+            }
+        } else {
+            if (tempMeasureIdx >= measures.length) {
+                if (measures.length === 0) break; 
+                tempMeasureIdx = 0; 
+                tempPartIdx = 0;
+            }
+        }
+        
+        if (tempMeasureIdx >= measures.length) break; 
+
+        const measureElement = measures[tempMeasureIdx];
+        if (!measureElement) break;
+
+        const measureParts = measureElement.querySelectorAll('.measure-part');
+        const isSplit = measureElement.dataset.isSplit === 'true' && parseInt(UI.elements.timeSignature.value) === 4;
+
+        for (let pIdx = tempPartIdx; pIdx < (isSplit ? 2 : 1) && displayCount < 4; pIdx++) {
+            const partElement = measureParts[pIdx];
+            if (!partElement) continue;
+
+            const root = partElement.querySelector('.root-note')?.value;
+            const qualityRaw = partElement.querySelector('.chord-quality')?.value;
+
+            if (root && qualityRaw) {
+                const qualityOption = partElement.querySelector(`.chord-quality option[value="${qualityRaw}"]`);
+                const qualityDisplay = qualityOption ? qualityOption.textContent : qualityRaw;
+                upcomingChords.push(`${root}${qualityDisplay}`);
+                displayCount++;
+            }
+        }
+        
+        tempMeasureIdx++; 
+        tempPartIdx = 0;  
+
+        if (displayCount >= 4) break;
+        if (measures.length > 0 && tempMeasureIdx === currentMeasureIndex && !AppState.loopingActive && measures.length > 1 && upcomingChords.length >= measures.length * (isSplit ? 2:1) ) break; 
+        if (AppState.loopingActive && tempMeasureIdx > AppState.loopEndMeasure && AppState.loopStartMeasure === AppState.loopEndMeasure && upcomingChords.length > 0) break;
+    }
+
+    nextChordDisplayElement.textContent = upcomingChords.length > 0 ? `Next: ${upcomingChords.join(', ')}` : "";
+}
+
+function loadProgression(progressionName, overrideKey = null, isUserSong = false) {
+    const songTitleElem = UI.elements.currentSongTitleFretboard;
+    const songDescElem = UI.elements.currentSongDescriptionFretboard;
+
+    let progressionData;
+    if (isUserSong) {
+        const userSongs = JSON.parse(localStorage.getItem('userBebopProgressions') || '{}');
+        progressionData = userSongs[progressionName];
+    } else {
+        progressionData = progressions[progressionName];
+    }
+
+    if (!progressionName || !progressionData) {
+        currentProgressionName = "";
+        currentFunctionalProgression = [];
+        UI.elements.measures.innerHTML = '<p>Select a progression.</p>';
+        if (songTitleElem) songTitleElem.textContent = "";
+        if (songDescElem) songDescElem.textContent = "";
+        if (UI.elements.scaleDisplay) UI.elements.scaleDisplay.textContent = "Select a progression and key.";
+        updateNextChordDisplay();
+        resetLoop();
+        return;
+    }
+
+    currentProgressionName = progressionName;
+    currentFunctionalProgression = progressionData.progression; 
+    
+    const targetGlobalKey = overrideKey || progressionData.defaultKey || "C";
+    const originalSongDefaultKey = progressionData.defaultKey || "C"; 
+
+    const originalSongDefaultKeyRoot = standardizeNoteName(originalSongDefaultKey.replace('m', ''));
+    const targetGlobalKeyRoot = standardizeNoteName(targetGlobalKey.replace('m', ''));
+
+    if (songTitleElem) songTitleElem.textContent = progressionData.displayName || progressionName.replace(/_/g, ' ');
+    if (songDescElem) songDescElem.textContent = progressionData.description || "";
+    if (UI.elements.keySelect) UI.elements.keySelect.value = targetGlobalKey; 
+
+    UI.elements.measures.innerHTML = '';
+    resetLoop();
+
+    currentFunctionalProgression.forEach((rawChordStringFromDefinition, index) => {
+        let partsToProcessBasedOnOriginalDefinition = [];
+        let isSplitInOriginalDefinition = false;
+
+        if (isUserSong && progressionData.parts && progressionData.parts[index]) {
+            isSplitInOriginalDefinition = progressionData.splitStatus[index];
+            progressionData.parts[index].forEach(userPartData => {
+                const parsedOriginal = parseRomanNumeralToAbsoluteChord(userPartData.originalRoman || `${userPartData.root}${userPartData.quality}`, originalSongDefaultKey);
+                partsToProcessBasedOnOriginalDefinition.push({
+                    parsedInOriginalContext: parsedOriginal,
+                    originalScaleRoot: userPartData.scaleRoot,
+                    originalScaleType: userPartData.scaleType
+                });
+            });
+        } else {
+            const potentialSplit = rawChordStringFromDefinition.split('/');
+            if (potentialSplit.length === 2 &&
+                !parseChord(rawChordStringFromDefinition) &&
+                parseChord(potentialSplit[0].trim()) && parseChord(potentialSplit[1].trim())) {
+                isSplitInOriginalDefinition = true;
+                partsToProcessBasedOnOriginalDefinition.push({
+                    parsedInOriginalContext: parseRomanNumeralToAbsoluteChord(potentialSplit[0].trim(), originalSongDefaultKey)
+                });
+                partsToProcessBasedOnOriginalDefinition.push({
+                    parsedInOriginalContext: parseRomanNumeralToAbsoluteChord(potentialSplit[1].trim(), originalSongDefaultKey)
+                });
+            } else {
+                isSplitInOriginalDefinition = false;
+                partsToProcessBasedOnOriginalDefinition.push({
+                    parsedInOriginalContext: parseRomanNumeralToAbsoluteChord(rawChordStringFromDefinition, originalSongDefaultKey)
+                });
+            }
+        }
+
+        let finalPartsDataForMeasure = [];
+        partsToProcessBasedOnOriginalDefinition.forEach(originalPart => {
+            // console.log(`--- Debugging Load ---`);
+            // console.log(`Progression: ${progressionName}, Measure Index: ${index}`);
+            // console.log(`Raw Chord String from Definition for this measure: '${rawChordStringFromDefinition}' (This part's original might be different if split)`);
+            // console.log(`Original Song Default Key: '${originalSongDefaultKey}', Root: '${originalSongDefaultKeyRoot}'`);
+            // console.log(`Target Global Key: '${targetGlobalKey}', Root: '${targetGlobalKeyRoot}'`);
+            // console.log(`Parsed in Original Context (originalPart.parsedInOriginalContext):`, JSON.parse(JSON.stringify(originalPart.parsedInOriginalContext)));
+            
+            const transposedChord = transposeChordData(originalPart.parsedInOriginalContext, originalSongDefaultKeyRoot, targetGlobalKeyRoot);
+            
+            // console.log(`Transposed Chord (transposedChord):`, JSON.parse(JSON.stringify(transposedChord)));
+            // console.log(`-----------------------`);
+            
+            let finalScaleRoot, finalScaleType;
+            if (originalPart.originalScaleRoot && originalPart.originalScaleType) {
+                const originalScaleRootData = { root: originalPart.originalScaleRoot, quality: 'maj' };
+                const transposedScaleRootInfo = transposeChordData(originalScaleRootData, originalSongDefaultKeyRoot, targetGlobalKeyRoot);
+                finalScaleRoot = transposedScaleRootInfo.root;
+                finalScaleType = originalPart.originalScaleType;
+            } else {
+                finalScaleRoot = transposedChord.root;
+                finalScaleType = suggestScaleForQuality(transposedChord.quality);
+            }
+
+            finalPartsDataForMeasure.push({
+                root: transposedChord.root,
+                quality: transposedChord.quality,
+                scaleRoot: finalScaleRoot,
+                scaleType: finalScaleType
+            });
+        });
+
+        if (isSplitInOriginalDefinition && finalPartsDataForMeasure.length === 1) {
+            finalPartsDataForMeasure.push({ ...finalPartsDataForMeasure[0] });
+        }
+        
+        addMeasure(
+            finalPartsDataForMeasure[0].root,
+            finalPartsDataForMeasure[0].quality,
+            finalPartsDataForMeasure[0].scaleRoot,
+            finalPartsDataForMeasure[0].scaleType,
+            isSplitInOriginalDefinition,
+            finalPartsDataForMeasure.length > 1 ? finalPartsDataForMeasure[1] : null
+        );
+    });
+
+    updateMeasureNumbers();
+    addFirstChordListener(); 
+    updateNextChordDisplay();
+    log(`Loaded ${isUserSong ? 'user song' : 'standard progression'}: ${progressionName} in key ${targetGlobalKey}`);
+}
+
+function updateProgressionKey(newKey) {
+    if (!currentFunctionalProgression || currentFunctionalProgression.length === 0 || UI.elements.measures.children.length === 0) {
+        const targetGlobalKeyRoot_noProg = standardizeNoteName(newKey.replace('m', ''));
+        const initialTuning = TUNINGS[UI.elements.chordTuning.value];
+        let defaultScaleType = 'major';
+        const firstMeasurePartForDefault = UI.elements.measures.children[0]?.querySelector('.measure-part');
+        if (firstMeasurePartForDefault) {
+            defaultScaleType = firstMeasurePartForDefault.querySelector('.scale-select')?.value || 'major';
+        }
+        
+        updateFretboardNotes(UI.elements.chordFretboard, targetGlobalKeyRoot_noProg, defaultScaleType, initialTuning, firstMeasurePartForDefault);
+        if (UI.elements.scaleDisplay) {
+            const scaleTypeName = firstMeasurePartForDefault ? (UI.elements.chordFretboard.querySelector('.scale-select option:checked')?.textContent || defaultScaleType) : 'Major';
+            UI.elements.scaleDisplay.textContent = `${targetGlobalKeyRoot_noProg} ${scaleTypeName}`;
+        }
+        log(`No active progression. Fretboard updated for key: ${newKey}`);
+        return;
+    }
+
+    const songDataForOriginalKey = progressions[currentProgressionName] ||
+                                  JSON.parse(localStorage.getItem('userBebopProgressions') || '{}')[currentProgressionName];
+
+    if (!songDataForOriginalKey || !songDataForOriginalKey.defaultKey) {
+        console.warn(`Cannot re-key progression '${currentProgressionName}': Original defaultKey information is missing. Fretboard might not update correctly for all chords.`);
+        const firstMeasurePart = UI.elements.measures.children[0]?.querySelector('.measure-part');
+        if (firstMeasurePart) {
+            const newTargetGlobalKeyRoot_fallback = standardizeNoteName(newKey.replace('m', ''));
+            firstMeasurePart.querySelector('.root-note').value = newTargetGlobalKeyRoot_fallback;
+            firstMeasurePart.querySelector('.second-key').value = newTargetGlobalKeyRoot_fallback;
+            const quality = firstMeasurePart.querySelector('.chord-quality').value;
+            firstMeasurePart.querySelector('.scale-select').value = suggestScaleForQuality(quality);
+            handleMeasureControlChange(firstMeasurePart, firstMeasurePart.querySelector('.root-note'));
+        }
+        return;
+    }
+
+    const originalSongDefaultKey = songDataForOriginalKey.defaultKey;
+    const originalSongDefaultKeyRoot = standardizeNoteName(originalSongDefaultKey.replace('m', ''));
+    const newTargetGlobalKeyRoot = standardizeNoteName(newKey.replace('m', ''));
+
+    Array.from(UI.elements.measures.children).forEach((measureElement, measureIndex) => {
+        if (measureIndex < currentFunctionalProgression.length) {
+            const rawChordStringFromOriginalDefinition = currentFunctionalProgression[measureIndex];
+            const measurePartsUI = measureElement.querySelectorAll('.measure-part');
+            
+            let originalPartsToProcess = [];
+            let isSplitInOriginalDefinition = false;
+
+            if (isUserSongCurrentlyLoaded() && songDataForOriginalKey.parts && songDataForOriginalKey.parts[measureIndex]) {
+                isSplitInOriginalDefinition = songDataForOriginalKey.splitStatus[measureIndex];
+                songDataForOriginalKey.parts[measureIndex].forEach(userPartData => {
+                    const parsedOriginal = parseRomanNumeralToAbsoluteChord(userPartData.originalRoman || `${userPartData.root}${userPartData.quality}`, originalSongDefaultKey);
+                    originalPartsToProcess.push({
+                        parsedInOriginalContext: parsedOriginal,
+                        originalScaleRoot: userPartData.scaleRoot,
+                        originalScaleType: userPartData.scaleType
+                    });
+                });
+            } else {
+                const potentialSplit = rawChordStringFromOriginalDefinition.split('/');
+                if (potentialSplit.length === 2 &&
+                    !parseChord(rawChordStringFromOriginalDefinition) &&
+                    parseChord(potentialSplit[0].trim()) && parseChord(potentialSplit[1].trim())) {
+                    isSplitInOriginalDefinition = true;
+                    originalPartsToProcess.push({
+                        parsedInOriginalContext: parseRomanNumeralToAbsoluteChord(potentialSplit[0].trim(), originalSongDefaultKey)
+                    });
+                    originalPartsToProcess.push({
+                        parsedInOriginalContext: parseRomanNumeralToAbsoluteChord(potentialSplit[1].trim(), originalSongDefaultKey)
+                    });
+                } else {
+                    isSplitInOriginalDefinition = false;
+                    originalPartsToProcess.push({
+                        parsedInOriginalContext: parseRomanNumeralToAbsoluteChord(rawChordStringFromOriginalDefinition, originalSongDefaultKey)
+                    });
+                }
+            }
+
+            measurePartsUI.forEach((partElement, partIndex) => {
+                if (partIndex < originalPartsToProcess.length) {
+                    const originalPart = originalPartsToProcess[partIndex];
+                    const transposedChord = transposeChordData(originalPart.parsedInOriginalContext, originalSongDefaultKeyRoot, newTargetGlobalKeyRoot);
+
+                    partElement.querySelector('.root-note').value = transposedChord.root;
+                    partElement.querySelector('.chord-quality').value = transposedChord.quality; 
+
+                    let finalScaleRoot, finalScaleType;
+                    if (originalPart.originalScaleRoot && originalPart.originalScaleType) {
+                        const originalScaleRootData = { root: originalPart.originalScaleRoot, quality: 'maj' };
+                        const transposedScaleRootInfo = transposeChordData(originalScaleRootData, originalSongDefaultKeyRoot, newTargetGlobalKeyRoot);
+                        finalScaleRoot = transposedScaleRootInfo.root;
+                        finalScaleType = originalPart.originalScaleType;
+                    } else {
+                        finalScaleRoot = transposedChord.root;
+                        finalScaleType = suggestScaleForQuality(transposedChord.quality);
+                    }
+                    partElement.querySelector('.second-key').value = finalScaleRoot;
+                    partElement.querySelector('.scale-select').value = finalScaleType;
+                } else if (originalPartsToProcess.length > 0) {
+                    const lastOriginalPart = originalPartsToProcess[originalPartsToProcess.length - 1];
+                    const transposedChord = transposeChordData(lastOriginalPart.parsedInOriginalContext, originalSongDefaultKeyRoot, newTargetGlobalKeyRoot);
+                     partElement.querySelector('.root-note').value = transposedChord.root;
+                    partElement.querySelector('.chord-quality').value = transposedChord.quality;
+                    partElement.querySelector('.second-key').value = transposedChord.root;
+                    partElement.querySelector('.scale-select').value = suggestScaleForQuality(transposedChord.quality);
+                }
+            });
+        } else {
+            const previousGlobalKey = measureElement.dataset.lastKeyContext || originalSongDefaultKey; 
+            const previousGlobalKeyRoot = standardizeNoteName(previousGlobalKey.replace('m', ''));
+            
+            measureElement.querySelectorAll('.measure-part').forEach(partElement => {
+                const currentRoot = partElement.querySelector('.root-note').value;
+                const currentQuality = partElement.querySelector('.chord-quality').value;
+                const currentScaleRoot = partElement.querySelector('.second-key').value;
+                const currentScaleType = partElement.querySelector('.scale-select').value;
+
+                const chordToTranspose = { root: currentRoot, quality: currentQuality };
+                const transposedChord = transposeChordData(chordToTranspose, previousGlobalKeyRoot, newTargetGlobalKeyRoot);
+                
+                partElement.querySelector('.root-note').value = transposedChord.root;
+                partElement.querySelector('.chord-quality').value = transposedChord.quality;
+
+                const scaleRootToTranspose = {root: currentScaleRoot, quality: 'maj'};
+                const transposedScale = transposeChordData(scaleRootToTranspose, previousGlobalKeyRoot, newTargetGlobalKeyRoot);
+                partElement.querySelector('.second-key').value = transposedScale.root;
+                partElement.querySelector('.scale-select').value = currentScaleType; 
+            });
+            measureElement.dataset.lastKeyContext = newKey; 
+        }
+    });
+
+    addFirstChordListener(); 
+    updateNextChordDisplay();
+    log(`Progression '${currentProgressionName}' re-keyed to: ${newKey}`);
+}
+
+function createMeasurePartHTML(data, partIndex = 0) {
+    return `
+        <div class="measure-part" data-part-index="${partIndex}">
+            <div class="chord-controls">
+                <select class="root-note">${createKeyOptions(data.root)}</select>
+                <select class="chord-quality">${createQualityOptions(data.quality)}</select>
+            </div>
+            <div class="scale-controls">
+                <select class="second-key">${createKeyOptions(data.scaleRoot)}</select>
+                <select class="scale-select">${createScaleOptions(data.scaleType)}</select>
+            </div>
+        </div>`;
+}
+
+function addMeasure(root = 'C', quality = 'maj7', scaleRoot = 'C', scaleType = 'major', 
+                    isInitiallySplit = false, secondPartData = null) {
+    const measuresContainer = UI.elements.measures;
+    const newMeasureIndex = measuresContainer.children.length;
+
+    const measureDiv = document.createElement('div');
+    measureDiv.className = 'measure';
+    measureDiv.dataset.measureIndex = newMeasureIndex;
+    measureDiv.dataset.isSplit = isInitiallySplit ? 'true' : 'false';
+    if (isInitiallySplit) measureDiv.classList.add('split-active');
+
+    // Store the key context this measure is being added in (for user-added measures)
+    measureDiv.dataset.lastKeyContext = UI.elements.keySelect.value;
+
+
+    let measureHTML = `<div class="measure-header"><span class="measure-number">${newMeasureIndex + 1}</span></div>`;
+    measureHTML += createMeasurePartHTML({ root, quality, scaleRoot, scaleType }, 0);
+    if (isInitiallySplit) {
+        const spData = secondPartData || { root, quality, scaleRoot, scaleType };
+        measureHTML += createMeasurePartHTML(spData, 1);
+    }
+    measureHTML += `<div class="measure-footer"><button class="split-measure-button">${isInitiallySplit ? 'Unsplit' : 'Split'}</button></div>`;
+    measureDiv.innerHTML = measureHTML;
+    measuresContainer.appendChild(measureDiv);
+
+    measureDiv.querySelectorAll('select').forEach(selectElement => {
+        selectElement.addEventListener('change', (event) => {
+            handleMeasureControlChange(event.target.closest('.measure-part'), event.target);
+        });
+    });
+    
+    measureDiv.querySelector('.measure-header').addEventListener('click', (event) => {
+        if (event.target.tagName !== 'SELECT' && event.target.tagName !== 'BUTTON') {
+            toggleMeasureLoopSelection(newMeasureIndex);
+        }
+    });
+    
+    const splitButton = measureDiv.querySelector('.split-measure-button');
+    const is44Time = parseInt(UI.elements.timeSignature.value) === 4;
+    splitButton.disabled = !is44Time;
+    splitButton.title = is44Time ? "" : "Splitting measures only available in 4/4 time.";
+    splitButton.addEventListener('click', (event) => {
+        event.stopPropagation();
+        toggleSplitMeasure(measureDiv);
+    });
+
+    updateMeasureNumbers(); 
+    if (newMeasureIndex === 0) addFirstChordListener();
+    updateNextChordDisplay();
+    // log(`Added measure ${newMeasureIndex + 1}${isInitiallySplit ? ' (split)' : ''}`); // Reduced log verbosity
+}
+
+function toggleSplitMeasure(measureDiv) {
+    if (parseInt(UI.elements.timeSignature.value) !== 4) {
+        alert("Splitting measures is only available in 4/4 time.");
+        return;
+    }
+    const isSplit = measureDiv.dataset.isSplit === 'true';
+    const splitButton = measureDiv.querySelector('.split-measure-button');
+    const firstPart = measureDiv.querySelector('.measure-part[data-part-index="0"]');
+
+    if (isSplit) { 
+        measureDiv.querySelector('.measure-part[data-part-index="1"]')?.remove();
+        measureDiv.dataset.isSplit = 'false';
+        measureDiv.classList.remove('split-active');
+        splitButton.textContent = 'Split';
+    } else { 
+        if (!firstPart) return;
+        const firstPartData = {
+            root: firstPart.querySelector('.root-note').value,
+            quality: firstPart.querySelector('.chord-quality').value,
+            scaleRoot: firstPart.querySelector('.second-key').value,
+            scaleType: firstPart.querySelector('.scale-select').value
+        };
+        measureDiv.querySelector('.measure-footer').insertAdjacentHTML('beforebegin', createMeasurePartHTML(firstPartData, 1));
+        const newSecondPart = measureDiv.querySelector('.measure-part[data-part-index="1"]');
+        newSecondPart.querySelectorAll('select').forEach(select => {
+            select.addEventListener('change', (e) => handleMeasureControlChange(e.target.closest('.measure-part'), e.target));
+        });
+        measureDiv.dataset.isSplit = 'true';
+        measureDiv.classList.add('split-active');
+        splitButton.textContent = 'Unsplit';
+    }
+    updateNextChordDisplay();
+    const currentActiveMeasure = UI.elements.measures.querySelector('.measure.active');
+    if (currentActiveMeasure === measureDiv) {
+        const activePart = measureDiv.querySelector('.measure-part.part-active') || firstPart;
+        if (activePart) handleMeasureControlChange(activePart, activePart.querySelector('select'));
+    }
+}
+
+function removeMeasure() {
+    const measuresChildren = UI.elements.measures.children;
+    if (measuresChildren.length > 0) {
+        const removedMeasureIndex = measuresChildren.length - 1;
+        if (AppState.loopStartMeasure === removedMeasureIndex || AppState.loopEndMeasure === removedMeasureIndex) {
+            resetLoop(); 
+        }
+        if (AppState.loopEndMeasure >= measuresChildren.length -1) {
+            AppState.loopEndMeasure = Math.max(-1, measuresChildren.length - 2);
+            if (AppState.loopStartMeasure > AppState.loopEndMeasure) AppState.loopStartMeasure = AppState.loopEndMeasure;
+            if (AppState.loopStartMeasure === -1 && AppState.loopEndMeasure > -1) AppState.loopStartMeasure = AppState.loopEndMeasure; 
+             if (AppState.loopStartMeasure === -1 && AppState.loopEndMeasure === -1 && AppState.loopingActive) toggleLoopingMode(); 
+        }
+
+        measuresChildren[measuresChildren.length - 1].remove();
+        updateMeasureNumbers();
+        if (measuresChildren.length > 0) {
+            addFirstChordListener();
+        } else {
+            if (UI.elements.scaleDisplay) UI.elements.scaleDisplay.textContent = "Select a progression and key.";
+            resetLoop(); 
+        }
+        updateNextChordDisplay();
+        log('Removed last measure');
+    }
+}
+
+function updateMeasureNumbers() {
+    Array.from(UI.elements.measures.children).forEach((measure, index) => {
+        measure.querySelector('.measure-number').textContent = index + 1;
+        measure.dataset.measureIndex = index;
+    });
+}
+
+function handleMeasureControlChange(measurePartDiv, changedElement) {
+    const rootSelect = measurePartDiv.querySelector('.root-note');
+    const qualitySelect = measurePartDiv.querySelector('.chord-quality');
+    const scaleKeySelect = measurePartDiv.querySelector('.second-key');
+    const scaleTypeSelect = measurePartDiv.querySelector('.scale-select');
+
+    if (changedElement.classList.contains('root-note') || changedElement.classList.contains('chord-quality')) {
+        scaleKeySelect.value = rootSelect.value;    
+        scaleTypeSelect.value = suggestScaleForQuality(qualitySelect.value); 
+    }
+
+    updateFretboardNotes(
+        UI.elements.chordFretboard,      
+        scaleKeySelect.value,     
+        scaleTypeSelect.value,    
+        TUNINGS[UI.elements.chordTuning.value],
+        measurePartDiv 
+    );
+
+    if (AppState.guideTonesActive) highlightGuideTones(measurePartDiv); 
+    updateNextChordDisplay(); 
+    // const measureDiv = measurePartDiv.closest('.measure');
+    // log(`Measure ${parseInt(measureDiv.dataset.measureIndex) + 1}, Part ${measurePartDiv.dataset.partIndex} controls changed.`); // Reduced verbosity
+}
+
+function saveCurrentProgression() {
+    const measures = Array.from(UI.elements.measures.children);
+    if (measures.length === 0) {
+        alert("No progression to save!");
+        return;
+    }
+    let suggestedName = "My Custom Song";
+    if (currentProgressionName && (progressions[currentProgressionName] || JSON.parse(localStorage.getItem('userBebopProgressions') || '{}')[currentProgressionName])) {
+        const currentSongData = progressions[currentProgressionName] || JSON.parse(localStorage.getItem('userBebopProgressions') || '{}')[currentProgressionName];
+        suggestedName = currentSongData.displayName || currentProgressionName.replace(/_/g, ' ');
+    }
+    let progressionNameInput = prompt("Enter a name for this progression:", suggestedName);
+    if (!progressionNameInput || progressionNameInput.trim() === "") {
+        alert("Save cancelled or empty name provided.");
+        return;
+    }
+    progressionNameInput = progressionNameInput.trim();
+    const keyForSaving = UI.elements.keySelect.value;
+    const savedProgressionData = {
+        progression: [], parts: [], splitStatus: [],
+        defaultKey: keyForSaving,
+        description: `User saved song - ${new Date().toLocaleDateString()}`,
+        displayName: progressionNameInput
+    };
+    measures.forEach(measureEl => {
+        const isSplit = measureEl.dataset.isSplit === 'true';
+        savedProgressionData.splitStatus.push(isSplit);
+        const measurePartsDataForStorage = [];
+        let measureCombinedString = "";
+        measureEl.querySelectorAll('.measure-part').forEach((partEl, partIdx) => {
+            const root = partEl.querySelector('.root-note').value;
+            const qualityValue = partEl.querySelector('.chord-quality').value;
+            const scaleRoot = partEl.querySelector('.second-key').value;
+            const scaleType = partEl.querySelector('.scale-select').value;
+            const qualityOption = partEl.querySelector(`.chord-quality option[value="${qualityValue}"]`);
+            const qualityDisplayText = qualityOption ? qualityOption.textContent : qualityValue;
+            const absoluteChordStringForStorage = `${root}${qualityDisplayText}`;
+            measurePartsDataForStorage.push({
+                root: root, quality: qualityValue,
+                originalRoman: absoluteChordStringForStorage,
+                scaleRoot: scaleRoot, scaleType: scaleType
+            });
+            if (partIdx > 0) measureCombinedString += " / ";
+            measureCombinedString += absoluteChordStringForStorage;
+        });
+        savedProgressionData.parts.push(measurePartsDataForStorage);
+        savedProgressionData.progression.push(measureCombinedString);
+    });
+    const userSongs = JSON.parse(localStorage.getItem('userBebopProgressions') || '{}');
+    userSongs[progressionNameInput] = savedProgressionData;
+    localStorage.setItem('userBebopProgressions', JSON.stringify(userSongs));
+    populateUserSongsDropdown();
+    UI.elements.userProgressionSelect.value = progressionNameInput;
+    currentProgressionName = progressionNameInput;
+    currentFunctionalProgression = savedProgressionData.progression;
+    alert(`Progression "${progressionNameInput}" saved!`);
+    log(`User progression saved: ${progressionNameInput} with defaultKey: ${keyForSaving}`);
+}
+
+function isUserSongCurrentlyLoaded() {
+    if (!currentProgressionName) return false;
+    const userSongs = JSON.parse(localStorage.getItem('userBebopProgressions') || '{}');
+    return userSongs.hasOwnProperty(currentProgressionName);
+}
+
+function populateUserSongsDropdown() {
+    const selectElement = UI.elements.userProgressionSelect;
+    if (!selectElement) return;
+    selectElement.innerHTML = '<option value="">-- Select a saved song --</option>';
+    const userSongs = JSON.parse(localStorage.getItem('userBebopProgressions') || '{}');
+    Object.keys(userSongs).sort().forEach(name => {
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = userSongs[name].displayName || name;
+        selectElement.appendChild(option);
+    });
+}
+
+function deleteSelectedUserSong() {
+    const selectedSongName = UI.elements.userProgressionSelect.value;
+    if (!selectedSongName) { alert("Please select a saved song to delete."); return; }
+    if (confirm(`Are you sure you want to delete "${selectedSongName}"? This cannot be undone.`)) {
+        const userSongs = JSON.parse(localStorage.getItem('userBebopProgressions') || '{}');
+        delete userSongs[selectedSongName];
+        localStorage.setItem('userBebopProgressions', JSON.stringify(userSongs));
+        populateUserSongsDropdown();
+        if (currentProgressionName === selectedSongName) {
+            UI.elements.measures.innerHTML = '<p>Select a progression.</p>';
+            if(UI.elements.currentSongTitleFretboard) UI.elements.currentSongTitleFretboard.textContent = "";
+            if(UI.elements.currentSongDescriptionFretboard) UI.elements.currentSongDescriptionFretboard.textContent = "";
+            currentProgressionName = ""; currentFunctionalProgression = [];
+            resetLoop();
+        }
+        alert(`Song "${selectedSongName}" deleted.`);
+        log(`User song deleted: ${selectedSongName}`);
+    }
+}
+
+function toggleMeasureLoopSelection(measureIndex) {
+    if (!AppState.loopingActive) {
+        toggleLoopingMode();
+        if (!AppState.loopingActive) return;
+    }
+    const measureElement = UI.elements.measures.children[measureIndex];
+    if (!measureElement) return;
+    measureElement.classList.toggle('loop-selected');
+    const selectedIndices = Array.from(UI.elements.measures.children)
+        .map((m, i) => m.classList.contains('loop-selected') ? i : -1)
+        .filter(i => i !== -1).sort((a, b) => a - b);
+    if (selectedIndices.length > 0) {
+        AppState.loopStartMeasure = selectedIndices[0];
+        AppState.loopEndMeasure = selectedIndices[selectedIndices.length - 1];
+        Array.from(UI.elements.measures.children).forEach((m, i) => {
+            m.classList.toggle('loop-selected', i >= AppState.loopStartMeasure && i <= AppState.loopEndMeasure);
+        });
+    } else {
+        resetLoop();
+    }
+    log(`Loop range: ${AppState.loopStartMeasure} to ${AppState.loopEndMeasure}`);
+}
+
+function resetLoop() {
+    AppState.loopStartMeasure = -1; AppState.loopEndMeasure = -1;
+    Array.from(UI.elements.measures.children).forEach(m => m.classList.remove('loop-selected'));
+    log("Loop selection cleared.");
+}
+
+function toggleLoopingMode() {
+    AppState.loopingActive = !AppState.loopingActive;
+    UI.elements.loopSelectedToggle.textContent = AppState.loopingActive ? "Looping ON" : "Looping Off";
+    UI.elements.loopSelectedToggle.classList.toggle('active', AppState.loopingActive);
+    if (!AppState.loopingActive) resetLoop();
+    else alert("Looping ON. Click measures to define loop range.");
+    log(`Looping mode: ${AppState.loopingActive ? 'ON' : 'OFF'}`);
+}
+
+function toggleGuideTones() {
+    AppState.guideTonesActive = !AppState.guideTonesActive;
+    UI.elements.guideTonesToggle.textContent = AppState.guideTonesActive ? "Guide Tones ON" : "Guide Tones Off";
+    UI.elements.guideTonesToggle.classList.toggle('active', AppState.guideTonesActive);
+    const currentMeasureEl = UI.elements.measures.children[AppState.currentMeasure];
+    const activePart = currentMeasureEl?.querySelector('.measure-part.part-active') || currentMeasureEl?.querySelector('.measure-part');
+    if (AppState.guideTonesActive) highlightGuideTones(activePart);
+    else clearGuideToneHighlights();
+    log(`Guide tones: ${AppState.guideTonesActive ? 'ON' : 'OFF'}`);
+}
+
+function highlightGuideTones(activeMeasurePartContext = null) {
+    clearGuideToneHighlights();
+    if (!AppState.guideTonesActive) return;
+    let chordRootStr, chordQualityStr;
+    if (activeMeasurePartContext) {
+        chordRootStr = activeMeasurePartContext.querySelector('.root-note')?.value;
+        chordQualityStr = activeMeasurePartContext.querySelector('.chord-quality')?.value;
+    } else {
+        const firstMeasurePart = UI.elements.measures.children[0]?.querySelector('.measure-part');
+        if (!firstMeasurePart) return;
+        chordRootStr = firstMeasurePart.querySelector('.root-note')?.value;
+        chordQualityStr = firstMeasurePart.querySelector('.chord-quality')?.value;
+    }
+    if (!chordRootStr || !chordQualityStr) return;
+    const chordRootNote = standardizeNoteName(chordRootStr);
+    const chordIntervals = CHORD_INTERVALS[chordQualityStr];
+    if (!chordIntervals) return;
+    const rootNoteIndex = NOTES.indexOf(chordRootNote);
+    if (rootNoteIndex === -1) return;
+    const guideToneNotesSet = new Set();
+    if (chordIntervals.includes(3)) guideToneNotesSet.add(NOTES[(rootNoteIndex + 3) % 12]);
+    else if (chordIntervals.includes(4)) guideToneNotesSet.add(NOTES[(rootNoteIndex + 4) % 12]);
+    if (chordQualityStr.includes('6')) {
+        if (chordIntervals.includes(9)) guideToneNotesSet.add(NOTES[(rootNoteIndex + 9) % 12]);
+    } else if (chordIntervals.includes(11)) {
+        guideToneNotesSet.add(NOTES[(rootNoteIndex + 11) % 12]);
+    } else if (chordIntervals.includes(10)) {
+        guideToneNotesSet.add(NOTES[(rootNoteIndex + 10) % 12]);
+    } else if (chordIntervals.includes(9) && chordQualityStr === 'dim7') {
+         guideToneNotesSet.add(NOTES[(rootNoteIndex + 9) % 12]);
+    }
+    UI.elements.chordFretboard.querySelectorAll('.note').forEach(noteElement => {
+        const noteName = noteElement.textContent;
+        if (noteName === chordRootNote) noteElement.classList.add('root-highlight-for-guides');
+        else if (guideToneNotesSet.has(noteName)) noteElement.classList.add('guide-tone-highlight');
+    });
+}
+
+function clearGuideToneHighlights() {
+    UI.elements.chordFretboard.querySelectorAll('.note').forEach(n => {
+        n.classList.remove('guide-tone-highlight', 'root-highlight-for-guides');
+        n.style.transform = 'translate(-50%, -50%) scale(1)';
+    });
+}
+
+function initializeFretFlow() {
+    const fretboardsGrid = UI.elements.fretboardsGrid;
+    if (!fretboardsGrid) { console.error("FretFlow grid not found."); return; }
+    fretboardsGrid.innerHTML = ''; 
+    for (let i = 0; i < 4; i++) {
+        const sectionDiv = document.createElement('div');
+        sectionDiv.className = 'fretboard-section';
+        sectionDiv.innerHTML = `
+            <div class="fretboard-controls">
+                <div class="control-group"><label for="ff-key-${i}">Key:</label><select id="ff-key-${i}" class="fretflow-key">${createKeyOptions()}</select></div>
+                <div class="control-group"><label for="ff-scale-${i}">Scale:</label><select id="ff-scale-${i}" class="fretflow-scale">${createScaleOptions()}</select></div>
+                <div class="control-group"><label for="ff-tuning-${i}">Tuning:</label><select id="ff-tuning-${i}" class="tuning-select">
+                    <option value="standard">Std</option><option value="dropD">DropD</option><option value="openG">OpG</option>
+                    <option value="DADGAD">DADGAD</option><option value="openE">OpE</option></select></div>
+            </div>
+            <div class="scale-display" id="ff-scale-display-${i}"></div>
+            <div id="ff-fretboard-${i}" class="fretboard"></div>`;
+        fretboardsGrid.appendChild(sectionDiv);
+        const fretboardEl = sectionDiv.querySelector(`#ff-fretboard-${i}`);
+        const keySelect = sectionDiv.querySelector(`#ff-key-${i}`);
+        const scaleSelect = sectionDiv.querySelector(`#ff-scale-${i}`);
+        const tuningSelect = sectionDiv.querySelector(`#ff-tuning-${i}`);
+        const scaleDisplay = sectionDiv.querySelector(`#ff-scale-display-${i}`);
+        const updateDisplay = () => {
+            const tuningArr = TUNINGS[tuningSelect.value] || TUNINGS.standard;
+            scaleDisplay.textContent = `${keySelect.value} ${scaleSelect.options[scaleSelect.selectedIndex].text}`;
+            createFretboard(fretboardEl, tuningArr);
+            updateFretboardNotes(fretboardEl, keySelect.value, scaleSelect.value, tuningArr);
+        };
+        [keySelect, scaleSelect, tuningSelect].forEach(el => el.addEventListener('change', updateDisplay));
+        updateDisplay();
+    }
+    log("FretFlow initialized.");
+}
+
+function addFirstChordListener() {
+    const firstMeasurePart = UI.elements.measures.firstElementChild?.querySelector('.measure-part[data-part-index="0"]');
+    if (firstMeasurePart) {
+        const scaleRootSelect = firstMeasurePart.querySelector('.scale-controls .second-key');
+        const scaleTypeSelect = firstMeasurePart.querySelector('.scale-controls .scale-select');
+        const updateFunc = () => {
+            if (scaleRootSelect && scaleTypeSelect && UI.elements.chordTuning) {
+                updateFretboardNotes(UI.elements.chordFretboard, scaleRootSelect.value, scaleTypeSelect.value, TUNINGS[UI.elements.chordTuning.value], firstMeasurePart);
+            }
+        };
+        updateFunc();
+    } else { 
+        updateFretboardNotes(UI.elements.chordFretboard, "C", "major", TUNINGS[UI.elements.chordTuning.value]);
+        if (UI.elements.scaleDisplay) UI.elements.scaleDisplay.textContent = "C Major (Default)";
+    }
+}
 
 function setupEventListeners() {
     document.body.addEventListener('click', ensureAudioInitializedUserInteraction, { once: true });
@@ -2192,14 +3646,13 @@ function setupEventListeners() {
             let totalInterval = 0;
             for (let i = 1; i < AppState.tapTempoTimestamps.length; i++) totalInterval += AppState.tapTempoTimestamps[i] - AppState.tapTempoTimestamps[i-1];
             const avgInterval = totalInterval / (AppState.tapTempoTimestamps.length - 1);
-            if (avgInterval > 0 && avgInterval < 3000) { // Avoid division by zero or extreme values
+            if (avgInterval > 0 && avgInterval < 3000) { 
                 AppState.tempo = Math.max(40, Math.min(220, Math.round(60000 / avgInterval)));
                 UI.elements.tempo.value = AppState.tempo;
                 UI.elements.tempoDisplay.textContent = `${AppState.tempo} BPM`;
                 if (AppState.isPlaying) { stopPlayback(); startPlayback(); }
             }
         }
-        // Clear timestamps if no tap for a while
         setTimeout(() => { 
             if (AppState.tapTempoTimestamps.length > 0 && (Date.now() - AppState.tapTempoTimestamps[AppState.tapTempoTimestamps.length - 1] > 3000)) {
                 AppState.tapTempoTimestamps = []; 
@@ -2235,7 +3688,7 @@ function setupEventListeners() {
             const userSongs = JSON.parse(localStorage.getItem('userBebopProgressions') || '{}');
             const selectedSongData = userSongs[e.target.value];
             loadProgression(e.target.value, selectedSongData?.defaultKey || UI.elements.keySelect.value, true);
-            if (UI.elements.progressionSelect) UI.elements.progressionSelect.value = ""; // Clear standard progression select
+            if (UI.elements.progressionSelect) UI.elements.progressionSelect.value = "";
         }
     });
     UI.elements.keySelect.addEventListener('change', (e) => updateProgressionKey(e.target.value));
@@ -2245,7 +3698,7 @@ function setupEventListeners() {
     UI.elements.guideTonesToggle?.addEventListener('click', toggleGuideTones);
     UI.elements.loopSelectedToggle?.addEventListener('click', toggleLoopingMode);
 
-    // NEW: Event Listeners for Collapsible Sections
+    // Collapsible Sections Logic
     document.querySelectorAll('.collapsible-toggle').forEach(button => {
         button.addEventListener('click', () => {
             const contentId = button.getAttribute('aria-controls');
@@ -2253,12 +3706,12 @@ function setupEventListeners() {
             const isExpanded = button.getAttribute('aria-expanded') === 'true' || false;
 
             button.setAttribute('aria-expanded', !isExpanded);
-            content.style.display = isExpanded ? 'none' : (contentId === 'metronome-volume-controls-stack' ? 'flex' : 'block'); // adjust display based on content
+            // Adjust display based on content's natural display type if needed
+            content.style.display = isExpanded ? 'none' : (contentId === 'metronome-volume-controls-stack' ? 'flex' : 'block'); 
             button.querySelector('.toggle-icon').textContent = isExpanded ? '+' : '-';
             log(`Collapsible ${contentId} ${isExpanded ? 'collapsed' : 'expanded'}`);
         });
     });
-
 
     document.addEventListener('keydown', (event) => {
         const targetTagName = event.target.tagName.toLowerCase();
@@ -2295,13 +3748,24 @@ async function initializeApp() {
     onMetronomeInstrumentChange(UI.elements.soundType?.value || 'click');
     populateUserSongsDropdown();
 
-    const initialProgressionName = UI.elements.progressionSelect?.value || "I V7"; // Default to a simple one
+    // Corrected initial progression loading
+    let initialProgressionName = "I V7"; // Fallback default
+    if (UI.elements.progressionSelect && UI.elements.progressionSelect.options.length > 0) {
+        // Try to get the first value from the first optgroup, or the very first option
+        const firstOptgroupOption = UI.elements.progressionSelect.querySelector('optgroup > option');
+        if (firstOptgroupOption) {
+            initialProgressionName = firstOptgroupOption.value;
+        } else if (UI.elements.progressionSelect.options[0]) {
+            initialProgressionName = UI.elements.progressionSelect.options[0].value;
+        }
+    }
+    
     const initialProgData = progressions[initialProgressionName] || {};
     const initialKey = UI.elements.keySelect?.value || initialProgData.defaultKey || "C";
     loadProgression(initialProgressionName, initialKey, false);
 
     initializeFretFlow();
-    setupEventListeners(); // This now includes collapsible setup
+    setupEventListeners(); 
 
     try {
         await AudioContextManager.initialize();
@@ -2337,3 +3801,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
     </script>
 </body>
+</html>
