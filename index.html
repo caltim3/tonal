@@ -1752,23 +1752,44 @@ function transposeChordData(chordData, originalSongKeyRoot, targetGlobalKeyRoot)
     console.log(`  -> transpositionInterval=${transpositionInterval}, origChordRootIdx=${originalChordRootIndex}, transposedChordRootIdx=${transposedChordRootIndex}, transposedRoot=${transposedRoot}`); // DEBUG LOG NEAR THE BOTTOM
     return { root: transposedRoot, quality: chordData.quality };
       }  
+        
+/**
+ * Standardizes a musical note name (e.g., C#, Db, Dbb).
+ * @param {string} note - The note name string.
+ * @returns {string} The standardized note name (e.g., Db).
+ */
 function standardizeNoteName(note) {
     if (!note || typeof note !== 'string') return '';
-    let standardized = note.toUpperCase().trim().replace('♭', 'b').replace('♯', '#');
-    
-    // Handle double flats/sharps first by reducing them
-    while (standardized.includes("BB")) standardized = standardized.replace("BB", "A"); // Bbb -> A
-    while (standardized.includes("E##")) standardized = standardized.replace("E##", "F#"); // E## -> F# -> Gb
-    while (standardized.includes("B##")) standardized = standardized.replace("B##", "C#"); // B## -> C# -> Db
-    // Add more double sharp/flat to single equivalent if needed.
+    let standardized = note.trim().replace('♭', 'b').replace('♯', '#'); // Work with original case first for Bb/BB distinction
+
+    // Handle specific double flats/sharps by exact match before general processing
+    if (standardized === "Bbb" || standardized === "bbb") return "A";
+    if (standardized === "E##" || standardized === "e##") return "Gb"; // E## -> F# -> Gb
+    if (standardized === "B##" || standardized === "b##") return "Db"; // B## -> C# -> Db
+    // Add more specific double sharp/flat to single equivalent if needed, e.g., Fb -> E, Cb -> B
+
+    // Now convert to upper case for general sharp/flat mapping and NOTES matching
+    standardized = standardized.toUpperCase();
 
     const sharpToFlatMap = { 'C#': 'Db', 'D#': 'Eb', 'F#': 'Gb', 'G#': 'Ab', 'A#': 'Bb' };
     if (sharpToFlatMap[standardized]) {
         return sharpToFlatMap[standardized];
     }
+
     // Ensure it's one of the 12 canonical flat/natural names if possible
-    const foundNote = NOTES.find(n => n.toUpperCase() === standardized.toUpperCase());
-    return foundNote || standardized; // Fallback to input if not found (e.g. already standard or complex like "Fb")
+    // NOTES array should contain "Db", "Eb", etc. not "C#", "D#"
+    const foundNote = NOTES_CHROMATIC.find(n_chromatic => n_chromatic.toUpperCase() === standardized);
+    if (foundNote) return foundNote;
+
+    // Fallback for simple naturals or already standard flats that might not have been in sharpToFlatMap
+    // e.g. if input was "Bb" and sharpToFlatMap handled "A#", this covers "Bb" directly.
+    if (NOTES_CHROMATIC.includes(note.charAt(0).toUpperCase() + note.slice(1))) { // Handles "Bb", "Db" if input was already that way
+        return note.charAt(0).toUpperCase() + note.slice(1);
+    }
+    
+    // Final fallback to the (uppercased) input if no other rule matched
+    // This might happen for less common notations or if NOTES_CHROMATIC is incomplete for some edge cases
+    return standardized;
 }
 
 /**
