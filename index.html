@@ -1811,9 +1811,9 @@ function getStandardQuality(rawQualityInput) {
     if (!rawQualityInput || typeof rawQualityInput !== 'string') return 'maj7'; // Default quality
 
     let quality = rawQualityInput.toLowerCase().trim();
-    quality = quality.split('/')[0].trim(); // Remove slash chord bass note for quality parsing (e.g., "m6/G" -> "m6")
+    quality = quality.split('/')[0].trim(); // Remove slash chord bass note for quality parsing
 
-    // Prioritize specific extended/altered chords that have dedicated entries
+    // Prioritize specific extended/altered/diminished chords
     if (quality === 'alt' || quality === '7alt') return 'alt';
     if (quality === '7b9' || quality === 'dom7b9') return 'dom7b9';
     if (quality === '7#9' || quality === 'dom7#9') return 'dom7#9';
@@ -1821,12 +1821,18 @@ function getStandardQuality(rawQualityInput) {
     if (quality === '7sus' || quality === '7sus4' || quality === 'dom7sus') return 'dom7sus';
     if (quality === 'imaj7' || quality === 'm(maj7)' || quality === 'minmaj7' || quality === 'mmaj7') return 'imaj7';
     
-    // Check for common 7th chord qualities (maj7, 7 (dom), m7, m7b5, dim7)
+    // === CRITICAL ORDERING: More specific 7ths before general ones ===
+    // Half-diminished (m7b5) - Check BEFORE general m7
+    if (quality === 'm7b5' || quality === 'min7b5' || quality === 'ø' || quality === 'mi7b5' || quality.startsWith('m7b5')) return 'min7b5';
+    
+    // Diminished 7th - Check BEFORE general dim
+    if (quality === 'dim7' || quality === '°7' || (quality.startsWith('dim') && quality.includes('7'))) return 'dim7';
+
+    // Check for common 7th chord qualities (maj7, 7 (dom), m7)
     if (quality === 'maj7' || quality === 'ma7' || quality === 'Δ' || quality.startsWith('maj7') || quality.startsWith('ma7')) return 'maj7';
     if (quality === '7' || quality === 'dom7' || quality === 'dom' || (quality.startsWith('7') && !quality.startsWith('7b') && !quality.startsWith('7#') && !quality.startsWith('7s'))) return 'dom7';
+    // General Minor 7th - Now safe to check after m7b5
     if (quality === 'm7' || quality === 'min7' || quality === 'mi7' || quality.startsWith('m7') || quality.startsWith('min7')) return 'min7';
-    if (quality === 'm7b5' || quality === 'min7b5' || quality === 'ø' || quality === 'mi7b5' || quality.startsWith('m7b5')) return 'min7b5';
-    if (quality === 'dim7' || quality === '°7' || (quality.startsWith('dim') && quality.includes('7'))) return 'dim7';
     
     // Check for 6th chords (maj6, m6, 6/9)
     if (quality === 'maj6' || quality === 'ma6' || quality === '6' || quality.startsWith('maj6') || quality.startsWith('ma6')) return 'maj6'; // "6" defaults to maj6
@@ -1836,14 +1842,15 @@ function getStandardQuality(rawQualityInput) {
     // Check for basic triads (maj, min, dim, aug, sus)
     if (quality === 'maj' || quality === '') return 'maj'; // Empty quality implies major triad
     if (quality === 'm' || quality === 'min' || quality === 'mi') return 'min';
+    // General Diminished - Now safe to check after dim7
     if (quality === 'dim' || quality === '°') return 'dim';
     if (quality === 'aug' || quality === '+') return 'aug';
     if (quality === 'sus4' || quality === 'sus') return 'sus4';
     if (quality === 'sus2') return 'sus2';
 
     // Fallback if complex or already a direct key in CHORD_INTERVALS
-    if (CHORD_INTERVALS[rawQualityInput]) return rawQualityInput; // E.g. if "dom9" was passed
-    if (CHORD_INTERVALS[quality]) return quality; // E.g. if "dom9" resulted after lowercasing
+    if (CHORD_INTERVALS[rawQualityInput]) return rawQualityInput;
+    if (CHORD_INTERVALS[quality]) return quality;
 
     console.warn(`getStandardQuality: Unstandardized quality "${rawQualityInput}". Defaulting to 'maj7'.`);
     return 'maj7';
