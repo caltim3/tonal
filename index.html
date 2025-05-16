@@ -1728,6 +1728,8 @@ const UI = {
  * @returns {object} An object { root: string (transposed), quality: string (original) }.
  */
 function transposeChordData(chordData, originalSongKeyRoot, targetGlobalKeyRoot) {
+    console.log(`TRANSPOSE CALL: chordData=${JSON.stringify(chordData)}, origKeyRoot=${originalSongKeyRoot}, targetKeyRoot=${targetGlobalKeyRoot}`); // DEBUG LOG AT THE TOP
+
     const originalKeyRootIndex = NOTES_CHROMATIC.indexOf(standardizeNoteName(originalSongKeyRoot));
     const targetKeyRootIndex = NOTES_CHROMATIC.indexOf(standardizeNoteName(targetGlobalKeyRoot));
 
@@ -1747,8 +1749,8 @@ function transposeChordData(chordData, originalSongKeyRoot, targetGlobalKeyRoot)
     const transposedChordRootIndex = (originalChordRootIndex + transpositionInterval + 12) % 12;
     const transposedRoot = NOTES_CHROMATIC[transposedChordRootIndex];
 
+    console.log(`  -> transpositionInterval=${transpositionInterval}, origChordRootIdx=${originalChordRootIndex}, transposedChordRootIdx=${transposedChordRootIndex}, transposedRoot=${transposedRoot}`); // DEBUG LOG NEAR THE BOTTOM
     return { root: transposedRoot, quality: chordData.quality };
-}
         
 function standardizeNoteName(note) {
     if (!note || typeof note !== 'string') return '';
@@ -3093,6 +3095,12 @@ function updateNextChordDisplay(currentMeasureIndex = AppState.currentMeasure) {
  * @param {string|null} [overrideKey=null] - An optional key to override the default.
  * @param {boolean} [isUserSong=false] - Whether this is a user-saved song.
  */
+/**
+ * Loads a selected chord progression into the measures display.
+ * @param {string} progressionName - The key of the progression in the `progressions` object.
+ * @param {string|null} [overrideKey=null] - An optional key to override the default.
+ * @param {boolean} [isUserSong=false] - Whether this is a user-saved song.
+ */
 function loadProgression(progressionName, overrideKey = null, isUserSong = false) {
     const songTitleElem = UI.elements.currentSongTitleFretboard;
     const songDescElem = UI.elements.currentSongDescriptionFretboard;
@@ -3140,29 +3148,21 @@ function loadProgression(progressionName, overrideKey = null, isUserSong = false
         let isSplitInOriginalDefinition = false;
 
         // Determine how to interpret the rawChordStringFromDefinition
-        // This string is from the `progressions` object or saved user song's `progression` array.
-        // It represents the chord(s) in the context of `originalSongDefaultKey`.
         if (isUserSong && progressionData.parts && progressionData.parts[index]) {
-            // User song with detailed parts data
             isSplitInOriginalDefinition = progressionData.splitStatus[index];
             progressionData.parts[index].forEach(userPartData => {
-                // userPartData.originalRoman is crucial: it's how the chord was defined in its original saved key context.
                 const parsedOriginal = parseRomanNumeralToAbsoluteChord(userPartData.originalRoman || `${userPartData.root}${userPartData.quality}`, originalSongDefaultKey);
                 partsToProcessBasedOnOriginalDefinition.push({
                     parsedInOriginalContext: parsedOriginal,
-                    originalScaleRoot: userPartData.scaleRoot, // Preserve user's chosen scale root (relative to original key)
-                    originalScaleType: userPartData.scaleType  // Preserve user's chosen scale type
+                    originalScaleRoot: userPartData.scaleRoot,
+                    originalScaleType: userPartData.scaleType
                 });
             });
         } else {
-            // Standard progression or simple user song (just a string like "Fm7" or "Fm7 / Bbm7")
-            // Check for "Chord / Chord" structure (indicating split) vs. "Chord/Bass" (which parseChord handles)
             const potentialSplit = rawChordStringFromDefinition.split('/');
-            // A simple heuristic: if split by '/' AND it's not a recognized single chord format (like C/G)
-            // AND the parts look like independent chords, treat as split.
             if (potentialSplit.length === 2 &&
-                !parseChord(rawChordStringFromDefinition) && // The whole thing isn't one chord like "Am7/G"
-                parseChord(potentialSplit[0].trim()) && parseChord(potentialSplit[1].trim())) { // Both parts parse as chords
+                !parseChord(rawChordStringFromDefinition) &&
+                parseChord(potentialSplit[0].trim()) && parseChord(potentialSplit[1].trim())) {
                 isSplitInOriginalDefinition = true;
                 partsToProcessBasedOnOriginalDefinition.push({
                     parsedInOriginalContext: parseRomanNumeralToAbsoluteChord(potentialSplit[0].trim(), originalSongDefaultKey)
@@ -3171,7 +3171,6 @@ function loadProgression(progressionName, overrideKey = null, isUserSong = false
                     parsedInOriginalContext: parseRomanNumeralToAbsoluteChord(potentialSplit[1].trim(), originalSongDefaultKey)
                 });
             } else {
-                // Single chord for the measure (or a slash chord like Am7/G)
                 isSplitInOriginalDefinition = false;
                 partsToProcessBasedOnOriginalDefinition.push({
                     parsedInOriginalContext: parseRomanNumeralToAbsoluteChord(rawChordStringFromDefinition, originalSongDefaultKey)
@@ -3182,17 +3181,29 @@ function loadProgression(progressionName, overrideKey = null, isUserSong = false
         // Now, transpose each part to the targetGlobalKey
         let finalPartsDataForMeasure = [];
         partsToProcessBasedOnOriginalDefinition.forEach(originalPart => {
+            // --- DEBUG LOGS START ---
+            console.log(`--- Debugging Load ---`);
+            console.log(`Progression: ${progressionName}, Measure Index: ${index}`);
+            console.log(`Raw Chord String from Definition for this measure: '${rawChordStringFromDefinition}' (This part's original might be different if split)`);
+            console.log(`Original Song Default Key: '${originalSongDefaultKey}', Root: '${originalSongDefaultKeyRoot}'`);
+            console.log(`Target Global Key: '${targetGlobalKey}', Root: '${targetGlobalKeyRoot}'`);
+            console.log(`Parsed in Original Context (originalPart.parsedInOriginalContext):`, JSON.parse(JSON.stringify(originalPart.parsedInOriginalContext)));
+            // --- DEBUG LOGS END ---
+
             const transposedChord = transposeChordData(originalPart.parsedInOriginalContext, originalSongDefaultKeyRoot, targetGlobalKeyRoot);
+            
+            // --- DEBUG LOGS START ---
+            console.log(`Transposed Chord (transposedChord):`, JSON.parse(JSON.stringify(transposedChord)));
+            console.log(`-----------------------`);
+            // --- DEBUG LOGS END ---
             
             let finalScaleRoot, finalScaleType;
             if (originalPart.originalScaleRoot && originalPart.originalScaleType) {
-                // If a specific scale was defined (likely from a user song), transpose its root
-                const originalScaleRootData = { root: originalPart.originalScaleRoot, quality: 'maj' }; // Use dummy quality for transposition
+                const originalScaleRootData = { root: originalPart.originalScaleRoot, quality: 'maj' };
                 const transposedScaleRootInfo = transposeChordData(originalScaleRootData, originalSongDefaultKeyRoot, targetGlobalKeyRoot);
                 finalScaleRoot = transposedScaleRootInfo.root;
                 finalScaleType = originalPart.originalScaleType;
             } else {
-                // Default: suggest scale based on the transposed chord
                 finalScaleRoot = transposedChord.root;
                 finalScaleType = suggestScaleForQuality(transposedChord.quality);
             }
@@ -3205,24 +3216,22 @@ function loadProgression(progressionName, overrideKey = null, isUserSong = false
             });
         });
 
-        // If the original definition implied a split measure but we only have one part processed (e.g. user song error), duplicate it.
         if (isSplitInOriginalDefinition && finalPartsDataForMeasure.length === 1) {
             finalPartsDataForMeasure.push({ ...finalPartsDataForMeasure[0] });
         }
         
-        // Add the measure to the UI
         addMeasure(
             finalPartsDataForMeasure[0].root,
             finalPartsDataForMeasure[0].quality,
             finalPartsDataForMeasure[0].scaleRoot,
             finalPartsDataForMeasure[0].scaleType,
-            isSplitInOriginalDefinition, // Use the split status derived from the original definition
+            isSplitInOriginalDefinition,
             finalPartsDataForMeasure.length > 1 ? finalPartsDataForMeasure[1] : null
         );
     });
 
     updateMeasureNumbers();
-    addFirstChordListener(); // This will set up the initial fretboard display
+    addFirstChordListener();
     updateNextChordDisplay();
     log(`Loaded ${isUserSong ? 'user song' : 'standard progression'}: ${progressionName} in key ${targetGlobalKey}`);
 }
