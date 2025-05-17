@@ -1722,6 +1722,7 @@ const AppState = {
 let currentFunctionalProgression = [];
 let currentProgressionName = "";
 let currentDrumSetIndex = 0;
+let previousPlayedVoicingNotesWithOctaves = null;
 
 // ==================================
 // === UI MANAGEMENT & DOM ELEMENTS ===
@@ -1797,7 +1798,6 @@ const AudioContextManager = { // Correctly defined object
     reverbAmount: 0.2,
     currentChordGain: null,
     secondaryLoadStarted: false,
-    previousPlayedVoicingNotesWithOctaves = null,
     reverbNodeConnected: false
 };
 
