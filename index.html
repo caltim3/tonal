@@ -2248,6 +2248,9 @@ function getSampleFileName(note, octave) {
 // ==================================
 // === AUDIO PLAYBACK ============= (ensureAudioInitializedUserInteraction, playNote, playChord, playMetronomeSound)
 // ==================================
+// ==================================
+// === AUDIO PLAYBACK ============= (ensureAudioInitializedUserInteraction, playNote, playChord, playMetronomeSound)
+// ==================================
 async function ensureAudioInitializedUserInteraction() {
     if (!AppState.audioInitialized) {
         try {
@@ -2290,13 +2293,153 @@ function playNote(noteNameWithOctave, volume = 0.5, duration = 500) {
     }
 }
 
+function playChordInstance(notesWithOctavesToPlay, instanceStartTime, instanceDuration, connectToGainNode) {
+    if (!notesWithOctavesToPlay || notesWithOctavesToPlay.length === 0) {
+        // console.warn("playChordInstance called with no notes to play.");
+        return;
+    }
+    notesWithOctavesToPlay.forEach(noteWithOctave => {
+        const match = noteWithOctave.match(/^([A-G][#bs]?)(\d)$/i);
+        if (!match) {
+            console.warn(`Invalid note format in playChordInstance: ${noteWithOctave}`);
+            return;
+        }
+        let [, pitchClass, octaveStr] = match;
+        const samplePitchClass = standardizeNoteNameForSamples(pitchClass);
+        const finalSampleOctave = Math.max(OCTAVES_FOR_SAMPLES[0], Math.min(OCTAVES_FOR_SAMPLES[OCTAVES_FOR_SAMPLES.length - 1], parseInt(octaveStr)));
+
+        const sampleKey = `${samplePitchClass}${finalSampleOctave}`;
+        const buffer = AudioContextManager.pianoSampleBuffers[sampleKey];
+        if (!buffer) { /* console.warn(`Buffer not found for ${sampleKey} in playChordInstance`); */ return; }
+
+        try {
+            const source = AudioContextManager.context.createBufferSource();
+            source.buffer = buffer;
+            source.connect(connectToGainNode);
+            const timingVariance = Math.random() * 0.03; // Keep existing strum effect
+            source.start(instanceStartTime + timingVariance);
+            source.stop(instanceStartTime + instanceDuration + timingVariance);
+        } catch (e) {
+            console.error(`Error playing sample ${sampleKey}:`, e);
+        }
+    });
+}
+
+// Helper to get MIDI note number for comparison (C4 = 60)
+function getMidiNoteNumber(noteNameWithOctave) {
+    if (!noteNameWithOctave) return -1000; // Return a value that won't match
+    const match = noteNameWithOctave.match(/^([A-G][#bs]?)(\d)$/i);
+    if (!match) return -1000;
+
+    let [, pitchClassStd, octaveStr] = match;
+    pitchClassStd = standardizeNoteName(pitchClassStd); // Important for NOTES_CHROMATIC index
+    const octave = parseInt(octaveStr);
+    const noteVal = NOTES_CHROMATIC.indexOf(pitchClassStd);
+
+    if (noteVal === -1) return -1000;
+    return (octave * 12) + noteVal; // Simple MIDI-like number
+}
+
+function getBestVoicing_VoiceLed(baseNotesInRootPosition, quality,
+                                 prevVoicingWithOctaves, targetOctaveRange,
+                                 allowMoreVariationForRhythmicHit = false) {
+
+    // --- 1. Generate Candidate Pitch-Class Voicings ---
+    let candidatePCVoicings = [];
+    const inversions = generateInversions(baseNotesInRootPosition);
+    candidatePCVoicings.push(...inversions);
+
+    if (baseNotesInRootPosition.length === 4) {
+        const drop2 = generateDrop2Voicing(baseNotesInRootPosition);
+        if (drop2) candidatePCVoicings.push(drop2);
+    }
+    candidatePCVoicings = [...new Set(candidatePCVoicings.map(v => JSON.stringify(v.slice().sort())))].map(s => JSON.parse(s));
+
+
+    // --- 2. Realize and Score Each Candidate ---
+    let scoredVoicings = [];
+
+    for (const pcVoicing of candidatePCVoicings) {
+        for (let octaveStartAttempt = targetOctaveRange[0]; octaveStartAttempt <= targetOctaveRange[0] + 1; octaveStartAttempt++) {
+            let currentRealizedVoicing = [];
+            let tempPcVoicingSorted = [...pcVoicing].sort((a, b) => NOTES_CHROMATIC.indexOf(standardizeNoteName(a)) - NOTES_CHROMATIC.indexOf(standardizeNoteName(b)));
+
+            let currentOctave = octaveStartAttempt;
+            currentRealizedVoicing.push(`${tempPcVoicingSorted[0]}${currentOctave}`);
+
+            for (let i = 1; i < tempPcVoicingSorted.length; i++) {
+                let noteName = tempPcVoicingSorted[i];
+                let prevNoteMidi = getMidiNoteNumber(currentRealizedVoicing[i-1]);
+                let currentNoteMidi = getMidiNoteNumber(`${noteName}${currentOctave}`);
+                while (currentNoteMidi <= prevNoteMidi) {
+                    currentOctave++;
+                    currentNoteMidi = getMidiNoteNumber(`${noteName}${currentOctave}`);
+                }
+                if (currentNoteMidi > prevNoteMidi + 12 && getMidiNoteNumber(`${noteName}${currentOctave-1}`) > prevNoteMidi) {
+                    currentOctave--;
+                }
+                currentRealizedVoicing.push(`${noteName}${currentOctave}`);
+            }
+
+            const minMidi = getMidiNoteNumber(currentRealizedVoicing[0]);
+            const maxMidi = getMidiNoteNumber(currentRealizedVoicing[currentRealizedVoicing.length - 1]);
+            const minSampleOctave = OCTAVES_FOR_SAMPLES[0];
+            const maxSampleOctave = OCTAVES_FOR_SAMPLES[OCTAVES_FOR_SAMPLES.length-1];
+
+            if (maxMidi - minMidi > 36) continue; // Max 3 octave spread, can be adjusted
+            if (maxMidi > getMidiNoteNumber(`${NOTES_CHROMATIC[11]}${maxSampleOctave}`) || minMidi < getMidiNoteNumber(`${NOTES_CHROMATIC[0]}${minSampleOctave}`)) continue;
+
+
+            let score = 0;
+            if (prevVoicingWithOctaves && prevVoicingWithOctaves.length === currentRealizedVoicing.length) {
+                let totalMovement = 0;
+                let commonTones = 0;
+                let heldTones = 0;
+
+                const sortedPrev = [...prevVoicingWithOctaves].sort((a, b) => getMidiNoteNumber(a) - getMidiNoteNumber(b));
+                const sortedCurr = [...currentRealizedVoicing].sort((a, b) => getMidiNoteNumber(a) - getMidiNoteNumber(b));
+
+                for (let k = 0; k < sortedCurr.length; k++) {
+                    const prevNoteMIDI = getMidiNoteNumber(sortedPrev[k]);
+                    const currNoteMIDI = getMidiNoteNumber(sortedCurr[k]);
+                    totalMovement += Math.abs(currNoteMIDI - prevNoteMIDI);
+                    if (prevNoteMIDI === currNoteMIDI) heldTones++;
+                    if ((prevNoteMIDI % 12) === (currNoteMIDI % 12)) commonTones++;
+                }
+                score = (heldTones * 25) + (commonTones * 10) - totalMovement;
+            } else {
+                score = Math.random() * -5;
+            }
+            scoredVoicings.push({ voicing: currentRealizedVoicing, score });
+        }
+    }
+
+    if (scoredVoicings.length === 0) {
+        let fallbackOctave = targetOctaveRange[Math.floor(targetOctaveRange.length / 2)];
+        if (!OCTAVES_FOR_SAMPLES.includes(fallbackOctave)) fallbackOctave = OCTAVES_FOR_SAMPLES[0]; // Ensure valid fallback
+        return baseNotesInRootPosition.map(note => `${note}${fallbackOctave}`);
+    }
+
+    scoredVoicings.sort((a, b) => b.score - a.score);
+
+    if (allowMoreVariationForRhythmicHit && scoredVoicings.length > 1 && Math.random() < 0.6) {
+        return scoredVoicings[Math.min(1, scoredVoicings.length - 1)].voicing;
+    }
+
+    if (Math.random() < 0.80 || scoredVoicings.length === 1) {
+        return scoredVoicings[0].voicing;
+    } else {
+        return scoredVoicings[1].voicing;
+    }
+}
+
 async function playChord(root, quality, startTime, duration) {
     if (!UI.elements.chordsEnabled.classList.contains('active') || !AudioContextManager.samplesLoaded) {
-        previousPlayedVoicingNotesWithOctaves = null; // Reset if chords are off
+        previousPlayedVoicingNotesWithOctaves = null;
         return;
     }
     await AudioContextManager.ensureAudioContext();
-    if (!AudioContextManager.context) { // Extra check
+    if (!AudioContextManager.context) {
         console.error("AudioContext not available in playChord");
         return;
     }
@@ -2304,72 +2447,52 @@ async function playChord(root, quality, startTime, duration) {
     const baseNotesInRootPosition = getChordNotes(root, quality);
     if (!baseNotesInRootPosition || baseNotesInRootPosition.length === 0) {
         console.warn(`Cannot play chord for ${root}${quality}: No notes found.`);
-        previousPlayedVoicingNotesWithOctaves = null; // Reset
+        previousPlayedVoicingNotesWithOctaves = null;
         return;
     }
 
     const overallVolume = parseFloat(UI.elements.chordVolume.value) * 0.7;
-    if (overallVolume <= 0.001) { // Check for very low volume
-        previousPlayedVoicingNotesWithOctaves = null; // Reset
+    if (overallVolume <= 0.001) {
+        previousPlayedVoicingNotesWithOctaves = null;
         return;
     }
 
-    // Fade out previous chord gain if it exists
     if (AudioContextManager.currentChordGain) {
         try {
-            // Ensure the gain value is valid before trying to ramp
             if (typeof AudioContextManager.currentChordGain.gain.value === 'number' && isFinite(AudioContextManager.currentChordGain.gain.value)) {
                 AudioContextManager.currentChordGain.gain.setValueAtTime(AudioContextManager.currentChordGain.gain.value, startTime);
-                AudioContextManager.currentChordGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.05); // Quick fade
+                AudioContextManager.currentChordGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.05);
             } else {
-                AudioContextManager.currentChordGain.gain.setValueAtTime(0.001, startTime + 0.05); // Just set to low if previous value was bad
+                AudioContextManager.currentChordGain.gain.setValueAtTime(0.001, startTime + 0.05);
             }
         } catch (e) { console.warn("Error fading out previous chord gain:", e); }
     }
 
-    // Create and configure new master gain for this chord
     const chordMasterGain = AudioContextManager.context.createGain();
-    chordMasterGain.gain.setValueAtTime(0, startTime); // Start silent
-    chordMasterGain.gain.linearRampToValueAtTime(overallVolume, startTime + 0.02); // Fade in
+    chordMasterGain.gain.setValueAtTime(0, startTime);
+    chordMasterGain.gain.linearRampToValueAtTime(overallVolume, startTime + 0.02);
 
-    // --- THIS IS THE CRITICAL CONNECTION LOGIC ---
     if (AudioContextManager.reverbNode && AudioContextManager.reverbAmount > 0.001) {
         const dryGain = AudioContextManager.context.createGain();
         const wetGain = AudioContextManager.context.createGain();
-
-        // Simple dry/wet mix:
-        // dryGain.gain.value = 1.0 - AudioContextManager.reverbAmount; // This can make dry too quiet
-        // wetGain.gain.value = AudioContextManager.reverbAmount;
-        // Better: keep dry at full, send a portion to wet
         dryGain.gain.value = 1.0;
         wetGain.gain.value = AudioContextManager.reverbAmount;
 
-
         chordMasterGain.connect(dryGain);
         dryGain.connect(AudioContextManager.context.destination);
-
         chordMasterGain.connect(wetGain);
         wetGain.connect(AudioContextManager.reverbNode);
-        // Ensure reverbNode itself is connected to destination (usually done once in setupReverb)
-        if (!AudioContextManager.reverbNodeConnected && AudioContextManager.context.destination && AudioContextManager.reverbNode.numberOfOutputs > 0) {
-            // Check if reverbNode is already connected, to prevent multiple connections
-            // This check is tricky. Simpler to rely on setupReverb.
-            // For safety, ensure it's connected if we are using it.
-            try {
-                AudioContextManager.reverbNode.disconnect(AudioContextManager.context.destination);
-            } catch(e) { /* ignore if not connected */ }
+
+        if (!AudioContextManager.reverbNodeConnected && AudioContextManager.context.destination) {
+             // Re-ensure reverbNode is connected to destination if it got disconnected or was never properly.
+            try { AudioContextManager.reverbNode.disconnect(); } catch(e) {} // Disconnect all first
             AudioContextManager.reverbNode.connect(AudioContextManager.context.destination);
             AudioContextManager.reverbNodeConnected = true;
-        } else if (!AudioContextManager.reverbNodeConnected && AudioContextManager.reverbNode.numberOfOutputs === 0) {
-             AudioContextManager.reverbNode.connect(AudioContextManager.context.destination);
-             AudioContextManager.reverbNodeConnected = true;
         }
     } else {
-        chordMasterGain.connect(AudioContextManager.context.destination); // Direct to output
+        chordMasterGain.connect(AudioContextManager.context.destination);
     }
-    AudioContextManager.currentChordGain = chordMasterGain; // Store reference to this new gain node
-    // --- END OF CRITICAL CONNECTION LOGIC ---
-
+    AudioContextManager.currentChordGain = chordMasterGain;
 
     const firstVoicingNotesWithOctaves = getBestVoicing_VoiceLed(
         baseNotesInRootPosition,
@@ -2395,7 +2518,7 @@ async function playChord(root, quality, startTime, duration) {
         const secondVoicingNotesWithOctaves = getBestVoicing_VoiceLed(
             baseNotesInRootPosition,
             quality,
-            firstVoicingNotesWithOctaves, // Use the first hit as context
+            firstVoicingNotesWithOctaves,
             PLAYBACK_OCTAVES,
             true
         );
@@ -2408,125 +2531,105 @@ async function playChord(root, quality, startTime, duration) {
     }
 }
         
-// Helper to get MIDI note number for comparison (C4 = 60)
-function getMidiNoteNumber(noteNameWithOctave) {
-    if (!noteNameWithOctave) return -1000; // Return a value that won't match
-    const match = noteNameWithOctave.match(/^([A-G][#bs]?)(\d)$/i);
-    if (!match) return -1000;
+async function playMetronomeSound(baseVolume) { 
+    if (!AudioContextManager.context) return;
 
-    let [, pitchClassStd, octaveStr] = match;
-    pitchClassStd = standardizeNoteName(pitchClassStd); // Important for NOTES_CHROMATIC index
-    const octave = parseInt(octaveStr);
-    const noteVal = NOTES_CHROMATIC.indexOf(pitchClassStd);
+    const metronomeOverallVolume = parseFloat(UI.elements.metronomeVolume.value);
+    const soundTypeSetting = UI.elements.soundType.value;
+    const beatElement = UI.elements.beatsContainer.querySelector(`.beat[data-beat="${AppState.currentBeat}"]`);
+    if (!beatElement) return;
 
-    if (noteVal === -1) return -1000;
-    return (octave * 12) + noteVal; // Simple MIDI-like number
-}
+    const soundsToPlayThisBeat = beatElement.dataset.sound.split(',');
+    const beatSpecificVolumeFactor = parseFloat(beatElement.dataset.volume); 
+    const isStrongBeatForAccent = parseFloat(beatElement.dataset.baseVolume) >= 0.9; 
+    const accentMultiplier = isStrongBeatForAccent ? parseFloat(UI.elements.accentIntensity?.value || 1.0) : 1.0;
 
-function getBestVoicing_VoiceLed(baseNotesInRootPosition, quality,
-                                 prevVoicingWithOctaves, targetOctaveRange,
-                                 allowMoreVariationForRhythmicHit = false) {
+    for (let soundKey of soundsToPlayThisBeat) {
+        soundKey = soundKey.trim();
+        if (soundKey === 'silent') continue;
 
-    // --- 1. Generate Candidate Pitch-Class Voicings ---
-    let candidatePCVoicings = [];
-    const inversions = generateInversions(baseNotesInRootPosition); // Assumes this returns arrays of pitch classes
-    candidatePCVoicings.push(...inversions);
+        let bufferToPlay;
+        let effectiveSoundKey = soundKey;
+        let soundSpecificMixLevel = 1.0;
 
-    if (baseNotesInRootPosition.length === 4) { // Common for 7th chords
-        const drop2 = generateDrop2Voicing(baseNotesInRootPosition); // Assumes this returns pitch classes
-        if (drop2) candidatePCVoicings.push(drop2);
-        // You could add Drop3, or other common jazz voicings structures here
-    }
-    // Filter out identical pitch class sets if generateInversions produces them
-    candidatePCVoicings = [...new Set(candidatePCVoicings.map(v => JSON.stringify(v.slice().sort())))].map(s => JSON.parse(s));
-
-
-    // --- 2. Realize and Score Each Candidate ---
-    let scoredVoicings = [];
-
-    for (const pcVoicing of candidatePCVoicings) {
-        // Try to realize this pcVoicing in a few octave positions
-        // This is a complex heuristic. A simple start:
-        for (let octaveStartAttempt = targetOctaveRange[0]; octaveStartAttempt <= targetOctaveRange[0] + 1; octaveStartAttempt++) {
-            let currentRealizedVoicing = []; // Will be like ["C3", "E3", "G3", "Bb3"]
-            let tempPcVoicingSorted = [...pcVoicing].sort((a, b) => NOTES_CHROMATIC.indexOf(standardizeNoteName(a)) - NOTES_CHROMATIC.indexOf(standardizeNoteName(b)));
-
-            // Assign octaves to make it a "close position" realization around octaveStartAttempt
-            let currentOctave = octaveStartAttempt;
-            currentRealizedVoicing.push(`${tempPcVoicingSorted[0]}${currentOctave}`);
-
-            for (let i = 1; i < tempPcVoicingSorted.length; i++) {
-                let noteName = tempPcVoicingSorted[i];
-                let prevNoteMidi = getMidiNoteNumber(currentRealizedVoicing[i-1]);
-                let currentNoteMidi = getMidiNoteNumber(`${noteName}${currentOctave}`);
-                while (currentNoteMidi <= prevNoteMidi) { // Ensure notes ascend in this realization
-                    currentOctave++;
-                    currentNoteMidi = getMidiNoteNumber(`${noteName}${currentOctave}`);
-                }
-                 // If it jumped too high, try bringing it down an octave IF it still makes sense
-                if (currentNoteMidi > prevNoteMidi + 12 && getMidiNoteNumber(`${noteName}${currentOctave-1}`) > prevNoteMidi) {
-                    currentOctave--;
-                }
-                currentRealizedVoicing.push(`${noteName}${currentOctave}`);
+        if (soundTypeSetting === 'drums') {
+            const currentDrumSet = drumSoundSets[currentDrumSetIndex];
+            let soundFilename;
+            switch (soundKey) {
+                case 'kick':
+                    soundFilename = currentDrumSet.kick;
+                    if (UI.elements.kickVolume) soundSpecificMixLevel = parseFloat(UI.elements.kickVolume.value);
+                    break;
+                case 'snare':
+                    soundFilename = currentDrumSet.snare;
+                    if (UI.elements.snareVolume) soundSpecificMixLevel = parseFloat(UI.elements.snareVolume.value);
+                    break;
+                case 'hihat':
+                    soundFilename = currentDrumSet.hihat;
+                    if (UI.elements.hihatVolume) soundSpecificMixLevel = parseFloat(UI.elements.hihatVolume.value);
+                    break;
+                default: 
+                    effectiveSoundKey = 'click';
+                    soundFilename = null; 
+                    soundSpecificMixLevel = 1.0; 
+                    break;
             }
 
-            // Basic check: is the voicing too spread out or out of typical piano range for samples?
-            const minMidi = getMidiNoteNumber(currentRealizedVoicing[0]);
-            const maxMidi = getMidiNoteNumber(currentRealizedVoicing[currentRealizedVoicing.length - 1]);
-            if (maxMidi - minMidi > 24) continue; // If more than 2 octaves spread, skip
-            if (maxMidi > getMidiNoteNumber("C6") || minMidi < getMidiNoteNumber("C2")) continue; // Out of sample range
-
-            // --- Scoring ---
-            let score = 0;
-            if (prevVoicingWithOctaves && prevVoicingWithOctaves.length === currentRealizedVoicing.length) {
-                let totalMovement = 0;
-                let commonTones = 0; // Pitch class match
-                let heldTones = 0;   // Exact note (pitch + octave) match
-
-                // Sort both by MIDI value for consistent voice pairing (simplistic pairing)
-                const sortedPrev = [...prevVoicingWithOctaves].sort((a, b) => getMidiNoteNumber(a) - getMidiNoteNumber(b));
-                const sortedCurr = [...currentRealizedVoicing].sort((a, b) => getMidiNoteNumber(a) - getMidiNoteNumber(b));
-
-                for (let k = 0; k < sortedCurr.length; k++) {
-                    const prevNoteMIDI = getMidiNoteNumber(sortedPrev[k]);
-                    const currNoteMIDI = getMidiNoteNumber(sortedCurr[k]);
-
-                    totalMovement += Math.abs(currNoteMIDI - prevNoteMIDI);
-                    if (prevNoteMIDI === currNoteMIDI) heldTones++;
-                    if ((prevNoteMIDI % 12) === (currNoteMIDI % 12)) commonTones++;
+            if (soundFilename) { 
+                effectiveSoundKey = soundFilename; 
+                if (!AudioContextManager.soundBuffers[soundFilename]) {
+                    try {
+                        const response = await fetch(`./${soundFilename}`);
+                        if (!response.ok) throw new Error(`HTTP ${response.status} for ${soundFilename}`);
+                        const arrayBuffer = await response.arrayBuffer();
+                        AudioContextManager.soundBuffers[soundFilename] = await AudioContextManager.context.decodeAudioData(arrayBuffer);
+                    } catch (e) {
+                        console.error(`Failed to load drum sample ${soundFilename} on-the-fly:`, e);
+                        bufferToPlay = AudioContextManager.soundBuffers[soundKey] || AudioContextManager.soundBuffers['click'];
+                        effectiveSoundKey = soundKey; 
+                    }
                 }
-                // Scoring: lower movement better, more common/held tones better. Weights need tuning.
-                score = (heldTones * 25) + (commonTones * 10) - totalMovement;
-            } else {
-                // No previous chord, or different number of voices. Give a neutral base score.
-                score = Math.random() * -5; // Small random penalty to prefer voice-led if possible
+                bufferToPlay = AudioContextManager.soundBuffers[soundFilename];
+            } else { 
+                 bufferToPlay = AudioContextManager.soundBuffers[effectiveSoundKey] || AudioContextManager.soundBuffers['click'];
             }
-            scoredVoicings.push({ voicing: currentRealizedVoicing, score });
+        } else { 
+            effectiveSoundKey = soundTypeSetting; 
+            bufferToPlay = AudioContextManager.soundBuffers[soundTypeSetting] || AudioContextManager.soundBuffers['click'];
+            soundSpecificMixLevel = 1.0; 
         }
-    }
 
-    // --- 3. Select the Best Voicing (with randomness) ---
-    if (scoredVoicings.length === 0) {
-        // Fallback: if no suitable voicings found (should be rare)
-        // Create a very default root position voicing in the middle of targetOctaveRange
-        let fallbackOctave = targetOctaveRange[Math.floor(targetOctaveRange.length / 2)];
-        return baseNotesInRootPosition.map(note => `${note}${fallbackOctave}`);
-    }
+        if (!bufferToPlay) continue;
 
-    scoredVoicings.sort((a, b) => b.score - a.score); // Highest score first
+        let actualFinalVolume = metronomeOverallVolume * beatSpecificVolumeFactor * soundSpecificMixLevel * accentMultiplier;
+        actualFinalVolume = Math.min(actualFinalVolume, 1.0); 
 
-    if (allowMoreVariationForRhythmicHit && scoredVoicings.length > 1 && Math.random() < 0.6) {
-        // For second hits, more chance to pick a slightly different (but still good) voicing
-        return scoredVoicings[Math.min(1, scoredVoicings.length - 1)].voicing;
-    }
+        if (actualFinalVolume <= 0.001) continue; 
 
-    // Default: 80% chance to pick the absolute best, 20% for the next best (if available)
-    if (Math.random() < 0.80 || scoredVoicings.length === 1) {
-        return scoredVoicings[0].voicing;
-    } else {
-        return scoredVoicings[1].voicing;
+        const source = AudioContextManager.context.createBufferSource();
+        source.buffer = bufferToPlay;
+        const gainNode = AudioContextManager.context.createGain();
+
+        gainNode.gain.setValueAtTime(actualFinalVolume, AudioContextManager.context.currentTime);
+        source.connect(gainNode);
+        gainNode.connect(AudioContextManager.context.destination);
+
+        if (soundTypeSetting === 'drums' && AudioContextManager.reverbNode && AudioContextManager.reverbAmount > 0.01) {
+            const reverbSendGain = AudioContextManager.context.createGain();
+            reverbSendGain.gain.setValueAtTime(0.05 * AudioContextManager.reverbAmount, AudioContextManager.context.currentTime); 
+            gainNode.connect(reverbSendGain); 
+            reverbSendGain.connect(AudioContextManager.reverbNode);
+             // Ensure reverbNode is connected to destination if used
+            if (!AudioContextManager.reverbNodeConnected && AudioContextManager.context.destination) {
+                 try { AudioContextManager.reverbNode.disconnect(); } catch(e) {}
+                 AudioContextManager.reverbNode.connect(AudioContextManager.context.destination);
+                 AudioContextManager.reverbNodeConnected = true;
+            }
+        }
+        source.start(AudioContextManager.context.currentTime);
     }
-}        
+}
+        
 async function playMetronomeSound(baseVolume) { 
     if (!AudioContextManager.context) return;
 
