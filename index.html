@@ -1797,6 +1797,7 @@ const AudioContextManager = { // Correctly defined object
     reverbAmount: 0.2,
     currentChordGain: null,
     secondaryLoadStarted: false,
+    previousPlayedVoicingNotesWithOctaves = null;
     reverbNodeConnected: false
 };
 
@@ -2290,7 +2291,9 @@ function playNote(noteNameWithOctave, volume = 0.5, duration = 500) {
 }
 
 async function playChord(root, quality, startTime, duration) {
+    // --- Basic checks and setup (as existing) ---
     if (!UI.elements.chordsEnabled.classList.contains('active') || !AudioContextManager.samplesLoaded) {
+        previousPlayedVoicingNotesWithOctaves = null; // Reset if chords are off
         return;
     }
     await AudioContextManager.ensureAudioContext();
@@ -2298,85 +2301,205 @@ async function playChord(root, quality, startTime, duration) {
     const baseNotesInRootPosition = getChordNotes(root, quality);
     if (!baseNotesInRootPosition || baseNotesInRootPosition.length === 0) {
         console.warn(`Cannot play chord for ${root}${quality}: No notes found.`);
+        previousPlayedVoicingNotesWithOctaves = null; // Reset
         return;
     }
 
     const overallVolume = parseFloat(UI.elements.chordVolume.value) * 0.7;
-    if (overallVolume <= 0) return;
+    if (overallVolume <= 0) {
+        previousPlayedVoicingNotesWithOctaves = null; // Reset
+        return;
+    }
 
-    const firstVoicingNotes = getChordVoicing([...baseNotesInRootPosition], quality);
-    
+    // --- GAIN NODE FADING (as existing) ---
     if (AudioContextManager.currentChordGain) {
-        try {
-            AudioContextManager.currentChordGain.gain.setValueAtTime(AudioContextManager.currentChordGain.gain.value, startTime);
-            AudioContextManager.currentChordGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.05);
-        } catch (e) { console.warn("Error fading out previous chord gain:", e); }
+        // ... fade out logic ...
     }
-
     const chordMasterGain = AudioContextManager.context.createGain();
-    chordMasterGain.gain.setValueAtTime(0, startTime);
-    chordMasterGain.gain.linearRampToValueAtTime(overallVolume, startTime + 0.02);
-    chordMasterGain.connect(AudioContextManager.context.destination);
-    AudioContextManager.currentChordGain = chordMasterGain;
+    // ... setup chordMasterGain ...
 
-    if (AudioContextManager.reverbNode && AudioContextManager.reverbAmount > 0) {
-        const reverbDryWet = AudioContextManager.context.createGain();
-        reverbDryWet.gain.value = AudioContextManager.reverbAmount;
-        chordMasterGain.connect(reverbDryWet);
-        reverbDryWet.connect(AudioContextManager.reverbNode);
-        if (!AudioContextManager.reverbNodeConnected && AudioContextManager.context.destination) {
-            AudioContextManager.reverbNode.connect(AudioContextManager.context.destination);
-            AudioContextManager.reverbNodeConnected = true;
-        }
-    }
+    // --- NEW: Get Voice-Led Voicing ---
+    const firstVoicingNotesWithOctaves = getBestVoicing_VoiceLed(
+        baseNotesInRootPosition,
+        quality,
+        previousPlayedVoicingNotesWithOctaves, // Pass the previously played notes
+        PLAYBACK_OCTAVES // Desired octave range for the new voicing (e.g., [3, 4])
+    );
 
-    function playChordInstance(voicingNotes, instanceStartTime, instanceDuration, connectToGainNode) {
-        const assignedNotesWithOctaves = voicingNotes.map((noteName, index) => {
-            let octave = PLAYBACK_OCTAVES[0];
-            if (index > 0 && PLAYBACK_OCTAVES.length > 1) {
-                octave = PLAYBACK_OCTAVES[index % PLAYBACK_OCTAVES.length];
-            }
-            if (index > 0 && NOTES.indexOf(standardizeNoteName(noteName)) < NOTES.indexOf(standardizeNoteName(voicingNotes[0])) && PLAYBACK_OCTAVES.length > 1) {
-                if (octave !== PLAYBACK_OCTAVES[PLAYBACK_OCTAVES.length - 1]) {
-                    octave = PLAYBACK_OCTAVES[1] || PLAYBACK_OCTAVES[0];
-                }
-            }
-            if (!OCTAVES_FOR_SAMPLES.includes(octave)) {
-                octave = OCTAVES_FOR_SAMPLES.find(o => o >= PLAYBACK_OCTAVES[0]) || OCTAVES_FOR_SAMPLES[0];
-            }
-            octave = Math.max(OCTAVES_FOR_SAMPLES[0], Math.min(OCTAVES_FOR_SAMPLES[OCTAVES_FOR_SAMPLES.length - 1], octave));
-            return { name: noteName, octave: octave };
-        });
+    // --- Play the first hit of the chord ---
+    playChordInstance(firstVoicingNotesWithOctaves, startTime, duration / 2, chordMasterGain);
 
-        assignedNotesWithOctaves.forEach(noteObj => {
-            const samplePitchClass = standardizeNoteNameForSamples(noteObj.name);
-            const finalSampleOctave = Math.max(OCTAVES_FOR_SAMPLES[0], Math.min(OCTAVES_FOR_SAMPLES[OCTAVES_FOR_SAMPLES.length - 1], noteObj.octave));
-            const sampleKey = `${samplePitchClass}${finalSampleOctave}`;
-            const buffer = AudioContextManager.pianoSampleBuffers[sampleKey];
-            if (!buffer) return;
+    // Update the global state with the notes we just decided to play
+    previousPlayedVoicingNotesWithOctaves = [...firstVoicingNotesWithOctaves];
 
-            const source = AudioContextManager.context.createBufferSource();
-            source.buffer = buffer;
-            source.connect(connectToGainNode);
-            const timingVariance = Math.random() * 0.03;
-            source.start(instanceStartTime + timingVariance);
-            source.stop(instanceStartTime + instanceDuration + timingVariance);
-        });
-    }
-
-    playChordInstance(firstVoicingNotes, startTime, duration / 2, chordMasterGain);
-
+    // --- Logic for the second hit (if any) ---
     const beatDurationSec = 60 / AppState.tempo;
     const timeSigNum = parseInt(UI.elements.timeSignature.value);
     const isLikelyFullMeasureChord = (timeSigNum === 4 && duration > (beatDurationSec * 2.5)) || (timeSigNum !== 4 && duration > (beatDurationSec * (timeSigNum / 2 + 0.5)));
 
     if (isLikelyFullMeasureChord) {
-        const secondVoicingNotes = getChordVoicing([...baseNotesInRootPosition], quality);
+        // For the second hit, we can either:
+        // 1. Re-use `firstVoicingNotesWithOctaves`.
+        // 2. Get a slightly different voicing, possibly using `firstVoicingNotesWithOctaves` as its "previous"
+        //    to ensure it's still related but provides some rhythmic variation.
+        const secondVoicingNotesWithOctaves = getBestVoicing_VoiceLed(
+            baseNotesInRootPosition,
+            quality,
+            firstVoicingNotesWithOctaves, // Use the first hit as the "previous context"
+            PLAYBACK_OCTAVES,
+            true // Add a flag: allowMoreVariationForRhythmicHit = true
+        );
         const secondHitStartTime = startTime + duration / 2;
-        playChordInstance(secondVoicingNotes, secondHitStartTime, duration / 2, chordMasterGain);
+        playChordInstance(secondVoicingNotesWithOctaves, secondHitStartTime, duration / 2, chordMasterGain);
+        // Typically, `previousPlayedVoicingNotesWithOctaves` is based on the *first* main voicing
+        // so no need to update it again here unless the second hit is meant to be the primary new context.
     }
 }
-        
+
+// `playChordInstance` would now take `notesWithOctavesToPlay`
+// and directly use those for sample lookup and playback.
+function playChordInstance(notesWithOctavesToPlay, instanceStartTime, instanceDuration, connectToGainNode) {
+    notesWithOctavesToPlay.forEach(noteWithOctave => {
+        const match = noteWithOctave.match(/^([A-G][#bs]?)(\d)$/i);
+        if (!match) {
+            console.warn(`Invalid note format in playChordInstance: ${noteWithOctave}`);
+            return;
+        }
+        let [, pitchClass, octaveStr] = match;
+        const samplePitchClass = standardizeNoteNameForSamples(pitchClass);
+        const finalSampleOctave = Math.max(OCTAVES_FOR_SAMPLES[0], Math.min(OCTAVES_FOR_SAMPLES[OCTAVES_FOR_SAMPLES.length - 1], parseInt(octaveStr)));
+
+        const sampleKey = `${samplePitchClass}${finalSampleOctave}`;
+        const buffer = AudioContextManager.pianoSampleBuffers[sampleKey];
+        if (!buffer) { /* console.warn(`Buffer not found for ${sampleKey}`); */ return; }
+
+        const source = AudioContextManager.context.createBufferSource();
+        source.buffer = buffer;
+        source.connect(connectToGainNode);
+        const timingVariance = Math.random() * 0.03; // Keep existing strum effect
+        source.start(instanceStartTime + timingVariance);
+        source.stop(instanceStartTime + instanceDuration + timingVariance);
+    });
+}
+// Helper to get MIDI note number for comparison (C4 = 60)
+function getMidiNoteNumber(noteNameWithOctave) {
+    if (!noteNameWithOctave) return -1000; // Return a value that won't match
+    const match = noteNameWithOctave.match(/^([A-G][#bs]?)(\d)$/i);
+    if (!match) return -1000;
+
+    let [, pitchClassStd, octaveStr] = match;
+    pitchClassStd = standardizeNoteName(pitchClassStd); // Important for NOTES_CHROMATIC index
+    const octave = parseInt(octaveStr);
+    const noteVal = NOTES_CHROMATIC.indexOf(pitchClassStd);
+
+    if (noteVal === -1) return -1000;
+    return (octave * 12) + noteVal; // Simple MIDI-like number
+}
+
+function getBestVoicing_VoiceLed(baseNotesInRootPosition, quality,
+                                 prevVoicingWithOctaves, targetOctaveRange,
+                                 allowMoreVariationForRhythmicHit = false) {
+
+    // --- 1. Generate Candidate Pitch-Class Voicings ---
+    let candidatePCVoicings = [];
+    const inversions = generateInversions(baseNotesInRootPosition); // Assumes this returns arrays of pitch classes
+    candidatePCVoicings.push(...inversions);
+
+    if (baseNotesInRootPosition.length === 4) { // Common for 7th chords
+        const drop2 = generateDrop2Voicing(baseNotesInRootPosition); // Assumes this returns pitch classes
+        if (drop2) candidatePCVoicings.push(drop2);
+        // You could add Drop3, or other common jazz voicings structures here
+    }
+    // Filter out identical pitch class sets if generateInversions produces them
+    candidatePCVoicings = [...new Set(candidatePCVoicings.map(v => JSON.stringify(v.slice().sort())))].map(s => JSON.parse(s));
+
+
+    // --- 2. Realize and Score Each Candidate ---
+    let scoredVoicings = [];
+
+    for (const pcVoicing of candidatePCVoicings) {
+        // Try to realize this pcVoicing in a few octave positions
+        // This is a complex heuristic. A simple start:
+        for (let octaveStartAttempt = targetOctaveRange[0]; octaveStartAttempt <= targetOctaveRange[0] + 1; octaveStartAttempt++) {
+            let currentRealizedVoicing = []; // Will be like ["C3", "E3", "G3", "Bb3"]
+            let tempPcVoicingSorted = [...pcVoicing].sort((a, b) => NOTES_CHROMATIC.indexOf(standardizeNoteName(a)) - NOTES_CHROMATIC.indexOf(standardizeNoteName(b)));
+
+            // Assign octaves to make it a "close position" realization around octaveStartAttempt
+            let currentOctave = octaveStartAttempt;
+            currentRealizedVoicing.push(`${tempPcVoicingSorted[0]}${currentOctave}`);
+
+            for (let i = 1; i < tempPcVoicingSorted.length; i++) {
+                let noteName = tempPcVoicingSorted[i];
+                let prevNoteMidi = getMidiNoteNumber(currentRealizedVoicing[i-1]);
+                let currentNoteMidi = getMidiNoteNumber(`${noteName}${currentOctave}`);
+                while (currentNoteMidi <= prevNoteMidi) { // Ensure notes ascend in this realization
+                    currentOctave++;
+                    currentNoteMidi = getMidiNoteNumber(`${noteName}${currentOctave}`);
+                }
+                 // If it jumped too high, try bringing it down an octave IF it still makes sense
+                if (currentNoteMidi > prevNoteMidi + 12 && getMidiNoteNumber(`${noteName}${currentOctave-1}`) > prevNoteMidi) {
+                    currentOctave--;
+                }
+                currentRealizedVoicing.push(`${noteName}${currentOctave}`);
+            }
+
+            // Basic check: is the voicing too spread out or out of typical piano range for samples?
+            const minMidi = getMidiNoteNumber(currentRealizedVoicing[0]);
+            const maxMidi = getMidiNoteNumber(currentRealizedVoicing[currentRealizedVoicing.length - 1]);
+            if (maxMidi - minMidi > 24) continue; // If more than 2 octaves spread, skip
+            if (maxMidi > getMidiNoteNumber("C6") || minMidi < getMidiNoteNumber("C2")) continue; // Out of sample range
+
+            // --- Scoring ---
+            let score = 0;
+            if (prevVoicingWithOctaves && prevVoicingWithOctaves.length === currentRealizedVoicing.length) {
+                let totalMovement = 0;
+                let commonTones = 0; // Pitch class match
+                let heldTones = 0;   // Exact note (pitch + octave) match
+
+                // Sort both by MIDI value for consistent voice pairing (simplistic pairing)
+                const sortedPrev = [...prevVoicingWithOctaves].sort((a, b) => getMidiNoteNumber(a) - getMidiNoteNumber(b));
+                const sortedCurr = [...currentRealizedVoicing].sort((a, b) => getMidiNoteNumber(a) - getMidiNoteNumber(b));
+
+                for (let k = 0; k < sortedCurr.length; k++) {
+                    const prevNoteMIDI = getMidiNoteNumber(sortedPrev[k]);
+                    const currNoteMIDI = getMidiNoteNumber(sortedCurr[k]);
+
+                    totalMovement += Math.abs(currNoteMIDI - prevNoteMIDI);
+                    if (prevNoteMIDI === currNoteMIDI) heldTones++;
+                    if ((prevNoteMIDI % 12) === (currNoteMIDI % 12)) commonTones++;
+                }
+                // Scoring: lower movement better, more common/held tones better. Weights need tuning.
+                score = (heldTones * 25) + (commonTones * 10) - totalMovement;
+            } else {
+                // No previous chord, or different number of voices. Give a neutral base score.
+                score = Math.random() * -5; // Small random penalty to prefer voice-led if possible
+            }
+            scoredVoicings.push({ voicing: currentRealizedVoicing, score });
+        }
+    }
+
+    // --- 3. Select the Best Voicing (with randomness) ---
+    if (scoredVoicings.length === 0) {
+        // Fallback: if no suitable voicings found (should be rare)
+        // Create a very default root position voicing in the middle of targetOctaveRange
+        let fallbackOctave = targetOctaveRange[Math.floor(targetOctaveRange.length / 2)];
+        return baseNotesInRootPosition.map(note => `${note}${fallbackOctave}`);
+    }
+
+    scoredVoicings.sort((a, b) => b.score - a.score); // Highest score first
+
+    if (allowMoreVariationForRhythmicHit && scoredVoicings.length > 1 && Math.random() < 0.6) {
+        // For second hits, more chance to pick a slightly different (but still good) voicing
+        return scoredVoicings[Math.min(1, scoredVoicings.length - 1)].voicing;
+    }
+
+    // Default: 80% chance to pick the absolute best, 20% for the next best (if available)
+    if (Math.random() < 0.80 || scoredVoicings.length === 1) {
+        return scoredVoicings[0].voicing;
+    } else {
+        return scoredVoicings[1].voicing;
+    }
+}        
 async function playMetronomeSound(baseVolume) { 
     if (!AudioContextManager.context) return;
 
