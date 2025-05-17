@@ -1866,6 +1866,10 @@ const UI = {
             reverbDialValue: document.getElementById('reverb-dial-value'),
             darkModeToggle: document.getElementById('dark-mode-toggle'),
             loadingIndicator: document.getElementById('loading-indicator'),
+            rhythmicStyleContainer: document.getElementById('rhythmic-style-container'),
+            rhythmicStyleSelect: document.getElementById('rhythmic-style-select'),
+            swingToggle: document.getElementById('swing-toggle'),
+            noteNamingConvention: document.getElementById('note-naming-convention'),
             swingToggle: document.getElementById('swing-toggle'),
             noteNamingConvention: document.getElementById('note-naming-convention'),
         };
@@ -4201,8 +4205,6 @@ async function initializeApp() {
 
     initializeFretFlow();
     setupEventListeners(); 
-    this.elements.rhythmicStyleContainer = document.getElementById('rhythmic-style-container');
-    this.elements.rhythmicStyleSelect = document.getElementById('rhythmic-style-select');
 
     try {
         await AudioContextManager.initialize();
