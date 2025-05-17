@@ -2291,12 +2291,15 @@ function playNote(noteNameWithOctave, volume = 0.5, duration = 500) {
 }
 
 async function playChord(root, quality, startTime, duration) {
-    // --- Basic checks and setup (as existing) ---
     if (!UI.elements.chordsEnabled.classList.contains('active') || !AudioContextManager.samplesLoaded) {
         previousPlayedVoicingNotesWithOctaves = null; // Reset if chords are off
         return;
     }
     await AudioContextManager.ensureAudioContext();
+    if (!AudioContextManager.context) { // Extra check
+        console.error("AudioContext not available in playChord");
+        return;
+    }
 
     const baseNotesInRootPosition = getChordNotes(root, quality);
     if (!baseNotesInRootPosition || baseNotesInRootPosition.length === 0) {
@@ -2306,81 +2309,105 @@ async function playChord(root, quality, startTime, duration) {
     }
 
     const overallVolume = parseFloat(UI.elements.chordVolume.value) * 0.7;
-    if (overallVolume <= 0) {
+    if (overallVolume <= 0.001) { // Check for very low volume
         previousPlayedVoicingNotesWithOctaves = null; // Reset
         return;
     }
 
-    // --- GAIN NODE FADING (as existing) ---
+    // Fade out previous chord gain if it exists
     if (AudioContextManager.currentChordGain) {
-        // ... fade out logic ...
+        try {
+            // Ensure the gain value is valid before trying to ramp
+            if (typeof AudioContextManager.currentChordGain.gain.value === 'number' && isFinite(AudioContextManager.currentChordGain.gain.value)) {
+                AudioContextManager.currentChordGain.gain.setValueAtTime(AudioContextManager.currentChordGain.gain.value, startTime);
+                AudioContextManager.currentChordGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.05); // Quick fade
+            } else {
+                AudioContextManager.currentChordGain.gain.setValueAtTime(0.001, startTime + 0.05); // Just set to low if previous value was bad
+            }
+        } catch (e) { console.warn("Error fading out previous chord gain:", e); }
     }
-    const chordMasterGain = AudioContextManager.context.createGain();
-    // ... setup chordMasterGain ...
 
-    // --- NEW: Get Voice-Led Voicing ---
+    // Create and configure new master gain for this chord
+    const chordMasterGain = AudioContextManager.context.createGain();
+    chordMasterGain.gain.setValueAtTime(0, startTime); // Start silent
+    chordMasterGain.gain.linearRampToValueAtTime(overallVolume, startTime + 0.02); // Fade in
+
+    // --- THIS IS THE CRITICAL CONNECTION LOGIC ---
+    if (AudioContextManager.reverbNode && AudioContextManager.reverbAmount > 0.001) {
+        const dryGain = AudioContextManager.context.createGain();
+        const wetGain = AudioContextManager.context.createGain();
+
+        // Simple dry/wet mix:
+        // dryGain.gain.value = 1.0 - AudioContextManager.reverbAmount; // This can make dry too quiet
+        // wetGain.gain.value = AudioContextManager.reverbAmount;
+        // Better: keep dry at full, send a portion to wet
+        dryGain.gain.value = 1.0;
+        wetGain.gain.value = AudioContextManager.reverbAmount;
+
+
+        chordMasterGain.connect(dryGain);
+        dryGain.connect(AudioContextManager.context.destination);
+
+        chordMasterGain.connect(wetGain);
+        wetGain.connect(AudioContextManager.reverbNode);
+        // Ensure reverbNode itself is connected to destination (usually done once in setupReverb)
+        if (!AudioContextManager.reverbNodeConnected && AudioContextManager.context.destination && AudioContextManager.reverbNode.numberOfOutputs > 0) {
+            // Check if reverbNode is already connected, to prevent multiple connections
+            // This check is tricky. Simpler to rely on setupReverb.
+            // For safety, ensure it's connected if we are using it.
+            try {
+                AudioContextManager.reverbNode.disconnect(AudioContextManager.context.destination);
+            } catch(e) { /* ignore if not connected */ }
+            AudioContextManager.reverbNode.connect(AudioContextManager.context.destination);
+            AudioContextManager.reverbNodeConnected = true;
+        } else if (!AudioContextManager.reverbNodeConnected && AudioContextManager.reverbNode.numberOfOutputs === 0) {
+             AudioContextManager.reverbNode.connect(AudioContextManager.context.destination);
+             AudioContextManager.reverbNodeConnected = true;
+        }
+    } else {
+        chordMasterGain.connect(AudioContextManager.context.destination); // Direct to output
+    }
+    AudioContextManager.currentChordGain = chordMasterGain; // Store reference to this new gain node
+    // --- END OF CRITICAL CONNECTION LOGIC ---
+
+
     const firstVoicingNotesWithOctaves = getBestVoicing_VoiceLed(
         baseNotesInRootPosition,
         quality,
-        previousPlayedVoicingNotesWithOctaves, // Pass the previously played notes
-        PLAYBACK_OCTAVES // Desired octave range for the new voicing (e.g., [3, 4])
+        previousPlayedVoicingNotesWithOctaves,
+        PLAYBACK_OCTAVES
     );
 
-    // --- Play the first hit of the chord ---
+    if (!firstVoicingNotesWithOctaves || firstVoicingNotesWithOctaves.length === 0) {
+        console.warn("getBestVoicing_VoiceLed returned no notes for first hit.");
+        previousPlayedVoicingNotesWithOctaves = null;
+        return;
+    }
+    
     playChordInstance(firstVoicingNotesWithOctaves, startTime, duration / 2, chordMasterGain);
-
-    // Update the global state with the notes we just decided to play
     previousPlayedVoicingNotesWithOctaves = [...firstVoicingNotesWithOctaves];
 
-    // --- Logic for the second hit (if any) ---
     const beatDurationSec = 60 / AppState.tempo;
     const timeSigNum = parseInt(UI.elements.timeSignature.value);
     const isLikelyFullMeasureChord = (timeSigNum === 4 && duration > (beatDurationSec * 2.5)) || (timeSigNum !== 4 && duration > (beatDurationSec * (timeSigNum / 2 + 0.5)));
 
     if (isLikelyFullMeasureChord) {
-        // For the second hit, we can either:
-        // 1. Re-use `firstVoicingNotesWithOctaves`.
-        // 2. Get a slightly different voicing, possibly using `firstVoicingNotesWithOctaves` as its "previous"
-        //    to ensure it's still related but provides some rhythmic variation.
         const secondVoicingNotesWithOctaves = getBestVoicing_VoiceLed(
             baseNotesInRootPosition,
             quality,
-            firstVoicingNotesWithOctaves, // Use the first hit as the "previous context"
+            firstVoicingNotesWithOctaves, // Use the first hit as context
             PLAYBACK_OCTAVES,
-            true // Add a flag: allowMoreVariationForRhythmicHit = true
+            true
         );
-        const secondHitStartTime = startTime + duration / 2;
-        playChordInstance(secondVoicingNotesWithOctaves, secondHitStartTime, duration / 2, chordMasterGain);
-        // Typically, `previousPlayedVoicingNotesWithOctaves` is based on the *first* main voicing
-        // so no need to update it again here unless the second hit is meant to be the primary new context.
+        if (!secondVoicingNotesWithOctaves || secondVoicingNotesWithOctaves.length === 0) {
+             console.warn("getBestVoicing_VoiceLed returned no notes for second hit.");
+        } else {
+            const secondHitStartTime = startTime + duration / 2;
+            playChordInstance(secondVoicingNotesWithOctaves, secondHitStartTime, duration / 2, chordMasterGain);
+        }
     }
 }
-
-// `playChordInstance` would now take `notesWithOctavesToPlay`
-// and directly use those for sample lookup and playback.
-function playChordInstance(notesWithOctavesToPlay, instanceStartTime, instanceDuration, connectToGainNode) {
-    notesWithOctavesToPlay.forEach(noteWithOctave => {
-        const match = noteWithOctave.match(/^([A-G][#bs]?)(\d)$/i);
-        if (!match) {
-            console.warn(`Invalid note format in playChordInstance: ${noteWithOctave}`);
-            return;
-        }
-        let [, pitchClass, octaveStr] = match;
-        const samplePitchClass = standardizeNoteNameForSamples(pitchClass);
-        const finalSampleOctave = Math.max(OCTAVES_FOR_SAMPLES[0], Math.min(OCTAVES_FOR_SAMPLES[OCTAVES_FOR_SAMPLES.length - 1], parseInt(octaveStr)));
-
-        const sampleKey = `${samplePitchClass}${finalSampleOctave}`;
-        const buffer = AudioContextManager.pianoSampleBuffers[sampleKey];
-        if (!buffer) { /* console.warn(`Buffer not found for ${sampleKey}`); */ return; }
-
-        const source = AudioContextManager.context.createBufferSource();
-        source.buffer = buffer;
-        source.connect(connectToGainNode);
-        const timingVariance = Math.random() * 0.03; // Keep existing strum effect
-        source.start(instanceStartTime + timingVariance);
-        source.stop(instanceStartTime + instanceDuration + timingVariance);
-    });
-}
+        
 // Helper to get MIDI note number for comparison (C4 = 60)
 function getMidiNoteNumber(noteNameWithOctave) {
     if (!noteNameWithOctave) return -1000; // Return a value that won't match
@@ -2985,6 +3012,7 @@ function stopPlayback() {
     clearInterval(AppState.intervalId);
     AppState.intervalId = null;
     AppState.updateState({ isPlaying: false });
+    previousPlayedVoicingNotesWithOctaves = null;
 
     UI.elements.beatsContainer.querySelectorAll('.beat.active').forEach(b => b.classList.remove('active'));
     UI.elements.measures.querySelectorAll('.measure.active').forEach(m => m.classList.remove('active'));
@@ -3085,6 +3113,7 @@ function updateNextChordDisplay(currentMeasureIndex = AppState.currentMeasure) {
 }
 
 function loadProgression(progressionName, overrideKey = null, isUserSong = false) {
+    previousPlayedVoicingNotesWithOctaves = null;
     const songTitleElem = UI.elements.currentSongTitleFretboard;
     const songDescElem = UI.elements.currentSongDescriptionFretboard;
 
@@ -3212,6 +3241,7 @@ function loadProgression(progressionName, overrideKey = null, isUserSong = false
 }
 
 function updateProgressionKey(newKey) {
+    previousPlayedVoicingNotesWithOctaves = null;
     if (!currentFunctionalProgression || currentFunctionalProgression.length === 0 || UI.elements.measures.children.length === 0) {
         const targetGlobalKeyRoot_noProg = standardizeNoteName(newKey.replace('m', ''));
         const initialTuning = TUNINGS[UI.elements.chordTuning.value];
