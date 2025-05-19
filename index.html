@@ -3276,13 +3276,6 @@ UI.elements.timeSignature.addEventListener('change', () => {
     updateRhythmicStyleUIVisibility(); // ADD THIS
     if (AppState.isPlaying) { stopPlayback(); startPlayback(); }
 });
-UI.elements.rhythmicStyleSelect.addEventListener('change', (e) => {
-    AppState.currentRhythmicStyle = e.target.value;
-    AppState.currentStylePatternBeat = 0; // Reset pattern index on style change
-    AppState.currentStyleBar = 0;         // Reset bar for multi-bar patterns
-    createBeats(); // Regenerate beats with the new style
-    log(`Rhythmic style changed to: ${AppState.currentRhythmicStyle}`);
-});
 
 // In initializeApp(), after UI.init():
 updateRhythmicStyleUIVisibility(); // Call once on init
@@ -4040,6 +4033,14 @@ function addFirstChordListener() {
     }
 }
 
+function safeAddEventListener(element, event, handler) {
+    if (element && typeof element.addEventListener === 'function') {
+        element.addEventListener(event, handler);
+        return true;
+    }
+    return false;
+}
+        
 function setupEventListeners() {
     try {
         // Ensure all required UI elements are available
@@ -4139,12 +4140,12 @@ function setupEventListeners() {
         });
 
         // Added rhythmic style select handler
-        if (UI.elements.rhythmicStyleSelect) {
+        if (UI.elements.rhythmicStyleSelect && UI.elements.rhythmicStyleSelect !== null) {
             UI.elements.rhythmicStyleSelect.addEventListener('change', (e) => {
                 AppState.currentRhythmicStyle = e.target.value;
-                AppState.currentStylePatternBeat = 0; // Reset pattern index on style change
-                AppState.currentStyleBar = 0;         // Reset bar for multi-bar patterns
-                createBeats(); // Regenerate beats with the new style
+                AppState.currentStylePatternBeat = 0;
+                AppState.currentStyleBar = 0;
+                createBeats();
                 log(`Rhythmic style changed to: ${AppState.currentRhythmicStyle}`);
             });
         }
