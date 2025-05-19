@@ -1704,9 +1704,6 @@ const progressions = {
 // ==================================
 // === APPLICATION STATE ==========
 // ==================================
-// ==================================
-// === APPLICATION STATE ==========
-// ==================================
 const AppState = {
     isPlaying: false,
     currentBeat: 0, // Current UI beat subdivision being played (0-7 for 4/4 eighths)
@@ -1809,8 +1806,6 @@ const RHYTHMIC_STYLES = {
     }
 };
 
-// (Keep existing currentFunctionalProgression, currentProgressionName, currentDrumSetIndex, previousPlayedVoicingNotesWithOctaves)
-
 let currentFunctionalProgression = [];
 let currentProgressionName = "";
 let currentDrumSetIndex = 0;
@@ -1870,12 +1865,10 @@ const UI = {
             rhythmicStyleSelect: document.getElementById('rhythmic-style-select'),
             swingToggle: document.getElementById('swing-toggle'),
             noteNamingConvention: document.getElementById('note-naming-convention'),
-            swingToggle: document.getElementById('swing-toggle'),
-            noteNamingConvention: document.getElementById('note-naming-convention'),
         };
         Object.entries(this.elements).forEach(([key, element]) => {
             if (!element && !['currentSongTitle', 'currentSongDescription', 'swingToggle', 'noteNamingConvention'].includes(key)) {
-                 console.warn(`[UI Init] Missing DOM element: ${key}`);
+                 console.error(`[UI Init - CRITICAL] Missing DOM element by ID: '${key}'. Element is ${element}.`);
             }
         });
         log("UI elements cached.");
@@ -1885,7 +1878,7 @@ const UI = {
 // ==================================
 // === AUDIO MANAGEMENT ===========
 // ==================================
-const AudioContextManager = { // Correctly defined object
+const AudioContextManager = { 
     context: null,
     soundBuffers: {},
     pianoSampleBuffers: {},
@@ -2100,7 +2093,6 @@ AudioContextManager.setupReverb = async function() {
 // === MUSIC THEORY HELPERS =======
 // ==================================
 function transposeChordData(chordData, originalSongKeyRoot, targetGlobalKeyRoot) {
-    // console.log(`TRANSPOSE CALL: chordData=${JSON.stringify(chordData)}, origKeyRoot=${originalSongKeyRoot}, targetKeyRoot=${targetGlobalKeyRoot}`);
     const originalKeyRootIndex = NOTES_CHROMATIC.indexOf(standardizeNoteName(originalSongKeyRoot));
     const targetKeyRootIndex = NOTES_CHROMATIC.indexOf(standardizeNoteName(targetGlobalKeyRoot));
     if (originalKeyRootIndex === -1 || targetKeyRootIndex === -1) {
@@ -2115,7 +2107,6 @@ function transposeChordData(chordData, originalSongKeyRoot, targetGlobalKeyRoot)
     }
     const transposedChordRootIndex = (originalChordRootIndex + transpositionInterval + 12) % 12;
     const transposedRoot = NOTES_CHROMATIC[transposedChordRootIndex];
-    // console.log(`  -> transpositionInterval=${transpositionInterval}, origChordRootIdx=${originalChordRootIndex}, transposedChordRootIdx=${transposedChordRootIndex}, transposedRoot=${transposedRoot}`);
     return { root: transposedRoot, quality: chordData.quality };
 }  
         
@@ -2203,7 +2194,6 @@ function parseRomanNumeralToAbsoluteChord(romanString, key) {
     }
     const romanMatch = firstChordInSplit.match(/^(b|#)?([IViv]+)(.*)$/);
     if (!romanMatch) {
-        // console.warn(`Could not parse Roman numeral or absolute chord: "${firstChordInSplit}" in key ${key}. Assuming Imaj7 of key.`);
         return { root: normalizedKeyRoot, quality: 'maj7', originalRoman: romanString };
     }
     const accidental = romanMatch[1];
@@ -2342,10 +2332,7 @@ function getSampleFileName(note, octave) {
 }
 
 // ==================================
-// === AUDIO PLAYBACK ============= (ensureAudioInitializedUserInteraction, playNote, playChord, playMetronomeSound)
-// ==================================
-// ==================================
-// === AUDIO PLAYBACK ============= (ensureAudioInitializedUserInteraction, playNote, playChord, playMetronomeSound)
+// === AUDIO PLAYBACK =============
 // ==================================
 async function ensureAudioInitializedUserInteraction() {
     if (!AppState.audioInitialized) {
@@ -2391,7 +2378,6 @@ function playNote(noteNameWithOctave, volume = 0.5, duration = 500) {
 
 function playChordInstance(notesWithOctavesToPlay, instanceStartTime, instanceDuration, connectToGainNode) {
     if (!notesWithOctavesToPlay || notesWithOctavesToPlay.length === 0) {
-        // console.warn("playChordInstance called with no notes to play.");
         return;
     }
     notesWithOctavesToPlay.forEach(noteWithOctave => {
@@ -2406,13 +2392,13 @@ function playChordInstance(notesWithOctavesToPlay, instanceStartTime, instanceDu
 
         const sampleKey = `${samplePitchClass}${finalSampleOctave}`;
         const buffer = AudioContextManager.pianoSampleBuffers[sampleKey];
-        if (!buffer) { /* console.warn(`Buffer not found for ${sampleKey} in playChordInstance`); */ return; }
+        if (!buffer) { return; }
 
         try {
             const source = AudioContextManager.context.createBufferSource();
             source.buffer = buffer;
             source.connect(connectToGainNode);
-            const timingVariance = Math.random() * 0.03; // Keep existing strum effect
+            const timingVariance = Math.random() * 0.03; 
             source.start(instanceStartTime + timingVariance);
             source.stop(instanceStartTime + instanceDuration + timingVariance);
         } catch (e) {
@@ -2421,26 +2407,24 @@ function playChordInstance(notesWithOctavesToPlay, instanceStartTime, instanceDu
     });
 }
 
-// Helper to get MIDI note number for comparison (C4 = 60)
 function getMidiNoteNumber(noteNameWithOctave) {
-    if (!noteNameWithOctave) return -1000; // Return a value that won't match
+    if (!noteNameWithOctave) return -1000; 
     const match = noteNameWithOctave.match(/^([A-G][#bs]?)(\d)$/i);
     if (!match) return -1000;
 
     let [, pitchClassStd, octaveStr] = match;
-    pitchClassStd = standardizeNoteName(pitchClassStd); // Important for NOTES_CHROMATIC index
+    pitchClassStd = standardizeNoteName(pitchClassStd); 
     const octave = parseInt(octaveStr);
     const noteVal = NOTES_CHROMATIC.indexOf(pitchClassStd);
 
     if (noteVal === -1) return -1000;
-    return (octave * 12) + noteVal; // Simple MIDI-like number
+    return (octave * 12) + noteVal; 
 }
 
 function getBestVoicing_VoiceLed(baseNotesInRootPosition, quality,
                                  prevVoicingWithOctaves, targetOctaveRange,
                                  allowMoreVariationForRhythmicHit = false) {
 
-    // --- 1. Generate Candidate Pitch-Class Voicings ---
     let candidatePCVoicings = [];
     const inversions = generateInversions(baseNotesInRootPosition);
     candidatePCVoicings.push(...inversions);
@@ -2451,8 +2435,6 @@ function getBestVoicing_VoiceLed(baseNotesInRootPosition, quality,
     }
     candidatePCVoicings = [...new Set(candidatePCVoicings.map(v => JSON.stringify(v.slice().sort())))].map(s => JSON.parse(s));
 
-
-    // --- 2. Realize and Score Each Candidate ---
     let scoredVoicings = [];
 
     for (const pcVoicing of candidatePCVoicings) {
@@ -2482,7 +2464,7 @@ function getBestVoicing_VoiceLed(baseNotesInRootPosition, quality,
             const minSampleOctave = OCTAVES_FOR_SAMPLES[0];
             const maxSampleOctave = OCTAVES_FOR_SAMPLES[OCTAVES_FOR_SAMPLES.length-1];
 
-            if (maxMidi - minMidi > 36) continue; // Max 3 octave spread, can be adjusted
+            if (maxMidi - minMidi > 36) continue;
             if (maxMidi > getMidiNoteNumber(`${NOTES_CHROMATIC[11]}${maxSampleOctave}`) || minMidi < getMidiNoteNumber(`${NOTES_CHROMATIC[0]}${minSampleOctave}`)) continue;
 
 
@@ -2512,7 +2494,7 @@ function getBestVoicing_VoiceLed(baseNotesInRootPosition, quality,
 
     if (scoredVoicings.length === 0) {
         let fallbackOctave = targetOctaveRange[Math.floor(targetOctaveRange.length / 2)];
-        if (!OCTAVES_FOR_SAMPLES.includes(fallbackOctave)) fallbackOctave = OCTAVES_FOR_SAMPLES[0]; // Ensure valid fallback
+        if (!OCTAVES_FOR_SAMPLES.includes(fallbackOctave)) fallbackOctave = OCTAVES_FOR_SAMPLES[0];
         return baseNotesInRootPosition.map(note => `${note}${fallbackOctave}`);
     }
 
@@ -2580,8 +2562,7 @@ async function playChord(root, quality, startTime, duration) {
         wetGain.connect(AudioContextManager.reverbNode);
 
         if (!AudioContextManager.reverbNodeConnected && AudioContextManager.context.destination) {
-             // Re-ensure reverbNode is connected to destination if it got disconnected or was never properly.
-            try { AudioContextManager.reverbNode.disconnect(); } catch(e) {} // Disconnect all first
+            try { AudioContextManager.reverbNode.disconnect(); } catch(e) {} 
             AudioContextManager.reverbNode.connect(AudioContextManager.context.destination);
             AudioContextManager.reverbNodeConnected = true;
         }
@@ -2627,26 +2608,17 @@ async function playChord(root, quality, startTime, duration) {
     }
 }
         
-// Modified to accept specific volume and sounds for the current tick
 async function playMetronomeSound(volumeForThisTick, soundsForThisTickString) { 
     if (!AudioContextManager.context || !soundsForThisTickString) return;
 
     const metronomeOverallVolume = parseFloat(UI.elements.metronomeVolume.value);
-    const selectedSoundType = UI.elements.soundType.value; // Still needed for drum kit selection
+    const selectedSoundType = UI.elements.soundType.value; 
 
-    // soundsForThisTickString comes from beatElement.dataset.sound (e.g., "kick,hihat" or "click")
     const soundsToPlayArray = soundsForThisTickString.split(',');
     
-    // volumeForThisTick is already the final calculated volume for this specific subdivision
-    // but we still need accentIntensity if the original beat was a strong one.
-    // This requires knowing if the *original styled beat* was strong.
-    // For simplicity now, let's assume accentIntensity is baked into volumeForThisTick
-    // or, more accurately, we can apply it here if we know the beatElement.
-    // Let's try to get the beatElement again to check its baseVolume for accent.
     const beatElement = UI.elements.beatsContainer.querySelector(`.beat[data-beat="${AppState.currentBeat}"]`);
     const isStrongStyledBeat = beatElement ? (parseFloat(beatElement.dataset.baseVolume) >= 0.9) : false;
     const accentMultiplier = isStrongStyledBeat ? parseFloat(UI.elements.accentIntensity?.value || 1.0) : 1.0;
-
 
     for (let soundKey of soundsToPlayArray) {
         soundKey = soundKey.trim();
@@ -2654,12 +2626,12 @@ async function playMetronomeSound(volumeForThisTick, soundsForThisTickString) {
 
         let bufferToPlay;
         let effectiveSoundKey = soundKey;
-        let soundSpecificMixLevel = 1.0; // From individual drum volume sliders
+        let soundSpecificMixLevel = 1.0; 
 
-        if (selectedSoundType === 'drums') { // This style logic applies ONLY if master sound type is drums
+        if (selectedSoundType === 'drums') { 
             const currentDrumSet = drumSoundSets[currentDrumSetIndex];
             let soundFilename;
-            switch (soundKey) { // soundKey is now 'kick', 'snare', or 'hihat' from the pattern
+            switch (soundKey) { 
                 case 'kick':
                     soundFilename = currentDrumSet.kick;
                     if (UI.elements.kickVolume) soundSpecificMixLevel = parseFloat(UI.elements.kickVolume.value);
@@ -2672,7 +2644,7 @@ async function playMetronomeSound(volumeForThisTick, soundsForThisTickString) {
                     soundFilename = currentDrumSet.hihat;
                     if (UI.elements.hihatVolume) soundSpecificMixLevel = parseFloat(UI.elements.hihatVolume.value);
                     break;
-                default: // Should not happen if pattern is well-defined for drums
+                default: 
                     effectiveSoundKey = 'click'; 
                     soundFilename = null; 
                     soundSpecificMixLevel = 1.0; 
@@ -2682,7 +2654,6 @@ async function playMetronomeSound(volumeForThisTick, soundsForThisTickString) {
             if (soundFilename) { 
                 effectiveSoundKey = soundFilename; 
                 if (!AudioContextManager.soundBuffers[soundFilename]) {
-                    // On-the-fly loading (already in your code)
                     try {
                         const response = await fetch(`./${soundFilename}`);
                         if (!response.ok) throw new Error(`HTTP ${response.status} for ${soundFilename}`);
@@ -2690,7 +2661,7 @@ async function playMetronomeSound(volumeForThisTick, soundsForThisTickString) {
                         AudioContextManager.soundBuffers[soundFilename] = await AudioContextManager.context.decodeAudioData(arrayBuffer);
                     } catch (e) {
                         console.error(`Failed to load drum sample ${soundFilename} on-the-fly:`, e);
-                        bufferToPlay = AudioContextManager.soundBuffers[soundKey] || AudioContextManager.soundBuffers['click']; // Fallback
+                        bufferToPlay = AudioContextManager.soundBuffers[soundKey] || AudioContextManager.soundBuffers['click'];
                         effectiveSoundKey = soundKey; 
                     }
                 }
@@ -2699,16 +2670,13 @@ async function playMetronomeSound(volumeForThisTick, soundsForThisTickString) {
                  bufferToPlay = AudioContextManager.soundBuffers[effectiveSoundKey] || AudioContextManager.soundBuffers['click'];
             }
         } else { 
-            // If not 'drums', the sound is 'click' or 'woodblock' directly
             effectiveSoundKey = selectedSoundType; 
             bufferToPlay = AudioContextManager.soundBuffers[selectedSoundType] || AudioContextManager.soundBuffers['click'];
             soundSpecificMixLevel = 1.0; 
         }
 
         if (!bufferToPlay) continue;
-
-        // volumeForThisTick is the specific volume for this subdivision from dataset.volume
-        // It already considers user overrides or style defaults.
+        
         let actualFinalVolume = metronomeOverallVolume * volumeForThisTick * soundSpecificMixLevel * accentMultiplier;
         actualFinalVolume = Math.min(Math.max(actualFinalVolume, 0), 1.0); 
 
@@ -2722,7 +2690,6 @@ async function playMetronomeSound(volumeForThisTick, soundsForThisTickString) {
         source.connect(gainNode);
         gainNode.connect(AudioContextManager.context.destination);
 
-        // Reverb for drums
         if (selectedSoundType === 'drums' && AudioContextManager.reverbNode && AudioContextManager.reverbAmount > 0.01) {
             const reverbSendGain = AudioContextManager.context.createGain();
             reverbSendGain.gain.setValueAtTime(0.05 * AudioContextManager.reverbAmount, AudioContextManager.context.currentTime); 
@@ -2917,116 +2884,95 @@ function createBeats() {
     const timeSignatureNum = parseInt(UI.elements.timeSignature.value);
     const selectedSoundType = UI.elements.soundType.value;
     const isDrumStyleActive = selectedSoundType === 'drums' && timeSignatureNum === 4;
-    const currentStyleKey = isDrumStyleActive ? AppState.currentRhythmicStyle : "quarterNotes"; // Fallback for non-drum styles
+    const currentStyleKey = isDrumStyleActive ? AppState.currentRhythmicStyle : "quarterNotes"; 
     const styleDefinition = RHYTHMIC_STYLES[currentStyleKey] || RHYTHMIC_STYLES.quarterNotes;
 
-    // Determine how many UI beat divs to show (always 8 for 4/4 currently)
     let beatsToDisplay = timeSignatureNum;
-    let subdivisionFactor = 1; // How many subdivisions per main beat number
+    let subdivisionFactor = 1; 
     if (timeSignatureNum === 4) {
-        beatsToDisplay = 8; // We always show 8 subdivisions for 4/4
+        beatsToDisplay = 8; 
         subdivisionFactor = 2;
     } else if (timeSignatureNum === 6 || timeSignatureNum === 12) {
-        beatsToDisplay = timeSignatureNum; // For 6/8, display 6 eighths; for 12/8, 12
-        subdivisionFactor = 3; // Grouped in 3s
-    } else { // 2/4, 3/4, 7/8 etc.
+        beatsToDisplay = timeSignatureNum; 
+        subdivisionFactor = 3; 
+    } else { 
         beatsToDisplay = timeSignatureNum;
-        subdivisionFactor = 1; // Each div is a main beat
+        subdivisionFactor = 1; 
     }
 
     for (let i = 0; i < beatsToDisplay; i++) {
         const beatDiv = document.createElement('div');
         beatDiv.className = 'beat';
-        beatDiv.dataset.beat = i; // This is the UI beat index (0-7 for 4/4)
+        beatDiv.dataset.beat = i; 
 
-        // --- Labeling ---
         let beatLabel = `${Math.floor(i / subdivisionFactor) + 1}`;
-        if (subdivisionFactor === 2 && (i % subdivisionFactor !== 0)) { // For 4/4 eighths
-            beatLabel = (i % 2 === 1) ? "&" : `${Math.floor(i / 2) + 1}`; // Label as 1, &, 2, &, ...
+        if (subdivisionFactor === 2 && (i % subdivisionFactor !== 0)) { 
+            beatLabel = (i % 2 === 1) ? "&" : `${Math.floor(i / 2) + 1}`; 
         } else if (subdivisionFactor > 1 && (i % subdivisionFactor !== 0)) {
-             // Could add more specific labeling for triplets if needed
         }
         beatDiv.innerHTML = beatLabel;
 
-
-        // --- Applying Style or Default Sounds ---
         let sound = 'silent';
         let volume = 0.1;
-        let color = '#666666'; // Default silent color
+        let color = '#666666'; 
 
         if (isDrumStyleActive) {
-            // Use the style pattern definition for drums in 4/4
-            // For multi-bar patterns, figure out which part of the pattern this UI beat corresponds to
-            // currentStylePatternBeat will map the overall progression through the style's pattern
-            // For a 1-bar style, patternIndex will be `i`.
-            // For a 2-bar style (16 beats), if UI shows 8 beats, it's `i` for bar 0, `i + 8` for bar 1
-            // This part is tricky and depends on how playBeat manages currentStyleBar
-            // Simpler: createBeats always renders the *first bar* of a multi-bar style,
-            // playBeat() will use AppState.currentStylePatternBeat to select the correct sound.
-            
-            const patternIndexInStyle = i % styleDefinition.beatsPerPattern; // For displaying the first bar of any style
+            const patternIndexInStyle = i % styleDefinition.beatsPerPattern; 
             const beatData = styleDefinition.pattern[patternIndexInStyle];
 
             if (beatData) {
                 sound = beatData.sound;
                 volume = beatData.volume;
                 color = beatData.color;
-            } else { // Explicit null in pattern means silence
+            } else { 
                 sound = 'silent';
-                volume = 0.0; // Ensure it's truly silent
+                volume = 0.0; 
                 color = '#444444';
             }
         } else {
-            // Non-drum sound type OR not 4/4 time - use basic click/woodblock logic
-            sound = selectedSoundType; // 'click' or 'woodblock'
-            if (i % subdivisionFactor === 0) { // Main beat
+            sound = selectedSoundType; 
+            if (i % subdivisionFactor === 0) { 
                 volume = (i === 0) ? 1.0 : 0.7;
                 color = (i === 0) ? '#1F618D' : '#5DADE2';
-            } else { // Subdivision
+            } else { 
                 volume = 0.3;
                 color = '#9E9E9E';
             }
         }
 
         beatDiv.dataset.sound = sound;
-        beatDiv.dataset.baseVolume = volume; // Store the style's original volume
-        beatDiv.dataset.volume = volume;     // Current volume (can be changed by user click)
+        beatDiv.dataset.baseVolume = volume; 
+        beatDiv.dataset.volume = volume;     
         beatDiv.style.backgroundColor = color;
         
         beatDiv.addEventListener('click', () => {
-             // Pass 'isDrumStyleActive' to inform toggleBeatAccent
             toggleBeatAccent(beatDiv, selectedSoundType, subdivisionFactor > 1 && (i % subdivisionFactor !== 0), isDrumStyleActive);
         });
         beatsContainer.appendChild(beatDiv);
     }
 }
         
-// Add new parameter: isDrumStyleActive
 function toggleBeatAccent(beatElement, currentSoundType, isSubdivision, isDrumStyleActive) {
     const currentVolume = parseFloat(beatElement.dataset.volume);
     let newVolume, newSound, newColor;
 
-    // If a drum style is active, user clicks cycle through drum sounds for that beat
     if (isDrumStyleActive) { 
         const drumCycle = [
-            { sound: 'silent',      volume: 0,   color: '#444' }, // Explicit silent
+            { sound: 'silent',      volume: 0,   color: '#444' }, 
             { sound: 'hihat',       volume: 0.3, color: '#9E9E9E' },
-            { sound: 'snare',       volume: 0.8, color: '#D9534F' }, // Snare only
-            { sound: 'kick',        volume: 1.0, color: '#1F618D' }, // Kick only
+            { sound: 'snare',       volume: 0.8, color: '#D9534F' }, 
+            { sound: 'kick',        volume: 1.0, color: '#1F618D' }, 
             { sound: 'snare,hihat', volume: 0.8, color: '#D35400' },
             { sound: 'kick,hihat',  volume: 1.0, color: '#27AE60' }
         ];
-        // Find current state in cycle
         let currentIndex = drumCycle.findIndex(s => s.sound === beatElement.dataset.sound && Math.abs(s.volume - currentVolume) < 0.01);
-        if (currentIndex === -1) { // If not found, try to find by sound or assume default
+        if (currentIndex === -1) { 
             currentIndex = drumCycle.findIndex(s => s.sound.startsWith(beatElement.dataset.sound.split(',')[0])) || 0;
         }
 
         let nextIndex = (currentIndex + 1) % drumCycle.length;
         
-        // Simplified: For subdivisions, maybe limit the heavy sounds
         if (isSubdivision && (drumCycle[nextIndex].sound.includes('kick') || drumCycle[nextIndex].sound.includes('snare,'))) {
-            // If trying to put a heavy sound on a weak subdivision, maybe cycle to hihat or silent
              if (!beatElement.dataset.sound.includes('kick') && !beatElement.dataset.sound.includes('snare')) {
                 nextIndex = drumCycle.findIndex(s => s.sound === 'hihat') ?? 1;
              }
@@ -3034,7 +2980,7 @@ function toggleBeatAccent(beatElement, currentSoundType, isSubdivision, isDrumSt
         newSound = drumCycle[nextIndex].sound; 
         newVolume = drumCycle[nextIndex].volume; 
         newColor = drumCycle[nextIndex].color;
-    } else { // Original logic for click/woodblock (non-styled or non-drum sounds)
+    } else { 
         const simpleCycle = [
             { volume: 0,   sound: 'silent',         color: '#666' },
             { volume: 0.3, sound: currentSoundType, color: '#9E9E9E' },
@@ -3048,7 +2994,6 @@ function toggleBeatAccent(beatElement, currentSoundType, isSubdivision, isDrumSt
     }
     beatElement.dataset.volume = newVolume;
     beatElement.dataset.sound = newSound;
-    // beatElement.dataset.baseVolume is NOT updated by user clicks. It stores the style's default.
     beatElement.style.backgroundColor = newColor;
 }
 
@@ -3069,45 +3014,38 @@ async function playBeat() {
     const measures = UI.elements.measures.children;
     if (beatsUI.length === 0) return;
 
-    // --- Determine active style and its properties ---
     const timeSignatureNum = parseInt(UI.elements.timeSignature.value);
     const selectedSoundType = UI.elements.soundType.value;
     const isDrumStyleActive = selectedSoundType === 'drums' && timeSignatureNum === 4;
     const activeStyleKey = isDrumStyleActive ? AppState.currentRhythmicStyle : "quarterNotes";
     const activeStyle = RHYTHMIC_STYLES[activeStyleKey] || RHYTHMIC_STYLES.quarterNotes;
 
-    // --- Update UI beat active state (uses AppState.currentBeat for UI) ---
     beatsUI.forEach(b => b.classList.remove('active'));
-    const currentUIBeatElement = beatsUI[AppState.currentBeat]; // UI element to highlight
+    const currentUIBeatElement = beatsUI[AppState.currentBeat]; 
     if (currentUIBeatElement) {
         currentUIBeatElement.classList.add('active');
     }
     
-    // --- Get sound data for the *actual* pattern beat to play ---
-    // `AppState.currentStylePatternBeat` is the true index into the style's pattern array
     const stylePatternData = activeStyle.pattern[AppState.currentStylePatternBeat];
     let soundToPlay, volumeToPlay;
 
-    if (currentUIBeatElement) { // User might have overridden the style for this UI beat
+    if (currentUIBeatElement) { 
         soundToPlay = currentUIBeatElement.dataset.sound;
         volumeToPlay = parseFloat(currentUIBeatElement.dataset.volume);
-    } else if (stylePatternData) { // Fallback to style if UI element is missing (should not happen)
+    } else if (stylePatternData) { 
         soundToPlay = stylePatternData.sound;
         volumeToPlay = stylePatternData.volume;
-    } else { // Silence if no style data and no UI element
+    } else { 
         soundToPlay = 'silent';
         volumeToPlay = 0;
     }
     
     if (volumeToPlay > 0 || (selectedSoundType === 'drums' && soundToPlay !== 'silent') ) { 
-        // Pass the sound and volume derived from either user override or style pattern
         await playMetronomeSound(volumeToPlay, soundToPlay); 
     }
 
-    // --- Chord Playback Logic (largely unchanged, uses AppState.currentBeat for timing within measure) ---
     if (measures.length > 0) {
         let measureToPlayIndex = AppState.currentMeasure;
-        // ... (looping logic for measureToPlayIndex as before) ...
          if (AppState.loopingActive && AppState.loopStartMeasure !== -1 && AppState.loopEndMeasure !== -1) {
             if (AppState.currentMeasure < AppState.loopStartMeasure || AppState.currentMeasure > AppState.loopEndMeasure) {
                 AppState.currentMeasure = AppState.loopStartMeasure;
@@ -3115,20 +3053,18 @@ async function playBeat() {
             measureToPlayIndex = AppState.currentMeasure;
         }
 
-
         const currentMeasureElement = measures[measureToPlayIndex];
         if (currentMeasureElement) {
             Array.from(measures).forEach((m, idx) => m.classList.toggle('active', idx === measureToPlayIndex));
             
             const isSplitMeasure = currentMeasureElement.dataset.isSplit === 'true';
-            const is44Time = timeSignatureNum === 4; // already have this
-            const numDisplayedBeats = beatsUI.length; // e.g. 8 for 4/4
+            const is44Time = timeSignatureNum === 4; 
+            const numDisplayedBeats = beatsUI.length; 
 
             let activePartIndex = 0;
-            // Chord plays on the main beats, determined by AppState.currentBeat (UI beat)
             let playChordOnThisBeat = AppState.currentBeat === 0; 
             if (is44Time && isSplitMeasure && numDisplayedBeats === 8) {
-                activePartIndex = (AppState.currentBeat < 4) ? 0 : 1; // UI beat determines which half of split measure
+                activePartIndex = (AppState.currentBeat < 4) ? 0 : 1; 
                 playChordOnThisBeat = (AppState.currentBeat === 0 || AppState.currentBeat === 4);
             }
             
@@ -3137,7 +3073,7 @@ async function playBeat() {
             });
 
             const activeMeasurePart = currentMeasureElement.querySelectorAll('.measure-part')[activePartIndex];
-            if (activeMeasurePart && playChordOnThisBeat) { // Only play/update on designated chord beats
+            if (activeMeasurePart && playChordOnThisBeat) { 
                 const root = activeMeasurePart.querySelector('.root-note')?.value;
                 const quality = activeMeasurePart.querySelector('.chord-quality')?.value;
                 const scaleRoot = activeMeasurePart.querySelector('.second-key')?.value;
@@ -3149,9 +3085,9 @@ async function playBeat() {
                     if (AppState.guideTonesActive) highlightGuideTones(activeMeasurePart);
                     
                     const beatDurationSec = 60 / AppState.tempo;
-                    let chordPlayDurationSec = beatDurationSec * (timeSignatureNum === 4 && numDisplayedBeats === 8 ? 4 : timeSignatureNum) ; // Default full bar
+                    let chordPlayDurationSec = beatDurationSec * (timeSignatureNum === 4 && numDisplayedBeats === 8 ? 4 : timeSignatureNum) ; 
                     if (is44Time && isSplitMeasure && numDisplayedBeats === 8) {
-                         chordPlayDurationSec = beatDurationSec * 2; // Half bar for split measures
+                         chordPlayDurationSec = beatDurationSec * 2; 
                     }
                     await playChord(root, quality, AudioContextManager.context.currentTime, chordPlayDurationSec);
                 }
@@ -3159,12 +3095,11 @@ async function playBeat() {
         }
     }
 
-    // --- Advance Beat Counters ---
-    AppState.currentBeat = (AppState.currentBeat + 1) % beatsUI.length; // UI beat counter
-    AppState.currentStylePatternBeat = (AppState.currentStylePatternBeat + 1) % activeStyle.beatsPerPattern; // Style pattern counter
+    AppState.currentBeat = (AppState.currentBeat + 1) % beatsUI.length; 
+    AppState.currentStylePatternBeat = (AppState.currentStylePatternBeat + 1) % activeStyle.beatsPerPattern; 
 
-    if (AppState.currentBeat === 0) { // UI measure has ended
-        AppState.currentStyleBar = (AppState.currentStyleBar + 1) % (activeStyle.beatsPerPattern / beatsUI.length || 1); // Advance style bar if multi-bar
+    if (AppState.currentBeat === 0) { 
+        AppState.currentStyleBar = (AppState.currentStyleBar + 1) % (activeStyle.beatsPerPattern / beatsUI.length || 1); 
 
         if (AppState.loopingActive && AppState.loopStartMeasure !== -1 && AppState.loopEndMeasure !== -1) {
             AppState.currentMeasure = (AppState.currentMeasure >= AppState.loopEndMeasure) ? AppState.loopStartMeasure : AppState.currentMeasure + 1;
@@ -3172,7 +3107,6 @@ async function playBeat() {
             AppState.currentMeasure = (AppState.currentMeasure + 1) % measures.length;
         }
         
-        // If a new measure starts, and the style pattern also resets, ensure style bar resets
         if (AppState.currentStylePatternBeat === 0) {
             AppState.currentStyleBar = 0;
         }
@@ -3187,17 +3121,12 @@ async function startPlayback() {
 
         const timeSignatureNumerator = parseInt(UI.elements.timeSignature.value);
         let intervalMs = (60 / AppState.tempo) * 1000;
-        // If 4/4 time and we have 8 UI beats (eighth notes), interval is for eighth notes
         if (timeSignatureNumerator === 4 && UI.elements.beatsContainer.querySelectorAll('.beat').length === 8) {
             intervalMs /= 2; 
         } else if ((timeSignatureNumerator === 6 || timeSignatureNumerator === 12) && UI.elements.beatsContainer.querySelectorAll('.beat').length === timeSignatureNumerator){
-            // For 6/8 or 12/8, if UI beats match numerator, interval is for 8th notes
-            // No change to intervalMs needed if it's already for the main beat
         }
 
-
-        // Reset counters if not resuming from a stop
-        if (!AppState.intervalId) { // True if fully stopped, not just tempo change
+        if (!AppState.intervalId) { 
             AppState.currentBeat = 0;
             AppState.currentStylePatternBeat = 0;
             AppState.currentStyleBar = 0;
@@ -3248,37 +3177,11 @@ function updateRhythmicStyleUIVisibility() {
     const styleContainer = UI.elements.rhythmicStyleContainer;
 
     if (soundType === 'drums' && timeSig === '4') {
-        styleContainer.style.display = 'inline-flex'; // Or 'flex' or 'block' as per your layout
+        styleContainer.style.display = 'inline-flex'; 
     } else {
         styleContainer.style.display = 'none';
-        // If style was active and conditions change, revert to quarter notes for safety,
-        // though createBeats will handle it based on non-drum sound type.
-        // AppState.currentRhythmicStyle = "quarterNotes"; 
     }
 }
-
-// In setupEventListeners():
-UI.elements.soundType.addEventListener('change', (e) => {
-    onMetronomeInstrumentChange(e.target.value);
-    updateRhythmicStyleUIVisibility(); // ADD THIS
-    createBeats(); // Regenerate beats when sound type changes
-});
-UI.elements.timeSignature.addEventListener('change', () => {
-    createBeats();
-    const is44 = parseInt(UI.elements.timeSignature.value) === 4;
-    document.querySelectorAll('.measure .split-measure-button').forEach(btn => {
-        btn.disabled = !is44;
-        btn.title = is44 ? "" : "Splitting only available in 4/4.";
-        if (!is44 && btn.closest('.measure').dataset.isSplit === 'true') {
-            toggleSplitMeasure(btn.closest('.measure')); 
-        }
-    });
-    updateRhythmicStyleUIVisibility(); // ADD THIS
-    if (AppState.isPlaying) { stopPlayback(); startPlayback(); }
-});
-
-// In initializeApp(), after UI.init():
-updateRhythmicStyleUIVisibility(); // Call once on init
 
 // ==================================
 // === PROGRESSION MANAGEMENT =====
@@ -3436,17 +3339,7 @@ function loadProgression(progressionName, overrideKey = null, isUserSong = false
 
         let finalPartsDataForMeasure = [];
         partsToProcessBasedOnOriginalDefinition.forEach(originalPart => {
-            // console.log(`--- Debugging Load ---`);
-            // console.log(`Progression: ${progressionName}, Measure Index: ${index}`);
-            // console.log(`Raw Chord String from Definition for this measure: '${rawChordStringFromDefinition}' (This part's original might be different if split)`);
-            // console.log(`Original Song Default Key: '${originalSongDefaultKey}', Root: '${originalSongDefaultKeyRoot}'`);
-            // console.log(`Target Global Key: '${targetGlobalKey}', Root: '${targetGlobalKeyRoot}'`);
-            // console.log(`Parsed in Original Context (originalPart.parsedInOriginalContext):`, JSON.parse(JSON.stringify(originalPart.parsedInOriginalContext)));
-            
             const transposedChord = transposeChordData(originalPart.parsedInOriginalContext, originalSongDefaultKeyRoot, targetGlobalKeyRoot);
-            
-            // console.log(`Transposed Chord (transposedChord):`, JSON.parse(JSON.stringify(transposedChord)));
-            // console.log(`-----------------------`);
             
             let finalScaleRoot, finalScaleType;
             if (originalPart.originalScaleRoot && originalPart.originalScaleType) {
@@ -3650,9 +3543,7 @@ function addMeasure(root = 'C', quality = 'maj7', scaleRoot = 'C', scaleType = '
     measureDiv.dataset.isSplit = isInitiallySplit ? 'true' : 'false';
     if (isInitiallySplit) measureDiv.classList.add('split-active');
 
-    // Store the key context this measure is being added in (for user-added measures)
     measureDiv.dataset.lastKeyContext = UI.elements.keySelect.value;
-
 
     let measureHTML = `<div class="measure-header"><span class="measure-number">${newMeasureIndex + 1}</span></div>`;
     measureHTML += createMeasurePartHTML({ root, quality, scaleRoot, scaleType }, 0);
@@ -3688,7 +3579,6 @@ function addMeasure(root = 'C', quality = 'maj7', scaleRoot = 'C', scaleType = '
     updateMeasureNumbers(); 
     if (newMeasureIndex === 0) addFirstChordListener();
     updateNextChordDisplay();
-    // log(`Added measure ${newMeasureIndex + 1}${isInitiallySplit ? ' (split)' : ''}`); // Reduced log verbosity
 }
 
 function toggleSplitMeasure(measureDiv) {
@@ -3785,8 +3675,6 @@ function handleMeasureControlChange(measurePartDiv, changedElement) {
 
     if (AppState.guideTonesActive) highlightGuideTones(measurePartDiv); 
     updateNextChordDisplay(); 
-    // const measureDiv = measurePartDiv.closest('.measure');
-    // log(`Measure ${parseInt(measureDiv.dataset.measureIndex) + 1}, Part ${measurePartDiv.dataset.partIndex} controls changed.`); // Reduced verbosity
 }
 
 function saveCurrentProgression() {
@@ -4043,17 +3931,31 @@ function safeAddEventListener(element, event, handler) {
         
 function setupEventListeners() {
     try {
-        // Ensure all required UI elements are available
         const requiredElements = [
             'startStopButton', 'tempo', 'tempoDisplay', 'timeSignature',
             'progressionSelect', 'keySelect', 'darkModeToggle', 'chordsEnabled',
-            'soundType', 'rhythmicStyleSelect' // Added these required elements
+            'soundType', 'rhythmicStyleSelect'
         ];
         
-        const missingElements = requiredElements.filter(id => !UI.elements[id]);
+        console.log("[DEBUG] In setupEventListeners, before requiredElements check. UI.elements.rhythmicStyleSelect:", UI.elements.rhythmicStyleSelect);
+
+        const missingElements = requiredElements.filter(id => {
+            const element = UI.elements[id];
+            const isMissing = !element;
+            if (id === 'rhythmicStyleSelect') {
+                console.log(`[DEBUG] Checking rhythmicStyleSelect in filter: element is ${element}, isMissing is ${isMissing}`);
+            }
+            return isMissing;
+        });
+
         if (missingElements.length > 0) {
-            throw new Error(`Missing required UI elements: ${missingElements.join(', ')}`);
+            const specificErrorMsg = `[CRITICAL] UI elements missing: ${missingElements.join(', ')}. Check HTML IDs and UI.init(). Execution of setupEventListeners will halt.`;
+            console.error(specificErrorMsg);
+            alert(specificErrorMsg);
+            updateLoadingStatus(specificErrorMsg, true);
+            return; 
         }
+        console.log("[DEBUG] All required elements found by the check.");
 
         document.body.addEventListener('click', ensureAudioInitializedUserInteraction, { once: true });
 
@@ -4067,12 +3969,11 @@ function setupEventListeners() {
             });
         }
 
-        // Updated sound type handler with new functionality
         if (UI.elements.soundType) {
             UI.elements.soundType.addEventListener('change', (e) => {
                 onMetronomeInstrumentChange(e.target.value);
-                updateRhythmicStyleUIVisibility(); 
-                createBeats(); 
+                updateRhythmicStyleUIVisibility();
+                createBeats();
             });
         }
         
@@ -4134,25 +4035,34 @@ function setupEventListeners() {
                     toggleSplitMeasure(btn.closest('.measure')); 
                 }
             });
-            updateRhythmicStyleUIVisibility(); 
+            updateRhythmicStyleUIVisibility();
             if (AppState.isPlaying) { stopPlayback(); startPlayback(); }
         });
 
-        // FIXED rhythmic style select handler
-        if (UI.elements.rhythmicStyleSelect && typeof UI.elements.rhythmicStyleSelect.addEventListener === 'function') {
-            UI.elements.rhythmicStyleSelect.addEventListener('change', (e) => {
-                AppState.currentRhythmicStyle = e.target.value;
-                AppState.currentStylePatternBeat = 0;
-                AppState.currentStyleBar = 0;
-                createBeats();
-                log(`Rhythmic style changed to: ${AppState.currentRhythmicStyle}`);
-            });
-        } else {
-            if (UI.elements.rhythmicStyleSelect) {
-                 console.warn('[Setup Event Listeners] UI.elements.rhythmicStyleSelect was found, but it does not have an addEventListener method.');
+        const rhythmicSelectElement = UI.elements.rhythmicStyleSelect; 
+        console.log("[DEBUG] Before trying to add listener to rhythmicStyleSelect. Element is:", rhythmicSelectElement, "Typeof:", typeof rhythmicSelectElement);
+
+        if (rhythmicSelectElement && typeof rhythmicSelectElement.addEventListener === 'function') {
+            try {
+                rhythmicSelectElement.addEventListener('change', (e) => {
+                    AppState.currentRhythmicStyle = e.target.value;
+                    AppState.currentStylePatternBeat = 0;
+                    AppState.currentStyleBar = 0;
+                    createBeats();
+                    log(`Rhythmic style changed to: ${AppState.currentRhythmicStyle}`);
+                });
+                console.log("[DEBUG] Successfully added 'change' listener to rhythmicStyleSelectElement.");
+            } catch (err) {
+                console.error("[CRITICAL DEBUG] Error occurred WHEN ATTEMPTING to add listener to rhythmicStyleSelectElement (which was presumed valid):", err);
+                console.error("[CRITICAL DEBUG] rhythmicStyleSelectElement at time of error:", rhythmicSelectElement);
             }
-            // If UI.elements.rhythmicStyleSelect is null/undefined, the requiredElements check should catch this.
-            // If it's not in requiredElements (it is), then this would be a silent non-addition of listener.
+        } else {
+            console.warn("[DEBUG] Did NOT add listener to rhythmicStyleSelect.");
+            if (!rhythmicSelectElement) {
+                console.warn("[DEBUG] Reason: rhythmicSelectElement is falsy (e.g., null, undefined). This should have been caught by requiredElements check.");
+            } else { 
+                console.warn("[DEBUG] Reason: rhythmicSelectElement.addEventListener is not a function. Element type:", typeof rhythmicSelectElement, "Element value:", rhythmicSelectElement);
+            }
         }
 
 
@@ -4241,10 +4151,15 @@ function setupEventListeners() {
         });
         log("Event listeners set up successfully.");
     } catch (error) {
-        console.error("Error setting up event listeners:", error);
-        updateLoadingStatus("Error setting up controls. Some features may not work.", true);
+        console.error("Error during setupEventListeners execution (outer catch):", error);
+        if (error.message && error.message.startsWith("[CRITICAL]")) {
+            // Already handled by alert and updateLoadingStatus
+        } else {
+            updateLoadingStatus("Error setting up controls. Some features may not work. Check console.", true);
+        }
     }
 }
+
 
 // ==================================
 // === INITIALIZATION =============
@@ -4258,10 +4173,8 @@ async function initializeApp() {
     onMetronomeInstrumentChange(UI.elements.soundType?.value || 'click');
     populateUserSongsDropdown();
 
-    // Corrected initial progression loading
-    let initialProgressionName = "I V7"; // Fallback default
+    let initialProgressionName = "I V7"; 
     if (UI.elements.progressionSelect && UI.elements.progressionSelect.options.length > 0) {
-        // Try to get the first value from the first optgroup, or the very first option
         const firstOptgroupOption = UI.elements.progressionSelect.querySelector('optgroup > option');
         if (firstOptgroupOption) {
             initialProgressionName = firstOptgroupOption.value;
