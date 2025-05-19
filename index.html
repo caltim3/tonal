@@ -4071,8 +4071,8 @@ function setupEventListeners() {
         if (UI.elements.soundType) {
             UI.elements.soundType.addEventListener('change', (e) => {
                 onMetronomeInstrumentChange(e.target.value);
-                updateRhythmicStyleUIVisibility(); // ADD THIS
-                createBeats(); // Regenerate beats when sound type changes
+                updateRhythmicStyleUIVisibility(); 
+                createBeats(); 
             });
         }
         
@@ -4124,7 +4124,6 @@ function setupEventListeners() {
             }, 3100);
         });
 
-        // Updated time signature handler with new functionality
         UI.elements.timeSignature.addEventListener('change', () => {
             createBeats();
             const is44 = parseInt(UI.elements.timeSignature.value) === 4;
@@ -4135,12 +4134,12 @@ function setupEventListeners() {
                     toggleSplitMeasure(btn.closest('.measure')); 
                 }
             });
-            updateRhythmicStyleUIVisibility(); // ADD THIS
+            updateRhythmicStyleUIVisibility(); 
             if (AppState.isPlaying) { stopPlayback(); startPlayback(); }
         });
 
-        // Added rhythmic style select handler
-        if (UI.elements.rhythmicStyleSelect && UI.elements.rhythmicStyleSelect !== null) {
+        // FIXED rhythmic style select handler
+        if (UI.elements.rhythmicStyleSelect && typeof UI.elements.rhythmicStyleSelect.addEventListener === 'function') {
             UI.elements.rhythmicStyleSelect.addEventListener('change', (e) => {
                 AppState.currentRhythmicStyle = e.target.value;
                 AppState.currentStylePatternBeat = 0;
@@ -4148,7 +4147,14 @@ function setupEventListeners() {
                 createBeats();
                 log(`Rhythmic style changed to: ${AppState.currentRhythmicStyle}`);
             });
+        } else {
+            if (UI.elements.rhythmicStyleSelect) {
+                 console.warn('[Setup Event Listeners] UI.elements.rhythmicStyleSelect was found, but it does not have an addEventListener method.');
+            }
+            // If UI.elements.rhythmicStyleSelect is null/undefined, the requiredElements check should catch this.
+            // If it's not in requiredElements (it is), then this would be a silent non-addition of listener.
         }
+
 
         if (UI.elements.reverbDial) {
             UI.elements.reverbDial.addEventListener('input', (e) => {
@@ -4199,7 +4205,6 @@ function setupEventListeners() {
             UI.elements.loopSelectedToggle.addEventListener('click', toggleLoopingMode);
         }
 
-        // Collapsible Sections Logic
         document.querySelectorAll('.collapsible-toggle').forEach(button => {
             button.addEventListener('click', () => {
                 const contentId = button.getAttribute('aria-controls');
