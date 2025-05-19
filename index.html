@@ -4042,36 +4042,22 @@ function addFirstChordListener() {
 
 function setupEventListeners() {
     try {
-        // First, verify UI exists
-        if (!UI || !UI.elements) {
-            throw new Error('UI or UI.elements is not initialized');
-        }
-
-        // Add required elements that were missing from the original list
+        // Ensure all required UI elements are available
         const requiredElements = [
             'startStopButton', 'tempo', 'tempoDisplay', 'timeSignature',
             'progressionSelect', 'keySelect', 'darkModeToggle', 'chordsEnabled',
-            'tapTempo', 'soundType', 'rhythmicStyleSelect'
+            'soundType', 'rhythmicStyleSelect' // Added these required elements
         ];
         
-        // Check for required elements
         const missingElements = requiredElements.filter(id => !UI.elements[id]);
         if (missingElements.length > 0) {
-            console.warn(`Missing UI elements: ${missingElements.join(', ')}`);
+            throw new Error(`Missing required UI elements: ${missingElements.join(', ')}`);
         }
 
-        // Basic document body listener - with check
-        if (document && document.body) {
-            document.body.addEventListener('click', ensureAudioInitializedUserInteraction, { once: true });
-        }
+        document.body.addEventListener('click', ensureAudioInitializedUserInteraction, { once: true });
 
-        // Core functionality - with safety checks
-        if (UI.elements.startStopButton) {
-            UI.elements.startStopButton.addEventListener('click', () => 
-                AppState.isPlaying ? stopPlayback() : startPlayback());
-        }
-
-        // Optional elements with specific functionality
+        UI.elements.startStopButton.addEventListener('click', () => AppState.isPlaying ? stopPlayback() : startPlayback());
+        
         if (UI.elements.drumSetToggleBtn) {
             UI.elements.drumSetToggleBtn.addEventListener('click', () => {
                 currentDrumSetIndex = (currentDrumSetIndex + 1) % drumSoundSets.length;
@@ -4080,113 +4066,90 @@ function setupEventListeners() {
             });
         }
 
-        // Sound type with new functionality
+        // Updated sound type handler with new functionality
         if (UI.elements.soundType) {
             UI.elements.soundType.addEventListener('change', (e) => {
                 onMetronomeInstrumentChange(e.target.value);
-                if (typeof updateRhythmicStyleUIVisibility === 'function') {
-                    updateRhythmicStyleUIVisibility();
+                updateRhythmicStyleUIVisibility(); // ADD THIS
+                createBeats(); // Regenerate beats when sound type changes
+            });
+        }
+        
+        let currentDarkModeIndex = 0;
+        const darkModeClasses = ['', 'dark-mode', 'dark-mode-2', 'dark-mode-3'];
+        const activeToggleClasses = ['', 'active', 'active-2', 'active-3'];
+        UI.elements.darkModeToggle.addEventListener('click', () => {
+            currentDarkModeIndex = (currentDarkModeIndex + 1) % darkModeClasses.length;
+            darkModeClasses.forEach(cls => { if (cls) document.body.classList.remove(cls); });
+            activeToggleClasses.forEach(cls => { if (cls) UI.elements.darkModeToggle.classList.remove(cls); });
+            if (currentDarkModeIndex > 0) {
+                document.body.classList.add(darkModeClasses[currentDarkModeIndex]);
+                UI.elements.darkModeToggle.classList.add(activeToggleClasses[currentDarkModeIndex]);
+            }
+            log(`Color mode: ${darkModeClasses[currentDarkModeIndex] || 'Light Mode'}`);
+        });
+
+        UI.elements.chordsEnabled.addEventListener('click', () => {
+            const isActive = UI.elements.chordsEnabled.classList.toggle('active');
+            UI.elements.chordsEnabled.textContent = isActive ? 'Chords Enabled' : 'Chords Disabled';
+            log(`Chords ${isActive ? 'enabled' : 'disabled'}`);
+        });
+
+        UI.elements.tempo.addEventListener('input', () => {
+            AppState.tempo = parseInt(UI.elements.tempo.value);
+            UI.elements.tempoDisplay.textContent = `${AppState.tempo} BPM`;
+            if (AppState.isPlaying) { stopPlayback(); startPlayback(); }
+        });
+
+        UI.elements.tapTempo.addEventListener('click', () => {
+            const now = Date.now();
+            AppState.tapTempoTimestamps.push(now);
+            if (AppState.tapTempoTimestamps.length > 4) AppState.tapTempoTimestamps.shift();
+            if (AppState.tapTempoTimestamps.length > 1) {
+                let totalInterval = 0;
+                for (let i = 1; i < AppState.tapTempoTimestamps.length; i++) totalInterval += AppState.tapTempoTimestamps[i] - AppState.tapTempoTimestamps[i-1];
+                const avgInterval = totalInterval / (AppState.tapTempoTimestamps.length - 1);
+                if (avgInterval > 0 && avgInterval < 3000) { 
+                    AppState.tempo = Math.max(40, Math.min(220, Math.round(60000 / avgInterval)));
+                    UI.elements.tempo.value = AppState.tempo;
+                    UI.elements.tempoDisplay.textContent = `${AppState.tempo} BPM`;
+                    if (AppState.isPlaying) { stopPlayback(); startPlayback(); }
                 }
-                createBeats();
-            });
-        }
-
-        // Dark mode toggle
-        if (UI.elements.darkModeToggle) {
-            let currentDarkModeIndex = 0;
-            const darkModeClasses = ['', 'dark-mode', 'dark-mode-2', 'dark-mode-3'];
-            const activeToggleClasses = ['', 'active', 'active-2', 'active-3'];
-            
-            UI.elements.darkModeToggle.addEventListener('click', () => {
-                currentDarkModeIndex = (currentDarkModeIndex + 1) % darkModeClasses.length;
-                darkModeClasses.forEach(cls => { if (cls) document.body.classList.remove(cls); });
-                activeToggleClasses.forEach(cls => { if (cls) UI.elements.darkModeToggle.classList.remove(cls); });
-                if (currentDarkModeIndex > 0) {
-                    document.body.classList.add(darkModeClasses[currentDarkModeIndex]);
-                    UI.elements.darkModeToggle.classList.add(activeToggleClasses[currentDarkModeIndex]);
+            }
+            setTimeout(() => { 
+                if (AppState.tapTempoTimestamps.length > 0 && (Date.now() - AppState.tapTempoTimestamps[AppState.tapTempoTimestamps.length - 1] > 3000)) {
+                    AppState.tapTempoTimestamps = []; 
                 }
-                log(`Color mode: ${darkModeClasses[currentDarkModeIndex] || 'Light Mode'}`);
-            });
-        }
+            }, 3100);
+        });
 
-        // Chords enabled toggle
-        if (UI.elements.chordsEnabled) {
-            UI.elements.chordsEnabled.addEventListener('click', () => {
-                const isActive = UI.elements.chordsEnabled.classList.toggle('active');
-                UI.elements.chordsEnabled.textContent = isActive ? 'Chords Enabled' : 'Chords Disabled';
-                log(`Chords ${isActive ? 'enabled' : 'disabled'}`);
-            });
-        }
-
-        // Tempo control
-        if (UI.elements.tempo && UI.elements.tempoDisplay) {
-            UI.elements.tempo.addEventListener('input', () => {
-                AppState.tempo = parseInt(UI.elements.tempo.value);
-                UI.elements.tempoDisplay.textContent = `${AppState.tempo} BPM`;
-                if (AppState.isPlaying) { stopPlayback(); startPlayback(); }
-            });
-        }
-
-        // Tap tempo
-        if (UI.elements.tapTempo) {
-            UI.elements.tapTempo.addEventListener('click', () => {
-                const now = Date.now();
-                AppState.tapTempoTimestamps.push(now);
-                if (AppState.tapTempoTimestamps.length > 4) AppState.tapTempoTimestamps.shift();
-                if (AppState.tapTempoTimestamps.length > 1) {
-                    let totalInterval = 0;
-                    for (let i = 1; i < AppState.tapTempoTimestamps.length; i++) {
-                        totalInterval += AppState.tapTempoTimestamps[i] - AppState.tapTempoTimestamps[i-1];
-                    }
-                    const avgInterval = totalInterval / (AppState.tapTempoTimestamps.length - 1);
-                    if (avgInterval > 0 && avgInterval < 3000) { 
-                        AppState.tempo = Math.max(40, Math.min(220, Math.round(60000 / avgInterval)));
-                        if (UI.elements.tempo) UI.elements.tempo.value = AppState.tempo;
-                        if (UI.elements.tempoDisplay) UI.elements.tempoDisplay.textContent = `${AppState.tempo} BPM`;
-                        if (AppState.isPlaying) { stopPlayback(); startPlayback(); }
-                    }
+        // Updated time signature handler with new functionality
+        UI.elements.timeSignature.addEventListener('change', () => {
+            createBeats();
+            const is44 = parseInt(UI.elements.timeSignature.value) === 4;
+            document.querySelectorAll('.measure .split-measure-button').forEach(btn => {
+                btn.disabled = !is44;
+                btn.title = is44 ? "" : "Splitting only available in 4/4.";
+                if (!is44 && btn.closest('.measure').dataset.isSplit === 'true') {
+                    toggleSplitMeasure(btn.closest('.measure')); 
                 }
-                setTimeout(() => { 
-                    if (AppState.tapTempoTimestamps.length > 0 && 
-                        (Date.now() - AppState.tapTempoTimestamps[AppState.tapTempoTimestamps.length - 1] > 3000)) {
-                        AppState.tapTempoTimestamps = []; 
-                    }
-                }, 3100);
             });
-        }
+            updateRhythmicStyleUIVisibility(); // ADD THIS
+            if (AppState.isPlaying) { stopPlayback(); startPlayback(); }
+        });
 
-        // Time signature handling with rhythmic style update
-        if (UI.elements.timeSignature) {
-            UI.elements.timeSignature.addEventListener('change', () => {
-                createBeats();
-                const is44 = parseInt(UI.elements.timeSignature.value) === 4;
-                document.querySelectorAll('.measure .split-measure-button').forEach(btn => {
-                    btn.disabled = !is44;
-                    btn.title = is44 ? "" : "Splitting only available in 4/4.";
-                    if (!is44 && btn.closest('.measure').dataset.isSplit === 'true') {
-                        toggleSplitMeasure(btn.closest('.measure')); 
-                    }
-                });
-                if (typeof updateRhythmicStyleUIVisibility === 'function') {
-                    updateRhythmicStyleUIVisibility();
-                }
-                if (AppState.isPlaying) { stopPlayback(); startPlayback(); }
-            });
-        }
-
-        // Rhythmic style select
+        // Added rhythmic style select handler
         if (UI.elements.rhythmicStyleSelect) {
             UI.elements.rhythmicStyleSelect.addEventListener('change', (e) => {
                 AppState.currentRhythmicStyle = e.target.value;
-                AppState.currentStylePatternBeat = 0;
-                AppState.currentStyleBar = 0;
-                createBeats();
+                AppState.currentStylePatternBeat = 0; // Reset pattern index on style change
+                AppState.currentStyleBar = 0;         // Reset bar for multi-bar patterns
+                createBeats(); // Regenerate beats with the new style
                 log(`Rhythmic style changed to: ${AppState.currentRhythmicStyle}`);
             });
         }
 
-        // Reverb control
-        if (UI.elements.reverbDial && UI.elements.reverbDialValue) {
+        if (UI.elements.reverbDial) {
             UI.elements.reverbDial.addEventListener('input', (e) => {
                 AudioContextManager.reverbAmount = parseInt(e.target.value, 10) / 100;
                 UI.elements.reverbDialValue.textContent = e.target.value;
@@ -4194,13 +4157,10 @@ function setupEventListeners() {
             });
         }
 
-        // Progression controls
-        if (UI.elements.progressionSelect) {
-            UI.elements.progressionSelect.addEventListener('change', (e) => {
-                loadProgression(e.target.value, null, false);
-                if (UI.elements.userProgressionSelect) UI.elements.userProgressionSelect.value = "";
-            });
-        }
+        UI.elements.progressionSelect.addEventListener('change', (e) => {
+            loadProgression(e.target.value, null, false);
+            if (UI.elements.userProgressionSelect) UI.elements.userProgressionSelect.value = "";
+        });
 
         if (UI.elements.userProgressionSelect) {
             UI.elements.userProgressionSelect.addEventListener('change', (e) => {
@@ -4213,12 +4173,8 @@ function setupEventListeners() {
             });
         }
 
-        // Key select
-        if (UI.elements.keySelect) {
-            UI.elements.keySelect.addEventListener('change', (e) => updateProgressionKey(e.target.value));
-        }
-
-        // Optional chord-related controls
+        UI.elements.keySelect.addEventListener('change', (e) => updateProgressionKey(e.target.value));
+        
         if (UI.elements.chordTuning) {
             UI.elements.chordTuning.addEventListener('change', () => { 
                 addFirstChordListener(); 
@@ -4226,7 +4182,6 @@ function setupEventListeners() {
             });
         }
 
-        // Optional progression controls
         if (UI.elements.saveProgressionButton) {
             UI.elements.saveProgressionButton.addEventListener('click', saveCurrentProgression);
         }
@@ -4243,7 +4198,7 @@ function setupEventListeners() {
             UI.elements.loopSelectedToggle.addEventListener('click', toggleLoopingMode);
         }
 
-        // Collapsible sections
+        // Collapsible Sections Logic
         document.querySelectorAll('.collapsible-toggle').forEach(button => {
             button.addEventListener('click', () => {
                 const contentId = button.getAttribute('aria-controls');
@@ -4252,45 +4207,32 @@ function setupEventListeners() {
                 
                 const isExpanded = button.getAttribute('aria-expanded') === 'true' || false;
                 button.setAttribute('aria-expanded', !isExpanded);
-                content.style.display = isExpanded ? 'none' : 
-                    (contentId === 'metronome-volume-controls-stack' ? 'flex' : 'block'); 
-                const toggleIcon = button.querySelector('.toggle-icon');
-                if (toggleIcon) toggleIcon.textContent = isExpanded ? '+' : '-';
+                content.style.display = isExpanded ? 'none' : (contentId === 'metronome-volume-controls-stack' ? 'flex' : 'block'); 
+                button.querySelector('.toggle-icon').textContent = isExpanded ? '+' : '-';
                 log(`Collapsible ${contentId} ${isExpanded ? 'collapsed' : 'expanded'}`);
             });
         });
 
-        // Global keyboard shortcuts
         document.addEventListener('keydown', (event) => {
             const targetTagName = event.target.tagName.toLowerCase();
             if (['input', 'select', 'textarea'].includes(targetTagName)) return;
-            
             let tempoChanged = false;
-            if (UI.elements.tempo && UI.elements.startStopButton) {
-                switch (event.key) {
-                    case ' ': 
-                        event.preventDefault(); 
-                        UI.elements.startStopButton.click(); 
-                        break;
-                    case 'ArrowUp':
-                        event.preventDefault();
-                        UI.elements.tempo.value = AppState.tempo = Math.min(220, parseInt(UI.elements.tempo.value) + 1);
-                        tempoChanged = true; 
-                        break;
-                    case 'ArrowDown':
-                        event.preventDefault();
-                        UI.elements.tempo.value = AppState.tempo = Math.max(40, parseInt(UI.elements.tempo.value) - 1);
-                        tempoChanged = true; 
-                        break;
-                }
+            switch (event.key) {
+                case ' ': event.preventDefault(); UI.elements.startStopButton.click(); break;
+                case 'ArrowUp':
+                    event.preventDefault();
+                    UI.elements.tempo.value = AppState.tempo = Math.min(220, parseInt(UI.elements.tempo.value) + 1);
+                    tempoChanged = true; break;
+                case 'ArrowDown':
+                    event.preventDefault();
+                    UI.elements.tempo.value = AppState.tempo = Math.max(40, parseInt(UI.elements.tempo.value) - 1);
+                    tempoChanged = true; break;
             }
-            
-            if (tempoChanged && UI.elements.tempoDisplay) {
+            if (tempoChanged) {
                 UI.elements.tempoDisplay.textContent = `${AppState.tempo} BPM`;
                 if (AppState.isPlaying) { stopPlayback(); startPlayback(); }
             }
         });
-
         log("Event listeners set up successfully.");
     } catch (error) {
         console.error("Error setting up event listeners:", error);
