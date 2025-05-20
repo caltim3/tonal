@@ -592,6 +592,211 @@ body.dark-mode-3 .fretboard .note.guide-tone-highlight {
     background-color: var(--guide-tone-bg-color) !important; 
     color: var(--guide-tone-text-color) !important; 
 }
+    /* ====== ADD THESE RESPONSIVE STYLES AT THE END OF YOUR EXISTING CSS ====== */
+
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+    .app-section, .fretboard-container {
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+    .app-subsection {
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+
+    h1 { font-size: 1.6em; }
+    h2 { font-size: 1.4em; }
+    h3 { font-size: 1.1em; }
+    h4 { font-size: 1.0em; }
+
+    .top-controls {
+        flex-direction: column; /* Stack global controls */
+        align-items: flex-start;
+    }
+    .top-controls button, .top-controls select {
+        width: auto; /* Allow them to size naturally initially */
+        margin-bottom: 8px;
+    }
+
+    .fretboards-grid {
+        grid-template-columns: 1fr; /* Stack FretFlow fretboards */
+        gap: 15px;
+    }
+
+    .fretboard {
+        height: 160px; /* Slightly reduce height */
+    }
+    .note {
+        width: 22px; /* Ensure tappability */
+        height: 22px;
+        font-size: 11px;
+    }
+    .note.guide-tone-highlight, .note.root-highlight-for-guides {
+        outline-width: 2px;
+    }
+
+    #measures {
+        grid-template-columns: 1fr; /* Single column for measures */
+        gap: 15px;
+    }
+    .measure.split-active {
+        flex-direction: column; /* Stack split measure parts */
+    }
+     .measure.split-active .measure-part {
+        min-width: unset; /* Allow full width */
+    }
+
+    .controls, .top-controls, .fretboard-controls, .song-setup-controls .controls, #user-songs-section .controls {
+        gap: 8px;
+    }
+    .controls select, .controls button, .top-controls select, .top-controls button {
+        padding: 8px 10px; /* Slightly smaller padding on controls */
+        font-size: 0.85em;
+    }
+    #tempo-display {
+        font-size: 1em;
+        min-width: 60px;
+    }
+    #start-stop {
+        padding: 10px 20px !important;
+        font-size: 1em !important;
+    }
+
+    #metronome-volume-controls-stack .volume-control {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    #metronome-volume-controls-stack .volume-control label,
+    #metronome-volume-controls-stack .volume-control span {
+        margin-bottom: 5px;
+    }
+    #metronome-volume-controls-stack .volume-control input[type="range"] {
+        width: 100%; /* Full width for sliders in stack */
+        max-width: none;
+    }
+
+    .song-setup-controls h4 {
+        font-size: 1.1em;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        padding: 5px;
+    }
+    .app-section, .fretboard-container {
+        padding: 10px;
+    }
+    .app-subsection {
+        padding: 8px;
+    }
+
+    h1 { font-size: 1.4em; }
+    h2 { font-size: 1.2em; }
+    h3 { font-size: 1.0em; }
+    h4 { font-size: 0.9em; }
+
+    #song-info-display-fretboard #current-song-title-fretboard {
+        font-size: 1.1em;
+    }
+    #song-info-display-fretboard p {
+        font-size: 0.8em;
+    }
+    .scale-display { font-size: 1em; }
+    .next-chord-display { font-size: 0.85em; }
+
+
+    /* General controls stacking */
+    .controls, .fretboard-controls, .song-setup-controls .controls, #user-songs-section .controls,
+    .top-controls /* Already column from 768px */ {
+        flex-direction: column; /* Ensure stacking */
+        align-items: stretch; /* Make children take full available width */
+    }
+    .controls > *, .fretboard-controls > *, .song-setup-controls .controls > *, #user-songs-section .controls > *,
+    .top-controls > * { /* Target direct children */
+        width: 100%; /* Full width for inputs/buttons in stacked controls */
+        margin-bottom: 8px;
+        box-sizing: border-box; /* Include padding and border in the element's total width and height */
+    }
+    .controls select, .controls button, /* Already targeted by > * */
+    .control-group select, .control-group button, .control-group input {
+        width: 100%;
+        box-sizing: border-box;
+    }
+    .control-group label { margin-bottom: 3px; }
+
+
+    .fretboard {
+        height: 130px; /* Further reduce height */
+        margin-bottom: 20px;
+    }
+    .fret-number { font-size: 10px; bottom: -20px; }
+    .note {
+        width: 20px;
+        height: 20px;
+        font-size: 9px;
+    }
+
+    .beats-container {
+        margin: 10px 0;
+        gap: 5px;
+    }
+    .beat {
+        width: 35px;
+        height: 70px;
+        font-size: 12px;
+    }
+
+    .chord-controls select, .scale-controls select {
+        min-width: 50px; /* Further reduce min-width */
+        font-size: 0.8em;
+        padding: 5px;
+    }
+    .measure-header .measure-number { font-size: 10px; }
+    .split-measure-button { font-size: 0.7em; padding: 2px 4px;}
+
+
+    #tempo { width: calc(100% - 110px); /* Adjust if tap tempo or display changes significantly */}
+    #tempo-display { margin: 0 5px; }
+
+    #start-stop {
+        padding: 8px 15px !important;
+        font-size: 0.9em !important;
+    }
+
+    /* Make sure individual volume control stacks correctly */
+    .volume-control {
+        flex-direction: column; /* Stack label and input */
+        align-items: flex-start; /* Align label to start */
+        gap: 5px;
+    }
+    .volume-control input[type="range"] {
+        width: 100%; /* Full width for range inputs */
+    }
+    .control-group {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .control-group #reverb-dial {
+        width: 100%;
+    }
+
+    /* Collapsible sections */
+    .collapsible-toggle {
+        padding: 6px 10px;
+        font-size: 0.9em;
+    }
+}
+
+/* Minor fix for select dropdowns on dark mode for better visibility with potential width:100% */
+body.dark-mode select, body.dark-mode-2 select, body.dark-mode-3 select {
+    /* If you set width: 100% on selects, ensure their text is readable and they don't look too out of place */
+    /* This is mostly fine, but could add specific padding if needed */
+}
+        
     </style>
 </head>
 <body>
