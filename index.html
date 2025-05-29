@@ -923,6 +923,8 @@ body.dark-mode select, body.dark-mode-2 select, body.dark-mode-3 select {
                         <option value="6_2_5_1">VI-II-V-I</option>
                         <option value="minor_2_5_1">Minor iim-V7-im</option>
                         <option value="ii_v_i_all_keys_cycle">ii-V-I All Keys Cycle</option>
+                        <option value="same_old_Blues">Same Old Blues</option>
+                        <option value="key_to_the_highway">Key to the Highway (8 bar blues)</option>
                         <option value="jazz_blues">Jazz Blues</option>
                         <option value="minor_blues">Minor Blues</option>
                         <option value="bird_blues">Bird Blues (Parker Blues)</option>
@@ -1252,6 +1254,27 @@ const progressions = {
     ],
     description: "A comprehensive workout cycling the ii-V-I-I progression through all twelve keys via the circle of fourths. Each key's progression is played twice."
   }, 
+  same_old_blues: {
+    defaultKey: "D",
+    displayName: "Same Old Blues",
+    progression: [
+      "D", "F#7", "Bm", "Bm",
+      "D", "F#7", "Bm", "Am7 D9",
+      "G", "G#dim", "D/A D/C", "B7",
+      "E7", "A7", "D", "A+"
+    ],
+    description: "Freddie King's soulful blues in D, blending major, minor, and diminished chords for a melancholic yet expressive vibe, perfect for soulful solos.",
+  },
+  key_to_the_highway: {
+    defaultKey: "A",
+    displayName: "Key to the Highway",
+    progression: [
+      "A7", "A7", "D7", "D7",
+      "A7", "A7", "E7", "D7",
+      "A7", "E7"
+    ],
+    description: "An 8-bar blues in A, popularized by various artists, with a laid-back groove ideal for vocal and instrumental interplay.",
+  },
   dark_eyes: { 
     defaultKey: "Dm",
     displayName: "Dark Eyes",
