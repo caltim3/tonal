@@ -1123,19 +1123,19 @@ const CHORD_INTERVALS = {
   dom7b9: [0, 4, 7, 10, 1],
   "dom7#9": [0, 4, 7, 10, 3],
   dom7b5: [0, 4, 6, 10],
-  alt: [0, 4, 1, 6, 10],
+  alt: [0, 4, 1, 6, 10], // Typically Root, 3rd, b9, #11 (or b5), b7
   dom7sus: [0, 5, 7, 10],
   maj9: [0, 4, 7, 11, 2],
   dom9: [0, 4, 7, 10, 2],
   min9: [0, 3, 7, 10, 2],
-  imaj7: [0, 3, 7, 11],
-  "6": [0, 4, 7, 9],
-  "m6": [0, 3, 7, 9],
-  "6/9": [0, 4, 7, 9, 2],
-  "7#11": [0, 4, 7, 10, 6],
-  "maj7#11": [0, 4, 7, 11, 6],
-  "7b13": [0, 4, 7, 10, 8],
-  unknown: [0, 4, 7, 10],
+  imaj7: [0, 3, 7, 11], // minor-major 7th
+  "6": [0, 4, 7, 9], // Same as maj6
+  "m6": [0, 3, 7, 9], // Same as min6
+  "6/9": [0, 4, 7, 9, 2], // Maj6 add 9
+  "7#11": [0, 4, 7, 10, 6], // Dominant 7 #11
+  "maj7#11": [0, 4, 7, 11, 6], // Major 7 #11
+  "7b13": [0, 4, 7, 10, 8], // Dominant 7 b13
+  unknown: [0, 4, 7, 10], // Default to dom7 if quality is truly unknown
 };
 
 const drumSoundSets = [
@@ -1175,23 +1175,24 @@ const progressions = {
     defaultKey: "Bb",
     displayName: "Rhythm Changes (Standard)",
     progression: [
-      "Bbmaj7", "G7",    "Cm7",    "F7", "Bbmaj7", "G7",    "Cm7",    "F7",
-      "Bbmaj7", "G7",    "Cm7",    "F7", "Bbmaj7", "Bb7",   "Ebmaj7", "Edim7",
-      "Dm7",    "G7",    "Cm7",    "F7", "Bbmaj7", "F7", 
-      "Bbmaj7", "G7",    "Cm7",    "F7", "Bbmaj7", "G7",    "Cm7",    "F7"
+      "Bbmaj7 G7",    "Cm7 F7", "Bbmaj7 G7",    "Cm7 F7", // A1 (measures 1-4)
+      "Bbmaj7 G7",    "Cm7 F7", "Bbmaj7 Bb7",   "Ebmaj7 Edim7", // A2 (measures 5-8)
+      "Dm7 G7",    "Cm7 F7", "Bbmaj7 F7",  "Bbmaj7 F7", // B (measures 9-12, some variations exist for last 2)
+      "Bbmaj7 G7",    "Cm7 F7", "Bbmaj7 G7",    "Cm7 F7"  // A3 (measures 13-16)
     ],
-    description: "A fast-paced, iconic jazz structure based on Gershwin's 'I Got Rhythm,' great for bebop. This is the standard 32-bar AABA form with traditional changes."
+     description: "A fast-paced, iconic jazz structure based on Gershwin's 'I Got Rhythm,' great for bebop. This is the standard 32-bar AABA form with traditional changes. (Showing 16 bars, repeat for full form)"
   },
   rhythm_changes_bebop: { 
     defaultKey: "Bb",
     displayName: "Rhythm Changes (Bebop)",
     progression: [
-      "Bbmaj7", "Bdim7", "Cm7",    "F7", "Dm7",    "G7",    "Cm7",    "F7",
-      "Bbmaj7", "Bdim7", "Cm7",    "F7", "Dm7",    "Db7",   "Cm7",    "F7",
-      "D7",     "D7",    "G7",     "G7", "C7",     "C7",    "F7",     "F7",
-      "Bbmaj7", "Bdim7", "Cm7",    "F7", "Dm7",    "G7",    "Cm7",    "F7"
+      "Bbmaj7 Bdim7", "Cm7 F7", "Dm7 G7",    "Cm7 F7",
+      "Bbmaj7 Bdim7", "Cm7 F7", "Dm7 Db7",   "Cm7 F7", // Some use G7 Db7 here
+      "D7",     "D7",    "G7",     "G7", 
+      "C7",     "C7",    "F7",     "F7",
+      "Bbmaj7 Bdim7", "Cm7 F7", "Dm7 G7",    "Cm7 F7"
     ],
-    description: "A bebop-oriented variation of Rhythm Changes with more sophisticated substitutions and a dominant cycle bridge, commonly used in jam sessions and bebop performances."
+    description: "A bebop-oriented variation of Rhythm Changes with more sophisticated substitutions and a dominant cycle bridge, commonly used in jam sessions and bebop performances. (Showing common 20 bar variant, full AABA is 32)"
   },
   "2_5_1": {
     defaultKey: "C",
@@ -1260,7 +1261,7 @@ const progressions = {
     progression: [
       "D", "F#7", "Bm", "Bm",
       "D", "F#7", "Bm", "Am7 D9",
-      "G", "G#dim", "D/A D/C", "B7",
+      "G", "G#dim", "D/A D/C", "B7", // D/A D/C implies D/A for 2 beats, D/C for 2 beats
       "E7", "A7", "D", "A+"
     ],
     description: "Freddie King's soulful blues in D, blending major, minor, and diminished chords for a melancholic yet expressive vibe, perfect for soulful solos.",
@@ -1298,10 +1299,10 @@ const progressions = {
     defaultKey: "Bb",
     displayName: "I'll See You In My Dreams (Django Alt.)",
     progression: [
-      "Bbmaj6", "G7",     "Cm7",    "F7",     "Bbmaj6", "Bbmin6", "Fmaj6",  "F7",
-      "Bbmaj6", "D7",     "Gm7",    "C7",     "Fmaj6",  "F#dim7", "Bbmaj6", "F7",
-      "Bbmaj6", "G7",     "Cm7",    "F7",     "Bbmaj6", "Bbmin6", "Fmaj6",  "F7",
-      "Bbmaj6", "D7",     "Gm7",    "C7",     "Fmaj6",  "F7",     "Bbmaj6", "Bbmaj6"
+      "Bbmaj6 G7",     "Cm7 F7",     "Bbmaj6 Bbmin6", "Fmaj6 F7",
+      "Bbmaj6 D7",     "Gm7 C7",     "Fmaj6 F#dim7", "Bbmaj6 F7",
+      "Bbmaj6 G7",     "Cm7 F7",     "Bbmaj6 Bbmin6", "Fmaj6 F7",
+      "Bbmaj6 D7",     "Gm7 C7",     "Fmaj6 F7",     "Bbmaj6 Bbmaj6"
     ],
     description: "An alternate Django-style arrangement featuring both the characteristic 6th chords and the passing diminished chords often used in Gypsy jazz interpretations."
   },
@@ -1331,9 +1332,9 @@ const progressions = {
     defaultKey: "Am",
     displayName: "Black Orpheus (Manhã de Carnaval)",
     progression: [
-      "Am7",  "Am7", "Bm7b5","E7b9", "Am7",  "Dm7",    "G7",   "Cmaj7",
+      "Am7",  "Am7", "Bm7b5 E7b9", "Am7",  "Dm7",    "G7",   "Cmaj7",
       "Fmaj7","Bm7b5", "E7b9", "Am7","Am7", "A7",    "Dm7",   "G7",
-      "Cmaj7","Fmaj7", "Bm7b5", "E7b9","Am7",  "E7b9", "Am7",   "Am7"
+      "Cmaj7","Fmaj7", "Bm7b5 E7b9","Am7",  "E7b9", "Am7",   "Am7"
     ],
     description: "A bossa nova classic with a haunting minor key, inspired by Brazilian rhythms."
   },
@@ -1368,12 +1369,12 @@ const progressions = {
     defaultKey: "Bb",
     displayName: "Stella By Starlight",
     progression: [
-      "Em7b5", "A7alt",  "Cm7",    "F7",
-      "Fm7",   "Bb7",    "Ebmaj7", "Ab7", 
-      "Dm7b5", "G7alt",  "Cmaj7",  "Am7 D7", 
-      "Gm7",   "C7",     "Fm7",    "Bb7",
-      "Ebmaj7", "Ebdim7", "Dm7",    "G7alt",
-      "Cm7",   "F7",     "Bbmaj7", "Bbmaj7 (Em7b5 A7alt for repeat)"
+      "Em7b5 A7alt",  "Cm7 F7",
+      "Fm7 Bb7",    "Ebmaj7 Ab7", 
+      "Dm7b5 G7alt",  "Cmaj7 Am7 D7", 
+      "Gm7 C7",     "Fm7 Bb7",
+      "Ebmaj7 Ebdim7", "Dm7 G7alt",
+      "Cm7 F7",     "Bbmaj7", "Bbmaj7 (Em7b5 A7alt for repeat)"
     ],
     description: "A lush, cinematic progression with a romantic and introspective feel."
   },
@@ -1381,10 +1382,10 @@ const progressions = {
     defaultKey: "Gm", 
     displayName: "Autumn Leaves",
     progression: [
-      "Cm7",   "F7",    "Bbmaj7", "Ebmaj7",
-      "Am7b5", "D7alt", "Gm7",    "Gm7 (C7 for turnaround to F7)",
-      "Cm7",   "F7",    "Bbmaj7", "Ebmaj7",
-      "Am7b5", "D7alt", "Gm7 G7alt", "Cm7 F7 (or Gm for end)" 
+      "Cm7 F7",    "Bbmaj7 Ebmaj7",
+      "Am7b5 D7alt", "Gm7",    "Gm7 (C7 for turnaround to F7)", // Second Gm7 is often a C7
+      "Cm7 F7",    "Bbmaj7 Ebmaj7",
+      "Am7b5 D7alt", "Gm7 G7alt", "Cm7 F7 (or Gm for end)" 
     ],
     description: "A melancholic jazz standard evoking falling leaves and wistful nostalgia."
   },
@@ -1433,17 +1434,17 @@ const progressions = {
     defaultKey: "Bb", 
     displayName: "Coltrane Changes (Giant Steps Cycle)",
     progression: [
-      "Bbmaj7", "D7",    "Gmaj7",  "Bb7",
-      "Ebmaj7", "Gb7",   "Cbmaj7", "E7", 
-      "Amaj7",  "C7",    "Fmaj7",  "Ab7",
-      "Dbmaj7", "E7",    "Amaj7",  "C7" 
+      "Bbmaj7 D7",    "Gmaj7 Bb7",
+      "Ebmaj7 Gb7",   "Cbmaj7 E7", 
+      "Amaj7 C7",    "Fmaj7 Ab7",
+      "Dbmaj7 E7",    "Amaj7 C7" 
     ],
     description: "A challenging, innovative progression from John Coltrane, with rapid key shifts based on major thirds."
   },
   bird_blues: { 
     defaultKey: "F",
     displayName: "Bird Blues (Parker Blues)",
-    progression: [
+    progression: [ 
       "Fmaj7",  "Em7b5 A7alt", "Dm7 G7alt", "Cm7 F7",
       "Bbmaj7", "Bbm7 Eb7",    "Am7 D7alt", "Abm7 Db7",
       "Gm7",    "C7alt",       "Fmaj7 D7alt", "Gm7 C7alt"
@@ -1470,9 +1471,9 @@ const progressions = {
     displayName: "Blue Bossa",
     progression: [
       "Cm7",  "Cm7",  "Fm7",  "Fm7",
-      "Dm7b5","G7alt","Cm7",  "Cm7 (Ab7 for bridge)", 
-      "Ebm7", "Ab7",  "Dbmaj7","Dbmaj7",
-      "Dm7b5","G7alt","Cm7",  "(G7alt for repeat or Cm7 for end)"
+      "Dm7b5 G7alt","Cm7",  "Cm7 (Ab7 for bridge)", 
+      "Ebm7 Ab7",  "Dbmaj7","Dbmaj7",
+      "Dm7b5 G7alt","Cm7",  "(G7alt for repeat or Cm7 for end)"
     ],
     description: "A cool, Latin-jazz progression with a relaxed yet groovy bossa nova feel."
   },
@@ -1480,11 +1481,11 @@ const progressions = {
     defaultKey: "Eb", 
     displayName: "On Green Dolphin Street",
     progression: [
-      "Ebmaj7", "Ebmaj7", "Ebm7",  "Ab7",   
-      "Dbmaj7", "Dbmaj7", "Dm7b5", "G7alt",
-      "Cm7",    "Cm7",    "Fm7",   "Bb7",
-      "Ebmaj7", "Am7b5 D7b9", "Gm7", "C7alt", 
-      "Fm7",    "Bb7",    "Ebmaj7", "Ebmaj7"
+      "Ebmaj7", "Ebmaj7", "Ebm7 Ab7",   
+      "Dbmaj7", "Dbmaj7", "Dm7b5 G7alt",
+      "Cm7",    "Cm7",    "Fm7 Bb7",
+      "Ebmaj7", "Am7b5 D7b9", "Gm7 C7alt", 
+      "Fm7 Bb7",    "Ebmaj7", "Ebmaj7"
     ],
     description: "A modal, cinematic progression with a mysterious and captivating atmosphere."
   },
@@ -1492,10 +1493,10 @@ const progressions = {
     defaultKey: "Cm",
     displayName: "Solar",
     progression: [
-      "Cm(maj7)", "Cm(maj7)", "Gm7b5",  "C7alt",
-      "Fmaj7",    "Fmaj7",    "Fm7",    "Bb7",
-      "Ebmaj7",   "Ebmaj7",   "Am7b5",  "D7alt", 
-      "Gm7",      "C7alt",    "Fmaj7",  "Fmaj7 (or turnaround)"
+      "Cm(maj7)", "Cm(maj7)", "Gm7b5 C7alt",
+      "Fmaj7",    "Fmaj7",    "Fm7 Bb7",
+      "Ebmaj7",   "Ebmaj7",   "Am7b5 D7alt", 
+      "Gm7 C7alt",    "Fmaj7",  "Fmaj7 (or turnaround)"
     ],
     description: "A contemplative, Miles Davis original with a flowing, introspective harmonic line."
   },
@@ -1503,10 +1504,10 @@ const progressions = {
     defaultKey: "Eb",
     displayName: "Misty",
     progression: [
-      "Ebmaj7", "Bbm7",  "Eb7",   "Abmaj7",
-      "Abm7",   "Db7",   "Ebmaj7","Cm7",
-      "Fm7",    "Bb7",   "Gm7",   "C7alt",
-      "Fm7",    "Bb7",   "Ebmaj7","(Fm7 Bb7 for repeat or Eb6 for end)"
+      "Ebmaj7", "Bbm7 Eb7",   "Abmaj7",
+      "Abm7 Db7",   "Ebmaj7 Cm7",
+      "Fm7 Bb7",   "Gm7 C7alt",
+      "Fm7 Bb7",   "Ebmaj7","(Fm7 Bb7 for repeat or Eb6 for end)"
     ],
     description: "A tender, romantic ballad progression, evoking misty-eyed sentimentality."
   },
@@ -1514,9 +1515,9 @@ const progressions = {
     defaultKey: "F",
     displayName: "Days of Wine and Roses",
     progression: [
-      "Fmaj7", "Eb7#11", "Dm7",   "G7#11", 
-      "Cm7",   "F7",     "Bbmaj7","Bbm7 Eb7",
-      "Am7",   "D7",     "Gm7",   "C7",
+      "Fmaj7", "Eb7#11", "Dm7 G7#11", 
+      "Cm7 F7",     "Bbmaj7","Bbm7 Eb7",
+      "Am7 D7",     "Gm7 C7",
       "Fmaj7", "Dm7 Gm7","C7sus C7","F6"
     ],
     description: "A bittersweet, elegant progression with a waltzing, reflective quality."
@@ -1525,11 +1526,11 @@ const progressions = {
     defaultKey: "Bb",
     displayName: "Cherokee",
     progression: [ 
-      "Bbmaj7", "Bbmaj7","Bbmaj7", "Bbmaj7", "Cm7",    "F7",    "Bbmaj7", "Bbmaj7",
-      "Bbmaj7", "Bbmaj7","Bbmaj7", "Bbmaj7", "Cm7",    "F7",    "Bbmaj7", "Bb7", 
+      "Bbmaj7", "Bbmaj7","Bbmaj7", "Bbmaj7", "Cm7 F7",    "Bbmaj7", "Bbmaj7",
+      "Bbmaj7", "Bbmaj7","Bbmaj7", "Bbmaj7", "Cm7 F7",    "Bbmaj7", "Bb7", 
       "Bmaj7",  "Bmaj7", "Emaj7",  "Emaj7",  "Amaj7",  "Amaj7", "Dmaj7",  "Dmaj7",
       "Gmaj7",  "Gmaj7", "Cmaj7",  "Cmaj7",  "Fmaj7",  "Fmaj7", "Bb7",    "Bb7",
-      "Bbmaj7", "Bbmaj7","Bbmaj7", "Bbmaj7", "Cm7",    "F7",    "Bbmaj7", "Bbmaj7"
+      "Bbmaj7", "Bbmaj7","Bbmaj7", "Bbmaj7", "Cm7 F7",    "Bbmaj7", "Bbmaj7"
     ],
     description: "A high-energy bebop standard with a fast-moving, adventurous harmonic structure."
   },
@@ -1538,7 +1539,7 @@ const progressions = {
     displayName: "Caravan",
     progression: [ 
       "Fm7", "Fm7", "Fm7", "C7b9", "Fm7", "Fm7", "C7b9","Fm7", 
-      "Abmaj7","Abmaj7","Dbmaj7","Dbmaj7","Gm7b5", "C7b9",  "Fm7",   "Fm7"  
+      "Abmaj7","Abmaj7","Dbmaj7","Dbmaj7","Gm7b5 C7b9",  "Fm7",   "Fm7"  
     ],
     description: "An exotic, Latin-tinged progression with a hypnotic, caravan-like rhythm."
   },
@@ -1548,7 +1549,7 @@ const progressions = {
     progression: [ 
       "F7", "Bb7", "F7", "F7",
       "Bb7","Bb7", "F7", "D7alt",
-      "Gm7","C7",  "F7", "(Gm7 C7 or F7)"
+      "Gm7 C7",  "F7", "(Gm7 C7 or F7)"
     ],
     description: "A gritty, straightforward blues progression by Charlie Parker, full of soul."
   },
@@ -1558,7 +1559,7 @@ const progressions = {
     progression: [ 
       "Bb7", "Eb7", "Bb7", "Bb7",
       "Eb7", "Eb7", "Bb7", "G7alt",
-      "Cm7", "F7",  "Bb7", "(Cm7 F7 or Bb7)"
+      "Cm7 F7",  "Bb7", "(Cm7 F7 or Bb7)"
     ],
     description: "A hard-swinging blues progression, ideal for fiery tenor sax battles."
   },
@@ -1570,10 +1571,10 @@ const progressions = {
       "Gmaj7", "Gmaj7", "Em7 A7", "G6 D7alt",
       "Gmaj7", "Gmaj7", "Em7 A7", "Am7 D7",
       "Gmaj7", "Gmaj7", "Em7 A7", "G6",
-      "Gm7", "C7", "Fmaj7", "Fmaj7",
+      "Gm7 C7", "Fmaj7", "Fmaj7",
       "Bb7", "Bb7", "Ebmaj7 D7", "Gmaj7 E7",
-      "Am7", "D7", "Gmaj7", "Gmaj7",
-      "Gmaj7", "E7", "Am7 D7", "G6 (D7)"
+      "Am7 D7", "Gmaj7", "Gmaj7",
+      "Gmaj7 E7", "Am7 D7", "G6 (D7)"
     ],
     description: "George Gershwin's timeless ballad, a favorite for its tender melody and rich harmonies."
   },
@@ -1633,12 +1634,12 @@ const progressions = {
     defaultKey: "G",
     displayName: "How High the Moon",
     progression: [
-      "Gmaj7", "Gmaj7", "Gm7", "C7",
-      "Fmaj7", "Fmaj7", "Fm7", "Bb7",
-      "Ebmaj7", "Am7b5", "D7", "Gmaj7", 
-      "Gmaj7", "Gm7", "C7", "Fmaj7",   
-      "Fmaj7", "Fm7", "Bb7", "Ebmaj7",
-      "Am7b5", "D7alt", "Gmaj7", "Gmaj7 (D7alt)"
+      "Gmaj7", "Gmaj7", "Gm7 C7",
+      "Fmaj7", "Fmaj7", "Fm7 Bb7",
+      "Ebmaj7", "Am7b5 D7", "Gmaj7", 
+      "Gmaj7", "Gm7 C7", "Fmaj7",   
+      "Fmaj7", "Fm7 Bb7", "Ebmaj7",
+      "Am7b5 D7alt", "Gmaj7", "Gmaj7 (D7alt)"
     ],
     description: "A popular jazz standard with a memorable cycle of dominants, a favorite for bebop improvisers."
   },
@@ -1646,10 +1647,10 @@ const progressions = {
     defaultKey: "Dm", 
     displayName: "A Night in Tunisia",
     progression: [ 
-      "Eb7", "Dm7", "Eb7", "Dm7", 
-      "Eb7", "Dm7", "Eb7", "Dm7",
-      "Gm7", "C7", "Fmaj7", "Fmaj7", 
-      "Em7b5", "A7alt", "Dm7", "A7alt"  
+      "Eb7 Dm7", "Eb7 Dm7", 
+      "Eb7 Dm7", "Eb7 Dm7",
+      "Gm7 C7", "Fmaj7", "Fmaj7", 
+      "Em7b5 A7alt", "Dm7", "A7alt"  
     ],
     description: "Dizzy Gillespie's Afro-Cuban jazz classic, known for its exotic melody and rhythm. (Solo changes shown)"
   },
@@ -1707,9 +1708,9 @@ const progressions = {
     defaultKey: "Eb", 
     displayName: "Moment's Notice",
     progression: [ 
-      "Ebm7", "Ab7", "Dbmaj7", "Gb7",
-      "Bmaj7", "Am7b5 D7b9", "Gm7", "C7b9", 
-      "Fm7", "Bb7", "Ebmaj7", "A7b9",
+      "Ebm7 Ab7", "Dbmaj7 Gb7",
+      "Bmaj7", "Am7b5 D7b9", "Gm7 C7b9", 
+      "Fm7 Bb7", "Ebmaj7 A7b9",
       "Dmaj7", "Am7 D7", "Gm7 C7alt", "Fm7 Bb7" 
     ],
     description: "John Coltrane's intricate composition with rapid key center shifts, a test of harmonic navigation."
@@ -1718,9 +1719,9 @@ const progressions = {
     defaultKey: "Am",
     displayName: "Recorda Me",
     progression: [ 
-      "Am7", "Am7", "Cm7", "F7",
-      "Bbmaj7", "Bbmaj7", "Ebm7", "Ab7",
-      "Am7", "Am7", "Cm7", "F7",
+      "Am7", "Am7", "Cm7 F7",
+      "Bbmaj7", "Bbmaj7", "Ebm7 Ab7",
+      "Am7", "Am7", "Cm7 F7",
       "Bbmaj7", "Ebm7 Ab7", "Dm7 G7", "Cmaj7 Fmaj7" 
     ],
     description: "Joe Henderson's Bossa-influenced classic, known for its smooth melody and distinctive harmony."
@@ -1730,12 +1731,12 @@ const progressions = {
     displayName: "My Funny Valentine",
     progression: [
       "Cm7", "Cm(maj7)", "Cm7", "C7alt",
-      "Fm7", "Bb7", "Ebmaj7", "Abmaj7 Dm7b5 G7alt",
+      "Fm7 Bb7", "Ebmaj7", "Abmaj7", "Dm7b5 G7alt",
       "Cm7", "Cm(maj7)", "Cm7", "C7alt",
-      "Fm7", "Bb7", "Ebmaj7", "Abmaj7 Dm7b5 G7alt",
+      "Fm7 Bb7", "Ebmaj7", "Abmaj7", "Dm7b5 G7alt",
       "Cm7", "Cm7", "Fm7", "Fm7",
       "Bb7", "Bb7", "Ebmaj7", "Abmaj7",
-      "Dm7b5", "G7alt", "Cm7", "Fm7",
+      "Dm7b5 G7alt", "Cm7", "Fm7",
       "Cm7 G7alt", "Cm7", "Cm7 G7alt", "Cm7" 
     ],
     description: "Richard Rodgers' iconic ballad, famed for its melancholic beauty and poignant lyrics."
@@ -1744,14 +1745,14 @@ const progressions = {
     defaultKey: "Bb",
     displayName: "Someday My Prince Will Come",
     progression: [
-      "Bbmaj7", "Gm7", "Cm7", "F7",
-      "Ebmaj7", "Edim7", "Dm7 G7", "Cm7 F7",
-      "Bbmaj7", "Gm7", "Cm7", "F7",
-      "Ebmaj7", "Edim7", "Dm7 G7", "Cm7 F7",
+      "Bbmaj7", "Gm7", "Cm7 F7",
+      "Ebmaj7 Edim7", "Dm7 G7", "Cm7 F7",
+      "Bbmaj7", "Gm7", "Cm7 F7",
+      "Ebmaj7 Edim7", "Dm7 G7", "Cm7 F7",
       "Am7 D7", "Gm7 C7", "Fmaj7 A7", "Dm7 G7",
       "Cm7 F7", "Bbmaj7 D7", "Gm7 C7", "F7 Bbmaj7",
-      "Bbmaj7", "Gm7", "Cm7", "F7",
-      "Ebmaj7", "Edim7", "Dm7 G7", "Cm7 F7"
+      "Bbmaj7", "Gm7", "Cm7 F7",
+      "Ebmaj7 Edim7", "Dm7 G7", "Cm7 F7"
     ],
     description: "A charming waltz from Disney's 'Snow White,' transformed into a beloved jazz standard."
   },
@@ -1773,8 +1774,8 @@ const progressions = {
       "Dm7 G7", "Cmaj7 Fmaj7", "Bbmaj7 E7alt", "A7alt",
       "Dm7 G7", "Cmaj7 Fmaj7", "Dm7 G7", "Cmaj7 A7alt",
       "Dm7 G7", "Cmaj7 Fmaj7", "Bbmaj7 E7alt", "A7alt",
-      "Gm7", "C7", "Fmaj7", "Fmaj7",
-      "Ebm7", "Ab7", "Dbmaj7", "Gm7 C7",
+      "Gm7 C7", "Fmaj7", "Fmaj7",
+      "Ebm7 Ab7", "Dbmaj7", "Gm7 C7",
       "Dm7 G7", "Cmaj7 Fmaj7", "Dm7 G7", "Cmaj7 A7alt",
       "Dm7 G7", "Cmaj7 Fmaj7", "Bbmaj7 Gm7 C7", "F6"
     ],
@@ -1810,14 +1811,14 @@ const progressions = {
     defaultKey: "Eb",
     displayName: "There Will Never Be Another You",
     progression: [
-      "Ebmaj7", "Ebmaj7", "Fm7", "Bb7",
-      "Ebmaj7", "Cm7", "F7", "Bb7",
-      "Ebmaj7", "Ebmaj7", "Fm7", "Bb7",
-      "Ebmaj7", "Cm7", "Fm7 Bb7", "Ebmaj7",
-      "Ebm7", "Ab7", "Dbmaj7", "Dbmaj7",
-      "Dbm7", "Gb7", "Bmaj7", "Bb7sus Bb7", 
-      "Ebmaj7", "Ebmaj7", "Fm7", "Bb7",
-      "Ebmaj7", "Cm7", "Fm7 Bb7", "Ebmaj7"
+      "Ebmaj7", "Ebmaj7", "Fm7 Bb7",
+      "Ebmaj7 Cm7", "F7 Bb7",
+      "Ebmaj7", "Ebmaj7", "Fm7 Bb7",
+      "Ebmaj7 Cm7", "Fm7 Bb7", "Ebmaj7",
+      "Ebm7 Ab7", "Dbmaj7", "Dbmaj7",
+      "Dbm7 Gb7", "Bmaj7", "Bb7sus Bb7", 
+      "Ebmaj7", "Ebmaj7", "Fm7 Bb7",
+      "Ebmaj7 Cm7", "Fm7 Bb7", "Ebmaj7"
     ],
     description: "A popular jazz standard by Harry Warren, loved for its beautiful melody and flowing changes."
   },
@@ -1845,7 +1846,7 @@ const progressions = {
       "G6", "G6", "Cm6", "Cm6",
       "G6", "D7", "G6", "D7",
       "Eb6", "Eb6", "Bbm6", "Bbm6",
-      "G6", "E7", "Am7", "D7",
+      "G6", "E7", "Am7 D7",
       "G6", "G6", "Cm6", "Cm6",
       "G6", "D7", "G6", "G6"
     ],
@@ -1859,8 +1860,8 @@ const progressions = {
       "G6", "D7", "G6", "D7",
       "G6", "G6", "C6", "C6",
       "G6", "D7", "G6", "G6",
-      "Am7", "D7", "G6", "E7",
-      "Am7", "D7", "G6", "D7",
+      "Am7 D7", "G6 E7",
+      "Am7 D7", "G6 D7",
       "G6", "G6", "C6", "C6",
       "G6", "D7", "G6", "G6"
     ],
@@ -1873,7 +1874,7 @@ const progressions = {
       "Eb7", "Eb7", "Ab6", "Ab6",
       "Eb7", "Eb7", "Ab6", "Ab6",
       "Eb7", "Eb7", "Ab6", "Ab6",
-      "C7", "C7", "F6", "F6",
+      "C7", "C7", "F6", "F6", // Usually B section starts on F7 in standard, F6 in gypsy is common
       "C7", "C7", "F6", "F6",
       "C7", "C7", "F6", "F6",
       "C7", "C7", "F6", "F6",
@@ -1919,8 +1920,8 @@ const progressions = {
       "D6", "A7", "D6", "A7",
       "D6", "D6", "G6", "G6",
       "D6", "A7", "D6", "D6",
-      "Em7", "A7", "D6", "B7",
-      "Em7", "A7", "D6", "A7",
+      "Em7 A7", "D6 B7",
+      "Em7 A7", "D6 A7",
       "D6", "D6", "G6", "G6",
       "D6", "A7", "D6", "D6"
     ],
@@ -1949,8 +1950,8 @@ const progressions = {
       "Am6", "Dm6", "Am6 E7", "Am6",
       "Am6", "Dm6", "Am6", "E7",
       "Am6", "Dm6", "Am6 E7", "Am6",
-      "Dm6", "G7", "Cmaj7", "Fmaj7", 
-      "Bm7b5", "E7", "Am6", "E7",
+      "Dm6 G7", "Cmaj7 Fmaj7", 
+      "Bm7b5 E7", "Am6 E7",
       "Am6", "Dm6", "Am6", "E7",
       "Am6", "Dm6", "Am6 E7", "Am6"
     ],
@@ -1965,7 +1966,7 @@ const progressions = {
       "Cmaj7", "Cmaj7", "G7", "G7",
       "G7", "G7", "Cmaj7", "Cmaj7",
       "Fmaj7", "Fmaj7", "Cmaj7", "Cmaj7",
-      "Dm7", "G7", "Cmaj7 G7", "Cmaj7",
+      "Dm7 G7", "Cmaj7 G7", "Cmaj7",
       "Cmaj7", "Cmaj7", "G7", "G7",
       "G7", "G7", "Cmaj7", "Cmaj7"
     ],
@@ -2409,7 +2410,7 @@ function standardizeNoteNameForSamples(note) {
 function getStandardQuality(rawQualityInput) {
     if (!rawQualityInput || typeof rawQualityInput !== 'string') return 'maj7';
     let quality = rawQualityInput.toLowerCase().trim();
-    quality = quality.split('/')[0].trim();
+    quality = quality.split('/')[0].trim(); // Ignore slash bass notes for quality lookup
     if (quality === 'alt' || quality === '7alt') return 'alt';
     if (quality === '7b9' || quality === 'dom7b9') return 'dom7b9';
     if (quality === '7#9' || quality === 'dom7#9') return 'dom7#9';
@@ -2423,13 +2424,14 @@ function getStandardQuality(rawQualityInput) {
     if (quality === 'm7' || quality === 'min7' || quality === 'mi7' || quality.startsWith('m7') || quality.startsWith('min7')) return 'min7';
     if (quality === 'maj6' || quality === 'ma6' || quality === '6' || quality.startsWith('maj6') || quality.startsWith('ma6')) return 'maj6';
     if (quality === 'm6' || quality === 'min6' || quality === 'mi6' || quality.startsWith('m6') || quality.startsWith('min6')) return 'min6';
-    if (quality === '6/9' || quality.startsWith('6/9')) return 'maj6';
+    if (quality === '6/9' || quality.startsWith('6/9')) return '6/9'; // Keep 6/9 distinct
     if (quality === 'maj' || quality === '') return 'maj';
     if (quality === 'm' || quality === 'min' || quality === 'mi') return 'min';
     if (quality === 'dim' || quality === '°') return 'dim';
     if (quality === 'aug' || quality === '+') return 'aug';
     if (quality === 'sus4' || quality === 'sus') return 'sus4';
     if (quality === 'sus2') return 'sus2';
+    // Check direct match after processing
     if (CHORD_INTERVALS[rawQualityInput]) return rawQualityInput;
     if (CHORD_INTERVALS[quality]) return quality;
     console.warn(`getStandardQuality: Unstandardized quality "${rawQualityInput}". Defaulting to 'maj7'.`);
@@ -2441,12 +2443,26 @@ function parseChord(chordString) {
         return null;
     }
     chordString = chordString.trim();
+    // Match root note (C, Db, F#, etc.) and the rest as quality string
     const match = chordString.match(/^([A-G][#b]?)(.*)$/);
     if (!match) {
-        return null;
+        return null; // Does not start with a valid note name
     }
     const root = standardizeNoteName(match[1]);
     const qualityString = match[2].trim(); 
+    
+    // If qualityString itself is a valid root note, then it's not a quality (e.g. "C D" is not "C" with quality "D")
+    // This helps distinguish "Am7 D7" (two chords) from "C aug" (one chord)
+    if (qualityString && parseChord(qualityString) && NOTES_CHROMATIC.includes(standardizeNoteName(qualityString.match(/^([A-G][#b]?)/)?.[1] || ""))) {
+         // This means qualityString looks like another chord, so the original chordString was probably just a root.
+         // e.g. if chordString was "C", match[1]="C", match[2]="". qualityString is empty.
+         // if chordString was "C D", match[1]="C", match[2]=" D". qualityString is "D". parseChord("D") is valid.
+         // We only want to return null if the *entire* original string was just a root, and it's part of a two-chord string.
+         // This check is tricky here. Simpler: parseChord should only parse *one* chord.
+         // If "Am7 D7" is passed, it should parse "Am7". The " D7" is excess.
+         // The calling function (loadProgression) will handle splitting "Am7 D7" into two calls to parseChord.
+    }
+
     const quality = getStandardQuality(qualityString);
     return { root: root, quality: quality, originalString: chordString };
 }
@@ -2459,48 +2475,68 @@ function parseRomanNumeralToAbsoluteChord(romanString, key) {
         console.error(`Invalid key for Roman numeral parsing: ${key}`);
         return { root: 'C', quality: 'maj7', originalRoman: romanString };
     }
-    const firstChordInSplit = romanString.split('/')[0].trim();
+    const firstChordInSplit = romanString.split('/')[0].trim(); // Handle cases like V7/ii (secondary dominant)
+    
+    // Attempt to parse as an absolute chord first
     const absoluteChordAttempt = parseChord(firstChordInSplit);
     if (absoluteChordAttempt && absoluteChordAttempt.root && CHORD_INTERVALS[absoluteChordAttempt.quality]) {
         return { ...absoluteChordAttempt, originalRoman: romanString };
     }
+
+    // If not an absolute chord, try Roman numeral parsing
     const romanMatch = firstChordInSplit.match(/^(b|#)?([IViv]+)(.*)$/);
     if (!romanMatch) {
+        // If it doesn't match Roman numeral pattern either, return default or log error
+        console.warn(`Could not parse "${firstChordInSplit}" as Roman numeral or absolute chord. Defaulting.`);
         return { root: normalizedKeyRoot, quality: 'maj7', originalRoman: romanString };
     }
     const accidental = romanMatch[1];
     const numeral = romanMatch[2];
     let qualitySuffix = romanMatch[3].trim();
+
     const majorScaleIntervals = { 'I': 0, 'II': 2, 'III': 4, 'IV': 5, 'V': 7, 'VI': 9, 'VII': 11 };
-    const minorScaleIntervals = { 'i': 0, 'ii': 2, 'III': 3, 'iv': 5, 'v': 7, 'VI': 8, 'VII': 10 };
+    const minorScaleIntervals = { 'i': 0, 'ii': 2, 'III': 3, 'iv': 5, 'v': 7, 'VI': 8, 'VII': 10 }; // Natural minor for reference
+    
     let degreeInterval;
     const isUpperCaseNumeral = numeral === numeral.toUpperCase();
+
     if (isMinorKey) {
-        degreeInterval = minorScaleIntervals[numeral.toLowerCase()];
-        if (isUpperCaseNumeral && numeral.toLowerCase() === 'v') degreeInterval = majorScaleIntervals['V'];
-        if (isUpperCaseNumeral && numeral.toLowerCase() === 'iv') degreeInterval = majorScaleIntervals['IV'];
-    } else {
+        // In minor keys, V is often major/dominant, III can be major, VI and VII can be major too (harmonic/melodic minor)
+        if (isUpperCaseNumeral) { // E.g., V7, IIImaj7, IVmaj7, VImaj7, VIImaj7 in minor context
+             degreeInterval = majorScaleIntervals[numeral.toUpperCase()]; // Use major scale interval if uppercase
+        } else { // e.g. i, ii°, iv, v
+             degreeInterval = minorScaleIntervals[numeral.toLowerCase()];
+        }
+    } else { // Major key
         degreeInterval = majorScaleIntervals[numeral.toUpperCase()];
     }
+
     if (degreeInterval === undefined) {
         console.warn(`Unknown Roman numeral base: ${numeral} in "${firstChordInSplit}". Assuming I of key.`);
         return { root: normalizedKeyRoot, quality: 'maj7', originalRoman: romanString };
     }
+
     let chordRootIndex = (keyRootIndex + degreeInterval) % 12;
     if (accidental === 'b') chordRootIndex = (chordRootIndex - 1 + 12) % 12;
     else if (accidental === '#') chordRootIndex = (chordRootIndex + 1) % 12;
     const chordRoot = NOTES_CHROMATIC[chordRootIndex];
+
     let finalQuality = getStandardQuality(qualitySuffix);
+
+    // If no quality suffix, infer default from Roman numeral style and key
     if (!qualitySuffix) {
-        if (numeral.toLowerCase() === 'v' && (isMinorKey || !qualitySuffix)) {
-            finalQuality = 'dom7';
-        } else if (numeral.toLowerCase() === 'vii' && !isUpperCaseNumeral) {
-            finalQuality = 'min7b5';
-        } else {
-            finalQuality = isUpperCaseNumeral ? 'maj7' : 'min7';
+        if (isMinorKey) {
+            if (numeral.toLowerCase() === 'v' && isUpperCaseNumeral) finalQuality = 'dom7'; // V7 in minor
+            else if (numeral.toLowerCase() === 'vii' && isUpperCaseNumeral) finalQuality = 'dim7'; // VII°7 (leading tone dim7)
+            else if (numeral.toLowerCase() === 'ii' && !isUpperCaseNumeral) finalQuality = 'min7b5'; // ii°7 or iim7b5
+            else finalQuality = isUpperCaseNumeral ? 'maj7' : 'min7'; // Default for others
+        } else { // Major key
+            if (numeral.toLowerCase() === 'v') finalQuality = 'dom7'; // V7 in major
+            else if (numeral.toLowerCase() === 'vii') finalQuality = 'min7b5'; // vii°7 or viim7b5
+            else finalQuality = isUpperCaseNumeral ? 'maj7' : 'min7';
         }
-    } else if (!CHORD_INTERVALS[finalQuality]) {
-        console.warn(`Quality suffix "${qualitySuffix}" for Roman ${firstChordInSplit} not fully resolved. Defaulting based on numeral.`);
+    } else if (!CHORD_INTERVALS[finalQuality]) { // Suffix was present but not fully resolved
+        console.warn(`Quality suffix "${qualitySuffix}" for Roman ${firstChordInSplit} not fully resolved. Defaulting based on numeral case.`);
         finalQuality = isUpperCaseNumeral ? 'maj7' : 'min7';
     }
     return { root: chordRoot, quality: finalQuality, originalRoman: romanString };
@@ -2523,14 +2559,16 @@ function getChordNotes(root, quality) {
 
 function suggestScaleForQuality(quality) {
     const scaleMap = {
-        'maj7': 'major', 'maj': 'major', 'maj6': 'major', 'maj9': 'major',
-        'dom7': 'mixolydian', 'dom9': 'mixolydian', 'dom7b9': 'diminishedWH',
+        'maj7': 'major', 'maj': 'major', 'maj6': 'major', 'maj9': 'major', '6/9': 'major',
+        'dom7': 'mixolydian', 'dom9': 'mixolydian', 'dom7b9': 'diminishedHW', // HW for dom func
         'dom7#9': 'altered', 'alt': 'altered', 'dom7sus': 'mixolydian',
+        '7#11': 'lydianDominant', 'maj7#11': 'lydian',
         'min7': 'dorian', 'min': 'dorian', 'min9': 'dorian', 'min6': 'dorian',
-        'min7b5': 'locrian', 'dim7': 'diminishedWH',
-        'imaj7': 'melodicMinor',
+        'min7b5': 'locrian', // or Locrian #2
+        'dim7': 'diminishedWH', // WH for dim func
+        'imaj7': 'melodicMinor', 
     };
-    return scaleMap[quality] || 'major';
+    return scaleMap[quality] || 'major'; // Default to major if no specific mapping
 }
 
 // ==================================
@@ -2584,7 +2622,8 @@ function createQualityOptions(selectedQuality = 'maj7') {
         { value: 'dom7b5', label: '7b5' }, { value: 'alt', label: 'alt' }, { value: 'dom7sus', label: '7sus' },
         { value: 'imaj7', label: 'm(maj7)' }, { value: 'maj', label: 'maj' }, { value: 'min', label: 'min' },
         { value: 'dim', label: 'dim' }, { value: 'aug', label: 'aug' }, { value: 'sus4', label: 'sus4' },
-        { value: 'sus2', label: 'sus2' }
+        { value: 'sus2', label: 'sus2' }, { value: '6/9', label: '6/9'},
+        { value: '7#11', label: '7#11'}, { value: 'maj7#11', label: 'maj7#11'}
     ];
     return qualityDisplayOrder.map(q =>
         `<option value="${q.value}"${q.value === selectedQuality ? ' selected' : ''}>${q.label}</option>`
@@ -3592,22 +3631,61 @@ function loadProgression(progressionName, overrideKey = null, isUserSong = false
                 });
             });
         } else {
-            const potentialSplit = rawChordStringFromDefinition.split('/');
-            if (potentialSplit.length === 2 &&
-                !parseChord(rawChordStringFromDefinition) &&
-                parseChord(potentialSplit[0].trim()) && parseChord(potentialSplit[1].trim())) {
+            let effectiveChordString = rawChordStringFromDefinition.trim();
+            if (effectiveChordString.startsWith("(") && effectiveChordString.endsWith(")")) {
+                effectiveChordString = effectiveChordString.substring(1, effectiveChordString.length - 1).trim();
+            }
+
+            const spaceParts = effectiveChordString.split(/\s+/);
+            let chord1ForSpaceSplit = null;
+            let chord2ForSpaceSplit = null;
+            let identifiedAsSpaceSplit = false;
+
+            if (spaceParts.length === 2) { // e.g. "Am7 D7"
+                if (parseChord(spaceParts[0]) && parseChord(spaceParts[1])) {
+                    chord1ForSpaceSplit = spaceParts[0];
+                    chord2ForSpaceSplit = spaceParts[1];
+                    identifiedAsSpaceSplit = true;
+                }
+            } else if (spaceParts.length === 4) { // e.g. "C maj7 G dom7"
+                 const firstCandidate = `${spaceParts[0]} ${spaceParts[1]}`;
+                 const secondCandidate = `${spaceParts[2]} ${spaceParts[3]}`;
+                 if (parseChord(firstCandidate) && parseChord(secondCandidate)) {
+                     chord1ForSpaceSplit = firstCandidate;
+                     chord2ForSpaceSplit = secondCandidate;
+                     identifiedAsSpaceSplit = true;
+                 }
+            }
+
+            if (identifiedAsSpaceSplit) {
                 isSplitInOriginalDefinition = true;
                 partsToProcessBasedOnOriginalDefinition.push({
-                    parsedInOriginalContext: parseRomanNumeralToAbsoluteChord(potentialSplit[0].trim(), originalSongDefaultKey)
+                    parsedInOriginalContext: parseRomanNumeralToAbsoluteChord(chord1ForSpaceSplit, originalSongDefaultKey)
                 });
                 partsToProcessBasedOnOriginalDefinition.push({
-                    parsedInOriginalContext: parseRomanNumeralToAbsoluteChord(potentialSplit[1].trim(), originalSongDefaultKey)
+                    parsedInOriginalContext: parseRomanNumeralToAbsoluteChord(chord2ForSpaceSplit, originalSongDefaultKey)
                 });
             } else {
-                isSplitInOriginalDefinition = false;
-                partsToProcessBasedOnOriginalDefinition.push({
-                    parsedInOriginalContext: parseRomanNumeralToAbsoluteChord(rawChordStringFromDefinition, originalSongDefaultKey)
-                });
+                const potentialSlashSplit = effectiveChordString.split('/');
+                const rawIsComplexSingleChord = parseChord(rawChordStringFromDefinition.trim());
+
+                if (potentialSlashSplit.length === 2 &&
+                    !rawIsComplexSingleChord && 
+                    parseChord(potentialSlashSplit[0].trim()) && parseChord(potentialSlashSplit[1].trim())) {
+                    
+                    isSplitInOriginalDefinition = true;
+                    partsToProcessBasedOnOriginalDefinition.push({
+                        parsedInOriginalContext: parseRomanNumeralToAbsoluteChord(potentialSlashSplit[0].trim(), originalSongDefaultKey)
+                    });
+                    partsToProcessBasedOnOriginalDefinition.push({
+                        parsedInOriginalContext: parseRomanNumeralToAbsoluteChord(potentialSlashSplit[1].trim(), originalSongDefaultKey)
+                    });
+                } else {
+                    isSplitInOriginalDefinition = false;
+                    partsToProcessBasedOnOriginalDefinition.push({
+                        parsedInOriginalContext: parseRomanNumeralToAbsoluteChord(effectiveChordString, originalSongDefaultKey)
+                    });
+                }
             }
         }
 
@@ -3617,7 +3695,7 @@ function loadProgression(progressionName, overrideKey = null, isUserSong = false
             
             let finalScaleRoot, finalScaleType;
             if (originalPart.originalScaleRoot && originalPart.originalScaleType) {
-                const originalScaleRootData = { root: originalPart.originalScaleRoot, quality: 'maj' };
+                const originalScaleRootData = { root: originalPart.originalScaleRoot, quality: 'maj' }; // Assume maj for scale root transposition
                 const transposedScaleRootInfo = transposeChordData(originalScaleRootData, originalSongDefaultKeyRoot, targetGlobalKeyRoot);
                 finalScaleRoot = transposedScaleRootInfo.root;
                 finalScaleType = originalPart.originalScaleType;
@@ -3633,8 +3711,10 @@ function loadProgression(progressionName, overrideKey = null, isUserSong = false
                 scaleType: finalScaleType
             });
         });
-
+        
         if (isSplitInOriginalDefinition && finalPartsDataForMeasure.length === 1) {
+            // If logic determined it should be split but only one part was generated (e.g. from a single Roman Numeral)
+            // duplicate the part. This shouldn't happen with the new logic if two distinct chords are parsed.
             finalPartsDataForMeasure.push({ ...finalPartsDataForMeasure[0] });
         }
         
@@ -3697,14 +3777,13 @@ function updateProgressionKey(newKey) {
 
     Array.from(UI.elements.measures.children).forEach((measureElement, measureIndex) => {
         if (measureIndex < currentFunctionalProgression.length) {
-            const rawChordStringFromOriginalDefinition = currentFunctionalProgression[measureIndex];
+            const rawChordStringFromDefinition = currentFunctionalProgression[measureIndex];
             const measurePartsUI = measureElement.querySelectorAll('.measure-part');
             
             let originalPartsToProcess = [];
-            let isSplitInOriginalDefinition = false;
+             // let isSplitInOriginalDefinition = false; // Not needed here, UI already reflects split status
 
             if (isUserSongCurrentlyLoaded() && songDataForOriginalKey.parts && songDataForOriginalKey.parts[measureIndex]) {
-                isSplitInOriginalDefinition = songDataForOriginalKey.splitStatus[measureIndex];
                 songDataForOriginalKey.parts[measureIndex].forEach(userPartData => {
                     const parsedOriginal = parseRomanNumeralToAbsoluteChord(userPartData.originalRoman || `${userPartData.root}${userPartData.quality}`, originalSongDefaultKey);
                     originalPartsToProcess.push({
@@ -3714,22 +3793,56 @@ function updateProgressionKey(newKey) {
                     });
                 });
             } else {
-                const potentialSplit = rawChordStringFromOriginalDefinition.split('/');
-                if (potentialSplit.length === 2 &&
-                    !parseChord(rawChordStringFromOriginalDefinition) &&
-                    parseChord(potentialSplit[0].trim()) && parseChord(potentialSplit[1].trim())) {
-                    isSplitInOriginalDefinition = true;
+                let effectiveChordString = rawChordStringFromDefinition.trim();
+                if (effectiveChordString.startsWith("(") && effectiveChordString.endsWith(")")) {
+                    effectiveChordString = effectiveChordString.substring(1, effectiveChordString.length - 1).trim();
+                }
+
+                const spaceParts = effectiveChordString.split(/\s+/);
+                let chord1ForSpaceSplit = null;
+                let chord2ForSpaceSplit = null;
+                let identifiedAsSpaceSplit = false;
+
+                if (spaceParts.length === 2) {
+                    if (parseChord(spaceParts[0]) && parseChord(spaceParts[1])) {
+                        chord1ForSpaceSplit = spaceParts[0];
+                        chord2ForSpaceSplit = spaceParts[1];
+                        identifiedAsSpaceSplit = true;
+                    }
+                } else if (spaceParts.length === 4) {
+                    const firstCandidate = `${spaceParts[0]} ${spaceParts[1]}`;
+                    const secondCandidate = `${spaceParts[2]} ${spaceParts[3]}`;
+                    if (parseChord(firstCandidate) && parseChord(secondCandidate)) {
+                        chord1ForSpaceSplit = firstCandidate;
+                        chord2ForSpaceSplit = secondCandidate;
+                        identifiedAsSpaceSplit = true;
+                    }
+                }
+
+                if (identifiedAsSpaceSplit) {
                     originalPartsToProcess.push({
-                        parsedInOriginalContext: parseRomanNumeralToAbsoluteChord(potentialSplit[0].trim(), originalSongDefaultKey)
+                        parsedInOriginalContext: parseRomanNumeralToAbsoluteChord(chord1ForSpaceSplit, originalSongDefaultKey)
                     });
                     originalPartsToProcess.push({
-                        parsedInOriginalContext: parseRomanNumeralToAbsoluteChord(potentialSplit[1].trim(), originalSongDefaultKey)
+                        parsedInOriginalContext: parseRomanNumeralToAbsoluteChord(chord2ForSpaceSplit, originalSongDefaultKey)
                     });
                 } else {
-                    isSplitInOriginalDefinition = false;
-                    originalPartsToProcess.push({
-                        parsedInOriginalContext: parseRomanNumeralToAbsoluteChord(rawChordStringFromOriginalDefinition, originalSongDefaultKey)
-                    });
+                    const potentialSlashSplit = effectiveChordString.split('/');
+                    const rawIsComplexSingleChord = parseChord(rawChordStringFromDefinition.trim());
+                    if (potentialSlashSplit.length === 2 &&
+                        !rawIsComplexSingleChord &&
+                        parseChord(potentialSlashSplit[0].trim()) && parseChord(potentialSlashSplit[1].trim())) {
+                        originalPartsToProcess.push({
+                            parsedInOriginalContext: parseRomanNumeralToAbsoluteChord(potentialSlashSplit[0].trim(), originalSongDefaultKey)
+                        });
+                        originalPartsToProcess.push({
+                            parsedInOriginalContext: parseRomanNumeralToAbsoluteChord(potentialSlashSplit[1].trim(), originalSongDefaultKey)
+                        });
+                    } else {
+                        originalPartsToProcess.push({
+                            parsedInOriginalContext: parseRomanNumeralToAbsoluteChord(effectiveChordString, originalSongDefaultKey)
+                        });
+                    }
                 }
             }
 
@@ -3753,7 +3866,7 @@ function updateProgressionKey(newKey) {
                     }
                     partElement.querySelector('.second-key').value = finalScaleRoot;
                     partElement.querySelector('.scale-select').value = finalScaleType;
-                } else if (originalPartsToProcess.length > 0) {
+                } else if (originalPartsToProcess.length > 0) { // Fallback if UI has more parts than definition (e.g. user split it)
                     const lastOriginalPart = originalPartsToProcess[originalPartsToProcess.length - 1];
                     const transposedChord = transposeChordData(lastOriginalPart.parsedInOriginalContext, originalSongDefaultKeyRoot, newTargetGlobalKeyRoot);
                      partElement.querySelector('.root-note').value = transposedChord.root;
@@ -3762,7 +3875,7 @@ function updateProgressionKey(newKey) {
                     partElement.querySelector('.scale-select').value = suggestScaleForQuality(transposedChord.quality);
                 }
             });
-        } else {
+        } else { // Measure was added by user, not part of original loaded progression
             const previousGlobalKey = measureElement.dataset.lastKeyContext || originalSongDefaultKey; 
             const previousGlobalKeyRoot = standardizeNoteName(previousGlobalKey.replace('m', ''));
             
@@ -3822,7 +3935,7 @@ function addMeasure(root = 'C', quality = 'maj7', scaleRoot = 'C', scaleType = '
     let measureHTML = `<div class="measure-header"><span class="measure-number">${newMeasureIndex + 1}</span></div>`;
     measureHTML += createMeasurePartHTML({ root, quality, scaleRoot, scaleType }, 0);
     if (isInitiallySplit) {
-        const spData = secondPartData || { root, quality, scaleRoot, scaleType };
+        const spData = secondPartData || { root, quality, scaleRoot, scaleType }; // Use provided or duplicate first
         measureHTML += createMeasurePartHTML(spData, 1);
     }
     measureHTML += `<div class="measure-footer"><button class="split-measure-button">${isInitiallySplit ? 'Unsplit' : 'Split'}</button></div>`;
@@ -3990,10 +4103,10 @@ function saveCurrentProgression() {
             const absoluteChordStringForStorage = `${root}${qualityDisplayText}`;
             measurePartsDataForStorage.push({
                 root: root, quality: qualityValue,
-                originalRoman: absoluteChordStringForStorage,
+                originalRoman: absoluteChordStringForStorage, // Store as absolute for easier re-keying if needed
                 scaleRoot: scaleRoot, scaleType: scaleType
             });
-            if (partIdx > 0) measureCombinedString += " / ";
+            if (partIdx > 0) measureCombinedString += " / "; // Using slash for consistency in stored string
             measureCombinedString += absoluteChordStringForStorage;
         });
         savedProgressionData.parts.push(measurePartsDataForStorage);
@@ -4004,8 +4117,8 @@ function saveCurrentProgression() {
     localStorage.setItem('userBebopProgressions', JSON.stringify(userSongs));
     populateUserSongsDropdown();
     UI.elements.userProgressionSelect.value = progressionNameInput;
-    currentProgressionName = progressionNameInput;
-    currentFunctionalProgression = savedProgressionData.progression;
+    currentProgressionName = progressionNameInput; // Update current loaded song to the one just saved
+    currentFunctionalProgression = savedProgressionData.progression; // Update functional prog
     alert(`Progression "${progressionNameInput}" saved!`);
     log(`User progression saved: ${progressionNameInput} with defaultKey: ${keyForSaving}`);
 }
@@ -4051,23 +4164,29 @@ function deleteSelectedUserSong() {
 
 function toggleMeasureLoopSelection(measureIndex) {
     if (!AppState.loopingActive) {
-        toggleLoopingMode();
-        if (!AppState.loopingActive) return;
+        toggleLoopingMode(); // This will activate looping and optionally alert the user
+        if (!AppState.loopingActive) return; // If user somehow cancelled or it failed to activate
     }
+
     const measureElement = UI.elements.measures.children[measureIndex];
     if (!measureElement) return;
+
     measureElement.classList.toggle('loop-selected');
+
+    // Recalculate loop range based on all currently selected measures
     const selectedIndices = Array.from(UI.elements.measures.children)
         .map((m, i) => m.classList.contains('loop-selected') ? i : -1)
         .filter(i => i !== -1).sort((a, b) => a - b);
+
     if (selectedIndices.length > 0) {
         AppState.loopStartMeasure = selectedIndices[0];
         AppState.loopEndMeasure = selectedIndices[selectedIndices.length - 1];
+        // Ensure all measures between start and end are also visually selected
         Array.from(UI.elements.measures.children).forEach((m, i) => {
             m.classList.toggle('loop-selected', i >= AppState.loopStartMeasure && i <= AppState.loopEndMeasure);
         });
     } else {
-        resetLoop();
+        resetLoop(); // If no measures are selected, clear the loop
     }
     log(`Loop range: ${AppState.loopStartMeasure} to ${AppState.loopEndMeasure}`);
 }
@@ -4082,8 +4201,16 @@ function toggleLoopingMode() {
     AppState.loopingActive = !AppState.loopingActive;
     UI.elements.loopSelectedToggle.textContent = AppState.loopingActive ? "Looping ON" : "Looping Off";
     UI.elements.loopSelectedToggle.classList.toggle('active', AppState.loopingActive);
-    if (!AppState.loopingActive) resetLoop();
-    else alert("Looping ON. Click measures to define loop range.");
+
+    if (!AppState.loopingActive) {
+        resetLoop();
+    } else {
+        alert("Looping ON. Click on measures to define the loop range (start and end). Click again to deselect.");
+        // Optionally, auto-select the first measure if none are selected
+        if (AppState.loopStartMeasure === -1 && UI.elements.measures.children.length > 0) {
+           // toggleMeasureLoopSelection(0); // This could be a bit aggressive, user might prefer explicit selection
+        }
+    }
     log(`Looping mode: ${AppState.loopingActive ? 'ON' : 'OFF'}`);
 }
 
@@ -4091,55 +4218,79 @@ function toggleGuideTones() {
     AppState.guideTonesActive = !AppState.guideTonesActive;
     UI.elements.guideTonesToggle.textContent = AppState.guideTonesActive ? "Guide Tones ON" : "Guide Tones Off";
     UI.elements.guideTonesToggle.classList.toggle('active', AppState.guideTonesActive);
+
+    // Determine which measure part is currently "active" visually or contextually
     const currentMeasureEl = UI.elements.measures.children[AppState.currentMeasure];
     const activePart = currentMeasureEl?.querySelector('.measure-part.part-active') || currentMeasureEl?.querySelector('.measure-part');
-    if (AppState.guideTonesActive) highlightGuideTones(activePart);
-    else clearGuideToneHighlights();
+    
+    if (AppState.guideTonesActive) {
+        highlightGuideTones(activePart);
+    } else {
+        clearGuideToneHighlights();
+    }
     log(`Guide tones: ${AppState.guideTonesActive ? 'ON' : 'OFF'}`);
 }
 
 function highlightGuideTones(activeMeasurePartContext = null) {
     clearGuideToneHighlights();
     if (!AppState.guideTonesActive) return;
+
     let chordRootStr, chordQualityStr;
+
     if (activeMeasurePartContext) {
         chordRootStr = activeMeasurePartContext.querySelector('.root-note')?.value;
         chordQualityStr = activeMeasurePartContext.querySelector('.chord-quality')?.value;
     } else {
+        // Fallback: if no specific part is active, try the first part of the first measure
         const firstMeasurePart = UI.elements.measures.children[0]?.querySelector('.measure-part');
-        if (!firstMeasurePart) return;
+        if (!firstMeasurePart) return; // No measures or parts to work with
         chordRootStr = firstMeasurePart.querySelector('.root-note')?.value;
         chordQualityStr = firstMeasurePart.querySelector('.chord-quality')?.value;
     }
-    if (!chordRootStr || !chordQualityStr) return;
+
+    if (!chordRootStr || !chordQualityStr) return; // Not enough info
+
     const chordRootNote = standardizeNoteName(chordRootStr);
     const chordIntervals = CHORD_INTERVALS[chordQualityStr];
-    if (!chordIntervals) return;
+    if (!chordIntervals) return; // Unknown quality
+
     const rootNoteIndex = NOTES.indexOf(chordRootNote);
-    if (rootNoteIndex === -1) return;
+    if (rootNoteIndex === -1) return; // Invalid root
+
     const guideToneNotesSet = new Set();
-    if (chordIntervals.includes(3)) guideToneNotesSet.add(NOTES[(rootNoteIndex + 3) % 12]);
-    else if (chordIntervals.includes(4)) guideToneNotesSet.add(NOTES[(rootNoteIndex + 4) % 12]);
-    if (chordQualityStr.includes('6')) {
-        if (chordIntervals.includes(9)) guideToneNotesSet.add(NOTES[(rootNoteIndex + 9) % 12]);
-    } else if (chordIntervals.includes(11)) {
-        guideToneNotesSet.add(NOTES[(rootNoteIndex + 11) % 12]);
-    } else if (chordIntervals.includes(10)) {
-        guideToneNotesSet.add(NOTES[(rootNoteIndex + 10) % 12]);
-    } else if (chordIntervals.includes(9) && chordQualityStr === 'dim7') {
-         guideToneNotesSet.add(NOTES[(rootNoteIndex + 9) % 12]);
+
+    // Determine 3rd (or equivalent like b3)
+    if (chordIntervals.includes(3)) guideToneNotesSet.add(NOTES[(rootNoteIndex + 3) % 12]); // Minor 3rd
+    else if (chordIntervals.includes(4)) guideToneNotesSet.add(NOTES[(rootNoteIndex + 4) % 12]); // Major 3rd
+
+    // Determine 7th (or 6th for 6th chords)
+    if (chordQualityStr.includes('6') && !chordQualityStr.includes('7')) { // 6th chords (maj6, min6)
+        if (chordIntervals.includes(9)) guideToneNotesSet.add(NOTES[(rootNoteIndex + 9) % 12]); // Major 6th
+    } else { // 7th chords
+        if (chordIntervals.includes(11)) guideToneNotesSet.add(NOTES[(rootNoteIndex + 11) % 12]); // Major 7th
+        else if (chordIntervals.includes(10)) guideToneNotesSet.add(NOTES[(rootNoteIndex + 10) % 12]); // Minor 7th (dominant or minor)
+        else if (chordIntervals.includes(9) && chordQualityStr === 'dim7') { // Diminished 7th (bb7)
+             guideToneNotesSet.add(NOTES[(rootNoteIndex + 9) % 12]);
+        }
     }
+    
     UI.elements.chordFretboard.querySelectorAll('.note').forEach(noteElement => {
         const noteName = noteElement.textContent;
-        if (noteName === chordRootNote) noteElement.classList.add('root-highlight-for-guides');
-        else if (guideToneNotesSet.has(noteName)) noteElement.classList.add('guide-tone-highlight');
+        if (noteName === chordRootNote) {
+            noteElement.classList.add('root-highlight-for-guides');
+        } else if (guideToneNotesSet.has(noteName)) {
+            noteElement.classList.add('guide-tone-highlight');
+        }
     });
 }
 
 function clearGuideToneHighlights() {
     UI.elements.chordFretboard.querySelectorAll('.note').forEach(n => {
         n.classList.remove('guide-tone-highlight', 'root-highlight-for-guides');
-        n.style.transform = 'translate(-50%, -50%) scale(1)';
+        // Reset transform if it was scaled due to highlight
+        if (n.style.transform.includes('scale(0.95)')) {
+            n.style.transform = 'translate(-50%, -50%) scale(1)';
+        }
     });
 }
 
@@ -4173,7 +4324,7 @@ function initializeFretFlow() {
             updateFretboardNotes(fretboardEl, keySelect.value, scaleSelect.value, tuningArr);
         };
         [keySelect, scaleSelect, tuningSelect].forEach(el => el.addEventListener('change', updateDisplay));
-        updateDisplay();
+        updateDisplay(); // Initial call
     }
     log("FretFlow initialized.");
 }
@@ -4188,8 +4339,9 @@ function addFirstChordListener() {
                 updateFretboardNotes(UI.elements.chordFretboard, scaleRootSelect.value, scaleTypeSelect.value, TUNINGS[UI.elements.chordTuning.value], firstMeasurePart);
             }
         };
+        // Call immediately to set initial fretboard based on the first chord
         updateFunc();
-    } else { 
+    } else { // No measures yet, default display
         updateFretboardNotes(UI.elements.chordFretboard, "C", "major", TUNINGS[UI.elements.chordTuning.value]);
         if (UI.elements.scaleDisplay) UI.elements.scaleDisplay.textContent = "C Major (Default)";
     }
@@ -4200,39 +4352,37 @@ function safeAddEventListener(element, event, handler) {
         element.addEventListener(event, handler);
         return true;
     }
+    // console.warn(`safeAddEventListener: Element for event '${event}' is invalid or has no addEventListener method. Element:`, element);
     return false;
 }
         
 function setupEventListeners() {
     try {
+        // Check for critical elements that must exist for core functionality
         const requiredElements = [
             'startStopButton', 'tempo', 'tempoDisplay', 'timeSignature',
             'progressionSelect', 'keySelect', 'darkModeToggle', 'chordsEnabled',
-            'soundType', 'rhythmicStyleSelect'
+            'soundType', 'rhythmicStyleSelect' // Added this to the check
         ];
         
-        console.log("[DEBUG] In setupEventListeners, before requiredElements check. UI.elements.rhythmicStyleSelect:", UI.elements.rhythmicStyleSelect);
-
         const missingElements = requiredElements.filter(id => {
             const element = UI.elements[id];
-            const isMissing = !element;
-            if (id === 'rhythmicStyleSelect') {
-                console.log(`[DEBUG] Checking rhythmicStyleSelect in filter: element is ${element}, isMissing is ${isMissing}`);
-            }
-            return isMissing;
+            return !element;
         });
 
         if (missingElements.length > 0) {
             const specificErrorMsg = `[CRITICAL] UI elements missing: ${missingElements.join(', ')}. Check HTML IDs and UI.init(). Execution of setupEventListeners will halt.`;
             console.error(specificErrorMsg);
-            alert(specificErrorMsg);
-            updateLoadingStatus(specificErrorMsg, true);
-            return; 
+            alert(specificErrorMsg); // User feedback
+            updateLoadingStatus(specificErrorMsg, true); // Visual feedback
+            return; // Halt further event listener setup
         }
-        console.log("[DEBUG] All required elements found by the check.");
 
+
+        // --- Audio Initialization on User Interaction ---
         document.body.addEventListener('click', ensureAudioInitializedUserInteraction, { once: true });
 
+        // --- Metronome Controls ---
         UI.elements.startStopButton.addEventListener('click', () => AppState.isPlaying ? stopPlayback() : startPlayback());
         
         if (UI.elements.drumSetToggleBtn) {
@@ -4247,10 +4397,11 @@ function setupEventListeners() {
             UI.elements.soundType.addEventListener('change', (e) => {
                 onMetronomeInstrumentChange(e.target.value);
                 updateRhythmicStyleUIVisibility();
-                createBeats();
+                createBeats(); // Recreate beats based on new sound type (especially for drums vs click/woodblock)
             });
         }
         
+        // --- Dark Mode ---
         let currentDarkModeIndex = 0;
         const darkModeClasses = ['', 'dark-mode', 'dark-mode-2', 'dark-mode-3'];
         const activeToggleClasses = ['', 'active', 'active-2', 'active-3'];
@@ -4265,12 +4416,14 @@ function setupEventListeners() {
             log(`Color mode: ${darkModeClasses[currentDarkModeIndex] || 'Light Mode'}`);
         });
 
+        // --- Chords Enabled Toggle ---
         UI.elements.chordsEnabled.addEventListener('click', () => {
             const isActive = UI.elements.chordsEnabled.classList.toggle('active');
             UI.elements.chordsEnabled.textContent = isActive ? 'Chords Enabled' : 'Chords Disabled';
             log(`Chords ${isActive ? 'enabled' : 'disabled'}`);
         });
 
+        // --- Tempo Controls ---
         UI.elements.tempo.addEventListener('input', () => {
             AppState.tempo = parseInt(UI.elements.tempo.value);
             UI.elements.tempoDisplay.textContent = `${AppState.tempo} BPM`;
@@ -4280,18 +4433,21 @@ function setupEventListeners() {
         UI.elements.tapTempo.addEventListener('click', () => {
             const now = Date.now();
             AppState.tapTempoTimestamps.push(now);
-            if (AppState.tapTempoTimestamps.length > 4) AppState.tapTempoTimestamps.shift();
+            if (AppState.tapTempoTimestamps.length > 4) AppState.tapTempoTimestamps.shift(); // Keep last 4 taps
             if (AppState.tapTempoTimestamps.length > 1) {
                 let totalInterval = 0;
-                for (let i = 1; i < AppState.tapTempoTimestamps.length; i++) totalInterval += AppState.tapTempoTimestamps[i] - AppState.tapTempoTimestamps[i-1];
+                for (let i = 1; i < AppState.tapTempoTimestamps.length; i++) {
+                    totalInterval += AppState.tapTempoTimestamps[i] - AppState.tapTempoTimestamps[i-1];
+                }
                 const avgInterval = totalInterval / (AppState.tapTempoTimestamps.length - 1);
-                if (avgInterval > 0 && avgInterval < 3000) { 
+                if (avgInterval > 0 && avgInterval < 3000) { // Avoid extreme values
                     AppState.tempo = Math.max(40, Math.min(220, Math.round(60000 / avgInterval)));
                     UI.elements.tempo.value = AppState.tempo;
                     UI.elements.tempoDisplay.textContent = `${AppState.tempo} BPM`;
                     if (AppState.isPlaying) { stopPlayback(); startPlayback(); }
                 }
             }
+            // Reset tap array if too much time passes between taps
             setTimeout(() => { 
                 if (AppState.tapTempoTimestamps.length > 0 && (Date.now() - AppState.tapTempoTimestamps[AppState.tapTempoTimestamps.length - 1] > 3000)) {
                     AppState.tapTempoTimestamps = []; 
@@ -4299,12 +4455,15 @@ function setupEventListeners() {
             }, 3100);
         });
 
+        // --- Time Signature and Rhythmic Style ---
         UI.elements.timeSignature.addEventListener('change', () => {
-            createBeats();
+            createBeats(); // Recreate beat buttons for the new time signature
             const is44 = parseInt(UI.elements.timeSignature.value) === 4;
+            // Enable/disable split measure buttons based on time signature
             document.querySelectorAll('.measure .split-measure-button').forEach(btn => {
                 btn.disabled = !is44;
-                btn.title = is44 ? "" : "Splitting only available in 4/4.";
+                btn.title = is44 ? "" : "Splitting measures only available in 4/4 time.";
+                // If not 4/4 and measure was split, unsplit it
                 if (!is44 && btn.closest('.measure').dataset.isSplit === 'true') {
                     toggleSplitMeasure(btn.closest('.measure')); 
                 }
@@ -4314,32 +4473,17 @@ function setupEventListeners() {
         });
 
         const rhythmicSelectElement = UI.elements.rhythmicStyleSelect; 
-        console.log("[DEBUG] Before trying to add listener to rhythmicStyleSelect. Element is:", rhythmicSelectElement, "Typeof:", typeof rhythmicSelectElement);
-
         if (rhythmicSelectElement && typeof rhythmicSelectElement.addEventListener === 'function') {
-            try {
-                rhythmicSelectElement.addEventListener('change', (e) => {
-                    AppState.currentRhythmicStyle = e.target.value;
-                    AppState.currentStylePatternBeat = 0;
-                    AppState.currentStyleBar = 0;
-                    createBeats();
-                    log(`Rhythmic style changed to: ${AppState.currentRhythmicStyle}`);
-                });
-                console.log("[DEBUG] Successfully added 'change' listener to rhythmicStyleSelectElement.");
-            } catch (err) {
-                console.error("[CRITICAL DEBUG] Error occurred WHEN ATTEMPTING to add listener to rhythmicStyleSelectElement (which was presumed valid):", err);
-                console.error("[CRITICAL DEBUG] rhythmicStyleSelectElement at time of error:", rhythmicSelectElement);
-            }
-        } else {
-            console.warn("[DEBUG] Did NOT add listener to rhythmicStyleSelect.");
-            if (!rhythmicSelectElement) {
-                console.warn("[DEBUG] Reason: rhythmicSelectElement is falsy (e.g., null, undefined). This should have been caught by requiredElements check.");
-            } else { 
-                console.warn("[DEBUG] Reason: rhythmicSelectElement.addEventListener is not a function. Element type:", typeof rhythmicSelectElement, "Element value:", rhythmicSelectElement);
-            }
+            rhythmicSelectElement.addEventListener('change', (e) => {
+                AppState.currentRhythmicStyle = e.target.value;
+                AppState.currentStylePatternBeat = 0; // Reset pattern index
+                AppState.currentStyleBar = 0; // Reset bar for multi-bar patterns
+                createBeats(); // Recreate beats with the new style
+                log(`Rhythmic style changed to: ${AppState.currentRhythmicStyle}`);
+            });
         }
 
-
+        // --- Reverb ---
         if (UI.elements.reverbDial) {
             UI.elements.reverbDial.addEventListener('input', (e) => {
                 AudioContextManager.reverbAmount = parseInt(e.target.value, 10) / 100;
@@ -4348,31 +4492,34 @@ function setupEventListeners() {
             });
         }
 
+        // --- Progression Loading & Key Changes ---
         UI.elements.progressionSelect.addEventListener('change', (e) => {
             loadProgression(e.target.value, null, false);
-            if (UI.elements.userProgressionSelect) UI.elements.userProgressionSelect.value = "";
+            if (UI.elements.userProgressionSelect) UI.elements.userProgressionSelect.value = ""; // Clear user song selection
         });
 
         if (UI.elements.userProgressionSelect) {
             UI.elements.userProgressionSelect.addEventListener('change', (e) => {
-                if (e.target.value) {
+                if (e.target.value) { // If a user song is selected
                     const userSongs = JSON.parse(localStorage.getItem('userBebopProgressions') || '{}');
                     const selectedSongData = userSongs[e.target.value];
                     loadProgression(e.target.value, selectedSongData?.defaultKey || UI.elements.keySelect.value, true);
-                    if (UI.elements.progressionSelect) UI.elements.progressionSelect.value = "";
+                    if (UI.elements.progressionSelect) UI.elements.progressionSelect.value = ""; // Clear standard progression selection
                 }
             });
         }
 
         UI.elements.keySelect.addEventListener('change', (e) => updateProgressionKey(e.target.value));
         
+        // --- Fretboard Tuning ---
         if (UI.elements.chordTuning) {
             UI.elements.chordTuning.addEventListener('change', () => { 
-                addFirstChordListener(); 
-                initializeFretFlow(); 
+                addFirstChordListener(); // Re-render main fretboard with new tuning
+                initializeFretFlow(); // Re-render FretFlow fretboards
             });
         }
 
+        // --- User Progression Management ---
         if (UI.elements.saveProgressionButton) {
             UI.elements.saveProgressionButton.addEventListener('click', saveCurrentProgression);
         }
@@ -4381,6 +4528,7 @@ function setupEventListeners() {
             UI.elements.deleteUserSongButton.addEventListener('click', deleteSelectedUserSong);
         }
 
+        // --- Guide Tones & Looping Toggles ---
         if (UI.elements.guideTonesToggle) {
             UI.elements.guideTonesToggle.addEventListener('click', toggleGuideTones);
         }
@@ -4389,6 +4537,7 @@ function setupEventListeners() {
             UI.elements.loopSelectedToggle.addEventListener('click', toggleLoopingMode);
         }
 
+        // --- Collapsible Sections ---
         document.querySelectorAll('.collapsible-toggle').forEach(button => {
             button.addEventListener('click', () => {
                 const contentId = button.getAttribute('aria-controls');
@@ -4403,31 +4552,37 @@ function setupEventListeners() {
             });
         });
 
+        // --- Keyboard Shortcuts ---
         document.addEventListener('keydown', (event) => {
             const targetTagName = event.target.tagName.toLowerCase();
+            // Ignore if typing in an input/select/textarea
             if (['input', 'select', 'textarea'].includes(targetTagName)) return;
+
             let tempoChanged = false;
             switch (event.key) {
-                case ' ': event.preventDefault(); UI.elements.startStopButton.click(); break;
-                case 'ArrowUp':
+                case ' ': // Spacebar for Start/Stop
+                    event.preventDefault();
+                    UI.elements.startStopButton.click();
+                    break;
+                case 'ArrowUp': // Up arrow for tempo up
                     event.preventDefault();
                     UI.elements.tempo.value = AppState.tempo = Math.min(220, parseInt(UI.elements.tempo.value) + 1);
                     tempoChanged = true; break;
-                case 'ArrowDown':
+                case 'ArrowDown': // Down arrow for tempo down
                     event.preventDefault();
                     UI.elements.tempo.value = AppState.tempo = Math.max(40, parseInt(UI.elements.tempo.value) - 1);
                     tempoChanged = true; break;
             }
             if (tempoChanged) {
                 UI.elements.tempoDisplay.textContent = `${AppState.tempo} BPM`;
-                if (AppState.isPlaying) { stopPlayback(); startPlayback(); }
+                if (AppState.isPlaying) { stopPlayback(); startPlayback(); } // Restart playback with new tempo
             }
         });
         log("Event listeners set up successfully.");
     } catch (error) {
         console.error("Error during setupEventListeners execution (outer catch):", error);
         if (error.message && error.message.startsWith("[CRITICAL]")) {
-            // Already handled by alert and updateLoadingStatus
+            // Already handled by alert and updateLoadingStatus in the element check
         } else {
             updateLoadingStatus("Error setting up controls. Some features may not work. Check console.", true);
         }
@@ -4439,37 +4594,41 @@ function setupEventListeners() {
 // === INITIALIZATION =============
 // ==================================
 async function initializeApp() {
-    UI.init(); 
+    UI.init(); // Cache DOM elements first
     
+    // Initial UI setup based on default values
     createBeats();
     const initialTuning = TUNINGS[UI.elements.chordTuning?.value || 'standard'] || TUNINGS.standard;
     createFretboard(UI.elements.chordFretboard, initialTuning);
-    onMetronomeInstrumentChange(UI.elements.soundType?.value || 'click');
-    populateUserSongsDropdown();
+    onMetronomeInstrumentChange(UI.elements.soundType?.value || 'click'); // Setup drum UI if needed
+    populateUserSongsDropdown(); // Load any saved user songs
 
-    let initialProgressionName = "I V7"; 
+    // Determine initial progression to load
+    let initialProgressionName = "I V7"; // Default fallback
     if (UI.elements.progressionSelect && UI.elements.progressionSelect.options.length > 0) {
         const firstOptgroupOption = UI.elements.progressionSelect.querySelector('optgroup > option');
         if (firstOptgroupOption) {
             initialProgressionName = firstOptgroupOption.value;
-        } else if (UI.elements.progressionSelect.options[0]) {
+        } else if (UI.elements.progressionSelect.options[0]) { // Fallback if no optgroups
             initialProgressionName = UI.elements.progressionSelect.options[0].value;
         }
     }
     
     const initialProgData = progressions[initialProgressionName] || {};
     const initialKey = UI.elements.keySelect?.value || initialProgData.defaultKey || "C";
-    loadProgression(initialProgressionName, initialKey, false);
+    loadProgression(initialProgressionName, initialKey, false); // Load the initial progression
 
-    initializeFretFlow();
-    setupEventListeners(); 
+    initializeFretFlow(); // Setup the 4 FretFlow fretboards
+    setupEventListeners(); // Set up all event listeners
 
+    // Attempt to initialize audio
     try {
         await AudioContextManager.initialize();
     } catch (e) {
+        // If audio init fails, show message and allow user to retry with a click
         updateLoadingStatus("Audio initialization failed. Click screen to retry.", true);
         document.body.addEventListener('click', async function retryAudioInit() {
-            document.body.removeEventListener('click', retryAudioInit);
+            document.body.removeEventListener('click', retryAudioInit); // Remove self
             updateLoadingStatus("Retrying audio initialization...", true);
             try {
                 await AudioContextManager.initialize();
@@ -4489,6 +4648,7 @@ async function initializeApp() {
     log("Application initialized.");
 }
 
+// Start the application once the DOM is fully loaded
 document.addEventListener('DOMContentLoaded', () => {
     initializeApp().catch(error => {
         console.error("Application initialization failed:", error);
@@ -4499,3 +4659,4 @@ document.addEventListener('DOMContentLoaded', () => {
     </script>
 </body>
 </html>
+
