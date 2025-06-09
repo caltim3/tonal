@@ -991,6 +991,18 @@ body.dark-mode select, body.dark-mode-2 select, body.dark-mode-3 select {
                         <option value="solar">Solar</option>
                         <option value="stella_by_starlight">Stella By Starlight</option>
                     </optgroup>
+                     <optgroup label="Rock">
+                        <option value="something_beatles">Something – The Beatles</option>
+                        <option value="let_it_be">Let It Be – The Beatles</option>
+                        <option value="here_comes_the_sun">Here Comes the Sun – The Beatles</option>
+                        <option value="hey_jude">Hey Jude – The Beatles</option>
+                        <option value="althea_dead">Althea – Grateful Dead</option>
+                        <option value="loser_dead">Loser – Grateful Dead</option>
+                        <option value="dead_flowers_stones">Dead Flowers – Rolling Stones</option>
+                        <option value="honky_tonk_woman">Honky Tonk Woman – Rolling Stones</option>
+                        <option value="black_magic_woman">Black Magic Woman – Santana</option>
+                        <option value="bittersweet_bhtm">Bittersweet – Big Head Todd & the Monsters</option>
+                    </optgroup>
                 </select>
                 <label for="keySelect">Select Key:</label>
                 <select id="keySelect" aria-label="Select key">
@@ -1971,9 +1983,69 @@ const progressions = {
       "G7", "G7", "Cmaj7", "Cmaj7"
     ],
     description: "A popular French song adopted into the Gypsy Jazz repertoire, known for its romantic melody."
+  },
+  something_beatles: {
+    defaultKey: "C",
+    displayName: "Something – The Beatles",
+    progression: ["C", "Cmaj7", "C7", "F", "D", "G", "Am", "Am(ma7)", "Am7", "D", "F", "G", "C"],
+    description: "A lush, romantic progression with chromatic movement and rich major 7th harmonies.",
+  },
+  althea_dead: {
+    defaultKey: "E",
+    displayName: "Althea – Grateful Dead",
+    progression: ["E", "A", "B", "C#m", "F#m", "G#7"],
+    description: "Laid-back and groovy with a bluesy foundation and modal flavor in E major.",
+  },
+  dead_flowers_stones: {
+    defaultKey: "D",
+    displayName: "Dead Flowers – Rolling Stones",
+    progression: ["D", "A", "G"],
+    description: "A country-tinged three-chord song with classic Rolling Stones swagger.",
+  },
+  honky_tonk_woman: {
+    defaultKey: "G",
+    displayName: "Honky Tonk Woman – Rolling Stones",
+    progression: ["G", "C", "D", "F"],
+    description: "Blues-rock riff-based progression with a gritty, swaggering feel.",
+  },
+  loser_dead: {
+    defaultKey: "B",
+    displayName: "Loser – Grateful Dead",
+    progression: ["B", "F#", "E", "C#m", "A", "G#m"],
+    description: "Minor-key narrative groove with chromatic flavor and storytelling drama.",
+  },
+  black_magic_woman: {
+    defaultKey: "Dm",
+    displayName: "Black Magic Woman – Santana",
+    progression: ["Dm", "Am", "Gm", "A7"],
+    description: "A Latin-blues vamp in D minor with a hypnotic, mystical feel.",
+  },
+  let_it_be: {
+    defaultKey: "C",
+    displayName: "Let It Be – The Beatles",
+    progression: ["C", "G", "Am", "F", "C/E", "Dm"],
+    description: "Gospel-inspired progression with emotional warmth and sing-along appeal.",
+  },
+  here_comes_the_sun: {
+    defaultKey: "A",
+    displayName: "Here Comes the Sun – The Beatles",
+    progression: ["A", "E", "F#m", "D", "Bm", "G", "A7"],
+    description: "Bright, optimistic chords with interesting meter changes and melodic movement.",
+  },
+  hey_jude: {
+    defaultKey: "F",
+    displayName: "Hey Jude – The Beatles",
+    progression: ["F", "C", "C7", "Bb", "Dm", "Gm", "F7"],
+    description: "Classic pop anthem with rich voice leading and a powerful outro vamp.",
+  },
+  bittersweet_bhtm: {
+    defaultKey: "A",
+    displayName: "Bittersweet – Big Head Todd",
+    progression: ["A", "E", "F#m", "D"],
+    description: "Emotive and melodic four-chord progression perfect for dynamic builds.",
   }
 };
-
+        
 // ==================================
 // === APPLICATION STATE ==========
 // ==================================
