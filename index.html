@@ -1001,6 +1001,7 @@ body.dark-mode select, body.dark-mode-2 select, body.dark-mode-3 select {
                         <option value="dead_flowers_stones">Dead Flowers – Rolling Stones</option>
                         <option value="honky_tonk_woman">Honky Tonk Woman – Rolling Stones</option>
                         <option value="black_magic_woman">Black Magic Woman – Santana</option>
+                        <option value="sweet_dreams">Sweet Dreams - Patsy Cline</option>
                         <option value="bittersweet_bhtm">Bittersweet – Big Head Todd & the Monsters</option>
                     </optgroup>
                 </select>
@@ -1991,46 +1992,115 @@ const progressions = {
     progression: ["C", "Cmaj7", "C7", "F", "D7", "G", "Aminmaj7", "Am", "Am7", "D7", "F", "Eb G"],
     description: "A lush, romantic progression with a famous chromatic walkdown and a dramatic bridge.",
   },
-  althea_dead: {
-    defaultKey: "E",
-    displayName: "Althea – Grateful Dead",
-    // FIX: Reordered to reflect the main riff (B -> A -> E).
-    progression: ["B", "A", "E", "C#m", "F#m", "G#7"],
-    description: "Laid-back and groovy, built on the iconic B-A-E riff with a modal flavor.",
-  },
-  dead_flowers_stones: {
-    defaultKey: "D",
-    displayName: "Dead Flowers – Rolling Stones",
-    // FIX: Added the essential C chord from the chorus.
-    progression: ["D", "A", "G", "C"],
-    description: "A country-tinged progression with a classic G-C-G chorus hook and Stones swagger.",
-  },
-  honky_tonk_woman: {
-    defaultKey: "G",
-    displayName: "Honky Tonk Woman – Rolling Stones",
-    // FIX: Removed the non-standard F chord.
-    progression: ["G", "C", "D"],
-    description: "Classic I-IV-V blues-rock progression with a gritty, swaggering feel.",
-  },
-  loser_dead: {
-    defaultKey: "Am", // FIX: Corrected key from B to Am.
-    displayName: "Loser – Grateful Dead",
-    // FIX: Replaced with the correct chords for the Am key.
-    progression: ["Am", "G", "D", "F", "C"],
-    description: "Minor-key narrative groove with storytelling drama in the key of A minor.",
-  },
+    althea: {
+      defaultKey: "A",
+      displayName: "Althea – Grateful Dead",
+      progression: [
+        // Verse 1
+        "Bm", "A", "E", "A",
+        "Bm", "A", "E",
+        "Bm", "A", "E", "A",
+        "Bm", "A", "E",
+    
+        // Response / bridge line
+        "A", "C#m", "D", "A",
+        "C#m", "E", "Bm", "A", "E"
+      ],
+      description: "Laid-back shuffle groove with a fluid verse-response format and introspective lyricism, blending blues, folk, and jazz inflections."
+    },
+    dead_flowers: {
+      defaultKey: "D",
+      displayName: "Dead Flowers – The Rolling Stones",
+      progression: [
+        // Verse
+        "D", "A", "G", "D",
+        "D", "A", "G", "D",
+        "D", "A", "G", "D",
+        "D", "A", "G", "D",
+    
+        // Pre-chorus
+        "A", "D",
+        "A", "D",
+    
+        // Chorus
+        "G", "D", "Dsus4", "D", "Dsus2",
+        "G", "D", "Dsus4", "D", "Dsus2",
+        "G", "D", "Dsus4", "D", "Dsus2",
+        "D", "A", "G", "D"
+      ],
+      description: "Country ballad with twangy charm, featuring I–IV–V progression and suspended chord embellishments for classic Stones flavor."
+    },
+    honky_tonk_women: {
+      defaultKey: "G",
+      displayName: "Honky Tonk Women – The Rolling Stones",
+      progression: [
+        // Verse
+        "G", "C",
+        "G", "A", "D",
+        "G", "C",
+        "G", "D", "G",
+    
+        // Chorus
+        "G", "D", "G",
+        "G", "D", "G"
+      ],
+      description: "Swaggering blues-rock progression with open-string grit and a classic country-barroom vibe."
+    },
+
+    loser: {
+      defaultKey: "Am",
+      displayName: "Loser – Grateful Dead",
+      progression: [
+        // Verse 1
+        "Am", "G", "C", "D",
+        "C", "Em", "Am",
+        "Am", "C", "G", "Em", "D",
+        "C", "C/B", "Am", "G", "Am",
+    
+        // Verse 2
+        "Am", "G", "C", "D",
+        "C", "Em", "Am",
+        "Am", "C", "G", "Em", "D",
+        "C", "C/B", "Am", "G", "Am",
+    
+        // Chorus
+        "G", "D", "A",
+        "G", "D", "A",
+        "G", "D", "A",
+        "C", "C/B", "Am", "G", "D", "Am"
+      ],
+      description: "Minor-key Americana ballad with blues-infused storytelling and a haunting, rolling groove."
+    }
+    sweet_dreams: {
+      defaultKey: "G",
+      displayName: "Sweet Dreams – Patsy Cline",
+      progression: [
+        // Verse
+        "G", "A7", "D7",
+        "G", "A7", "D7",
+        "G", "C", "G", "Em",
+        "G", "C", "D7", "G C", "G D7"
+      ],
+      description: "Classic 3/4 country ballad with emotional depth, rich dominant 7th chords, and elegant simplicity in the key of G."
+    },
   black_magic_woman: {
     defaultKey: "Dm",
     displayName: "Black Magic Woman – Santana",
-    progression: ["Dm", "Am", "Gm", "A7"],
+    progression: ["Dm7", "Am7", "Dm7", "Gm", "Dm7", "A7", "Dm7" ],
     description: "A Latin-blues vamp in D minor with a hypnotic, mystical feel.",
   },
-  let_it_be: {
-    defaultKey: "C",
-    displayName: "Let It Be – The Beatles",
-    progression: ["C", "G", "Am", "F", "C/E", "Dm"],
-    description: "Gospel-inspired progression with emotional warmth and sing-along appeal.",
-  },
+    let_it_be: {
+      defaultKey: "C",
+      displayName: "Let It Be – The Beatles",
+      progression: [
+        "C", "G", "Am", "Am7", "Fmaj7", "F6",
+        "C", "G", "F", "C/E", "C",
+        "C", "G", "Am", "Am7", "Fmaj7", "F6",
+        "C", "G", "F", "C/E", "C",
+        "Am", "G", "F", "C",
+        "C", "G", "F", "C/E", "C"],
+      description: "Gospel-inspired progression with descending bass movement and emotional sing-along appeal."
+    },
   here_comes_the_sun: {
     defaultKey: "A",
     displayName: "Here Comes the Sun – The Beatles",
@@ -2048,7 +2118,7 @@ const progressions = {
   bittersweet_bhtm: {
     defaultKey: "A",
     displayName: "Bittersweet – Big Head Todd and the Monsters",
-    progression: ["A", "E", "F#m", "D"],
+    progression: ["G", "D", "Am", "C" ],
     description: "Emotive and melodic I-V-vi-IV progression perfect for dynamic builds.",
   }
 };
