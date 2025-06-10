@@ -2480,7 +2480,7 @@ function standardizeNoteNameForSamples(note) {
 }
 
 function getStandardQuality(rawQualityInput) {
-    if (!rawQualityInput || typeof rawQualityInput !== 'string') return 'maj7';
+    if (!rawQualityInput || typeof rawQualityInput !== 'string') return 'maj';
     let quality = rawQualityInput.toLowerCase().trim();
     quality = quality.split('/')[0].trim(); // Ignore slash bass notes for quality lookup
     if (quality === 'alt' || quality === '7alt') return 'alt';
@@ -2967,7 +2967,7 @@ async function playChord(root, quality, startTime, duration) {
         return;
     }
     
-    playChordInstance(firstVoicingNotesWithOctaves, startTime, duration / 2, chordMasterGain);
+    playChordInstance(firstVoicingNotesWithOctaves, startTime, duration, chordMasterGain);
     previousPlayedVoicingNotesWithOctaves = [...firstVoicingNotesWithOctaves];
 
     const beatDurationSec = 60 / AppState.tempo;
