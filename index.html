@@ -1984,35 +1984,40 @@ const progressions = {
     ],
     description: "A popular French song adopted into the Gypsy Jazz repertoire, known for its romantic melody."
   },
-  something_beatles: {
+ something_beatles: {
     defaultKey: "C",
     displayName: "Something – The Beatles",
-    progression: ["C", "Cmaj7", "C7", "F", "D", "G", "Am", "Am", "Am7", "D", "F", "Eb", "G" ],
-    description: "A lush, romantic progression with chromatic movement and rich major 7th harmonies.",
+    // FIX: Reordered for flow, added Am/G and D7 for the bridge.
+    progression: ["C", "Cmaj7", "C7", "F", "Am", "Am/G", "D7", "G", "Eb G"],
+    description: "A lush, romantic progression with a famous chromatic walkdown and a dramatic bridge.",
   },
   althea_dead: {
     defaultKey: "E",
     displayName: "Althea – Grateful Dead",
-    progression: ["E", "A", "B", "C#m", "F#m", "G#7"],
-    description: "Laid-back and groovy with a bluesy foundation and modal flavor in E major.",
+    // FIX: Reordered to reflect the main riff (B -> A -> E).
+    progression: ["B", "A", "E", "C#m", "F#m", "G#7"],
+    description: "Laid-back and groovy, built on the iconic B-A-E riff with a modal flavor.",
   },
   dead_flowers_stones: {
     defaultKey: "D",
     displayName: "Dead Flowers – Rolling Stones",
-    progression: ["D", "A", "G"],
-    description: "A country-tinged three-chord song with classic Rolling Stones swagger.",
+    // FIX: Added the essential C chord from the chorus.
+    progression: ["D", "A", "G", "C"],
+    description: "A country-tinged progression with a classic G-C-G chorus hook and Stones swagger.",
   },
   honky_tonk_woman: {
     defaultKey: "G",
     displayName: "Honky Tonk Woman – Rolling Stones",
-    progression: ["G", "C", "D", "F"],
-    description: "Blues-rock riff-based progression with a gritty, swaggering feel.",
+    // FIX: Removed the non-standard F chord.
+    progression: ["G", "C", "D"],
+    description: "Classic I-IV-V blues-rock progression with a gritty, swaggering feel.",
   },
   loser_dead: {
-    defaultKey: "B",
+    defaultKey: "Am", // FIX: Corrected key from B to Am.
     displayName: "Loser – Grateful Dead",
-    progression: ["B", "F#", "E", "C#m", "A", "G#m"],
-    description: "Minor-key narrative groove with chromatic flavor and storytelling drama.",
+    // FIX: Replaced with the correct chords for the Am key.
+    progression: ["Am", "G", "D", "F", "C"],
+    description: "Minor-key narrative groove with storytelling drama in the key of A minor.",
   },
   black_magic_woman: {
     defaultKey: "Dm",
@@ -2029,20 +2034,22 @@ const progressions = {
   here_comes_the_sun: {
     defaultKey: "A",
     displayName: "Here Comes the Sun – The Beatles",
-    progression: ["A", "E", "F#m", "D", "Bm", "G", "A7"],
+    // FIX: Added the C#m chord from the chorus.
+    progression: ["A", "E", "F#m", "D", "Bm", "G", "C#m", "A7"],
     description: "Bright, optimistic chords with interesting meter changes and melodic movement.",
   },
   hey_jude: {
     defaultKey: "F",
     displayName: "Hey Jude – The Beatles",
-    progression: ["F", "C", "C7", "Bb", "Dm", "Gm", "F7"],
-    description: "Classic pop anthem with rich voice leading and a powerful outro vamp.",
+    // FIX: Added the Eb from the famous outro.
+    progression: ["F", "C", "C7", "Bb", "Eb", "Dm", "Gm", "F7"],
+    description: "Classic pop anthem with rich voice leading and a powerful F-Eb-Bb-F outro vamp.",
   },
   bittersweet_bhtm: {
     defaultKey: "A",
-    displayName: "Bittersweet – Big Head Todd",
+    displayName: "Bittersweet – Big Head Todd and the Monsters",
     progression: ["A", "E", "F#m", "D"],
-    description: "Emotive and melodic four-chord progression perfect for dynamic builds.",
+    description: "Emotive and melodic I-V-vi-IV progression perfect for dynamic builds.",
   }
 };
         
