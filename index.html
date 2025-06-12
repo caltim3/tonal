@@ -832,6 +832,7 @@ body.dark-mode select, body.dark-mode-2 select, body.dark-mode-3 select {
                     <option value="dropD">Drop D (DADGBE)</option>
                     <option value="openG">Open G (DGDGBD)</option>
                     <option value="DADGAD">DADGAD</option>
+                    <option value="openD">Open D (DADF#AD)</option>
                     <option value="openE">Open E (EBEG#BE)</option>
                 </select>
                 <button id="guide-tones-toggle" class="toggle-button" aria-label="Toggle guide tones">Guide Tones Off</button>
@@ -1124,6 +1125,7 @@ const TUNINGS = {
   dropD:    ["D", "A", "D", "G", "B", "E"],
   openG:    ["D", "G", "D", "G", "B", "D"],
   DADGAD:   ["D", "A", "D", "G", "A", "D"],
+  openD:    ["D", "A", "D", "Gb", "A", "D"],
   openE:    ["E", "B", "E", "Ab", "B", "E"],
 };
 
@@ -4425,12 +4427,13 @@ function initializeFretFlow() {
         const sectionDiv = document.createElement('div');
         sectionDiv.className = 'fretboard-section';
         sectionDiv.innerHTML = `
+        sectionDiv.innerHTML = `
             <div class="fretboard-controls">
                 <div class="control-group"><label for="ff-key-${i}">Key:</label><select id="ff-key-${i}" class="fretflow-key">${createKeyOptions()}</select></div>
                 <div class="control-group"><label for="ff-scale-${i}">Scale:</label><select id="ff-scale-${i}" class="fretflow-scale">${createScaleOptions()}</select></div>
                 <div class="control-group"><label for="ff-tuning-${i}">Tuning:</label><select id="ff-tuning-${i}" class="tuning-select">
                     <option value="standard">Std</option><option value="dropD">DropD</option><option value="openG">OpG</option>
-                    <option value="DADGAD">DADGAD</option><option value="openE">OpE</option></select></div>
+                    <option value="DADGAD">DADGAD</option><option value="openD">OpD</option><option value="openE">OpE</option></select></div>
             </div>
             <div class="scale-display" id="ff-scale-display-${i}"></div>
             <div id="ff-fretboard-${i}" class="fretboard"></div>`;
