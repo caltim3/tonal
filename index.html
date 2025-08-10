@@ -797,7 +797,23 @@ body.dark-mode select, body.dark-mode-2 select, body.dark-mode-3 select {
     /* This is mostly fine, but could add specific padding if needed */
 }
         
-    </style>
+    
+/* Guide-Tone Path Overlay */
+#chord-fretboard .guide-tone-overlay {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+}
+#chord-fretboard .guide-path {
+  stroke: var(--guide-tone-border-color, #0056b3);
+  stroke-width: 2;
+  opacity: 0.85;
+}
+#chord-fretboard .guide-node {
+  fill: var(--guide-tone-bg-color, #007bff);
+  opacity: 0.9;
+}
+</style>
 </head>
 <body><button class="secondary" id="open-ai-modal-button">Find Chords with AI</button>
 <!-- MODIFIED: Top Controls / Global Panel -->
@@ -4856,7 +4872,442 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-    </script>
+    
+// =========================
+// === PATCH BLOCK START ===
+// === Precise Beat Scheduler + Voicing Upgrade + Guide-Tone Paths ===
+// =========================
+
+// ---- Precise Beat Scheduler (AudioContext-anchored) ----
+const BeatScheduler = {
+  timerId: null,
+  nextBeatTime: 0,
+  spb: 0,
+  scheduleAhead: 0.10,
+};
+
+function schedulerStart() {
+  const ctx = AudioContextManager.context;
+  if (!ctx) return;
+  const beatsUI = UI.elements.beatsContainer?.querySelectorAll?.('.beat') || [];
+  const tsNum = parseInt(UI.elements.timeSignature?.value || "4", 10);
+
+  BeatScheduler.spb = 60 / AppState.tempo;
+  if (tsNum === 4 && beatsUI.length === 8) BeatScheduler.spb /= 2;
+
+  BeatScheduler.nextBeatTime = ctx.currentTime + 0.05;
+
+  const tick = async () => {
+    const now = ctx.currentTime;
+    const delayMs = Math.max(0, (BeatScheduler.nextBeatTime - now) * 1000);
+    BeatScheduler.timerId = setTimeout(async () => {
+      try { await playBeat(); } catch(e) { console.error("playBeat error:", e); }
+      BeatScheduler.nextBeatTime += BeatScheduler.spb;
+      tick();
+    }, delayMs);
+  };
+  tick();
+}
+
+function schedulerStop() {
+  if (BeatScheduler.timerId) {
+    clearTimeout(BeatScheduler.timerId);
+    BeatScheduler.timerId = null;
+  }
+}
+
+// ---- Drop voicing helpers ----
+function generateDrop3Voicing(rootPositionNotes) {
+  if (!rootPositionNotes || rootPositionNotes.length !== 4) return null;
+  return [ rootPositionNotes[1], rootPositionNotes[0], rootPositionNotes[2], rootPositionNotes[3] ]; // [3, R, 5, 7]
+}
+function generateDrop24Voicing(rootPositionNotes) {
+  if (!rootPositionNotes || rootPositionNotes.length !== 4) return null;
+  return [ rootPositionNotes[2], rootPositionNotes[0], rootPositionNotes[1], rootPositionNotes[3] ]; // [5, R, 3, 7]
+}
+
+// ---- Upgraded getBestVoicing_VoiceLed (drop-2/3/2&4, register hygiene, guide-tone reward) ----
+function getBestVoicing_VoiceLed(
+  baseNotesInRootPosition,
+  quality,
+  prevVoicingWithOctaves,
+  targetOctaveRange,
+  allowMoreVariationForRhythmicHit = false
+) {
+  // Build pitch-class candidates
+  let candidatePCVoicings = [];
+  const inversions = generateInversions(baseNotesInRootPosition);
+  candidatePCVoicings.push(...inversions);
+
+  if (baseNotesInRootPosition.length === 4) {
+    const d2 = generateDrop2Voicing(baseNotesInRootPosition);
+    const d3 = generateDrop3Voicing(baseNotesInRootPosition);
+    const d24 = generateDrop24Voicing(baseNotesInRootPosition);
+    if (d2) candidatePCVoicings.push(d2);
+    if (d3) candidatePCVoicings.push(d3);
+    if (d24) candidatePCVoicings.push(d24);
+  }
+
+  // Deduplicate by pitch-class set
+  candidatePCVoicings = [...new Set(candidatePCVoicings.map(v => JSON.stringify(v.slice().sort())))]
+    .map(s => JSON.parse(s));
+
+  const minSampleOct = OCTAVES_FOR_SAMPLES[0];
+  const maxSampleOct = OCTAVES_FOR_SAMPLES[OCTAVES_FOR_SAMPLES.length - 1];
+  const lowTargetMidi  = getMidiNoteNumber(`${NOTES_CHROMATIC[9]}2`);  // A2
+  const highTargetMidi = getMidiNoteNumber(`${NOTES_CHROMATIC[9]}4`);  // A4
+
+  const isSeventhChord = ['maj7','dom7','min7','min7b5','dim7','imaj7','dom9','maj9','min9','7#11','maj7#11','7b13','dom7b9','dom7#9','dom7sus'].includes(quality);
+
+  let scoredVoicings = [];
+
+  for (const pcVoicing of candidatePCVoicings) {
+    for (const startOct of targetOctaceSweep(targetOctaveRange, minSampleOct, maxSampleOct)) {
+      // Realize ascending with octave adjustments
+      let currentOct = startOct;
+      const realized = [];
+      realized.push(`${pcVoicing[0]}${currentOct}`);
+      for (let i = 1; i < pcVoicing.length; i++) {
+        const name = pcVoicing[i];
+        const prevMidi = getMidiNoteNumber(realized[i-1]);
+        let curMidi = getMidiNoteNumber(`${name}${currentOct}`);
+        while (curMidi <= prevMidi) {
+          currentOct++;
+          curMidi = getMidiNoteNumber(`${name}${currentOct}`);
+        }
+        if (curMidi > prevMidi + 12 && getMidiNoteNumber(`${name}${currentOct-1}`) > prevMidi) {
+          currentOct--;
+          curMidi = getMidiNoteNumber(`${name}${currentOct}`);
+        }
+        realized.push(`${name}${currentOct}`);
+      }
+
+      // Range constraints
+      const minMidi = getMidiNoteNumber(realized[0]);
+      const maxMidi = getMidiNoteNumber(realized[realized.length - 1]);
+      if (maxMidi - minMidi > 36) continue;
+      if (maxMidi > getMidiNoteNumber(`${NOTES_CHROMATIC[11]}${maxSampleOct}`)) continue;
+      if (minMidi < getMidiNoteNumber(`${NOTES_CHROMATIC[0]}${minSampleOct}`)) continue;
+
+      // Score
+      let score = 0;
+
+      // Prefer A2–A4 window
+      const windowPenalty =
+        Math.max(0, lowTargetMidi - minMidi) * 0.5 +
+        Math.max(0, maxMidi - highTargetMidi) * 0.5;
+      score -= windowPenalty;
+
+      // Penalize over-wide adjacent gaps
+      for (let i = 1; i < realized.length; i++) {
+        const interval = getMidiNoteNumber(realized[i]) - getMidiNoteNumber(realized[i-1]);
+        if (interval >= 11) score -= (interval - 10) * 2;
+      }
+
+      // Reward containing 3rd & 7th
+      if (isSeventhChord) {
+        const root = baseNotesInRootPosition[0];
+        const rootIdx = NOTES.indexOf(root);
+        const maj3 = (rootIdx + 4) % 12;
+        const min3 = (rootIdx + 3) % 12;
+        const maj7 = (rootIdx + 11) % 12;
+        const dom7 = (rootIdx + 10) % 12;
+        const dim7 = (rootIdx + 9) % 12;
+
+        const pcs = realized.map(n => getMidiNoteNumber(n) % 12);
+        const has3 = pcs.includes(CHORD_INTERVALS[quality]?.includes(4) ? maj3 : min3);
+        let has7 = false;
+        if (CHORD_INTERVALS[quality]?.includes(11)) has7 = pcs.includes(maj7);
+        else if (CHORD_INTERVALS[quality]?.includes(10)) has7 = pcs.includes(dom7);
+        else if (quality === 'dim7' && CHORD_INTERVALS[quality]?.includes(9)) has7 = pcs.includes(dim7);
+
+        if (has3) score += 8;
+        if (has7) score += 8;
+      }
+
+      // Voice-leading vs previous
+      if (prevVoicingWithOctaves && prevVoicingWithOctaves.length === realized.length) {
+        let totalMove = 0, common = 0, held = 0;
+        for (let i = 0; i < realized.length; i++) {
+          const p = getMidiNoteNumber(prevVoicingWithOctaves[i]);
+          const c = getMidiNoteNumber(realized[i]);
+          totalMove += Math.abs(c - p);
+          if (p === c) held++;
+          if ((p % 12) === (c % 12)) common++;
+        }
+        score += held * 25 + common * 10 - totalMove;
+      } else {
+        score += (Math.random() * -5);
+      }
+
+      scoredVoicings.push({ voicing: realized, score });
+    }
+  }
+
+  if (scoredVoicings.length === 0) {
+    let fallbackOct = targetOctaveRange[Math.floor(targetOctaveRange.length / 2)];
+    if (!OCTAVES_FOR_SAMPLES.includes(fallbackOct)) fallbackOct = OCTAVES_FOR_SAMPLES[0];
+    return baseNotesInRootPosition.map(n => `${n}${fallbackOct}`);
+  }
+
+  scoredVoicings.sort((a, b) => b.score - a.score);
+
+  if (allowMoreVariationForRhythmicHit && scoredVoicings.length > 1 && Math.random() < 0.6) {
+    return scoredVoicings[Math.min(1, scoredVoicings.length - 1)].voicing;
+  }
+  if (Math.random() < 0.80 || scoredVoicings.length === 1) {
+    return scoredVoicings[0].voicing;
+  } else {
+    return scoredVoicings[1].voicing;
+  }
+
+  function targetOctaceSweep(pref, minOct, maxOct) {
+    const set = new Set(pref);
+    if (pref[0] > minOct) set.add(pref[0] - 1);
+    if (pref[pref.length - 1] < maxOct) set.add(pref[pref.length - 1] + 1);
+    return [...set].sort((a,b) => a - b);
+  }
+}
+
+// ---- Guide Tone Paths overlay ----
+function clearGuideTonePaths() {
+  const fb = UI.elements.chordFretboard;
+  if (!fb) return;
+  fb.querySelectorAll('.guide-tone-overlay').forEach(el => el.remove());
+}
+function getGuideToneNamesForChord(rootStr, qualityStr) {
+  const chordIntervals = CHORD_INTERVALS[qualityStr];
+  if (!rootStr || !qualityStr || !chordIntervals) return [];
+  const root = standardizeNoteName(rootStr);
+  const rIdx = NOTES.indexOf(root);
+  if (rIdx === -1) return [];
+
+  const out = new Set();
+  if (chordIntervals.includes(4)) out.add(NOTES[(rIdx + 4) % 12]);
+  else if (chordIntervals.includes(3)) out.add(NOTES[(rIdx + 3) % 12]);
+
+  if (qualityStr.includes('6') && !qualityStr.includes('7')) {
+    if (chordIntervals.includes(9)) out.add(NOTES[(rIdx + 9) % 12]);
+  } else {
+    if (chordIntervals.includes(11)) out.add(NOTES[(rIdx + 11) % 12]);
+    else if (chordIntervals.includes(10)) out.add(NOTES[(rIdx + 10) % 12]);
+    else if (qualityStr === 'dim7' && chordIntervals.includes(9)) out.add(NOTES[(rIdx + 9) % 12]);
+  }
+  return [...out];
+}
+function getNextMeasurePartFor(partEl) {
+  if (!partEl) return null;
+  const measureEl = partEl.closest('.measure');
+  const measures = Array.from(UI.elements.measures?.children || []);
+  if (!measureEl) return null;
+
+  const parts = Array.from(measureEl.querySelectorAll('.measure-part'));
+  const idx = parts.indexOf(partEl);
+  if (idx !== -1 && idx + 1 < parts.length) return parts[idx + 1];
+
+  let mIdx = measures.indexOf(measureEl);
+  if (mIdx === -1) return null;
+
+  let nextMeasure;
+  if (AppState.loopingActive && AppState.loopStartMeasure !== -1 && AppState.loopEndMeasure !== -1) {
+    const end = AppState.loopEndMeasure;
+    const start = AppState.loopStartMeasure;
+    const after = mIdx + 1;
+    nextMeasure = (after > end) ? measures[start] : measures[after] || measures[start];
+  } else {
+    nextMeasure = measures[mIdx + 1] || measures[0];
+  }
+  return nextMeasure ? nextMeasure.querySelector('.measure-part') : null;
+}
+function drawGuideTonePaths(currentPartEl) {
+  clearGuideTonePaths();
+  const fb = UI.elements.chordFretboard;
+  if (!fb || !currentPartEl) return;
+
+  const nextPartEl = getNextMeasurePartFor(currentPartEl);
+  if (!nextPartEl) return;
+
+  const curRoot = currentPartEl.querySelector('.root-note')?.value;
+  const curQual = currentPartEl.querySelector('.chord-quality')?.value;
+  const nxtRoot = nextPartEl.querySelector('.root-note')?.value;
+  const nxtQual = nextPartEl.querySelector('.chord-quality')?.value;
+
+  if (!curRoot || !curQual || !nxtRoot || !nxtQual) return;
+
+  const curGuides = getGuideToneNamesForChord(curRoot, curQual);
+  const nxtGuides = getGuideToneNamesForChord(nxtRoot, nxtQual);
+  if (!curGuides.length || !nxtGuides.length) return;
+
+  const isMajorThird = (root, q) => (CHORD_INTERVALS[q]||[]).includes(4);
+  const wantNextThird = (root, q) => isMajorThird(root, q) ? NOTES[(NOTES.indexOf(standardizeNoteName(root)) + 4) % 12]
+                                                          : NOTES[(NOTES.indexOf(standardizeNoteName(root)) + 3) % 12];
+  const wantNextSeventh = (root, q) => (CHORD_INTERVALS[q]||[]).includes(11)
+                                ? NOTES[(NOTES.indexOf(standardizeNoteName(root)) + 11) % 12]
+                                : (CHORD_INTERVALS[q]||[]).includes(10)
+                                ? NOTES[(NOTES.indexOf(standardizeNoteName(root)) + 10) % 12]
+                                : NOTES[(NOTES.indexOf(standardizeNoteName(root)) + 9) % 12];
+
+  const curThird = curGuides[0];
+  const curSeventh = curGuides[1] || curThird;
+
+  const targetNextThird = wantNextThird(nxtRoot, nxtQual);
+  const targetNextSeventh = wantNextSeventh(nxtRoot, nxtQual);
+
+  const noteEls = [...fb.querySelectorAll('.note')];
+  const curThirdEls   = noteEls.filter(n => n.textContent === curThird);
+  const curSeventhEls = noteEls.filter(n => n.textContent === curSeventh);
+  const nxtThirdEls   = noteEls.filter(n => n.textContent === targetNextThird);
+  const nxtSeventhEls = noteEls.filter(n => n.textContent === targetNextSeventh);
+
+  if ((curThirdEls.length+curSeventhEls.length+nxtThirdEls.length+nxtSeventhEls.length) === 0) return;
+
+  const rect = fb.getBoundingClientRect();
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.classList.add('guide-tone-overlay');
+  svg.setAttribute('width', rect.width);
+  svg.setAttribute('height', rect.height);
+
+  const defs = document.createElementNS('http://www.w3.org/2000/svg','defs');
+  const marker = document.createElementNS('http://www.w3.org/2000/svg','marker');
+  marker.setAttribute('id','arrowhead');
+  marker.setAttribute('markerWidth','6');
+  marker.setAttribute('markerHeight','6');
+  marker.setAttribute('refX','5');
+  marker.setAttribute('refY','3');
+  marker.setAttribute('orient','auto-start-reverse');
+  const tip = document.createElementNS('http://www.w3.org/2000/svg','path');
+  tip.setAttribute('d','M0,0 L6,3 L0,6 Z');
+  tip.setAttribute('class','guide-node');
+  marker.appendChild(tip);
+  defs.appendChild(marker);
+  svg.appendChild(defs);
+
+  const center = (el) => {
+    const r = el.getBoundingClientRect();
+    return { x: (r.left + r.width/2) - rect.left, y: (r.top + r.height/2) - rect.top };
+  };
+
+  function nearestPair(fromEls, toEls) {
+    let best = null, bestD = Infinity;
+    for (const a of fromEls) for (const b of toEls) {
+      const ca = center(a), cb = center(b);
+      const d = Math.hypot(ca.x - cb.x, ca.y - cb.y);
+      if (d < bestD) { bestD = d; best = [ca, cb]; }
+    }
+    return best;
+  }
+
+  const pair1 = nearestPair(curSeventhEls, nxtThirdEls);   // 7 → 3
+  const pair2 = nearestPair(curThirdEls,   nxtSeventhEls); // 3 → 7
+
+  for (const pair of [pair1, pair2]) {
+    if (!pair) continue;
+    const [a, b] = pair;
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1', a.x); line.setAttribute('y1', a.y);
+    line.setAttribute('x2', b.x); line.setAttribute('y2', b.y);
+    line.setAttribute('class','guide-path');
+    line.setAttribute('marker-end','url(#arrowhead)');
+    svg.appendChild(line);
+  }
+
+  fb.appendChild(svg);
+}
+
+// ---- Enhanced highlightGuideTones to also draw paths ----
+function highlightGuideTones(activeMeasurePartContext = null) {
+  if (typeof clearGuideToneHighlights === "function") {
+    try { clearGuideToneHighlights(); } catch(e) {}
+  }
+  clearGuideTonePaths();
+  if (!AppState.guideTonesActive) return;
+
+  let partCtx = activeMeasurePartContext;
+  if (!partCtx || partCtx.classList?.contains('measure')) {
+    partCtx = partCtx?.querySelector?.('.measure-part.part-active') ||
+              partCtx?.querySelector?.('.measure-part') ||
+              UI.elements.measures?.children?.[0]?.querySelector?.('.measure-part');
+  }
+  if (!partCtx) return;
+
+  const chordRootStr = partCtx.querySelector('.root-note')?.value;
+  const chordQualityStr = partCtx.querySelector('.chord-quality')?.value;
+  const chordIntervals = CHORD_INTERVALS[chordQualityStr];
+  if (!chordRootStr || !chordIntervals) return;
+
+  const chordRootNote = standardizeNoteName(chordRootStr);
+  const rootNoteIndex = NOTES.indexOf(chordRootNote);
+  if (rootNoteIndex === -1) return;
+
+  const gtSet = new Set();
+  if (chordIntervals.includes(3)) gtSet.add(NOTES[(rootNoteIndex + 3) % 12]);
+  else if (chordIntervals.includes(4)) gtSet.add(NOTES[(rootNoteIndex + 4) % 12]);
+  if (chordQualityStr.includes('6') && !chordQualityStr.includes('7')) {
+    if (chordIntervals.includes(9)) gtSet.add(NOTES[(rootNoteIndex + 9) % 12]);
+  } else {
+    if (chordIntervals.includes(11)) gtSet.add(NOTES[(rootNoteIndex + 11) % 12]);
+    else if (chordIntervals.includes(10)) gtSet.add(NOTES[(rootNoteIndex + 10) % 12]);
+    else if (chordQualityStr === 'dim7' && chordIntervals.includes(9)) gtSet.add(NOTES[(rootNoteIndex + 9) % 12]);
+  }
+
+  UI.elements.chordFretboard?.querySelectorAll?.('.note')?.forEach(noteEl => {
+    const noteName = noteEl.textContent;
+    if (noteName === chordRootNote) {
+      noteEl.classList.add('root-highlight-for-guides');
+    } else if (gtSet.has(noteName)) {
+      noteEl.classList.add('guide-tone-highlight');
+    }
+  });
+
+  // Paths into the next chord
+  drawGuideTonePaths(partCtx);
+}
+
+// ---- Replace start/stop to use the scheduler ----
+async function startPlayback() {
+  try {
+    await AudioContextManager.ensureAudioContext();
+    if (AppState.isPlaying) return;
+
+    if (!AppState.intervalId) {
+      AppState.currentBeat = 0;
+      AppState.currentStylePatternBeat = 0;
+      AppState.currentStyleBar = 0;
+      AppState.currentMeasure = (AppState.loopingActive && AppState.loopStartMeasure !== -1) ? AppState.loopStartMeasure : 0;
+    }
+
+    await playBeat();
+
+    clearInterval(AppState.intervalId);
+    AppState.intervalId = null;
+    schedulerStop();
+    schedulerStart();
+
+    AppState.updateState({ isPlaying: true });
+    if (UI.elements.startStopButton) UI.elements.startStopButton.textContent = 'Stop';
+    log("Playback started.");
+  } catch (e) {
+    console.error('Failed to start playback:', e);
+    stopPlayback();
+    alert("Error starting playback. Audio system might not be available.");
+  }
+}
+
+function stopPlayback() {
+  schedulerStop();
+  if (AppState.intervalId) clearInterval(AppState.intervalId);
+  AppState.intervalId = null;
+  AppState.updateState({ isPlaying: false });
+  previousPlayedVoicingNotesWithOctaves = null;
+  if (UI.elements.startStopButton) UI.elements.startStopButton.textContent = 'Start';
+  log("Playback stopped.");
+}
+
+// =======================
+// === PATCH BLOCK END ===
+// =======================
+
+</script>
 <div class="modal-overlay" id="ai-modal" style="display: none;">
 <div class="modal-content">
 <span class="modal-close-button">×</span>
