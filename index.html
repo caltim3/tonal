@@ -3,7 +3,7 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Bebop Blueprint</title>
-<link href="jazzmaster.png" rel="icon" type="image/png"/>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'> <defs><linearGradient id='g' x1='0' x2='0' y1='0' y2='1'> <stop offset='0' stop-color='#f4a261'/><stop offset='1' stop-color='#e76f51'/> </linearGradient></defs> <path d='M32 6c9 0 26 6 26 21 0 12-10 31-26 31S6 39 6 27C6 12 23 6 32 6z' fill='url(#g)'/> <circle cx='32' cy='27' r='8' fill='#264653'/> </svg>" type="image/svg+xml"/>
 <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&amp;display=swap" rel="stylesheet"/>
 <style>
     body {
@@ -803,6 +803,7 @@ body.dark-mode select, body.dark-mode-2 select, body.dark-mode-3 select {
 <!-- MODIFIED: Top Controls / Global Panel -->
 <div class="top-controls app-section">
 <button aria-label="Toggle dark mode" id="dark-mode-toggle">Dark Mode</button>
+<button id="download-index" class="secondary" aria-label="Download this page as a single file">Download</button>
 <!-- Placeholder for future global controls -->
 <button class="toggle-button" id="swing-toggle" style="display: none;">Swing Off</button>
 <select id="note-naming-convention" style="display: none; margin-left: 10px;">
@@ -5233,6 +5234,33 @@ function __bb_clearGuideTonePaths(){
 })();
 </script>
 <!-- === END: Integrated Patch === -->
+
+
+<script>
+(function(){
+  function downloadSelf(){
+    try {
+      const doctype = '<!DOCTYPE html>';
+      const html = document.documentElement.outerHTML;
+      const blob = new Blob([doctype + '\n' + html], {type: 'text/html'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'bebop-blueprint-index.html';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 400);
+    } catch(e) {
+      alert('Download failed: ' + (e && e.message ? e.message : e));
+    }
+  }
+  document.addEventListener('click', function(e){
+    if (e.target && e.target.id === 'download-index') {
+      e.preventDefault();
+      downloadSelf();
+    }
+  }, true);
+})();
+</script>
 
 </body>
 </html>
