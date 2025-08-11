@@ -3,7 +3,7 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Bebop Blueprint</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'> <defs><linearGradient id='g' x1='0' x2='0' y1='0' y2='1'> <stop offset='0' stop-color='#f4a261'/><stop offset='1' stop-color='#e76f51'/> </linearGradient></defs> <path d='M32 6c9 0 26 6 26 21 0 12-10 31-26 31S6 39 6 27C6 12 23 6 32 6z' fill='url(#g)'/> <circle cx='32' cy='27' r='8' fill='#264653'/> </svg>" type="image/svg+xml"/>
+<link rel="icon" href="jazzmaster.png" type="image/png"/>
 <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&amp;display=swap" rel="stylesheet"/>
 <style>
     body {
@@ -797,7 +797,14 @@ body.dark-mode select, body.dark-mode-2 select, body.dark-mode-3 select {
     /* This is mostly fine, but could add specific padding if needed */
 }
         
-    </style>
+    
+/* BB: enforce thicker guide/connection lines */
+.guide-path-line, .guide-tone-line, .voiceleading-line, .guide-connector {
+  stroke-width: 4 !important;
+  stroke-linecap: round !important;
+}
+
+</style>
 </head>
 <body><button class="secondary" id="open-ai-modal-button">Find Chords with AI</button>
 <!-- MODIFIED: Top Controls / Global Panel -->
@@ -5238,6 +5245,14 @@ function __bb_clearGuideTonePaths(){
 
 <script>
 (function(){
+  function bbSafeInit(){
+    try {
+      if (typeof window.progressions === 'undefined') return setTimeout(bbSafeInit, 50);
+      if (typeof window.initializeApp === 'function') window.initializeApp();
+    } catch (e) {
+      console.error('initializeApp failed:', e);
+    }
+  }
   function downloadSelf(){
     try {
       const doctype = '<!DOCTYPE html>';
@@ -5259,6 +5274,7 @@ function __bb_clearGuideTonePaths(){
       downloadSelf();
     }
   }, true);
+  window.addEventListener('load', function(){ setTimeout(bbSafeInit, 0); });
 })();
 </script>
 
