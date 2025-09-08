@@ -805,87 +805,6 @@ body.dark-mode select, body.dark-mode-2 select, body.dark-mode-3 select {
 }
 
 </style>
-<style>
-/* --- Fretboard styles (from guitar.html, subset) --- */
-
-        .fretboards-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .fretboard-container {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-
-        .fretboard {
-            position: relative;
-            height: 200px;
-            background-color: #FFCF79;
-            border-radius: 5px;
-            margin-bottom: 30px;
-            border: 2px solid #4B1C2E;
-            overflow: visible;
-        }
-
-        .fret-line {
-            position: absolute;
-            top: 0;
-            height: 100%;
-            width: 2px;
-            background: #c0c0c0;
-            border-right: 1px solid rgba(0, 0, 0, 0.3);
-            z-index: 1;
-        }
-
-        .string-line {
-            position: absolute;
-            left: 0;
-            width: 100%;
-            height: 1px;
-            background: silver;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.3);
-            z-index: 0;
-        }
-
-        .fret-number {
-            position: absolute;
-            bottom: -40px;
-            font-size: 16px;
-            color: #1f618d;
-            transform: translateX(-50%);
-            font-weight: bold;
-            z-index: 2;
-            width: 20px;
-            text-align: center;
-        }
-
-        .fret-marker {
-            position: absolute;
-            width: 12px;
-            height: 12px;
-            background-color: #333;
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-        }
-
-        .dark-mode .fretboard-container {
-            background-color: #606c38;
-            border: 1px solid #dda15e;
-            border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-        }
-
-        .dark-mode .fretboard {
-            background-color: #dda15e;
-            border: 2px solid #4b4b4b;
-            border-radius: 5px;
-        }
-</style>
 </head>
 <body><button class="secondary" id="open-ai-modal-button">Find Chords with AI</button>
 <!-- MODIFIED: Top Controls / Global Panel -->
@@ -5360,7 +5279,6 @@ function __bb_clearGuideTonePaths(){
 </script>
 
 
-<!-- ===== Dominant Upper Structures (DUS) — integrated module ===== -->
 <section class="app-section" id="dominant-upper-structures" aria-label="Dominant Upper Structures">
   <h2>Dominant Domination (Dominant Upper Structures)</h2>
   <p class="next-chord-display" id="dus-context">
@@ -5388,42 +5306,27 @@ function __bb_clearGuideTonePaths(){
   </div>
 
   <div id="dus-triad-list" class="fretboards-grid" style="grid-template-columns: repeat(4,1fr);"></div>
-  <!-- Two dedicated fretboards for top-four-strings emphasis -->
-  <div class="fretboards-grid" style="grid-template-columns: repeat(2,1fr); gap: var(--gap, 1rem); margin-top:1rem;">
+
+  <div class="fretboards-grid" style="grid-template-columns: repeat(2,1fr); gap: 1rem; margin-top:1rem;">
     <div class="fretboard-container">
       <h3>Lydian Dominant — parent: <span id="dus-lyd-parent">D</span> melodic minor</h3>
-      <div id="dus-fb-lyd" class="fretboard" style="position:relative; height:220px;"></div>
+      <div id="dus-fb-lyd" class="fretboard" style="position:relative; height:220px;" style="position:relative; height:220px;"></div>
       <div class="controls" id="dus-lyd-triads" aria-label="Lydian Dominant Upper-Structure Triads"></div>
     </div>
     <div class="fretboard-container">
       <h3>Altered — parent: <span id="dus-alt-parent">Ab</span> melodic minor</h3>
-      <div id="dus-fb-alt" class="fretboard" style="position:relative; height:220px;"></div>
+      <div id="dus-fb-alt" class="fretboard" style="position:relative; height:220px;" style="position:relative; height:220px;"></div>
       <div class="controls" id="dus-alt-triads" aria-label="Altered Upper-Structure Triads"></div>
     </div>
   </div>
-
 </section>
 
 
-<!-- Quick Jump to Dominant Domination -->
-<button id="jump-dominant-domination" class="secondary" style="position:fixed; right:1rem; bottom:1rem; z-index:9999;">
-  Dominant Domination ⤵
-</button>
-<script>
-  (function(){
-    const btn = document.getElementById('jump-dominant-domination');
-    if (btn) {
-      btn.addEventListener('click', ()=>{
-        const sec = document.getElementById('dominant-upper-structures');
-        if (sec) sec.scrollIntoView({behavior:'smooth'});
-      });
-    }
-  })();
-</script>
+<button id="jump-dominant-domination" class="secondary" style="position:fixed; right:1rem; bottom:1rem; z-index:9999;">Dominant Domination ⤵</button>
+<script>(function(){const b=document.getElementById('jump-dominant-domination'); if(b){b.onclick=()=>document.getElementById('dominant-upper-structures').scrollIntoView({behavior:'smooth'});}})();</script>
 
 
 <script>
-// ===== Integrated fretboard renderer (from guitar.html subset) =====
 const NOTES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
 const ENHARMONIC_MAP = {
             'C#': 'Db', 'Db': 'Db',
@@ -5439,8 +5342,6 @@ function standardizeNoteName(note) {
             const standardized = ENHARMONIC_MAP[baseNote] || baseNote;
             return isMinor ? standardized + 'm' : standardized;
         }
-
-// Create visual fretboard if not present, using guitar.html's createFretboard
 function createFretboard(container, tuning) {
             if (!(container instanceof HTMLElement)) return;
             container.innerHTML = '';
@@ -5487,30 +5388,28 @@ function createFretboard(container, tuning) {
             }
         }
 
-// Minimal helpers used by custom drawing
-function noteIndex(note) {
-  const n = standardizeNoteName(note).replace(/m$/, '');
-  return NOTES.indexOf(n);
-}
-
-// Default standard tuning (low to high)
-const STD_TUNING = ['E','A','D','G','B','E'];
-
-// Render an empty fretboard into a container id
 window.renderFretboard = function(containerId, opts={}){
   const el = document.getElementById(containerId);
   if (!el) return;
-  createFretboard(el, STD_TUNING);
+  createFretboard(el, ['E','A','D','G','B','E']);
 };
 
-// Draw arbitrary note names on a board; optionally restrict to stringsFilter (e.g. ['D','G','B','E'])
+window.clearCustomHighlights = function(containerId){
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.querySelectorAll('.note[data-overlay="1"]').forEach(n=>n.remove());
+};
+
+// default simplistic draw; we'll upgrade below
+
 window.drawCustomNotesOnFretboard = function(containerId, notes, opts={}){
   const el = document.getElementById(containerId);
   if (!el) return;
   const stringsFilter = opts.stringsFilter || null;
-  // remove old notes but keep fretboard
-  el.querySelectorAll('.note').forEach(n=>n.remove());
-  // draw notes at every occurrence up to 12th fret
+  const rootName = opts.rootName || (notes[0] || null);
+  const guideNotes = new Set(opts.guideNotes || []);
+  el.querySelectorAll('.note[data-overlay="1"]').forEach(n=>n.remove());
+  const STD_TUNING = ['E','A','D','G','B','E'];
   for (let string=0; string<6; string++) {
     const open = STD_TUNING[string];
     if (stringsFilter && !stringsFilter.includes(open)) continue;
@@ -5521,13 +5420,15 @@ window.drawCustomNotesOnFretboard = function(containerId, notes, opts={}){
       if (notes.includes(current)) {
         const dot = document.createElement('div');
         dot.className = 'note';
+        dot.dataset.overlay = '1';
         dot.textContent = current;
         const left = fret === 0 ? 0 : ((fret - 0.5) / 12) * 100;
         dot.style.left = left + '%';
         dot.style.top = ((string / 5) * 100) + '%';
-        // simple coloring: root-ish (first of list) vs others
-        if (opts.emphasizeGuides && (current === notes[0] || current === notes[2])) {
+        if (rootName && current === rootName) {
           dot.style.backgroundColor = '#BD2031';
+        } else if (guideNotes.has(current)) {
+          dot.style.backgroundColor = '#006400';
         } else {
           dot.style.backgroundColor = '#4CAF50';
         }
@@ -5537,287 +5438,172 @@ window.drawCustomNotesOnFretboard = function(containerId, notes, opts={}){
   }
 };
 
-window.clearCustomHighlights = function(containerId){
+window.updateBoardScale = function(containerId, root, scale){
   const el = document.getElementById(containerId);
   if (!el) return;
-  el.querySelectorAll('.note').forEach(n=>n.remove());
+  if (!el.dataset.boardReady){
+    if (typeof createFretboard === 'function') createFretboard(el, ['E','A','D','G','B','E']);
+    el.dataset.boardReady = '1';
+  }
+  if (typeof updateFretboardNotes === 'function'){
+    updateFretboardNotes(el, root, scale, ['E','A','D','G','B','E']);
+  }
 };
+
+</script>
+
+
+<script>
+(function(){
+  const NAME_TO_SEMI = {C:0,'Cs':1,Db:1,D:2,'Ds':3,Eb:3,E:4,F:5,'Fs':6,Gb:6,G:7,'Gs':8,Ab:8,A:9,'As':10,Bb:10,B:11};
+  const SEMI_TO_NAME = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
+  function n2s(n){ return NAME_TO_SEMI[n]; } function s2n(s){ return SEMI_TO_NAME[(s%12+12)%12]; }
+  const STRINGS_TOP4 = ['D','G','B','E'];
+
+  window.ensureBoards = function(vRoot){
+    document.dispatchEvent(new CustomEvent('bb:renderFretboard', { detail: { containerId: 'dus-fb-lyd', strings: STRINGS_TOP4 } }));
+    document.dispatchEvent(new CustomEvent('bb:renderFretboard', { detail: { containerId: 'dus-fb-alt', strings: STRINGS_TOP4 } }));
+    const lydP = window.lydianDomParentMM(vRoot);
+    const altP = window.alteredParentMM(vRoot);
+    document.getElementById('dus-lyd-parent').textContent = lydP;
+    document.getElementById('dus-alt-parent').textContent = altP;
+    window.updateBoardScale('dus-fb-lyd', lydP, 'melodicMinor');
+    window.updateBoardScale('dus-fb-alt', altP, 'melodicMinor');
+    buildTriadToggles('dus-lyd-triads', 'dus-fb-lyd', mmTriads(lydP));
+    buildTriadToggles('dus-alt-triads', 'dus-fb-alt', mmTriads(altP));
+    buildArpToggle('dus-lyd-triads', 'dus-fb-lyd', vRoot);
+    buildArpToggle('dus-alt-triads', 'dus-fb-alt', vRoot);
+  };
+
+  const MM_SCL = [0,2,3,5,7,9,11];
+  const TRIAD_QUALS = ['m','m','aug','maj','maj','dim','dim'];
+  const DEGREE_ROMANS = ['i','ii','III+','IV','V','vi°','vii°'];
+  function transp(n, semis){ return s2n(n2s(n)+semis); }
+  function mmTriads(parentRoot){
+    const scaleNotes = MM_SCL.map(s=>transp(parentRoot, s));
+    function triadAtDegree(k){ const r=scaleNotes[k]; const third=scaleNotes[(k+2)%7]; const fifth=scaleNotes[(k+4)%7]; return [r,third,fifth]; }
+    return DEGREE_ROMANS.map((roman, idx)=>({ label: `${scaleNotes[idx]} ${roman}`, notes: triadAtDegree(idx) }));
+  }
+
+  function buildArpToggle(containerId, boardId, vRoot){
+    const host = document.getElementById(containerId);
+    let wrap = document.getElementById(containerId + '-arpwrap');
+    if (!wrap){
+      wrap = document.createElement('div'); wrap.id = containerId + '-arpwrap'; wrap.style.margin='0 0 .5rem 0';
+      const lab = document.createElement('label'); const cb = document.createElement('input'); cb.type='checkbox'; cb.id=containerId+'-arp';
+      lab.appendChild(cb); lab.appendChild(document.createTextNode(' ' + vRoot + '7 arpeggio')); wrap.appendChild(lab);
+      host.parentElement.insertBefore(wrap, host);
+    }
+    wrap.querySelector('label').lastChild.nodeValue = ' ' + vRoot + '7 arpeggio';
+    wrap.querySelector('input').onchange = function(){
+      const r = vRoot; const notes = [0,4,7,10].map(semi=> s2n(n2s(r)+semi));
+      if (this.checked){
+        document.dispatchEvent(new CustomEvent('bb:highlightNotesOnBoard', {
+          detail: { containerId: boardId, notes, opts: { rootName: r, guideNotes: [s2n(n2s(r)+4), s2n(n2s(r)+10)] } }
+        }));
+      } else {
+        document.dispatchEvent(new CustomEvent('bb:clearBoard', { detail: { containerId: boardId } }));
+        if (boardId==='dus-fb-lyd'){ window.updateBoardScale('dus-fb-lyd', window.lydianDomParentMM(vRoot), 'melodicMinor'); }
+        else { window.updateBoardScale('dus-fb-alt', window.alteredParentMM(vRoot), 'melodicMinor'); }
+        const triadHost = document.getElementById(containerId);
+        triadHost.querySelectorAll('input[type="checkbox"]:checked').forEach(el=>{
+          const n2 = JSON.parse(el.dataset.notes||'[]');
+          document.dispatchEvent(new CustomEvent('bb:highlightNotesOnBoard', {
+            detail: { containerId: boardId, notes: n2, opts: { stringsFilter: STRINGS_TOP4, rootName: n2[0] } }
+          }));
+        });
+      }
+    };
+  }
+
+  function buildTriadToggles(containerId, boardId, triads){
+    const host = document.getElementById(containerId);
+    host.innerHTML = '';
+    triads.forEach((t, idx)=>{
+      const lab = document.createElement('label'); lab.style.marginRight='0.5rem';
+      const cb = document.createElement('input'); cb.type='checkbox'; cb.id = containerId + '-triad-' + idx; cb.dataset.notes = JSON.stringify(t.notes);
+      cb.addEventListener('change', (e)=>{
+        const notes = JSON.parse(e.target.dataset.notes);
+        if (e.target.checked){
+          document.dispatchEvent(new CustomEvent('bb:highlightNotesOnBoard', {
+            detail: { containerId: boardId, notes, opts: { stringsFilter: STRINGS_TOP4, rootName: notes[0] } }
+          }));
+        } else {
+          document.dispatchEvent(new CustomEvent('bb:clearBoard', { detail: { containerId: boardId } }));
+          if (boardId==='dus-fb-lyd'){ window.updateBoardScale('dus-fb-lyd', document.getElementById('dus-lyd-parent').textContent, 'melodicMinor'); }
+          else { window.updateBoardScale('dus-fb-alt', document.getElementById('dus-alt-parent').textContent, 'melodicMinor'); }
+          host.querySelectorAll('input[type="checkbox"]:checked').forEach(el=>{
+            const n2 = JSON.parse(el.dataset.notes||'[]');
+            document.dispatchEvent(new CustomEvent('bb:highlightNotesOnBoard', {
+              detail: { containerId: boardId, notes: n2, opts: { stringsFilter: STRINGS_TOP4, rootName: n2[0] } }
+            }));
+          });
+          // reapply arp if checked
+          const arp = document.getElementById(containerId + '-arp');
+          if (arp && arp.checked){ arp.dispatchEvent(new Event('change')); }
+        }
+      });
+      lab.appendChild(cb); lab.appendChild(document.createTextNode(' ' + t.label)); host.appendChild(lab);
+    });
+  }
+
+  // bootstrap
+  const rootSel = document.getElementById('dus-root');
+  if (rootSel){ rootSel.addEventListener('change', ()=>window.ensureBoards(rootSel.value)); window.ensureBoards(rootSel.value || 'G'); }
+})();
 </script>
 
 </body>
 
 <script>
-/* ===== Dominant Upper Structures (DUS) — integrated into Bebop Blueprint ===== */
 (function(){
-  // Use theme variables so colors follow existing scheme
-  // Map each tonality to classic upper-structure *roots* over V7 (relative to the dominant root)
   const DUS_TRIADS = {
-    altered:   ['Ab','Bb','B','Db','Eb','F'],      // from bII melodic minor (altered)
-    lydianDom: ['A','B','Cs','Ds','E','Fs'],       // from IV melodic minor (lydian dominant)
-    bebopDom:  ['A','B','D','E','Fs','G'],         // chord/scale tones and approaches
-    blues:     ['Bb','Db','D','F','Ab','A']        // blue notes mixed with dominant
+    altered:   ['Ab','Bb','B','Db','Eb','F'],
+    lydianDom: ['A','B','Cs','Ds','E','Fs'],
+    bebopDom:  ['A','B','D','E','Fs','G'],
+    blues:     ['Bb','Db','D','F','Ab','A']
   };
-
-  // Friendly triad variants
-  function buildTriadVariants(root) {
-    return [
-      {name: `${root}maj`, q:'maj'},
-      {name: `${root}m`,   q:'m'},
-      {name: `${root}dim`, q:'dim'}
-    ];
-  }
-
-  // DOM hooks
+  function buildTriadVariants(root){ return [
+    {name: `${root}maj`, q:'maj'},
+    {name: `${root}m`, q:'m'},
+    {name: `${root}dim`, q:'dim'}
+  ];}
   const rootSel = document.getElementById('dus-root');
   const tonSel  = document.getElementById('dus-tonality');
   const showBtn = document.getElementById('dus-show');
   const clearBtn= document.getElementById('dus-clear');
   const listEl  = document.getElementById('dus-triad-list');
-
-  // Semitone helpers (C=0), using 's' for sharps where needed to align with app naming
   const NAME_TO_SEMI = {C:0,'Cs':1,Db:1,D:2,'Ds':3,Eb:3,E:4,F:5,'Fs':6,Gb:6,G:7,'Gs':8,Ab:8,A:9,'As':10,Bb:10,B:11};
   const SEMI_TO_NAME = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
-  function nameToSemi(n){ return NAME_TO_SEMI[n]; }
-  function semiToName(s){ return SEMI_TO_NAME[(s%12+12)%12]; }
-  function transpose(rootName, semis){ return semiToName(nameToSemi(rootName)+semis); }
-
+  function n2s(n){ return NAME_TO_SEMI[n]; } function s2n(s){ return SEMI_TO_NAME[(s%12+12)%12]; } function transp(n, semis){ return s2n(n2s(n)+semis); }
   const QMAP = { 'maj':[0,4,7], 'm':[0,3,7], 'dim':[0,3,6] };
-  function triadPitches(triadRootName, q){ return QMAP[q].map(s=>transpose(triadRootName, s)); }
+  function triadPitches(triadRootName, q){ return QMAP[q].map(s=>transp(triadRootName,s)); }
 
-  // Light notes on the app's main fretboard via custom events (decoupled integration)
-  function lightTriadOnFretboard(pitches, label, vRoot) {
-    document.dispatchEvent(new CustomEvent('bb:highlightNotes', {
-      detail: { notes: pitches, opts: { label, contextRoot: vRoot, highlightGuideTones: true } }
-    }));
-    // Optional: update any existing "scale display" area if present
-    try {
-      const sd = document.getElementById('scale-display');
-      if (sd) sd.textContent = `${label} over ${vRoot}7`;
-    } catch(e){}
-  }
-
-  function renderTiles() {
+  function renderTiles(){
     listEl.innerHTML = '';
-    const vRoot = rootSel.value;
-    const mode  = tonSel.value;
-    const usRoots = (DUS_TRIADS[mode]||[]);
-    usRoots.forEach(r => {
-      const card = document.createElement('div');
-      card.className = 'fretboard-container';
-      const h = document.createElement('h4');
-      h.textContent = `${r} upper-structure`;
-      card.appendChild(h);
-      const group = document.createElement('div');
-      group.className = 'controls';
+    const vRoot = rootSel.value; const mode=tonSel.value; const usRoots = (DUS_TRIADS[mode]||[]);
+    usRoots.forEach(r=>{
+      const card = document.createElement('div'); card.className='fretboard-container';
+      const h = document.createElement('h4'); h.textContent = `${r} upper-structure`; card.appendChild(h);
+      const group = document.createElement('div'); group.className='controls';
       buildTriadVariants(r).forEach(v=>{
-        const btn = document.createElement('button');
-        btn.textContent = v.name;
+        const btn = document.createElement('button'); btn.textContent=v.name;
         btn.addEventListener('click', ()=>{
-          const pitches = triadPitches(r, v.q);
-          lightTriadOnFretboard(pitches, v.name, vRoot);
+          const notes = triadPitches(r, v.q);
+          document.dispatchEvent(new CustomEvent('bb:highlightNotes', { detail: { notes, opts:{ label:v.name, contextRoot:vRoot, highlightGuideTones:true } } }));
         });
         group.appendChild(btn);
       });
-      card.appendChild(group);
-      listEl.appendChild(card);
+      card.appendChild(group); listEl.appendChild(card);
     });
   }
-
   showBtn.addEventListener('click', renderTiles);
-  clearBtn.addEventListener('click', ()=>{
-    listEl.innerHTML='';
-    document.dispatchEvent(new CustomEvent('bb:clearHighlights'));
-  });
+  clearBtn.addEventListener('click', ()=>{ listEl.innerHTML=''; document.dispatchEvent(new CustomEvent('bb:clearHighlights')); });
+  document.addEventListener('bb:keyChanged', (e)=>{ if(e?.detail?.key) rootSel.value=e.detail.key; });
 
-  // Keep root in sync if the main app broadcasts key changes
-  document.addEventListener('bb:keyChanged', (e)=>{ if(e?.detail?.key) rootSel.value = e.detail.key; });
-})();
-
-// === Tiny bridge: if the main app hasn't yet implemented the bb:highlightNotes listeners,
-// wire a safe default that expects a function like drawCustomNotesOnFretboard(containerId, notes, opts)
-(function(){
-  if (window.__DUS_BRIDGE_INSTALLED__) return;
-  window.__DUS_BRIDGE_INSTALLED__ = true;
-  document.addEventListener('bb:highlightNotes', (e)=>{
-    const d = e.detail||{};
-    if (typeof window.drawCustomNotesOnFretboard === 'function') {
-      window.drawCustomNotesOnFretboard('chord-fretboard', d.notes, d.opts||{});
-    }
-  });
-  document.addEventListener('bb:clearHighlights', ()=>{
-    if (typeof window.clearCustomHighlights === 'function') {
-      window.clearCustomHighlights('chord-fretboard');
-    }
-  });
-})();
-
-// ===== Dominant Domination — top four strings triad toggles =====
-(function(){
-  const NAME_TO_SEMI = {C:0,'Cs':1,Db:1,D:2,'Ds':3,Eb:3,E:4,F:5,'Fs':6,Gb:6,G:7,'Gs':8,Ab:8,A:9,'As':10,Bb:10,B:11};
-  const SEMI_TO_NAME = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
-  function n2s(n){ return NAME_TO_SEMI[n]; }
-  function s2n(s){ return SEMI_TO_NAME[(s%12+12)%12]; }
-  function transp(n, semis){ return s2n(n2s(n)+semis); }
-
-  // Given dominant V root, compute parent melodic minor:
-  // Lydian Dominant = 4th mode -> parent is a perfect 4th above V (i.e., V + 5 semis)
-  // Altered = 7th mode -> parent is a minor 2nd above V (i.e., V + 1 semitone)
-  function lydianDomParentMM(vRoot){ return transp(vRoot, 5); }
-  function alteredParentMM(vRoot){ return transp(vRoot, 1); }
-
-  // Build diatonic triads of melodic minor (i, ii, III+, IV, V, vi°, vii°) as note triplets
-  // Melodic minor scale intervals (ascending): 0,2,3,5,7,9,11
-  const MM_SCL = [0,2,3,5,7,9,11];
-  const TRIAD_QUALS = ['m','m','aug','maj','maj','dim','dim']; // i, ii, III+, IV, V, vi°, vii°
-  const DEGREE_ROMANS = ['i','ii','III+','IV','V','vi°','vii°'];
-
-  function mmTriads(parentRoot){
-    // return array of {label, notes}
-    const scaleNotes = MM_SCL.map(s=>transp(parentRoot, s));
-    function triadAtDegree(k){ // 0..6
-      const r = scaleNotes[k];
-      const third = scaleNotes[(k+2)%7]; // scale degree stacked thirds
-      const fifth = scaleNotes[(k+4)%7];
-      return [r, third, fifth];
-    }
-    return DEGREE_ROMANS.map((roman, idx)=>{
-      const notes = triadAtDegree(idx);
-      const qual = TRIAD_QUALS[idx];
-      const label = `${scaleNotes[idx]} ${roman}`;
-      return {label, notes, qual, roman, root: scaleNotes[idx]};
-    });
-  }
-
-  // Render the two small boards focused on strings D-G-B-E
-  const STRINGS_TOP4 = ['D','G','B','E']; // highest-sounding four
-  function ensureBoards(vRoot){
-    // Ask main app to render blank fretboards in our containers with a strings filter
-    document.dispatchEvent(new CustomEvent('bb:renderFretboard', {
-      detail: { containerId: 'dus-fb-lyd', strings: STRINGS_TOP4 }
-    }));
-    document.dispatchEvent(new CustomEvent('bb:renderFretboard', {
-      detail: { containerId: 'dus-fb-alt', strings: STRINGS_TOP4 }
-    }));
-
-    // Update parent labels
-    const lydP = document.getElementById('dus-lyd-parent');
-    const altP = document.getElementById('dus-alt-parent');
-    const lydParent = lydianDomParentMM(vRoot);
-    const altParent = alteredParentMM(vRoot);
-    if (lydP) lydP.textContent = lydParent;
-    if (altP) altP.textContent = altParent;
-
-    // Build triad toggles for both parents
-    buildTriadToggles('dus-lyd-triads', 'dus-fb-lyd', mmTriads(lydParent));
-    buildTriadToggles('dus-alt-triads', 'dus-fb-alt', mmTriads(altParent));
-  }
-
-  // Create checkboxes that toggle highlights per board
-  function buildTriadToggles(containerId, boardId, triads){
-    const host = document.getElementById(containerId);
-    if (!host) return;
-    host.innerHTML = ''; // reset
-    triads.forEach((t, idx)=>{
-      const wrapper = document.createElement('label');
-      wrapper.style.marginRight = '0.5rem';
-      const cb = document.createElement('input');
-      cb.type = 'checkbox';
-      cb.id = `${containerId}-triad-${idx}`;
-      cb.dataset.notes = JSON.stringify(t.notes);
-      cb.addEventListener('change', (e)=>{
-        const notes = JSON.parse(e.target.dataset.notes);
-        if (e.target.checked){
-          document.dispatchEvent(new CustomEvent('bb:highlightNotesOnBoard', {
-            detail: { containerId: boardId, notes, opts: { label: t.label, stringsFilter: STRINGS_TOP4, emphasizeGuides: true } }
-          }));
-        } else {
-          // Easiest path: clear and re-apply all currently-checked triads to keep states consistent
-          document.dispatchEvent(new CustomEvent('bb:clearBoard', { detail: { containerId: boardId } }));
-          const all = host.querySelectorAll('input[type="checkbox"]:checked');
-          all.forEach(el=>{
-            const n2 = JSON.parse(el.dataset.notes||'[]');
-            document.dispatchEvent(new CustomEvent('bb:highlightNotesOnBoard', {
-              detail: { containerId: boardId, notes: n2, opts: { stringsFilter: STRINGS_TOP4, emphasizeGuides: true } }
-            }));
-          });
-        }
-      });
-      const txt = document.createTextNode(` ${t.label}`);
-      wrapper.appendChild(cb);
-      wrapper.appendChild(txt);
-      host.appendChild(wrapper);
-    });
-  }
-
-  // Hook root selector changes to rebuild boards
-  const rootSel = document.getElementById('dus-root');
-  if (rootSel) {
-    rootSel.addEventListener('change', ()=>ensureBoards(rootSel.value));
-    // initial draw
-    ensureBoards(rootSel.value||'G');
-  } else {
-    // fallback
-    ensureBoards('G');
-  }
-
-  // If main app key changes, sync and rebuild
-  document.addEventListener('bb:keyChanged', (e)=>{
-    const v = e?.detail?.key;
-    if (v){
-      const sel = document.getElementById('dus-root');
-      if (sel) sel.value = v;
-      ensureBoards(v);
-    }
-  });
-})();
-
-// === Bridge for per-board rendering if host app doesn't implement the board-specific events ===
-(function(){
-  if (window.__DUS_BOARD_BRIDGE__) return;
-  window.__DUS_BOARD_BRIDGE__ = true;
-
-  document.addEventListener('bb:renderFretboard', (e)=>{
-    const d = e.detail||{};
-    if (typeof window.renderFretboard === 'function'){
-      // App-provided renderer that accepts a container and options
-      window.renderFretboard(d.containerId, { stringsFilter: d.strings||['D','G','B','E'] });
-    } else {
-      // Minimal placeholder: ensure container exists
-      const el = document.getElementById(d.containerId);
-      if (el && !el.dataset.placeholder){
-        el.dataset.placeholder = '1';
-        el.style.minHeight = '140px';
-        el.style.border = '1px dashed var(--border-color, #555)';
-        el.style.borderRadius = '8px';
-        el.style.display = 'flex';
-        el.style.alignItems = 'center';
-        el.style.justifyContent = 'center';
-        el.style.opacity = '0.8';
-        el.innerText = 'Fretboard (top 4 strings)';
-      }
-    }
-  });
-
-  document.addEventListener('bb:highlightNotesOnBoard', (e)=>{
-    const d = e.detail||{};
-    if (typeof window.drawCustomNotesOnFretboard === 'function'){
-      window.drawCustomNotesOnFretboard(d.containerId, d.notes, d.opts||{});
-    } else {
-      // No-op if host hasn't exposed drawing
-    }
-  });
-
-  document.addEventListener('bb:clearBoard', (e)=>{
-    const d = e.detail||{};
-    if (typeof window.clearCustomHighlights === 'function'){
-      window.clearCustomHighlights(d.containerId);
-    } else {
-      const el = document.getElementById(d.containerId);
-      if (el && el.dataset.placeholder){
-        // keep placeholder visible
-      }
-    }
-  });
+  // helpers for parents
+  window.lydianDomParentMM = function(vRoot){ return transp(vRoot,5); };
+  window.alteredParentMM = function(vRoot){ return transp(vRoot,1); };
 })();
 </script>
 
