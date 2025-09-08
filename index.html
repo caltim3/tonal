@@ -805,6 +805,17 @@ body.dark-mode select, body.dark-mode-2 select, body.dark-mode-3 select {
 }
 
 </style>
+
+<style>
+/* Fretboard visuals (compact subset matching main board) */
+.fretboard{position:relative;background:#f7c774;border:3px solid #3a2a2a;border-radius:12px;min-height:220px;overflow:hidden}
+.string-line{position:absolute;left:0;width:100%;height:2px;background:#b7a07a;opacity:.9}
+.fret-line{position:absolute;top:0;height:100%;width:2px;background:#c0c0c0;border-right:1px solid rgba(0,0,0,.3)}
+.fret-number{position:absolute;bottom:-28px;font-size:16px;color:#1f618d;transform:translateX(-50%);font-weight:600}
+.fret-marker{position:absolute;width:12px;height:12px;background:#333;border-radius:50%;transform:translate(-50%,-50%)}
+.note{position:absolute;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+font-size:12px;color:#fff;z-index:3;transform:translate(-50%,-50%);box-shadow:0 2px 6px rgba(0,0,0,.25)}
+</style>
 </head>
 <body><button class="secondary" id="open-ai-modal-button">Find Chords with AI</button>
 <!-- MODIFIED: Top Controls / Global Panel -->
@@ -5551,6 +5562,31 @@ window.updateBoardScale = function(containerId, root, scale){
   const rootSel = document.getElementById('dus-root');
   if (rootSel){ rootSel.addEventListener('change', ()=>window.ensureBoards(rootSel.value)); window.ensureBoards(rootSel.value || 'G'); }
 })();
+</script>
+
+
+<script>
+(function(){
+  document.addEventListener('bb:renderFretboard', (e)=>{
+    const d = e.detail||{}; if (typeof window.renderFretboard==='function'){ window.renderFretboard(d.containerId, d); }
+  });
+  document.addEventListener('bb:highlightNotesOnBoard', (e)=>{
+    const d = e.detail||{}; if (typeof window.drawCustomNotesOnFretboard==='function'){ window.drawCustomNotesOnFretboard(d.containerId, d.notes||[], d.opts||{}); }
+  });
+  document.addEventListener('bb:clearBoard', (e)=>{
+    const d = e.detail||{}; if (typeof window.clearCustomHighlights==='function'){ window.clearCustomHighlights(d.containerId); }
+  });
+})();
+</script>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  try{
+    var rootSel = document.getElementById('dus-root');
+    if (rootSel && typeof window.ensureBoards==='function'){ window.ensureBoards(rootSel.value || 'G'); }
+  }catch(e){}
+});
 </script>
 
 </body>
