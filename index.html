@@ -5278,5 +5278,143 @@ function __bb_clearGuideTonePaths(){
 })();
 </script>
 
+
+<!-- ===== Dominant Upper Structures (DUS) — integrated module ===== -->
+<section class="app-section" id="dominant-upper-structures" aria-label="Dominant Upper Structures">
+  <h2>Dominant Upper Structures</h2>
+  <p class="next-chord-display" id="dus-context">
+    Choose a dominant root and a tonality. Click a triad to light those tones on the main fretboard.
+  </p>
+
+  <div class="controls">
+    <label for="dus-root">Root:</label>
+    <select id="dus-root" aria-label="Select dominant root">
+      <option>G</option><option>Ab</option><option>A</option><option>Bb</option>
+      <option>B</option><option>C</option><option>Db</option><option>D</option>
+      <option>Eb</option><option>E</option><option>F</option><option>Gb</option>
+    </select>
+
+    <label for="dus-tonality">Tonality:</label>
+    <select id="dus-tonality" aria-label="Select dominant tonality">
+      <option value="altered">Altered (melodic minor b2)</option>
+      <option value="lydianDom">Lydian Dominant (melodic minor parent)</option>
+      <option value="bebopDom">Bebop Dominant</option>
+      <option value="blues">Blues</option>
+    </select>
+
+    <button id="dus-show" class="secondary">Show Triads</button>
+    <button id="dus-clear" class="danger">Clear</button>
+  </div>
+
+  <div id="dus-triad-list" class="fretboards-grid" style="grid-template-columns: repeat(4,1fr);"></div>
+</section>
+
 </body>
+
+<script>
+/* ===== Dominant Upper Structures (DUS) — integrated into Bebop Blueprint ===== */
+(function(){
+  // Use theme variables so colors follow existing scheme
+  // Map each tonality to classic upper-structure *roots* over V7 (relative to the dominant root)
+  const DUS_TRIADS = {
+    altered:   ['Ab','Bb','B','Db','Eb','F'],      // from bII melodic minor (altered)
+    lydianDom: ['A','B','Cs','Ds','E','Fs'],       // from IV melodic minor (lydian dominant)
+    bebopDom:  ['A','B','D','E','Fs','G'],         // chord/scale tones and approaches
+    blues:     ['Bb','Db','D','F','Ab','A']        // blue notes mixed with dominant
+  };
+
+  // Friendly triad variants
+  function buildTriadVariants(root) {
+    return [
+      {name: `${root}maj`, q:'maj'},
+      {name: `${root}m`,   q:'m'},
+      {name: `${root}dim`, q:'dim'}
+    ];
+  }
+
+  // DOM hooks
+  const rootSel = document.getElementById('dus-root');
+  const tonSel  = document.getElementById('dus-tonality');
+  const showBtn = document.getElementById('dus-show');
+  const clearBtn= document.getElementById('dus-clear');
+  const listEl  = document.getElementById('dus-triad-list');
+
+  // Semitone helpers (C=0), using 's' for sharps where needed to align with app naming
+  const NAME_TO_SEMI = {C:0,'Cs':1,Db:1,D:2,'Ds':3,Eb:3,E:4,F:5,'Fs':6,Gb:6,G:7,'Gs':8,Ab:8,A:9,'As':10,Bb:10,B:11};
+  const SEMI_TO_NAME = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
+  function nameToSemi(n){ return NAME_TO_SEMI[n]; }
+  function semiToName(s){ return SEMI_TO_NAME[(s%12+12)%12]; }
+  function transpose(rootName, semis){ return semiToName(nameToSemi(rootName)+semis); }
+
+  const QMAP = { 'maj':[0,4,7], 'm':[0,3,7], 'dim':[0,3,6] };
+  function triadPitches(triadRootName, q){ return QMAP[q].map(s=>transpose(triadRootName, s)); }
+
+  // Light notes on the app's main fretboard via custom events (decoupled integration)
+  function lightTriadOnFretboard(pitches, label, vRoot) {
+    document.dispatchEvent(new CustomEvent('bb:highlightNotes', {
+      detail: { notes: pitches, opts: { label, contextRoot: vRoot, highlightGuideTones: true } }
+    }));
+    // Optional: update any existing "scale display" area if present
+    try {
+      const sd = document.getElementById('scale-display');
+      if (sd) sd.textContent = `${label} over ${vRoot}7`;
+    } catch(e){}
+  }
+
+  function renderTiles() {
+    listEl.innerHTML = '';
+    const vRoot = rootSel.value;
+    const mode  = tonSel.value;
+    const usRoots = (DUS_TRIADS[mode]||[]);
+    usRoots.forEach(r => {
+      const card = document.createElement('div');
+      card.className = 'fretboard-container';
+      const h = document.createElement('h4');
+      h.textContent = `${r} upper-structure`;
+      card.appendChild(h);
+      const group = document.createElement('div');
+      group.className = 'controls';
+      buildTriadVariants(r).forEach(v=>{
+        const btn = document.createElement('button');
+        btn.textContent = v.name;
+        btn.addEventListener('click', ()=>{
+          const pitches = triadPitches(r, v.q);
+          lightTriadOnFretboard(pitches, v.name, vRoot);
+        });
+        group.appendChild(btn);
+      });
+      card.appendChild(group);
+      listEl.appendChild(card);
+    });
+  }
+
+  showBtn.addEventListener('click', renderTiles);
+  clearBtn.addEventListener('click', ()=>{
+    listEl.innerHTML='';
+    document.dispatchEvent(new CustomEvent('bb:clearHighlights'));
+  });
+
+  // Keep root in sync if the main app broadcasts key changes
+  document.addEventListener('bb:keyChanged', (e)=>{ if(e?.detail?.key) rootSel.value = e.detail.key; });
+})();
+
+// === Tiny bridge: if the main app hasn't yet implemented the bb:highlightNotes listeners,
+// wire a safe default that expects a function like drawCustomNotesOnFretboard(containerId, notes, opts)
+(function(){
+  if (window.__DUS_BRIDGE_INSTALLED__) return;
+  window.__DUS_BRIDGE_INSTALLED__ = true;
+  document.addEventListener('bb:highlightNotes', (e)=>{
+    const d = e.detail||{};
+    if (typeof window.drawCustomNotesOnFretboard === 'function') {
+      window.drawCustomNotesOnFretboard('chord-fretboard', d.notes, d.opts||{});
+    }
+  });
+  document.addEventListener('bb:clearHighlights', ()=>{
+    if (typeof window.clearCustomHighlights === 'function') {
+      window.clearCustomHighlights('chord-fretboard');
+    }
+  });
+})();
+</script>
+
 </html>
