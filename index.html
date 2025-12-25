@@ -18,7 +18,10 @@
         --guide-tone-bg-color: #007bff;       /* Bright Blue */
         --guide-tone-text-color: white;
         --guide-tone-border-color: #0056b3;    /* Darker Blue */
-        --root-highlight-border-color: #c82333; /* Default for root highlight border */
+        --root-highlight-border-color: #c82333;
+
+        /* Strong Beat Pulse */
+        --strong-beat-pulse-color: rgba(255, 193, 7, 0.28); /* Default for root highlight border */
 
         /* Item 1: Song Title Color */
         --song-title-fretboard-color: #0056b3; /* Darker blue for light mode */
@@ -132,6 +135,23 @@
         border: 2px solid var(--fretboard-border, #4A3B31);
         overflow: visible;
     }
+
+    /* Strong Beat Pulse: subtle overlay that respects theme colors */
+    .fretboard::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 5px;
+        pointer-events: none;
+        background: var(--strong-beat-pulse-color, rgba(255, 193, 7, 0.28));
+        opacity: 0;
+        transition: opacity 80ms ease-in-out;
+        z-index: 2; /* Above strings/frets, below notes (notes are z-index: 3) */
+    }
+    .fretboard.strong-beat-pulsing::after {
+        opacity: 1;
+    }
+
     .fret-line { position: absolute; top: 0; height: 100%; width: 2px; background: #A0A0A0; border-right: 1px solid rgba(0,0,0,0.1); z-index: 1; }
     .string-line { position: absolute; left: 0; width: 100%; height: 1px; background: #C0C0C0; border-bottom: 1px solid rgba(0,0,0,0.1); z-index: 0; }
     .fret-number { position: absolute; bottom: -25px; font-size: 14px; color: #555; transform: translateX(-50%); font-weight: bold; z-index: 2; width: 20px; text-align: center; }
@@ -409,7 +429,8 @@
         --guide-tone-bg-color: #61dafb;      /* Light Cyan/Aqua */
         --guide-tone-text-color: #0a1128;    /* Very Dark Blue/Black */
         --guide-tone-border-color: #4ac9e8;   /* Slightly Darker Cyan */
-        --root-highlight-border-color: #ffc107; /* Gold for root highlight */
+        --root-highlight-border-color: #ffc107;
+        --strong-beat-pulse-color: rgba(97, 218, 251, 0.28); /* Gold for root highlight */
     }
     .dark-mode .app-section { box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
     .dark-mode .scale-display { text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
@@ -469,7 +490,8 @@
         --guide-tone-bg-color: #fca311;      /* Bright Orange/Yellow */
         --guide-tone-text-color: #001f54;    /* Dark Blue (contrasts with bg) */
         --guide-tone-border-color: #e79002;   /* Darker Orange */
-        --root-highlight-border-color: #61dafb; /* Cyan for root highlight */
+        --root-highlight-border-color: #61dafb;
+        --strong-beat-pulse-color: rgba(252, 163, 17, 0.28); /* Cyan for root highlight */
     }
     #dark-mode-toggle.active-2 { background-color: #1282a2; color: #fefcfb; border: 1px solid #034078; }
 
@@ -547,7 +569,8 @@ body.dark-mode-3 {
     --guide-tone-bg-color: #E7A002;      /* Muted Gold/Yellow */
     --guide-tone-text-color: #2A2F20;    /* Dark text */
     --guide-tone-border-color: #D97904;   /* Burnt Orange */
-    --root-highlight-border-color: #D9534F; /* Muted Red for root highlight (distinct) */
+    --root-highlight-border-color: #D9534F;
+        --strong-beat-pulse-color: rgba(231, 160, 2, 0.28); /* Muted Red for root highlight (distinct) */
 }
 
 body.dark-mode-3 button.danger { color: var(--button-danger-text-color, white); } 
@@ -843,6 +866,7 @@ body.dark-mode select, body.dark-mode-2 select, body.dark-mode-3 select {
 <option value="openE">Open E (EBEG#BE)</option>
 </select>
 <button aria-label="Toggle guide tones" class="toggle-button" id="guide-tones-toggle">Guide Tones Off</button>
+<button aria-label="Toggle strong beat pulse" class="toggle-button" id="strong-beat-pulse-toggle">Strong Beat Pulse</button>
 </div>
 <div class="fretboard" id="chord-fretboard"></div>
 </div>
@@ -2189,7 +2213,10 @@ const AppState = {
     lastTapTime: 0,
     tapTempoTimestamps: [],
     guideTonesActive: false,
-    loopingActive: false,
+    
+    strongBeatPulseActive: false,
+    strongBeatPulseTimeoutId: null,
+loopingActive: false,
     loopStartMeasure: -1,
     loopEndMeasure: -1,
     currentRhythmicStyle: "standardSwing", // NEW: Default style
@@ -2307,6 +2334,7 @@ const UI = {
             currentSongTitleFretboard: document.getElementById('current-song-title-fretboard'),
             currentSongDescriptionFretboard: document.getElementById('current-song-description-fretboard'),
             guideTonesToggle: document.getElementById('guide-tones-toggle'),
+            strongBeatPulseToggle: document.getElementById('strong-beat-pulse-toggle'),
             timeSignature: document.getElementById('time-signature'),
             soundType: document.getElementById('sound-type'),
             drumSetToggleBtn: document.getElementById('drumSetToggleBtn'),
@@ -2341,6 +2369,11 @@ const UI = {
             swingToggle: document.getElementById('swing-toggle'),
             noteNamingConvention: document.getElementById('note-naming-convention'),
         };
+
+        if (this.elements.strongBeatPulseToggle) {
+            this.elements.strongBeatPulseToggle.setAttribute('aria-pressed', 'false');
+        }
+
         Object.entries(this.elements).forEach(([key, element]) => {
             if (!element && !['currentSongTitle', 'currentSongDescription', 'swingToggle', 'noteNamingConvention'].includes(key)) {
                  console.error(`[UI Init - CRITICAL] Missing DOM element by ID: '${key}'. Element is ${element}.`);
@@ -3540,6 +3573,21 @@ async function playBeat() {
     if (currentUIBeatElement) {
         currentUIBeatElement.classList.add('active');
     }
+
+    // Strong Beat Pulse (beats 1 and 3 of each measure, respecting UI subdivisions)
+    try {
+        const beatsPerMeasureUI = beatsUI.length;
+        const subdivPerBeat = Math.max(1, Math.round(beatsPerMeasureUI / timeSignatureNum));
+        const beat1Idx = 0;
+        const beat3Idx = (timeSignatureNum >= 3) ? (2 * subdivPerBeat) : -1; // beat #3 => zero-based beat 2
+
+        if (AppState.currentBeat === beat1Idx || (beat3Idx !== -1 && AppState.currentBeat === beat3Idx)) {
+            triggerStrongBeatPulse();
+        }
+    } catch (pulseErr) {
+        console.warn("Strong Beat Pulse error:", pulseErr);
+    }
+
     
     const stylePatternData = activeStyle.pattern[AppState.currentStylePatternBeat];
     let soundToPlay, volumeToPlay;
@@ -3672,7 +3720,9 @@ function stopPlayback() {
     UI.elements.measures.querySelectorAll('.measure.active').forEach(m => m.classList.remove('active'));
     UI.elements.measures.querySelectorAll('.measure-part.part-active').forEach(p => p.classList.remove('part-active'));
 
-    if (AudioContextManager.currentChordGain && AudioContextManager.context) {
+    
+    clearStrongBeatPulse();
+if (AudioContextManager.currentChordGain && AudioContextManager.context) {
         try {
             const now = AudioContextManager.context.currentTime;
             if (AudioContextManager.currentChordGain.gain) {
@@ -4456,6 +4506,49 @@ function toggleGuideTones() {
     log(`Guide tones: ${AppState.guideTonesActive ? 'ON' : 'OFF'}`);
 }
 
+function toggleStrongBeatPulse() {
+    AppState.strongBeatPulseActive = !AppState.strongBeatPulseActive;
+
+    if (UI.elements.strongBeatPulseToggle) {
+        UI.elements.strongBeatPulseToggle.classList.toggle('active', AppState.strongBeatPulseActive);
+        UI.elements.strongBeatPulseToggle.setAttribute('aria-pressed', AppState.strongBeatPulseActive ? 'true' : 'false');
+    }
+
+    // If turning OFF, make sure any current pulse is cleared immediately.
+    if (!AppState.strongBeatPulseActive) {
+        clearStrongBeatPulse();
+    }
+
+    log(`Strong Beat Pulse: ${AppState.strongBeatPulseActive ? 'ON' : 'OFF'}`);
+}
+
+function clearStrongBeatPulse() {
+    if (AppState.strongBeatPulseTimeoutId) {
+        clearTimeout(AppState.strongBeatPulseTimeoutId);
+        AppState.strongBeatPulseTimeoutId = null;
+    }
+    if (UI.elements.chordFretboard) {
+        UI.elements.chordFretboard.classList.remove('strong-beat-pulsing');
+    }
+}
+
+function triggerStrongBeatPulse() {
+    if (!AppState.strongBeatPulseActive || !UI.elements.chordFretboard) return;
+
+    // Re-trigger cleanly even if beats are fast (e.g., 8th-note UI in 4/4).
+    UI.elements.chordFretboard.classList.remove('strong-beat-pulsing');
+    void UI.elements.chordFretboard.offsetWidth; // force reflow to restart CSS transition
+
+    UI.elements.chordFretboard.classList.add('strong-beat-pulsing');
+    if (AppState.strongBeatPulseTimeoutId) clearTimeout(AppState.strongBeatPulseTimeoutId);
+
+    AppState.strongBeatPulseTimeoutId = setTimeout(() => {
+        if (UI.elements.chordFretboard) UI.elements.chordFretboard.classList.remove('strong-beat-pulsing');
+        AppState.strongBeatPulseTimeoutId = null;
+    }, 110);
+}
+
+
 function highlightGuideTones(activeMeasurePartContext = null) {
     clearGuideToneHighlights();
     if (!AppState.guideTonesActive) return;
@@ -4758,7 +4851,11 @@ function setupEventListeners() {
             UI.elements.guideTonesToggle.addEventListener('click', toggleGuideTones);
         }
 
-        if (UI.elements.loopSelectedToggle) {
+        
+        if (UI.elements.strongBeatPulseToggle) {
+            UI.elements.strongBeatPulseToggle.addEventListener('click', toggleStrongBeatPulse);
+        }
+if (UI.elements.loopSelectedToggle) {
             UI.elements.loopSelectedToggle.addEventListener('click', toggleLoopingMode);
         }
 
