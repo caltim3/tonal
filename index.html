@@ -35,7 +35,7 @@
         --subsection-bg-color: #e9ecef;
         --subsection-border-color: #ced4da;
         --subsection-title-color: inherit;
-    }
+    --barry-passing-outline: rgba(0,0,0,0.70);    }
     .app-section {
         background: var(--section-bg-color, white);
         padding: 20px;
@@ -180,6 +180,18 @@
         box-shadow: 0 1px 3px rgba(0,0,0,0.2);
         /* background-color is set by JS for regular notes */
     }
+
+/* Barry Harris 6th Dim: mark the passing tone (the extra note) */
+.note.barry-passing-tone {
+    outline: 2px solid var(--barry-passing-outline, rgba(0,0,0,0.65));
+    box-shadow: 0 0 0 2px rgba(0,0,0,0.05);
+}
+body.dark-mode .note.barry-passing-tone,
+body.dark-mode-2 .note.barry-passing-tone,
+body.dark-mode-3 .note.barry-passing-tone {
+    outline: 2px solid var(--barry-passing-outline, rgba(255,255,255,0.75));
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.06);
+}
 
     /* UPDATED GUIDE TONE STYLING (Item 3) */
     .note.guide-tone-highlight, .note.root-highlight-for-guides {
@@ -440,7 +452,7 @@
         --toggle-on-bg: rgba(255, 255, 255, 0.18);
         --toggle-on-text: #ffffff;
         --toggle-on-border: rgba(255, 255, 255, 0.35);
-    }
+    --barry-passing-outline: rgba(255,255,255,0.80);    }
     .dark-mode .app-section { box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
     .dark-mode .scale-display { text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
     .dark-mode .beat.active { transform: translateY(-5px); }
@@ -505,7 +517,7 @@
         --toggle-on-bg: rgba(255, 255, 255, 0.18);
         --toggle-on-text: #ffffff;
         --toggle-on-border: rgba(255, 255, 255, 0.35);
-    }
+    --barry-passing-outline: rgba(255,255,255,0.80);    }
     #dark-mode-toggle.active-2 { background-color: #1282a2; color: #fefcfb; border: 1px solid #034078; }
 
     /* --- Dark Mode 3 --- */
@@ -588,7 +600,7 @@ body.dark-mode-3 {
         --toggle-on-bg: rgba(255, 255, 255, 0.18);
         --toggle-on-text: #ffffff;
         --toggle-on-border: rgba(255, 255, 255, 0.35);
-}
+    --barry-passing-outline: rgba(255,255,255,0.80);}
 
 body.dark-mode-3 button.danger { color: var(--button-danger-text-color, white); } 
 body.dark-mode-3 #dark-mode-toggle.active-3 { 
@@ -898,6 +910,7 @@ body.dark-mode select, body.dark-mode-2 select, body.dark-mode-3 select {
 </select>
 <button aria-label="Toggle guide tones" aria-pressed="false" class="toggle-button" id="guide-tones-toggle">Guide Tones Off</button>
 <button aria-label="Toggle strong beat pulse" aria-pressed="false" class="toggle-button" id="strong-beat-pulse-toggle">Strong Beat Pulse</button>
+<button aria-label="Toggle 6th diminished scale (Barry Harris)" aria-pressed="false" class="toggle-button" id="sixth-dim-toggle">6th Dim</button>
 </div>
 <div class="fretboard" id="chord-fretboard"></div>
 </div>
@@ -2246,6 +2259,7 @@ const AppState = {
     guideTonesActive: false,
     
     strongBeatPulseActive: false,
+    sixthDimActive: false,
     strongBeatPulseTimeoutId: null,
 loopingActive: false,
     loopStartMeasure: -1,
@@ -2366,6 +2380,7 @@ const UI = {
             currentSongDescriptionFretboard: document.getElementById('current-song-description-fretboard'),
             guideTonesToggle: document.getElementById('guide-tones-toggle'),
             strongBeatPulseToggle: document.getElementById('strong-beat-pulse-toggle'),
+            sixthDimToggle: document.getElementById('sixth-dim-toggle'),
             timeSignature: document.getElementById('time-signature'),
             soundType: document.getElementById('sound-type'),
             drumSetToggleBtn: document.getElementById('drumSetToggleBtn'),
@@ -3390,7 +3405,56 @@ function updateFretboardNotes(fretboardContainer, rootNote, scaleName, tuningArr
 
     const rootIndex = NOTES.indexOf(standardizedRoot); 
     const notesInScale = scaleData.map(interval => NOTES[(rootIndex + interval) % 12]); 
-    const numStrings = tuningArray.length;
+    
+    // --- Barry Harris 6th Dim mode (only affects the chord fretboard when enabled) ---
+    let barryPassingNoteName = null;
+    if (AppState.sixthDimActive && fretboardContainer.id === 'chord-fretboard') {
+        // Try to infer the chord quality from the current measure context (preferred),
+        // otherwise fall back to the selected scale type name.
+        let inferredQuality = null;
+        try {
+            let ctx = measureContext;
+            if (ctx && ctx.classList && ctx.classList.contains('measure')) {
+                ctx = ctx.querySelector('.measure-part.part-active') || ctx.querySelector('.measure-part');
+            }
+            const qRaw = ctx?.querySelector('.chord-controls .chord-quality')?.value || null;
+
+            const q = (qRaw || "").toLowerCase();
+            if (q.includes('maj') || q.includes('major')) inferredQuality = 'major';
+            else if (q.includes('min') || (q.startsWith('m') && !q.includes('maj')) ) inferredQuality = 'minor';
+            else if (q.includes('dom') || q.includes('7')) inferredQuality = 'dominant';
+        } catch (e) {}
+
+        if (!inferredQuality) {
+            const s = (scaleName || "").toLowerCase();
+            if (s.includes('mixolyd') || s.includes('dominant')) inferredQuality = 'dominant';
+            else if (s.includes('melodic minor') || s.includes('dorian') || s.includes('minor')) inferredQuality = 'minor';
+            else inferredQuality = 'major';
+        }
+
+        // Build an 8-note "sixth diminished" / Barry-style scale as semitone offsets.
+        // Major 6 Dim: major scale + #5 (passing tone between 5 and 6)
+        // Minor 6 Dim: melodic minor + b7 (passing tone between 6 and 7)
+        // Dominant (Barry-ish): mixolydian + maj7 (bebop dominant passing tone)
+        let barryOffsets = null;
+        let passingOffset = null;
+
+        if (inferredQuality === 'minor') {
+            barryOffsets = [0, 2, 3, 5, 7, 9, 10, 11];
+            passingOffset = 10; // b7
+        } else if (inferredQuality === 'dominant') {
+            barryOffsets = [0, 2, 4, 5, 7, 9, 10, 11];
+            passingOffset = 11; // maj7 passing tone
+        } else {
+            barryOffsets = [0, 2, 4, 5, 7, 8, 9, 11];
+            passingOffset = 8; // #5 passing tone
+        }
+
+        notesInScale.length = 0;
+        barryOffsets.forEach(off => notesInScale.push(NOTES[(rootIndex + off) % 12]));
+        barryPassingNoteName = NOTES[(rootIndex + passingOffset) % 12];
+    }
+const numStrings = tuningArray.length;
     const numFrets = 12; 
 
     for (let stringIndex = 0; stringIndex < numStrings; stringIndex++) {
@@ -3406,7 +3470,11 @@ function updateFretboardNotes(fretboardContainer, rootNote, scaleName, tuningArr
                 const noteElement = document.createElement('div');
                 noteElement.className = 'note';
                 noteElement.textContent = currentNoteNameOnString;
-                noteElement.style.left = (fret === 0) ? `-2%` : `${((fret - 0.5) / numFrets) * 100}%`;
+                
+                if (barryPassingNoteName && currentNoteNameOnString === barryPassingNoteName) {
+                    noteElement.classList.add('barry-passing-tone');
+                }
+noteElement.style.left = (fret === 0) ? `-2%` : `${((fret - 0.5) / numFrets) * 100}%`;
                 
                 const stringYPosition = (((numStrings - 1 - stringIndex) / (numStrings - 1)) * 96) + 2;
                 noteElement.style.top = `${stringYPosition}%`;
@@ -4557,6 +4625,38 @@ function toggleStrongBeatPulse() {
     log(`Strong Beat Pulse: ${AppState.strongBeatPulseActive ? 'ON' : 'OFF'}`);
 }
 
+function toggleSixthDim() {
+    AppState.sixthDimActive = !AppState.sixthDimActive;
+    if (UI.elements.sixthDimToggle) {
+        UI.elements.sixthDimToggle.textContent = AppState.sixthDimActive ? "6th Dim ON" : "6th Dim";
+        UI.elements.sixthDimToggle.classList.toggle('active', AppState.sixthDimActive);
+        UI.elements.sixthDimToggle.classList.toggle('is-on', AppState.sixthDimActive);
+        UI.elements.sixthDimToggle.setAttribute('aria-pressed', AppState.sixthDimActive ? 'true' : 'false');
+    }
+
+    // Refresh chord fretboard immediately so the scale overlay updates
+    try {
+        const currentMeasureEl = UI.elements.measures?.children?.[AppState.currentMeasure];
+        const activePart = currentMeasureEl?.querySelector('.measure-part.part-active') || currentMeasureEl?.querySelector('.measure-part');
+        if (activePart) {
+            const scaleRoot = activePart.querySelector('.second-key')?.value;
+            const scaleType = activePart.querySelector('.scale-select')?.value;
+            const tuning = TUNINGS[UI.elements.chordTuning?.value] || TUNINGS.standard;
+            if (scaleRoot && scaleType) {
+                updateFretboardNotes(UI.elements.chordFretboard, scaleRoot, scaleType, tuning, activePart);
+                if (AppState.guideTonesActive) highlightGuideTones(activePart);
+            }
+        } else if (UI.elements.chordFretboard && UI.elements.chordTuning) {
+            updateFretboardNotes(UI.elements.chordFretboard, "C", "major", TUNINGS[UI.elements.chordTuning.value]);
+        }
+    } catch (e) {
+        console.warn("Could not refresh fretboard after toggling 6th Dim:", e);
+    }
+
+    log(`6th Dim (Barry Harris): ${AppState.sixthDimActive ? 'ON' : 'OFF'}`);
+}
+
+
 function clearStrongBeatPulse() {
     if (AppState.strongBeatPulseTimeoutId) {
         clearTimeout(AppState.strongBeatPulseTimeoutId);
@@ -4889,6 +4989,10 @@ function setupEventListeners() {
         
         if (UI.elements.strongBeatPulseToggle) {
             UI.elements.strongBeatPulseToggle.addEventListener('click', toggleStrongBeatPulse);
+        }
+
+        if (UI.elements.sixthDimToggle) {
+            UI.elements.sixthDimToggle.addEventListener('click', toggleSixthDim);
         }
 if (UI.elements.loopSelectedToggle) {
             UI.elements.loopSelectedToggle.addEventListener('click', toggleLoopingMode);
