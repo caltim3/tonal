@@ -21,7 +21,12 @@
         --root-highlight-border-color: #c82333;
 
         /* Strong Beat Pulse */
-        --strong-beat-pulse-color: rgba(255, 193, 7, 0.28); /* Default for root highlight border */
+        --strong-beat-pulse-color: rgba(0, 0, 0, 0.22); /* Darker pulse for light modes */
+
+        /* Toggle ON state (Guide Tones / Strong Beat Pulse) */
+        --toggle-on-bg: rgba(0, 0, 0, 0.82);
+        --toggle-on-text: #ffffff;
+        --toggle-on-border: rgba(0, 0, 0, 0.92);
 
         /* Item 1: Song Title Color */
         --song-title-fretboard-color: #0056b3; /* Darker blue for light mode */
@@ -145,7 +150,7 @@
         pointer-events: none;
         background: var(--strong-beat-pulse-color, rgba(255, 193, 7, 0.28));
         opacity: 0;
-        transition: opacity 80ms ease-in-out;
+        transition: opacity 120ms ease-in-out;
         z-index: 2; /* Above strings/frets, below notes (notes are z-index: 3) */
     }
     .fretboard.strong-beat-pulsing::after {
@@ -430,7 +435,11 @@
         --guide-tone-text-color: #0a1128;    /* Very Dark Blue/Black */
         --guide-tone-border-color: #4ac9e8;   /* Slightly Darker Cyan */
         --root-highlight-border-color: #ffc107;
-        --strong-beat-pulse-color: rgba(97, 218, 251, 0.28); /* Gold for root highlight */
+        --strong-beat-pulse-color: rgba(255, 255, 255, 0.18); /* Gold for root highlight */
+        /* Toggle ON state (Guide Tones / Strong Beat Pulse) */
+        --toggle-on-bg: rgba(255, 255, 255, 0.18);
+        --toggle-on-text: #ffffff;
+        --toggle-on-border: rgba(255, 255, 255, 0.35);
     }
     .dark-mode .app-section { box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
     .dark-mode .scale-display { text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
@@ -491,7 +500,11 @@
         --guide-tone-text-color: #001f54;    /* Dark Blue (contrasts with bg) */
         --guide-tone-border-color: #e79002;   /* Darker Orange */
         --root-highlight-border-color: #61dafb;
-        --strong-beat-pulse-color: rgba(252, 163, 17, 0.28); /* Cyan for root highlight */
+        --strong-beat-pulse-color: rgba(255, 255, 255, 0.18); /* Cyan for root highlight */
+        /* Toggle ON state (Guide Tones / Strong Beat Pulse) */
+        --toggle-on-bg: rgba(255, 255, 255, 0.18);
+        --toggle-on-text: #ffffff;
+        --toggle-on-border: rgba(255, 255, 255, 0.35);
     }
     #dark-mode-toggle.active-2 { background-color: #1282a2; color: #fefcfb; border: 1px solid #034078; }
 
@@ -570,7 +583,11 @@ body.dark-mode-3 {
     --guide-tone-text-color: #2A2F20;    /* Dark text */
     --guide-tone-border-color: #D97904;   /* Burnt Orange */
     --root-highlight-border-color: #D9534F;
-        --strong-beat-pulse-color: rgba(231, 160, 2, 0.28); /* Muted Red for root highlight (distinct) */
+        --strong-beat-pulse-color: rgba(255, 255, 255, 0.18); /* Muted Red for root highlight (distinct) */
+        /* Toggle ON state (Guide Tones / Strong Beat Pulse) */
+        --toggle-on-bg: rgba(255, 255, 255, 0.18);
+        --toggle-on-text: #ffffff;
+        --toggle-on-border: rgba(255, 255, 255, 0.35);
 }
 
 body.dark-mode-3 button.danger { color: var(--button-danger-text-color, white); } 
@@ -590,6 +607,20 @@ body.dark-mode-3 #fretflow-section {
     background: var(--section-bg-color); 
     color: var(--text-color); 
     border-color: var(--fretboard-container-border);
+}
+
+
+/* Guide Tones + Strong Beat Pulse: clear ON/OFF visual state */
+.toggle-button.is-on {
+    background: var(--toggle-on-bg);
+    color: var(--toggle-on-text);
+    border: 1px solid var(--toggle-on-border);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.18);
+}
+body.dark-mode .toggle-button.is-on,
+body.dark-mode-2 .toggle-button.is-on,
+body.dark-mode-3 .toggle-button.is-on {
+    box-shadow: 0 2px 10px rgba(255,255,255,0.06);
 }
 
 /* Toggle button styling for DM3 */
@@ -865,8 +896,8 @@ body.dark-mode select, body.dark-mode-2 select, body.dark-mode-3 select {
 <option value="openD">Open D (DADF#AD)</option>
 <option value="openE">Open E (EBEG#BE)</option>
 </select>
-<button aria-label="Toggle guide tones" class="toggle-button" id="guide-tones-toggle">Guide Tones Off</button>
-<button aria-label="Toggle strong beat pulse" class="toggle-button" id="strong-beat-pulse-toggle">Strong Beat Pulse</button>
+<button aria-label="Toggle guide tones" aria-pressed="false" class="toggle-button" id="guide-tones-toggle">Guide Tones Off</button>
+<button aria-label="Toggle strong beat pulse" aria-pressed="false" class="toggle-button" id="strong-beat-pulse-toggle">Strong Beat Pulse</button>
 </div>
 <div class="fretboard" id="chord-fretboard"></div>
 </div>
@@ -4493,6 +4524,8 @@ function toggleGuideTones() {
     AppState.guideTonesActive = !AppState.guideTonesActive;
     UI.elements.guideTonesToggle.textContent = AppState.guideTonesActive ? "Guide Tones ON" : "Guide Tones Off";
     UI.elements.guideTonesToggle.classList.toggle('active', AppState.guideTonesActive);
+    UI.elements.guideTonesToggle.classList.toggle('is-on', AppState.guideTonesActive);
+    UI.elements.guideTonesToggle.setAttribute('aria-pressed', AppState.guideTonesActive ? 'true' : 'false');
 
     // Determine which measure part is currently "active" visually or contextually
     const currentMeasureEl = UI.elements.measures.children[AppState.currentMeasure];
@@ -4511,6 +4544,8 @@ function toggleStrongBeatPulse() {
 
     if (UI.elements.strongBeatPulseToggle) {
         UI.elements.strongBeatPulseToggle.classList.toggle('active', AppState.strongBeatPulseActive);
+        UI.elements.strongBeatPulseToggle.classList.toggle('is-on', AppState.strongBeatPulseActive);
+        UI.elements.strongBeatPulseToggle.textContent = AppState.strongBeatPulseActive ? 'Strong Beat Pulse ON' : 'Strong Beat Pulse';
         UI.elements.strongBeatPulseToggle.setAttribute('aria-pressed', AppState.strongBeatPulseActive ? 'true' : 'false');
     }
 
@@ -4545,7 +4580,7 @@ function triggerStrongBeatPulse() {
     AppState.strongBeatPulseTimeoutId = setTimeout(() => {
         if (UI.elements.chordFretboard) UI.elements.chordFretboard.classList.remove('strong-beat-pulsing');
         AppState.strongBeatPulseTimeoutId = null;
-    }, 110);
+    }, 170);
 }
 
 
