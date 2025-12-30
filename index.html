@@ -905,6 +905,22 @@ body.dark-mode select, body.dark-mode-2 select, body.dark-mode-3 select {
 #anticipate-toggle.toggle-button{ /* match other toggle buttons */ }
 
 
+
+/* Anticipate: guide-tone targets (muted red) */
+#anticipate-fretboard .note.anticipate-guide-tone{
+  outline: 3px solid rgba(175, 70, 70, 0.95) !important;
+  box-shadow: 0 0 8px 1px rgba(175, 70, 70, 0.55) !important;
+  background-color: rgba(175, 70, 70, 0.55) !important;
+  color: rgba(255,255,255,0.95) !important;
+}
+body.dark-mode #anticipate-fretboard .note.anticipate-guide-tone,
+body.dark-mode-2 #anticipate-fretboard .note.anticipate-guide-tone,
+body.dark-mode-3 #anticipate-fretboard .note.anticipate-guide-tone{
+  outline-color: rgba(210, 105, 105, 0.98) !important;
+  box-shadow: 0 0 10px 2px rgba(210, 105, 105, 0.6) !important;
+  background-color: rgba(210, 105, 105, 0.45) !important;
+}
+
 </style>
 </head>
 <body>
@@ -4655,6 +4671,10 @@ function toggleGuideTones() {
     } else {
         clearGuideToneHighlights();
     }
+
+    // Keep the Anticipate fretboard in sync (shows next-chord guide-tone targets when enabled)
+    updateAnticipateFretboard();
+
     log(`Guide tones: ${AppState.guideTonesActive ? 'ON' : 'OFF'}`);
 }
 
@@ -4820,7 +4840,92 @@ function updateAnticipateFretboard() {
 
     // Draw notes on top of the already-built fretboard structure
     updateFretboardNotes(UI.elements.anticipateFretboard, scaleRoot, scaleType, tuning, partEl);
+
+    // If guide tones are ON, show voice-leading targets for the *next* chord in muted red.
+    applyAnticipateGuideToneTargets(partEl);
 }
+
+
+function getGuideToneIdxsForChord(chordRootStr, chordQualityStr){
+    try{
+        if (!chordRootStr || !chordQualityStr) return { rootIdx:-1, thirdIdx:-1, seventhIdx:-1, set:new Set() };
+        const chordIntervals = CHORD_INTERVALS?.[chordQualityStr];
+        if (!chordIntervals) return { rootIdx:-1, thirdIdx:-1, seventhIdx:-1, set:new Set() };
+
+        const rootStd = standardizeNoteName(chordRootStr);
+        const rootIdx = NOTES.indexOf(rootStd);
+        if (rootIdx === -1) return { rootIdx:-1, thirdIdx:-1, seventhIdx:-1, set:new Set() };
+
+        let thirdIdx = -1;
+        if (chordIntervals.includes(3)) thirdIdx = (rootIdx + 3) % 12;
+        else if (chordIntervals.includes(4)) thirdIdx = (rootIdx + 4) % 12;
+
+        let seventhIdx = -1;
+        if (chordQualityStr.includes('6') && !chordQualityStr.includes('7')) {
+            if (chordIntervals.includes(9)) seventhIdx = (rootIdx + 9) % 12; // treat 6th as "upper guide"
+        } else {
+            if (chordIntervals.includes(11)) seventhIdx = (rootIdx + 11) % 12;
+            else if (chordIntervals.includes(10)) seventhIdx = (rootIdx + 10) % 12;
+            else if (chordQualityStr === 'dim7' && chordIntervals.includes(9)) seventhIdx = (rootIdx + 9) % 12; // bb7
+        }
+
+        const set = new Set();
+        if (thirdIdx !== -1) set.add(thirdIdx);
+        if (seventhIdx !== -1) set.add(seventhIdx);
+
+        return { rootIdx, thirdIdx, seventhIdx, set };
+    }catch(e){
+        return { rootIdx:-1, thirdIdx:-1, seventhIdx:-1, set:new Set() };
+    }
+}
+
+function applyAnticipateGuideToneTargets(nextChordPartEl){
+    try{
+        const fb = UI?.elements?.anticipateFretboard;
+        if (!fb) return;
+
+        // Always clear previous targets (even if guide tones are off)
+        fb.querySelectorAll('.note.anticipate-guide-tone').forEach(n => n.classList.remove('anticipate-guide-tone'));
+
+        if (!AppState?.anticipateActive) return;
+        if (!AppState?.guideTonesActive) return;
+        if (!nextChordPartEl) return;
+
+        // Current chord context (what you're playing NOW)
+        const currentMeasureEl = UI?.elements?.measures?.children?.[AppState.currentMeasure];
+        const currentPartEl = currentMeasureEl?.querySelector?.('.measure-part.part-active') || currentMeasureEl?.querySelector?.('.measure-part');
+        if (!currentPartEl) return;
+
+        const curRoot = currentPartEl.querySelector('.root-note')?.value || "";
+        const curQual = currentPartEl.querySelector('.chord-quality')?.value || "";
+        const nextRoot = nextChordPartEl.querySelector('.root-note')?.value || "";
+        const nextQual = nextChordPartEl.querySelector('.chord-quality')?.value || "";
+
+        const curGT = getGuideToneIdxsForChord(curRoot, curQual);
+        const nextGT = getGuideToneIdxsForChord(nextRoot, nextQual);
+
+        // "Voice-leading targets":
+        // current 7th -> next 3rd, current 3rd -> next 7th
+        const targetIdxs = new Set();
+        if (curGT.seventhIdx !== -1 && nextGT.thirdIdx !== -1) targetIdxs.add(nextGT.thirdIdx);
+        if (curGT.thirdIdx !== -1 && nextGT.seventhIdx !== -1) targetIdxs.add(nextGT.seventhIdx);
+
+        if (targetIdxs.size === 0) return;
+
+        fb.querySelectorAll('.note').forEach(noteEl => {
+            const idx = (typeof __bb_pcIndex === 'function')
+                ? __bb_pcIndex(noteEl.textContent)
+                : (NOTES.indexOf(standardizeNoteName(noteEl.textContent)) );
+            if (idx < 0) return;
+            if (targetIdxs.has(idx)) noteEl.classList.add('anticipate-guide-tone');
+        });
+    }catch(e){
+        // swallow: never break playback/UI
+    }
+}
+
+
+
 
 
 
