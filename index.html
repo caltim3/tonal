@@ -898,8 +898,12 @@ body.dark-mode select, body.dark-mode-2 select, body.dark-mode-3 select {
   box-shadow: none !important;
 }
 #anticipate-toggle.is-on{
-  background: rgba(255,255,255,0.12);
+  background: var(--toggle-on-bg, rgba(0,0,0,0.82));
+  color: var(--toggle-on-text, #fff);
+  border: 1px solid var(--toggle-on-border, rgba(0,0,0,0.92));
 }
+#anticipate-toggle.toggle-button{ /* match other toggle buttons */ }
+
 
 </style>
 </head>
@@ -942,7 +946,7 @@ body.dark-mode select, body.dark-mode-2 select, body.dark-mode-3 select {
 <button aria-label="Toggle guide tones" aria-pressed="false" class="toggle-button" id="guide-tones-toggle">Guide Tones Off</button>
 <button aria-label="Toggle strong beat pulse" aria-pressed="false" class="toggle-button" id="strong-beat-pulse-toggle">Strong Beat Pulse</button>
 <button aria-label="Toggle 6th diminished scale (Barry Harris)" aria-pressed="false" class="toggle-button" id="sixth-dim-toggle">6th Dim</button>
-<button id="anticipate-toggle" title="Show the next chord/scale on a second fretboard" aria-pressed="false">Anticipate</button>
+<button class="toggle-button" id="anticipate-toggle" title="Show the next chord/scale on a second fretboard" aria-pressed="false">Anticipate</button>
 </div>
 <div class="fretboard" id="chord-fretboard"></div>
 <div id="anticipate-fretboard-section" class="anticipate-section" style="display:none;">
@@ -4786,9 +4790,8 @@ function updateAnticipateFretboard() {
     const scaleType = partEl.querySelector('.scale-select')?.value || (typeof suggestScaleForQuality === "function" ? suggestScaleForQuality(chordQualityRaw) : "major");
 
     const tuning = TUNINGS[UI.elements.chordTuning?.value] || TUNINGS.standard;
-    const scaleData = SCALES[scaleType];
 
-    if (!scaleRoot || !scaleData) {
+    if (!scaleRoot || !SCALES[scaleType]) {
         UI.elements.anticipateScaleDisplay.textContent = chordRoot ? `Anticipating: ${chordRoot}${chordQualityDisplay}` : "";
         UI.elements.anticipateFretboard.innerHTML = "";
         return;
@@ -4798,7 +4801,7 @@ function updateAnticipateFretboard() {
     UI.elements.anticipateScaleDisplay.textContent =
         chordRoot ? `Anticipating: ${scaleRoot} ${scaleOptionText} over ${chordRoot}${chordQualityDisplay}` : `Anticipating: ${scaleRoot} ${scaleOptionText}`;
 
-    updateFretboardNotes(UI.elements.anticipateFretboard, scaleRoot, scaleData, tuning, scaleType, partEl);
+    updateFretboardNotes(UI.elements.anticipateFretboard, scaleRoot, scaleType, tuning, partEl);
 }
 
 
