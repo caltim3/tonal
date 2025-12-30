@@ -4772,10 +4772,20 @@ function updateAnticipateFretboard() {
     if (!AppState.anticipateActive) return;
     if (!UI.elements.anticipateFretboard || !UI.elements.anticipateScaleDisplay) return;
 
+    const tuning = TUNINGS[UI.elements.chordTuning?.value] || TUNINGS.standard;
+
+    // Ensure the anticipate fretboard has its base (frets/strings) drawn.
+    // updateFretboardNotes() only draws note circles; it assumes the fretboard structure already exists.
+    if (!UI.elements.anticipateFretboard.querySelector('.fret-line') ||
+        !UI.elements.anticipateFretboard.querySelector('.string-line')) {
+        createFretboard(UI.elements.anticipateFretboard, tuning);
+    }
+
     const nextPos = getNextMeasurePartPosition(AppState.currentMeasure);
     if (!nextPos || !nextPos.partEl) {
         UI.elements.anticipateScaleDisplay.textContent = "";
-        UI.elements.anticipateFretboard.innerHTML = "";
+        // Keep the fretboard structure visible, just remove notes
+        UI.elements.anticipateFretboard.querySelectorAll('.note').forEach(el => el.remove());
         return;
     }
 
@@ -4786,23 +4796,32 @@ function updateAnticipateFretboard() {
     const chordQualityOption = partEl.querySelector(`.chord-quality option[value="${chordQualityRaw}"]`);
     const chordQualityDisplay = chordQualityOption ? chordQualityOption.textContent : chordQualityRaw;
 
+    // Scale selection for the NEXT chord (what user set in the next measure-part UI)
     const scaleRoot = partEl.querySelector('.second-key')?.value || chordRoot;
-    const scaleType = partEl.querySelector('.scale-select')?.value || (typeof suggestScaleForQuality === "function" ? suggestScaleForQuality(chordQualityRaw) : "major");
-
-    const tuning = TUNINGS[UI.elements.chordTuning?.value] || TUNINGS.standard;
+    let scaleType = partEl.querySelector('.scale-select')?.value || "";
+    if (!scaleType || !SCALES[scaleType]) {
+        // Fallback: try your existing suggestion helper if present
+        scaleType = (typeof suggestScaleForQuality === "function")
+            ? suggestScaleForQuality(chordQualityRaw)
+            : "major";
+    }
 
     if (!scaleRoot || !SCALES[scaleType]) {
         UI.elements.anticipateScaleDisplay.textContent = chordRoot ? `Anticipating: ${chordRoot}${chordQualityDisplay}` : "";
-        UI.elements.anticipateFretboard.innerHTML = "";
+        UI.elements.anticipateFretboard.querySelectorAll('.note').forEach(el => el.remove());
         return;
     }
 
     const scaleOptionText = partEl.querySelector(`.scale-select option[value="${scaleType}"]`)?.textContent || scaleType;
     UI.elements.anticipateScaleDisplay.textContent =
-        chordRoot ? `Anticipating: ${scaleRoot} ${scaleOptionText} over ${chordRoot}${chordQualityDisplay}` : `Anticipating: ${scaleRoot} ${scaleOptionText}`;
+        chordRoot
+            ? `Anticipating: ${scaleRoot} ${scaleOptionText} over ${chordRoot}${chordQualityDisplay}`
+            : `Anticipating: ${scaleRoot} ${scaleOptionText}`;
 
+    // Draw notes on top of the already-built fretboard structure
     updateFretboardNotes(UI.elements.anticipateFretboard, scaleRoot, scaleType, tuning, partEl);
 }
+
 
 
 function clearStrongBeatPulse() {
