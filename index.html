@@ -906,20 +906,29 @@ body.dark-mode select, body.dark-mode-2 select, body.dark-mode-3 select {
 
 
 
-/* Anticipate: guide-tone targets (muted red) */
+/* Anticipate: guide-tone targets (POP — not greyed) */
 #anticipate-fretboard .note.anticipate-guide-tone{
-  outline: 3px solid rgba(175, 70, 70, 0.95) !important;
-  box-shadow: 0 0 8px 1px rgba(175, 70, 70, 0.55) !important;
-  background-color: rgba(175, 70, 70, 0.55) !important;
-  color: rgba(255,255,255,0.95) !important;
+  outline: 3px solid rgba(175, 70, 70, 0.98) !important;
+  box-shadow: 0 0 12px 3px rgba(175, 70, 70, 0.85) !important;
+  background-color: rgba(175, 70, 70, 0.9) !important;
+  color: #ffffff !important;
+
+  /* Override anticipate greying */
+  opacity: 1 !important;
+  filter: none !important;
+
+  /* Make it visually dominant */
+  z-index: 20 !important;
+  transform: translate(-50%, -50%) scale(1.12);
 }
+
 body.dark-mode #anticipate-fretboard .note.anticipate-guide-tone,
 body.dark-mode-2 #anticipate-fretboard .note.anticipate-guide-tone,
 body.dark-mode-3 #anticipate-fretboard .note.anticipate-guide-tone{
   outline-color: rgba(210, 105, 105, 0.98) !important;
-  box-shadow: 0 0 10px 2px rgba(210, 105, 105, 0.6) !important;
-  background-color: rgba(210, 105, 105, 0.45) !important;
-}
+  box-shadow: 0 0 14px 4px rgba(210, 105, 105, 0.9) !important;
+  background-color: rgba(210, 105, 105, 0.85) !importan
+
 
 </style>
 </head>
