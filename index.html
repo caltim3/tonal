@@ -870,6 +870,37 @@ body.dark-mode select, body.dark-mode-2 select, body.dark-mode-3 select {
   stroke-linecap: round !important;
 }
 
+
+
+/* ================================
+   === Anticipate (Next Chord) ====
+   ================================ */
+.anticipate-section{
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255,255,255,0.12);
+}
+.anticipate-section .anticipate-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom: 8px;
+}
+.anticipate-section .anticipate-scale-display{
+  opacity: 0.8;
+  filter: grayscale(0.65);
+}
+#anticipate-fretboard{
+  opacity: 0.78;
+  filter: grayscale(0.85);
+}
+#anticipate-fretboard .note{
+  box-shadow: none !important;
+}
+#anticipate-toggle.is-on{
+  background: rgba(255,255,255,0.12);
+}
+
 </style>
 </head>
 <body>
@@ -911,8 +942,15 @@ body.dark-mode select, body.dark-mode-2 select, body.dark-mode-3 select {
 <button aria-label="Toggle guide tones" aria-pressed="false" class="toggle-button" id="guide-tones-toggle">Guide Tones Off</button>
 <button aria-label="Toggle strong beat pulse" aria-pressed="false" class="toggle-button" id="strong-beat-pulse-toggle">Strong Beat Pulse</button>
 <button aria-label="Toggle 6th diminished scale (Barry Harris)" aria-pressed="false" class="toggle-button" id="sixth-dim-toggle">6th Dim</button>
+<button id="anticipate-toggle" title="Show the next chord/scale on a second fretboard" aria-pressed="false">Anticipate</button>
 </div>
 <div class="fretboard" id="chord-fretboard"></div>
+<div id="anticipate-fretboard-section" class="anticipate-section" style="display:none;">
+  <div class="anticipate-header">
+    <div id="anticipate-scale-display" class="scale-display anticipate-scale-display"></div>
+  </div>
+  <div class="fretboard anticipate-fretboard" id="anticipate-fretboard" aria-label="Anticipated next chord fretboard"></div>
+</div>
 </div>
 </div>
 <div class="app-section" id="metronome-section">
@@ -2260,6 +2298,7 @@ const AppState = {
     
     strongBeatPulseActive: false,
     sixthDimActive: false,
+    anticipateActive: false,
     strongBeatPulseTimeoutId: null,
 loopingActive: false,
     loopStartMeasure: -1,
@@ -2381,6 +2420,10 @@ const UI = {
             guideTonesToggle: document.getElementById('guide-tones-toggle'),
             strongBeatPulseToggle: document.getElementById('strong-beat-pulse-toggle'),
             sixthDimToggle: document.getElementById('sixth-dim-toggle'),
+            anticipateToggle: document.getElementById('anticipate-toggle'),
+            anticipateFretboardSection: document.getElementById('anticipate-fretboard-section'),
+            anticipateFretboard: document.getElementById('anticipate-fretboard'),
+            anticipateScaleDisplay: document.getElementById('anticipate-scale-display'),
             timeSignature: document.getElementById('time-signature'),
             soundType: document.getElementById('sound-type'),
             drumSetToggleBtn: document.getElementById('drumSetToggleBtn'),
@@ -3924,7 +3967,11 @@ function updateNextChordDisplay(currentMeasureIndex = AppState.currentMeasure) {
     }
 
     nextChordDisplayElement.textContent = upcomingChords.length > 0 ? `Next: ${upcomingChords.join(', ')}` : "";
+
+    // Keep the Anticipate fretboard in sync with the computed 'next' context.
+    updateAnticipateFretboard();
 }
+
 
 function loadProgression(progressionName, overrideKey = null, isUserSong = false) {
     previousPlayedVoicingNotesWithOctaves = null;
@@ -4657,6 +4704,104 @@ function toggleSixthDim() {
 }
 
 
+function toggleAnticipateMode() {
+    AppState.anticipateActive = !AppState.anticipateActive;
+    if (UI.elements.anticipateToggle) {
+        UI.elements.anticipateToggle.textContent = AppState.anticipateActive ? "Anticipate ON" : "Anticipate";
+        UI.elements.anticipateToggle.classList.toggle('active', AppState.anticipateActive);
+        UI.elements.anticipateToggle.classList.toggle('is-on', AppState.anticipateActive);
+        UI.elements.anticipateToggle.setAttribute('aria-pressed', AppState.anticipateActive ? 'true' : 'false');
+    }
+
+    if (UI.elements.anticipateFretboardSection) {
+        UI.elements.anticipateFretboardSection.style.display = AppState.anticipateActive ? 'block' : 'none';
+    }
+
+    updateAnticipateFretboard();
+}
+
+function getNextMeasurePartPosition(currentMeasureIndex = AppState.currentMeasure) {
+    const measures = UI.elements.measures?.children;
+    if (!measures || measures.length === 0) return null;
+
+    const displayedBeats = UI.elements.beatsContainer?.querySelectorAll?.('.beat') || [];
+    const timeSig = parseInt(UI.elements.timeSignature?.value || "4", 10);
+
+    let nextMeasureIdx = currentMeasureIndex;
+    let nextPartIdx = 0;
+
+    const currentMeasureEl = measures[currentMeasureIndex];
+    const isSplit = !!(currentMeasureEl && currentMeasureEl.dataset && currentMeasureEl.dataset.isSplit === 'true' && timeSig === 4);
+
+    if (isSplit && displayedBeats.length === 8) {
+        if (AppState.currentBeat < 4) {
+            nextMeasureIdx = currentMeasureIndex;
+            nextPartIdx = 1;
+        } else {
+            nextMeasureIdx = currentMeasureIndex + 1;
+            nextPartIdx = 0;
+        }
+    } else {
+        nextMeasureIdx = currentMeasureIndex + 1;
+        nextPartIdx = 0;
+    }
+
+    if (AppState.loopingActive && AppState.loopStartMeasure !== -1 && AppState.loopEndMeasure !== -1) {
+        if (nextMeasureIdx > AppState.loopEndMeasure) nextMeasureIdx = AppState.loopStartMeasure;
+        if (nextMeasureIdx < AppState.loopStartMeasure) nextMeasureIdx = AppState.loopStartMeasure;
+    } else {
+        if (nextMeasureIdx >= measures.length) nextMeasureIdx = 0;
+    }
+
+    const nextMeasureEl = measures[nextMeasureIdx];
+    if (!nextMeasureEl) return null;
+
+    const parts = nextMeasureEl.querySelectorAll('.measure-part');
+    const hasSplit = nextMeasureEl.dataset && nextMeasureEl.dataset.isSplit === 'true' && timeSig === 4;
+
+    const safePartIdx = (hasSplit && nextPartIdx === 1 && parts.length > 1) ? 1 : 0;
+
+    return { measureIdx: nextMeasureIdx, partIdx: safePartIdx, measureEl: nextMeasureEl, partEl: parts[safePartIdx] || null };
+}
+
+function updateAnticipateFretboard() {
+    if (!AppState.anticipateActive) return;
+    if (!UI.elements.anticipateFretboard || !UI.elements.anticipateScaleDisplay) return;
+
+    const nextPos = getNextMeasurePartPosition(AppState.currentMeasure);
+    if (!nextPos || !nextPos.partEl) {
+        UI.elements.anticipateScaleDisplay.textContent = "";
+        UI.elements.anticipateFretboard.innerHTML = "";
+        return;
+    }
+
+    const partEl = nextPos.partEl;
+
+    const chordRoot = partEl.querySelector('.root-note')?.value || "";
+    const chordQualityRaw = partEl.querySelector('.chord-quality')?.value || "";
+    const chordQualityOption = partEl.querySelector(`.chord-quality option[value="${chordQualityRaw}"]`);
+    const chordQualityDisplay = chordQualityOption ? chordQualityOption.textContent : chordQualityRaw;
+
+    const scaleRoot = partEl.querySelector('.second-key')?.value || chordRoot;
+    const scaleType = partEl.querySelector('.scale-select')?.value || (typeof suggestScaleForQuality === "function" ? suggestScaleForQuality(chordQualityRaw) : "major");
+
+    const tuning = TUNINGS[UI.elements.chordTuning?.value] || TUNINGS.standard;
+    const scaleData = SCALES[scaleType];
+
+    if (!scaleRoot || !scaleData) {
+        UI.elements.anticipateScaleDisplay.textContent = chordRoot ? `Anticipating: ${chordRoot}${chordQualityDisplay}` : "";
+        UI.elements.anticipateFretboard.innerHTML = "";
+        return;
+    }
+
+    const scaleOptionText = partEl.querySelector(`.scale-select option[value="${scaleType}"]`)?.textContent || scaleType;
+    UI.elements.anticipateScaleDisplay.textContent =
+        chordRoot ? `Anticipating: ${scaleRoot} ${scaleOptionText} over ${chordRoot}${chordQualityDisplay}` : `Anticipating: ${scaleRoot} ${scaleOptionText}`;
+
+    updateFretboardNotes(UI.elements.anticipateFretboard, scaleRoot, scaleData, tuning, scaleType, partEl);
+}
+
+
 function clearStrongBeatPulse() {
     if (AppState.strongBeatPulseTimeoutId) {
         clearTimeout(AppState.strongBeatPulseTimeoutId);
@@ -4993,7 +5138,8 @@ function setupEventListeners() {
 
         if (UI.elements.sixthDimToggle) {
             UI.elements.sixthDimToggle.addEventListener('click', toggleSixthDim);
-        }
+            if (UI.elements.anticipateToggle) UI.elements.anticipateToggle.addEventListener('click', toggleAnticipateMode);
+}
 if (UI.elements.loopSelectedToggle) {
             UI.elements.loopSelectedToggle.addEventListener('click', toggleLoopingMode);
         }
