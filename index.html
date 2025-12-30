@@ -891,8 +891,14 @@ body.dark-mode select, body.dark-mode-2 select, body.dark-mode-3 select {
   filter: grayscale(0.65);
 }
 #anticipate-fretboard{
-  opacity: 0.78;
-  filter: grayscale(0.85);
+  opacity: 1;
+  filter: none;
+}
+
+/* Ghost all notes by default on anticipate board */
+#anticipate-fretboard .note{
+  opacity: 0.45;
+  filter: grayscale(0.9);
 }
 #anticipate-fretboard .note{
   box-shadow: none !important;
@@ -905,29 +911,54 @@ body.dark-mode select, body.dark-mode-2 select, body.dark-mode-3 select {
 #anticipate-toggle.toggle-button{ /* match other toggle buttons */ }
 
 
-
-/* Anticipate: guide-tone targets (POP — not greyed) */
+/* Anticipate: guide-tone targets should POP (not greyed) */
 #anticipate-fretboard .note.anticipate-guide-tone{
-  outline: 3px solid rgba(175, 70, 70, 0.98) !important;
-  box-shadow: 0 0 12px 3px rgba(175, 70, 70, 0.85) !important;
-  background-color: rgba(175, 70, 70, 0.9) !important;
+  outline: 3px solid rgba(255, 55, 55, 0.98) !important;
+  box-shadow: 0 0 16px 4px rgba(255, 55, 55, 0.90) !important;
+  background-color: rgba(255, 55, 55, 0.95) !important;
   color: #ffffff !important;
 
-  /* Override anticipate greying */
   opacity: 1 !important;
   filter: none !important;
 
-  /* Make it visually dominant */
   z-index: 20 !important;
-  transform: translate(-50%, -50%) scale(1.12);
+  transform: translate(-50%, -50%) scale(1.10);
 }
 
 body.dark-mode #anticipate-fretboard .note.anticipate-guide-tone,
 body.dark-mode-2 #anticipate-fretboard .note.anticipate-guide-tone,
 body.dark-mode-3 #anticipate-fretboard .note.anticipate-guide-tone{
-  outline-color: rgba(210, 105, 105, 0.98) !important;
-  box-shadow: 0 0 14px 4px rgba(210, 105, 105, 0.9) !important;
-  background-color: rgba(210, 105, 105, 0.85) !importan
+  outline-color: rgba(255, 85, 85, 0.98) !important;
+  box-shadow: 0 0 18px 5px rgba(255, 85, 85, 0.95) !important;
+  background-color: rgba(255, 85, 85, 0.92) !important;
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+/* Top fretboard: direction triangle attached to guide tones */
+#chord-fretboard .note.guide-tone-highlight[data-target-dir="up"]::after,
+#chord-fretboard .note.guide-tone-highlight[data-target-dir="down"]::after{
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+}
+
+/* Up the neck (higher fret) = point RIGHT */
+#chord-fretboard .note.guide-tone-highlight[data-target-dir="up"]::after{
+  right: -8px;
+  border-left: 9px solid rgba(255, 55, 55, 0.95);
+}
+
+/* Down the neck (lower fret) = point LEFT */
+#chord-fretboard .note.guide-tone-highlight[data-target-dir="down"]::after{
+  left: -8px;
+  border-right: 9px solid rgba(255, 55, 55, 0.95);
+}
 
 
 </style>
@@ -3543,6 +3574,8 @@ const numStrings = tuningArray.length;
                 noteElement.className = 'note';
                 noteElement.textContent = currentNoteNameOnString;
                 
+                noteElement.dataset.fret = String(fret);
+                noteElement.dataset.string = String(stringIndex);
                 if (barryPassingNoteName && currentNoteNameOnString === barryPassingNoteName) {
                     noteElement.classList.add('barry-passing-tone');
                 }
@@ -4680,10 +4713,6 @@ function toggleGuideTones() {
     } else {
         clearGuideToneHighlights();
     }
-
-    // Keep the Anticipate fretboard in sync (shows next-chord guide-tone targets when enabled)
-    updateAnticipateFretboard();
-
     log(`Guide tones: ${AppState.guideTonesActive ? 'ON' : 'OFF'}`);
 }
 
@@ -4850,91 +4879,17 @@ function updateAnticipateFretboard() {
     // Draw notes on top of the already-built fretboard structure
     updateFretboardNotes(UI.elements.anticipateFretboard, scaleRoot, scaleType, tuning, partEl);
 
-    // If guide tones are ON, show voice-leading targets for the *next* chord in muted red.
-    applyAnticipateGuideToneTargets(partEl);
-}
-
-
-function getGuideToneIdxsForChord(chordRootStr, chordQualityStr){
-    try{
-        if (!chordRootStr || !chordQualityStr) return { rootIdx:-1, thirdIdx:-1, seventhIdx:-1, set:new Set() };
-        const chordIntervals = CHORD_INTERVALS?.[chordQualityStr];
-        if (!chordIntervals) return { rootIdx:-1, thirdIdx:-1, seventhIdx:-1, set:new Set() };
-
-        const rootStd = standardizeNoteName(chordRootStr);
-        const rootIdx = NOTES.indexOf(rootStd);
-        if (rootIdx === -1) return { rootIdx:-1, thirdIdx:-1, seventhIdx:-1, set:new Set() };
-
-        let thirdIdx = -1;
-        if (chordIntervals.includes(3)) thirdIdx = (rootIdx + 3) % 12;
-        else if (chordIntervals.includes(4)) thirdIdx = (rootIdx + 4) % 12;
-
-        let seventhIdx = -1;
-        if (chordQualityStr.includes('6') && !chordQualityStr.includes('7')) {
-            if (chordIntervals.includes(9)) seventhIdx = (rootIdx + 9) % 12; // treat 6th as "upper guide"
-        } else {
-            if (chordIntervals.includes(11)) seventhIdx = (rootIdx + 11) % 12;
-            else if (chordIntervals.includes(10)) seventhIdx = (rootIdx + 10) % 12;
-            else if (chordQualityStr === 'dim7' && chordIntervals.includes(9)) seventhIdx = (rootIdx + 9) % 12; // bb7
-        }
-
-        const set = new Set();
-        if (thirdIdx !== -1) set.add(thirdIdx);
-        if (seventhIdx !== -1) set.add(seventhIdx);
-
-        return { rootIdx, thirdIdx, seventhIdx, set };
-    }catch(e){
-        return { rootIdx:-1, thirdIdx:-1, seventhIdx:-1, set:new Set() };
+    // If Guide Tones are enabled, pop the next-chord guide-tone targets on the anticipate board
+    // and update direction indicators on the top board.
+    try {
+        const currentMeasureEl = UI.elements.measures.children[AppState.currentMeasure];
+        const currentPartEl = currentMeasureEl?.querySelector('.measure-part.part-active') || currentMeasureEl?.querySelector('.measure-part');
+        __bb_applyAnticipateGuideToneTargets(currentPartEl, partEl);
+        __bb_setGuideToneDirections(currentPartEl, partEl);
+    } catch (e) {
+        // noop
     }
 }
-
-function applyAnticipateGuideToneTargets(nextChordPartEl){
-    try{
-        const fb = UI?.elements?.anticipateFretboard;
-        if (!fb) return;
-
-        // Always clear previous targets (even if guide tones are off)
-        fb.querySelectorAll('.note.anticipate-guide-tone').forEach(n => n.classList.remove('anticipate-guide-tone'));
-
-        if (!AppState?.anticipateActive) return;
-        if (!AppState?.guideTonesActive) return;
-        if (!nextChordPartEl) return;
-
-        // Current chord context (what you're playing NOW)
-        const currentMeasureEl = UI?.elements?.measures?.children?.[AppState.currentMeasure];
-        const currentPartEl = currentMeasureEl?.querySelector?.('.measure-part.part-active') || currentMeasureEl?.querySelector?.('.measure-part');
-        if (!currentPartEl) return;
-
-        const curRoot = currentPartEl.querySelector('.root-note')?.value || "";
-        const curQual = currentPartEl.querySelector('.chord-quality')?.value || "";
-        const nextRoot = nextChordPartEl.querySelector('.root-note')?.value || "";
-        const nextQual = nextChordPartEl.querySelector('.chord-quality')?.value || "";
-
-        const curGT = getGuideToneIdxsForChord(curRoot, curQual);
-        const nextGT = getGuideToneIdxsForChord(nextRoot, nextQual);
-
-        // "Voice-leading targets":
-        // current 7th -> next 3rd, current 3rd -> next 7th
-        const targetIdxs = new Set();
-        if (curGT.seventhIdx !== -1 && nextGT.thirdIdx !== -1) targetIdxs.add(nextGT.thirdIdx);
-        if (curGT.thirdIdx !== -1 && nextGT.seventhIdx !== -1) targetIdxs.add(nextGT.seventhIdx);
-
-        if (targetIdxs.size === 0) return;
-
-        fb.querySelectorAll('.note').forEach(noteEl => {
-            const idx = (typeof __bb_pcIndex === 'function')
-                ? __bb_pcIndex(noteEl.textContent)
-                : (NOTES.indexOf(standardizeNoteName(noteEl.textContent)) );
-            if (idx < 0) return;
-            if (targetIdxs.has(idx)) noteEl.classList.add('anticipate-guide-tone');
-        });
-    }catch(e){
-        // swallow: never break playback/UI
-    }
-}
-
-
-
 
 
 
@@ -4964,6 +4919,143 @@ function triggerStrongBeatPulse() {
     }, 170);
 }
 
+
+
+// === Anticipate Guide Tone Targets + Direction Indicators ===
+function __bb_getChordGuideToneNames(chordRootStr, chordQualityStr) {
+    try {
+        if (!chordRootStr || !chordQualityStr) return { third: null, seventh: null };
+        const chordIntervals = CHORD_INTERVALS[chordQualityStr];
+        if (!chordIntervals) return { third: null, seventh: null };
+
+        const rootStd = standardizeNoteName(chordRootStr);
+        const rootIdx = NOTES.indexOf(rootStd);
+        if (rootIdx === -1) return { third: null, seventh: null };
+
+        let thirdIdx = null;
+        if (chordIntervals.includes(3)) thirdIdx = (rootIdx + 3) % 12;
+        else if (chordIntervals.includes(4)) thirdIdx = (rootIdx + 4) % 12;
+
+        let seventhIdx = null;
+        // Use 7th if present, otherwise for pure 6th chords you can treat 6th as a soft "upper guide"
+        if (chordIntervals.includes(11)) seventhIdx = (rootIdx + 11) % 12;
+        else if (chordIntervals.includes(10)) seventhIdx = (rootIdx + 10) % 12;
+        else if (chordQualityStr.includes('6') && chordIntervals.includes(9) && !chordQualityStr.includes('7')) seventhIdx = (rootIdx + 9) % 12;
+
+        return {
+            third: thirdIdx !== null ? NOTES[thirdIdx] : null,
+            seventh: seventhIdx !== null ? NOTES[seventhIdx] : null
+        };
+    } catch (e) {
+        return { third: null, seventh: null };
+    }
+}
+
+function __bb_clearAnticipateGuideToneTargets() {
+    try {
+        UI.elements.anticipateFretboard?.querySelectorAll('.note.anticipate-guide-tone')
+            ?.forEach(n => n.classList.remove('anticipate-guide-tone'));
+    } catch (e) { /* noop */ }
+}
+
+function __bb_applyAnticipateGuideToneTargets(currentPartEl, nextPartEl) {
+    try {
+        __bb_clearAnticipateGuideToneTargets();
+        if (!AppState.anticipateActive) return;
+        if (!AppState.guideTonesActive) return;
+        if (!UI.elements.anticipateFretboard) return;
+        if (!currentPartEl || !nextPartEl) return;
+
+        const curRoot = currentPartEl.querySelector('.root-note')?.value || "";
+        const curQual = currentPartEl.querySelector('.chord-quality')?.value || "";
+        const nxtRoot = nextPartEl.querySelector('.root-note')?.value || "";
+        const nxtQual = nextPartEl.querySelector('.chord-quality')?.value || "";
+
+        const curGT = __bb_getChordGuideToneNames(curRoot, curQual);
+        const nxtGT = __bb_getChordGuideToneNames(nxtRoot, nxtQual);
+
+        // Voice-leading targets: current 7th -> next 3rd, current 3rd -> next 7th
+        const targets = new Set();
+        if (curGT.seventh && nxtGT.third) targets.add(nxtGT.third);
+        if (curGT.third && nxtGT.seventh) targets.add(nxtGT.seventh);
+        if (targets.size === 0) return;
+
+        UI.elements.anticipateFretboard.querySelectorAll('.note').forEach(noteEl => {
+            const pc = standardizeNoteName(noteEl.textContent || "");
+            if (targets.has(pc)) noteEl.classList.add('anticipate-guide-tone');
+        });
+    } catch (e) {
+        // swallow: never break playback/UI
+    }
+}
+
+function __bb_clearGuideToneDirections() {
+    try {
+        UI.elements.chordFretboard?.querySelectorAll('.note[data-target-dir]')?.forEach(n => {
+            n.removeAttribute('data-target-dir');
+        });
+    } catch (e) { /* noop */ }
+}
+
+function __bb_setGuideToneDirections(currentPartEl, nextPartEl) {
+    try {
+        __bb_clearGuideToneDirections();
+        if (!AppState.guideTonesActive) return;
+        if (!AppState.anticipateActive) return;
+        if (!currentPartEl || !nextPartEl) return;
+        if (!UI.elements.chordFretboard || !UI.elements.anticipateFretboard) return;
+
+        const curRoot = currentPartEl.querySelector('.root-note')?.value || "";
+        const curQual = currentPartEl.querySelector('.chord-quality')?.value || "";
+        const nxtRoot = nextPartEl.querySelector('.root-note')?.value || "";
+        const nxtQual = nextPartEl.querySelector('.chord-quality')?.value || "";
+
+        const curGT = __bb_getChordGuideToneNames(curRoot, curQual);
+        const nxtGT = __bb_getChordGuideToneNames(nxtRoot, nxtQual);
+
+        // Map current guide tone pitch class -> target pitch class
+        const mapping = new Map();
+        if (curGT.seventh && nxtGT.third) mapping.set(curGT.seventh, nxtGT.third);
+        if (curGT.third && nxtGT.seventh) mapping.set(curGT.third, nxtGT.seventh);
+        if (mapping.size === 0) return;
+
+        // Build a list of target note positions (by pitch class) on the anticipate fretboard
+        const targetPositions = {};
+        UI.elements.anticipateFretboard.querySelectorAll('.note').forEach(n => {
+            const pc = standardizeNoteName(n.textContent || "");
+            const fret = parseInt(n.dataset.fret || "", 10);
+            if (!Number.isFinite(fret)) return;
+            if (!targetPositions[pc]) targetPositions[pc] = [];
+            targetPositions[pc].push(fret);
+        });
+
+        // For each guide tone note on the TOP fretboard, set a direction arrow toward nearest target fret
+        UI.elements.chordFretboard.querySelectorAll('.note.guide-tone-highlight').forEach(n => {
+            const pc = standardizeNoteName(n.textContent || "");
+            const targetPC = mapping.get(pc);
+            if (!targetPC) return;
+
+            const curFret = parseInt(n.dataset.fret || "", 10);
+            if (!Number.isFinite(curFret)) return;
+
+            const candidates = targetPositions[targetPC] || [];
+            if (!candidates.length) return;
+
+            // nearest target fret (absolute distance)
+            let best = candidates[0];
+            let bestDist = Math.abs(best - curFret);
+            for (const f of candidates) {
+                const d = Math.abs(f - curFret);
+                if (d < bestDist) { best = f; bestDist = d; }
+            }
+
+            if (best > curFret) n.setAttribute('data-target-dir', 'up');
+            else if (best < curFret) n.setAttribute('data-target-dir', 'down');
+        });
+    } catch (e) {
+        // noop
+    }
+}
 
 function highlightGuideTones(activeMeasurePartContext = null) {
     clearGuideToneHighlights();
@@ -5016,11 +5108,30 @@ function highlightGuideTones(activeMeasurePartContext = null) {
             noteElement.classList.add('guide-tone-highlight');
         }
     });
+    
+    // If Anticipate is enabled, highlight the next-chord guide-tone TARGETS on the anticipate board,
+    // and add direction triangles on the current (top) guide tones toward those targets.
+    try {
+        const currentPartEl = activeMeasurePartContext || UI.elements.measures.children[0]?.querySelector('.measure-part');
+        const nextPos = (typeof getNextMeasurePartPosition === "function") ? getNextMeasurePartPosition(AppState.currentMeasure) : null;
+        const nextPartEl = nextPos?.partEl || null;
+        if (currentPartEl && nextPartEl) {
+            __bb_applyAnticipateGuideToneTargets(currentPartEl, nextPartEl);
+            __bb_setGuideToneDirections(currentPartEl, nextPartEl);
+        } else {
+            __bb_clearAnticipateGuideToneTargets();
+            __bb_clearGuideToneDirections();
+        }
+    } catch (e) {
+        // noop
+    }
+
 }
 
 function clearGuideToneHighlights() {
     UI.elements.chordFretboard.querySelectorAll('.note').forEach(n => {
         n.classList.remove('guide-tone-highlight', 'root-highlight-for-guides');
+        n.removeAttribute('data-target-dir');
         // Reset transform if it was scaled due to highlight
         if (n.style.transform.includes('scale(0.95)')) {
             n.style.transform = 'translate(-50%, -50%) scale(1)';
