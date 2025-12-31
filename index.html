@@ -5029,7 +5029,30 @@ function __bb_setGuideToneDirections(currentPartEl, nextPartEl) {
             targetPositions[pc].push(fret);
         });
 
-        // For each guide tone note on the TOP fretboard, set a direction arrow toward nearest target fret
+        // For each guide tone note on the TOP fretboard, set a direction arrow toward the "closest" target fret.
+        // IMPORTANT: The fretboard repeats every 12 frets. A target at fret 1 can be "up" from fret 11 (to fret 13),
+        // so we treat distance cyclically across 12.
+        function getBestSignedDelta(srcFret, targetFrets) {
+            let bestDelta = null;
+            let bestAbs = Infinity;
+
+            for (const tf of targetFrets) {
+                // Consider the same pitch class at tf, tf+12, tf-12 (wrap-around)
+                const deltas = [tf - srcFret, (tf + 12) - srcFret, (tf - 12) - srcFret];
+                for (const d of deltas) {
+                    const ad = Math.abs(d);
+                    if (ad < bestAbs) {
+                        bestAbs = ad;
+                        bestDelta = d;
+                    } else if (ad === bestAbs && bestDelta !== null) {
+                        // Tie-break: prefer smaller movement toward higher frets (feels more "forward" on guitar)
+                        if (d > bestDelta) bestDelta = d;
+                    }
+                }
+            }
+            return bestDelta;
+        }
+
         UI.elements.chordFretboard.querySelectorAll('.note.guide-tone-highlight').forEach(n => {
             const pc = standardizeNoteName(n.textContent || "");
             const targetPC = mapping.get(pc);
@@ -5041,16 +5064,11 @@ function __bb_setGuideToneDirections(currentPartEl, nextPartEl) {
             const candidates = targetPositions[targetPC] || [];
             if (!candidates.length) return;
 
-            // nearest target fret (absolute distance)
-            let best = candidates[0];
-            let bestDist = Math.abs(best - curFret);
-            for (const f of candidates) {
-                const d = Math.abs(f - curFret);
-                if (d < bestDist) { best = f; bestDist = d; }
-            }
+            const delta = getBestSignedDelta(curFret, candidates);
+            if (delta === null || delta === 0) return;
 
-            if (best > curFret) n.setAttribute('data-target-dir', 'up');
-            else if (best < curFret) n.setAttribute('data-target-dir', 'down');
+            if (delta > 0) n.setAttribute('data-target-dir', 'up');
+            else if (delta < 0) n.setAttribute('data-target-dir', 'down');
         });
     } catch (e) {
         // noop
