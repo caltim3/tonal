@@ -959,7 +959,13 @@ body.dark-mode-3 #anticipate-fretboard .note.anticipate-guide-tone{
   left: -8px;
   border-right: 9px solid rgba(255, 55, 55, 0.95);
 }
-
+.toggle-button.harmonic {
+  background: #6c757d;
+}
+.toggle-button.harmonic.is-on {
+  background: #b02a37;
+  color: white;
+}
 
 </style>
 </head>
@@ -1136,6 +1142,8 @@ body.dark-mode-3 #anticipate-fretboard .note.anticipate-guide-tone{
 <option value="rose_room_django">Rose Room (Django)</option>
 <option value="sweet_georgia_brown_gypsy">Sweet Georgia Brown (Gypsy)</option>
 <option value="swing_42_gypsy">Swing 42 (Gypsy)</option>
+<option value="bistro_fada">Bistro Fada (Wrembel)</option>
+   
 </optgroup>
 <optgroup label="More Complex Jazz Standards">
 <option value="a_night_in_tunisia">A Night in Tunisia</option>
@@ -2097,6 +2105,19 @@ const progressions = {
     ],
     description: "Django Reinhardt's evocative masterpiece, meaning 'Clouds,' known for its beautiful, melancholic melody."
   },
+bistro_fada: { 
+    defaultKey: "Em", 
+    displayName: "Bistro Fada",
+    defaultTempo: 99,
+    progression: [
+      "Em", "Em", "Em", "Em", "Em", "Em", "B7", "B7", 
+       "B7", "B7", "B7", "B7", "B7", "B7", "Em", "B7", 
+       "Em", "Em", "Em", "Em", "E7", "E7" , "Am", "Am",
+       "Am", "Am", "Em", "Em", "C7", "B7", "Em", "B7"
+    ] ,
+    description: "Django Reinhardt's evocative masterpiece, meaning 'Clouds,' known for its beautiful, melancholic melody."
+  },
+   
   djangology: {
     defaultKey: "G",
     displayName: "Djangology",
