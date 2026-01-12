@@ -1093,9 +1093,10 @@ body.dark-mode-3 #anticipate-fretboard .note.anticipate-guide-tone{
 <label for="progression-select">Select Progression:</label>
 <select aria-label="Select chord progression" id="progression-select">
 <optgroup label="Practice Progressions">
-<option value="I V7">I-V7</option>
+<option value="I_V7">I-V7</option>
 <option value="2_5_1">II-V-I</option>
 <option value="6_2_5_1">VI-II-V-I</option>
+<option value="ii_V7">ii-V7</option>
 <option value="minor_2_5_1">Minor iim-V7-im</option>
 <option value="ii_v_i_all_keys_cycle">ii-V-I All Keys Cycle</option>
 <option value="same_old_blues">Same Old Blues</option>
@@ -1336,7 +1337,7 @@ const drumSoundSets = [
 
 const progressions = {
   // Practice Progressions (No defaultTempo, will fallback to 120)
-  "I V7": {
+  "I_V7": {
     defaultKey: "C",
     displayName: "I-V7",
     progression: ["Imaj7", "V7"],
@@ -1354,6 +1355,12 @@ const progressions = {
     progression: ["vim7", "iim7", "V7", "Imaj7"],
     description: "An extended version of the 2-5-1, starting on the vi minor for a richer harmonic journey.",
   },
+  "ii_V7": {
+    defaultKey: "C",
+    displayName: "I-V7",
+    progression: ["Dm", "G7"],
+    description: "Excellent practice. Do you play minor like Pat Martino and Wes Montgomery? Or dominant like Joe Pass?",
+  }, 
   minor_2_5_1: {
     defaultKey: "Gm", 
     displayName: "Minor iim-V7-im",
