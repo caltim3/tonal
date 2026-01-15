@@ -4896,9 +4896,18 @@ function getEffectiveScaleForMeasurePart(partEl) {
         scaleRoot = root;
         scaleType = (chordClass === "minor") ? "pentatonicMinor" : "pentatonicMajor";
     } else if (AppState.scaleModeHexatonic) {
+    // Hexatonic lens:
+    // - Major chords -> Major Hex on chord root (e.g., Cmaj7 -> C Major Hex)
+    // - Minor chords -> Minor Hex on chord root (e.g., Dm7 -> D Minor Hex)
+    // - Dominant chords -> ii Minor Hex (a perfect 5th above the dominant root), e.g., G7 -> D Minor Hex
+    if (chordClass === "dominant") {
+        scaleRoot = transposeNoteName(root, 7); // up a perfect 5th
+        scaleType = "HexMinor";
+    } else {
         scaleRoot = root;
         scaleType = (chordClass === "minor") ? "HexMinor" : "HexMajor";
     }
+}
 
     // Altered is additive: only affects dominant chords
     if (AppState.scaleModeAltered && chordClass === "dominant") {
@@ -4939,12 +4948,14 @@ function refreshActiveFretboards() {
 
     const eff = getEffectiveScaleForMeasurePart(activePart);
     const tuning = TUNINGS[UI.elements.chordTuning?.value] || TUNINGS.standard;
-    updateFretboardNotes(UI.elements.chordFretboard, eff.scaleRoot, eff.scaleType, tuning, true);
-    updateScaleDisplay(eff.scaleRoot, eff.scaleType, eff.root, eff.quality);
+
+    // IMPORTANT: updateFretboardNotes expects (container, root, scaleName, tuningArray, measureContext)
+    updateFretboardNotes(UI.elements.chordFretboard, eff.scaleRoot, eff.scaleType, tuning, activePart);
 
     // Keep anticipate in sync
     if (AppState.anticipateActive) updateAnticipateFretboard();
 }
+
 
 function toggleScaleModePentatonics() {
     AppState.scaleModePentatonic = !AppState.scaleModePentatonic;
