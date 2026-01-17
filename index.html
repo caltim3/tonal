@@ -1287,10 +1287,23 @@ body.dark-mode-3 #anticipate-fretboard .note.anticipate-guide-tone{
 // ==================================
 
 /**
- * Logs a message to the console with a prefix.
+ * Returns whether debug logging is enabled via URL param or localStorage.
+ * @returns {boolean}
+ */
+function isDebugEnabled() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('debug')) {
+        return params.get('debug') === '1' || params.get('debug') === 'true';
+    }
+    return window.localStorage.getItem('bb-debug') === 'true';
+}
+
+/**
+ * Logs a message to the console with a prefix when debug is enabled.
  * @param {string} message - The message to log.
  */
 function log(message) {
+    if (!isDebugEnabled()) return;
     console.log(`[Bebop Blueprint Debug] ${message}`);
 }
 
@@ -5699,6 +5712,11 @@ if (UI.elements.loopSelectedToggle) {
 // === INITIALIZATION =============
 // ==================================
 async function initializeApp() {
+    if (window.__bbInitialized) {
+        log("initializeApp called more than once; skipping duplicate init.");
+        return;
+    }
+    window.__bbInitialized = true;
     UI.init(); // Cache DOM elements first
     
     // Initial UI setup based on default values
@@ -5800,6 +5818,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function bbSafeInit(){
     try {
       if (typeof window.progressions === 'undefined') return setTimeout(bbSafeInit, 50);
+      if (window.__bbInitialized) return;
       if (typeof window.initializeApp === 'function') window.initializeApp();
     } catch (e) {
       console.error('initializeApp failed:', e);
