@@ -5968,33 +5968,60 @@ function __bb_clearGuideTonePaths(){
 function getRunwayQualityCategory(qualityRaw) {
   const q = String(qualityRaw || "").toLowerCase().trim();
 
-  // Half-diminished (ø / m7b5)
-  if (q.includes("min7b5") || q.includes("m7b5") || q.includes("halfdim") || q.includes("half-dim") || q.includes("ø")) {
+  // Altered chords FIRST (must come before dominant)
+  if (q.includes("alt") || q.includes("7alt")) {
+    return "altered";
+  }
+
+  // Half diminished
+  if (
+    q.includes("min7b5") ||
+    q.includes("m7b5") ||
+    q.includes("ø") ||
+    q.includes("halfdim")
+  ) {
     return "half-diminished";
   }
 
   // Fully diminished
-  if (q.includes("dim7") || q.includes("o7") || (q.includes("dim") && q.includes("7")) || q === "dim" || q === "o") {
+  if (
+    q.includes("dim7") ||
+    q.includes("o7") ||
+    (q.includes("dim") && q.includes("7"))
+  ) {
     return "fully-diminished";
   }
 
   // Augmented
-  if (q.includes("aug") || q.includes("+")) return "augmented";
+  if (q.includes("aug") || q.includes("+")) {
+    return "augmented";
+  }
 
-  // Major-family (do this BEFORE dominant so Maj7 doesn't get stolen by "7")
-  if (q.includes("maj") || q.includes("major") || q.includes("ma7") || q.includes("Δ") || q.includes("delta")) {
+  // Major family (must come before dominant)
+  if (
+    q.includes("maj") ||
+    q.includes("major") ||
+    q.includes("ma7") ||
+    q.includes("Δ") ||
+    q.includes("delta")
+  ) {
     return "major";
   }
 
-  // Minor-family
-  if (q.includes("min") || q === "m" || q.startsWith("m")) return "minor";
+  // Minor family
+  if (q.includes("min") || q === "m" || q.startsWith("m")) {
+    return "minor";
+  }
 
-  // Dominant-family
-  if (q.includes("dom") || (q.includes("7") && !q.includes("maj") && !q.includes("min"))) return "dominant";
+  // Dominant family (generic 7s)
+  if (q.includes("dom") || (q.includes("7") && !q.includes("maj") && !q.includes("min"))) {
+    return "dominant";
+  }
 
-  // Default
+  // Default fallback
   return "major";
 }
+
 
 function getRunwayColorByCategory(category) {
   // blue minor, red dominant, green major, purple half dim, black augmented, yellow fully dim
