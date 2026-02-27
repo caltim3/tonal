@@ -973,14 +973,12 @@ body.dark-mode-3 #anticipate-fretboard .note.anticipate-guide-tone{
   border: 1px solid rgba(0,0,0,0.10);
   overflow: hidden;
 }
-
 body.dark-mode .runway,
 body.dark-mode-2 .runway,
 body.dark-mode-3 .runway{
   background: rgba(255,255,255,0.08);
   border: 1px solid rgba(255,255,255,0.12);
 }
-
 .runway-track{
   display: flex;
   gap: 10px;
@@ -990,8 +988,6 @@ body.dark-mode-3 .runway{
   padding: 6px 2px;
   -webkit-overflow-scrolling: touch;
 }
-
-/* Hide scrollbar but keep scroll */
 .runway-track::-webkit-scrollbar { height: 0px; }
 .runway-track { scrollbar-width: none; }
 
@@ -1010,18 +1006,15 @@ body.dark-mode-3 .runway{
   transition: opacity 140ms ease, transform 140ms ease, box-shadow 140ms ease, filter 140ms ease;
   box-shadow: 0 6px 18px rgba(0,0,0,0.10);
 }
-
 .runway-pill.is-current{
   opacity: 1;
   transform: scale(1.02);
   filter: none;
   box-shadow: 0 10px 24px rgba(0,0,0,0.18);
 }
-
 .runway-pill.is-next{
   opacity: 0.85;
 }
-
 .runway-spacer{
   width: 10px;
   height: 1px;
@@ -2547,8 +2540,8 @@ const UI = {
             chordTuning: document.getElementById('chord-tuning'),
             scaleDisplay: document.getElementById('scale-display'),
             nextChordDisplay: document.getElementById('next-chord-display'),
-            runway: document.getElementById('runway'),
-            runwayTrack: document.getElementById('runway-track'),
+runway: document.getElementById('runway'),
+runwayTrack: document.getElementById('runway-track'),
             currentSongTitleFretboard: document.getElementById('current-song-title-fretboard'),
             currentSongDescriptionFretboard: document.getElementById('current-song-description-fretboard'),
             guideTonesToggle: document.getElementById('guide-tones-toggle'),
@@ -3923,8 +3916,9 @@ async function playBeat() {
                 if (root && quality && scaleRoot && scaleType) {
                     const tuning = TUNINGS[UI.elements.chordTuning.value];
                     updateFretboardNotes(UI.elements.chordFretboard, scaleRoot, scaleType, tuning, activeMeasurePart);
-                // RUNWAY: keep chord strip synced to playback state
-                updateRunwayDisplay(measureToPlayIndex, activePartIndex);
+
+        // NEW: keep runway synced to playback state
+        updateRunwayDisplay(measureToPlayIndex, activePartIndex);
                     if (AppState.guideTonesActive) highlightGuideTones(activeMeasurePart);
                     
                     const beatDurationSec = 60 / AppState.tempo;
@@ -4013,7 +4007,7 @@ if (AudioContextManager.currentChordGain && AudioContextManager.context) {
         finally { AudioContextManager.currentChordGain = null; }
     }
     if (UI.elements.nextChordDisplay) UI.elements.nextChordDisplay.textContent = "";
-        if (UI.elements.runwayTrack) UI.elements.runwayTrack.innerHTML = \"\";
+    if (UI.elements.runwayTrack) UI.elements.runwayTrack.innerHTML = "";
     UI.elements.startStopButton.textContent = 'Start';
     log("Playback stopped.");
 }
@@ -4110,19 +4104,19 @@ function updateNextChordDisplay(currentMeasureIndex = AppState.currentMeasure) {
     // Keep the Anticipate fretboard in sync with the computed 'next' context.
     updateAnticipateFretboard();
 
-    // RUNWAY: refresh runway on any chord or measure edits
-    try {
-        const beatsUI = UI.elements.beatsContainer.querySelectorAll('.beat');
-        const measures = UI.elements.measures.children;
-        let partIdx = 0;
-        const mEl = measures?.[AppState.currentMeasure];
-        const isSplit = mEl && mEl.dataset.isSplit === 'true';
-        const is44 = parseInt(UI.elements.timeSignature.value) === 4;
-        if (is44 && isSplit && beatsUI.length === 8) {
-            partIdx = (AppState.currentBeat < 4) ? 0 : 1;
-        }
-        updateRunwayDisplay(AppState.currentMeasure, partIdx);
-    } catch (e) {}
+// NEW: also refresh runway on any chord/measure edits
+try {
+  const beatsUI = UI.elements.beatsContainer?.querySelectorAll?.('.beat') || [];
+  const measures = UI.elements.measures?.children;
+  let partIdx = 0;
+  const mEl = measures?.[AppState.currentMeasure];
+  const isSplit = mEl && mEl.dataset && mEl.dataset.isSplit === 'true';
+  const is44 = parseInt(UI.elements.timeSignature.value) === 4;
+  if (is44 && isSplit && beatsUI.length === 8) {
+    partIdx = (AppState.currentBeat < 4) ? 0 : 1;
+  }
+  updateRunwayDisplay(AppState.currentMeasure, partIdx);
+} catch (e) {}
 
 }
 
@@ -5620,144 +5614,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-    
-// ==================================
-// === RUNWAY (Chord Strip) =========
-// ==================================
-
-function getRunwayQualityCategory(qualityRaw) {
-  const q = String(qualityRaw || "").toLowerCase();
-
-  // Expected values in this app include: maj7, dom7, min7, min7b5, dim7, aug, etc.
-  if (q.includes("min7b5") || q.includes("halfdim") || q.includes("ø")) return "half-diminished";
-  if (q.includes("dim7") || (q.includes("dim") && q.includes("7"))) return "fully-diminished";
-  if (q.includes("dim")) return "fully-diminished";
-  if (q.includes("aug")) return "augmented";
-  if (q.includes("dom") || (q.includes("7") && !q.includes("maj7") && !q.includes("min7"))) return "dominant";
-  if (q.includes("min") || q.startsWith("m")) return "minor";
-  return "major";
-}
-
-function getRunwayColorByCategory(category) {
-  // Color map per Tim's request:
-  // blue minor, red dominant, green major, purple half dim, black augmented, yellow fully dim
-  switch (category) {
-    case "minor": return "#2f6fed";
-    case "dominant": return "#d32f2f";
-    case "major": return "#2e7d32";
-    case "half-diminished": return "#7b1fa2";
-    case "augmented": return "#111111";
-    case "fully-diminished": return "#f9a825";
-    default: return "#666666";
-  }
-}
-
-function getChordLabelFromPart(partEl) {
-  if (!partEl) return null;
-
-  // These selectors match your measure-part controls
-  const root = partEl.querySelector(".root-note")?.value;
-  const qualityRaw = partEl.querySelector(".chord-quality")?.value;
-  if (!root || !qualityRaw) return null;
-
-  const qualityOption = partEl.querySelector(`.chord-quality option[value="${qualityRaw}"]`);
-  const qualityDisplay = qualityOption ? qualityOption.textContent : qualityRaw;
-
-  return { root, qualityRaw, label: `${root}${qualityDisplay}` };
-}
-
-function buildChordTimelineFromMeasures() {
-  const measuresEl = UI?.elements?.measures;
-  const measures = measuresEl?.children;
-  if (!measures || measures.length === 0) return [];
-
-  const timeline = [];
-
-  Array.from(measures).forEach((measureEl, mIdx) => {
-    const isSplit = measureEl.dataset.isSplit === "true";
-    const parts = measureEl.querySelectorAll(".measure-part");
-
-    const pushPart = (pIdx) => {
-      const partEl = parts[pIdx];
-      const chord = getChordLabelFromPart(partEl);
-      if (!chord) return;
-
-      const category = getRunwayQualityCategory(chord.qualityRaw);
-      timeline.push({
-        measureIdx: mIdx,
-        partIdx: pIdx,
-        label: chord.label,
-        category
-      });
-    };
-
-    pushPart(0);
-    if (isSplit) pushPart(1);
-  });
-
-  return timeline;
-}
-
-/**
- * Updates the runway strip and scrolls the current chord into view.
- * measureIdx and partIdx should match the active playback selection.
- */
-function updateRunwayDisplay(measureIdx = AppState.currentMeasure, partIdx = 0) {
-  const track = UI?.elements?.runwayTrack;
-  if (!track) return;
-
-  const timeline = buildChordTimelineFromMeasures();
-  if (timeline.length === 0) {
-    track.innerHTML = "";
-    return;
-  }
-
-  const currentKey = `${measureIdx}:${partIdx}`;
-  let currentIndex = timeline.findIndex(x => `${x.measureIdx}:${x.partIdx}` === currentKey);
-  if (currentIndex < 0) currentIndex = 0;
-
-  const windowSize = 9;
-  const half = Math.floor(windowSize / 2);
-
-  const indices = [];
-  for (let i = currentIndex - half; i <= currentIndex + half; i++) {
-    let idx = i;
-    while (idx < 0) idx += timeline.length;
-    idx = idx % timeline.length;
-    indices.push(idx);
-  }
-
-  track.innerHTML = "";
-
-  indices.forEach((idx, localPos) => {
-    const item = timeline[idx];
-    const pill = document.createElement("div");
-    pill.className = "runway-pill";
-    pill.textContent = item.label;
-    pill.dataset.measureIdx = String(item.measureIdx);
-    pill.dataset.partIdx = String(item.partIdx);
-
-    pill.style.backgroundColor = getRunwayColorByCategory(item.category);
-
-    if (idx === currentIndex) pill.classList.add("is-current");
-    else if (localPos === half + 1 || localPos === half + 2) pill.classList.add("is-next");
-
-    track.appendChild(pill);
-
-    if (idx === currentIndex) {
-      const spacer = document.createElement("div");
-      spacer.className = "runway-spacer";
-      track.appendChild(spacer);
-    }
-  });
-
-  const currentPill = track.querySelector(".runway-pill.is-current");
-  if (currentPill && typeof currentPill.scrollIntoView === "function") {
-    currentPill.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
-  }
-}
-
-</script>
+    </script>
 <div class="modal-overlay" id="ai-modal" style="display: none;">
 <div class="modal-content">
 <span class="modal-close-button">×</span>
@@ -5988,8 +5845,8 @@ function __bb_clearGuideTonePaths(){
 
 // Draw 7→3 and 3→7 with THICKER lines
 (function(){
-
-// (Guide-tone arrow overlay disabled to prevent intermittent blue arrow artifacts.)
+  // (Guide-tone arrow overlay disabled to prevent intermittent blue arrow artifacts.)
+})();
 </script>
 <!-- === END: Integrated Patch === -->
 
@@ -6027,6 +5884,134 @@ function __bb_clearGuideTonePaths(){
   }, true);
   window.addEventListener('load', function(){ setTimeout(bbSafeInit, 0); });
 })();
+
+// ==================================
+// === RUNWAY (Chord Strip) =========
+// ==================================
+
+function getRunwayQualityCategory(qualityRaw) {
+  const q = String(qualityRaw || "").toLowerCase();
+
+  if (q.includes("min7b5") || q.includes("halfdim") || q.includes("ø")) return "half-diminished";
+  if (q.includes("dim7") || (q.includes("dim") && q.includes("7"))) return "fully-diminished";
+  if (q.includes("dim")) return "fully-diminished";
+  if (q.includes("aug")) return "augmented";
+  if (q.includes("dom") || (q.includes("7") && !q.includes("maj7") && !q.includes("min7"))) return "dominant";
+  if (q.includes("min") || q.startsWith("m")) return "minor";
+  return "major";
+}
+
+function getRunwayColorByCategory(category) {
+  // blue minor, red dominant, green major, purple half dim, black augmented, yellow fully dim
+  switch (category) {
+    case "minor": return "#2f6fed";
+    case "dominant": return "#d32f2f";
+    case "major": return "#2e7d32";
+    case "half-diminished": return "#7b1fa2";
+    case "augmented": return "#111111";
+    case "fully-diminished": return "#f9a825";
+    default: return "#666666";
+  }
+}
+
+function getChordLabelFromPart(partEl) {
+  if (!partEl) return null;
+  const root = partEl.querySelector(".root-note")?.value;
+  const qualityRaw = partEl.querySelector(".chord-quality")?.value;
+  if (!root || !qualityRaw) return null;
+
+  const qualityOption = partEl.querySelector(`.chord-quality option[value="${qualityRaw}"]`);
+  const qualityDisplay = qualityOption ? qualityOption.textContent : qualityRaw;
+
+  return { root, qualityRaw, label: `${root}${qualityDisplay}` };
+}
+
+function buildChordTimelineFromMeasures() {
+  const measures = UI.elements.measures?.children;
+  if (!measures || measures.length === 0) return [];
+
+  const timeline = [];
+
+  Array.from(measures).forEach((measureEl, mIdx) => {
+    const isSplit = measureEl.dataset.isSplit === "true";
+    const parts = measureEl.querySelectorAll(".measure-part");
+
+    const pushPart = (pIdx) => {
+      const partEl = parts[pIdx];
+      const chord = getChordLabelFromPart(partEl);
+      if (!chord) return;
+
+      const category = getRunwayQualityCategory(chord.qualityRaw);
+      timeline.push({
+        measureIdx: mIdx,
+        partIdx: pIdx,
+        label: chord.label,
+        category
+      });
+    };
+
+    pushPart(0);
+    if (isSplit) pushPart(1);
+  });
+
+  return timeline;
+}
+
+function updateRunwayDisplay(measureIdx = AppState.currentMeasure, partIdx = 0) {
+  const track = UI.elements.runwayTrack;
+  if (!track) return;
+
+  const timeline = buildChordTimelineFromMeasures();
+  if (timeline.length === 0) {
+    track.innerHTML = "";
+    return;
+  }
+
+  const currentKey = `${measureIdx}:${partIdx}`;
+  let currentIndex = timeline.findIndex(x => `${x.measureIdx}:${x.partIdx}` === currentKey);
+  if (currentIndex < 0) currentIndex = 0;
+
+  const windowSize = 9;
+  const half = Math.floor(windowSize / 2);
+
+  const indices = [];
+  for (let i = currentIndex - half; i <= currentIndex + half; i++) {
+    let idx = i;
+    while (idx < 0) idx += timeline.length;
+    idx = idx % timeline.length;
+    indices.push(idx);
+  }
+
+  track.innerHTML = "";
+
+  indices.forEach((idx, localPos) => {
+    const item = timeline[idx];
+    const pill = document.createElement("div");
+    pill.className = "runway-pill";
+    pill.textContent = item.label;
+    pill.dataset.measureIdx = String(item.measureIdx);
+    pill.dataset.partIdx = String(item.partIdx);
+
+    pill.style.backgroundColor = getRunwayColorByCategory(item.category);
+
+    if (idx === currentIndex) pill.classList.add("is-current");
+    else if (localPos === half + 1 || localPos === half + 2) pill.classList.add("is-next");
+
+    track.appendChild(pill);
+
+    if (idx === currentIndex) {
+      const spacer = document.createElement("div");
+      spacer.className = "runway-spacer";
+      track.appendChild(spacer);
+    }
+  });
+
+  const currentPill = track.querySelector(".runway-pill.is-current");
+  if (currentPill && typeof currentPill.scrollIntoView === "function") {
+    currentPill.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+  }
+}
+
 </script>
 
 </body>
