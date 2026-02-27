@@ -6024,17 +6024,18 @@ function getRunwayQualityCategory(qualityRaw) {
 
 
 function getRunwayColorByCategory(category) {
-  // blue minor, red dominant, green major, purple half dim, black augmented, yellow fully dim
   switch (category) {
-    case "minor": return "#2f6fed";           // blue
-    case "dominant": return "#d32f2f";        // red
-    case "major": return "#00c853";           // green
-    case "half-diminished": return "#7b1fa2"; // purple
-    case "augmented": return "#111111";       // black
-    case "fully-diminished": return "#f9a825"; // yellow
+    case "minor": return "#2f6fed";
+    case "dominant": return "#d32f2f";
+    case "major": return "#00c853";
+    case "half-diminished": return "#7b1fa2";
+    case "augmented": return "#111111";
+    case "fully-diminished": return "#f9a825";
+    case "altered": return "#7f0000"; // dark red
     default: return "#666666";
   }
 }
+
 
 function getChordLabelFromPart(partEl) {
   if (!partEl) return null;
