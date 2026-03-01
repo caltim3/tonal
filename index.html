@@ -1051,6 +1051,7 @@ body.dark-mode-3 .runway-pill.is-current{
 <div class="top-controls app-section">
 <button aria-label="Toggle dark mode" id="dark-mode-toggle">Dark Mode</button>
 <button id="download-index" class="secondary" aria-label="Download this page as a single file">Download</button>
+<button id="generate-improv-md" class="secondary" aria-label="Generate improvisation guide markdown">Improv Guide</button>
 <!-- Placeholder for future global controls -->
 <button class="toggle-button" id="swing-toggle" style="display: none;">Swing Off</button>
 <select id="note-naming-convention" style="display: none; margin-left: 10px;">
@@ -2660,7 +2661,8 @@ runwayTrack: document.getElementById('runway-track'),
             rhythmicStyleSelect: document.getElementById('rhythmic-style-select'),
             swingToggle: document.getElementById('swing-toggle'),
             noteNamingConvention: document.getElementById('note-naming-convention'),
-        };
+                    generateImprovMdButton: document.getElementById('generate-improv-md'),
+};
 
         if (this.elements.strongBeatPulseToggle) {
             this.elements.strongBeatPulseToggle.setAttribute('aria-pressed', 'false');
@@ -5409,6 +5411,10 @@ function setupEventListeners() {
 
         // --- Metronome Controls ---
         UI.elements.startStopButton.addEventListener('click', () => AppState.isPlaying ? stopPlayback() : startPlayback());
+
+        // --- Improv Guide Markdown ---
+        safeAddEventListener(UI.elements.generateImprovMdButton, 'click', generateAndDownloadImprovGuideMarkdown);
+
         
         if (UI.elements.drumSetToggleBtn) {
             UI.elements.drumSetToggleBtn.addEventListener('click', () => {
@@ -5627,6 +5633,328 @@ if (UI.elements.loopSelectedToggle) {
 // ==================================
 // === INITIALIZATION =============
 // ==================================
+
+// ==================================
+// === IMPROV GUIDE MARKDOWN EXPORT ==
+// ==================================
+function __bb_sanitizeFilename(name) {
+    return String(name || "improv_guide")
+        .replace(/[^\w\-]+/g, "_")
+        .replace(/_+/g, "_")
+        .replace(/^_+|_+$/g, "");
+}
+
+function __bb_splitMeasureChords(measureToken) {
+    // Handles strings like "Am7 D7" or "Gmaj7 C7" and ignores parenthetical hints "(Cmaj7)"
+    if (!measureToken) return [];
+    let s = String(measureToken).trim();
+    if (!s) return [];
+    // remove parenthetical-only endings like "(Cmaj7)" but keep if mixed content
+    s = s.replace(/\(([^)]+)\)/g, "$1").trim();
+    // common separators: whitespace
+    // preserve slash chords like "C7/E" by not splitting on '/'
+    return s.split(/\s+/g).filter(Boolean);
+}
+
+function __bb_pcIndex(noteLike) {
+    try {
+        return NOTES_CHROMATIC.indexOf(standardizeNoteName(String(noteLike)));
+    } catch (e) {
+        return -1;
+    }
+}
+
+function __bb_intervalSemis(fromPc, toPc) {
+    const a = __bb_pcIndex(fromPc);
+    const b = __bb_pcIndex(toPc);
+    if (a < 0 || b < 0) return null;
+    return (b - a + 12) % 12;
+}
+
+function __bb_isDominantToNext(ch, nextCh) {
+    // True when current is dominant-ish and resolves a perfect 4th up (aka down a fifth)
+    if (!ch || !nextCh) return false;
+    const curr = parseChord(ch);
+    const nxt = parseChord(nextCh);
+    if (!curr || !nxt) return false;
+    const domQuals = new Set(["dom7","alt","dom7b9","dom7#9","dom7b5","dom7sus"]);
+    if (!domQuals.has(curr.quality)) return false;
+    const semis = __bb_intervalSemis(curr.root, nxt.root);
+    return semis === 5; // up a 4th
+}
+
+function __bb_qualityLabel(q) {
+    const map = {
+        maj: "Major",
+        maj7: "Maj7",
+        maj6: "6",
+        min: "Minor",
+        min7: "Min7",
+        min6: "Min6",
+        min9: "Min9",
+        dom7: "Dom7",
+        dom9: "Dom9",
+        dom13: "Dom13",
+        alt: "Alt (Altered Dom)",
+        dom7b9: "Dom7(b9)",
+        dom7#9: "Dom7(#9)",
+        dom7b5: "Dom7(b5)",
+        dom7sus: "Dom7sus",
+        min7b5: "Half-diminished (m7b5)",
+        dim7: "Diminished 7"
+    };
+    return map[q] || q;
+}
+
+function __bb_modeFromQuality(root, quality, key) {
+    // Use the app's existing scale suggester when possible.
+    // suggestScaleForQuality returns a string like "F Dorian" or "G Mixolydian".
+    try {
+        return suggestScaleForQuality(root, quality, key);
+    } catch (e) {
+        return `${root} (mode suggestion unavailable)`;
+    }
+}
+
+function __bb_triadsForQuality(chord) {
+    // Simple, practical "triads over chord" (Randy Vincent-ish) suggestions.
+    const p = parseChord(chord);
+    if (!p) return [];
+    const r = p.root;
+    const q = p.quality;
+
+    // helper: transpose pitch class by semis
+    const idx = __bb_pcIndex(r);
+    const T = (n) => NOTES_CHROMATIC[(idx + n + 12) % 12];
+
+    if (q === "maj7" || q === "maj6" || q === "maj") {
+        return [
+            `${r} major triad (1-3-5)`,
+            `${T(4)} minor triad (3-5-7)`,
+            `${T(9)} minor triad (6-1-3)`,
+        ];
+    }
+    if (q === "min7" || q === "min" || q === "min6" || q === "min9") {
+        return [
+            `${r} minor triad (1-b3-5)`,
+            `${T(3)} major triad (b3-5-b7)`,
+            `${T(7)} minor triad (5-b7-9)`,
+        ];
+    }
+    if (q === "min7b5") {
+        return [
+            `${r} diminished triad (1-b3-b5)`,
+            `${T(3)} minor triad (b3-b5-b7)`,
+            `${T(10)} major triad (b7-9-11)`,
+        ];
+    }
+    // Dominant family
+    if (["dom7","dom9","dom13","alt","dom7b9","dom7#9","dom7b5","dom7sus"].includes(q)) {
+        return [
+            `${r} major triad (1-3-5)`,
+            `${T(4)} diminished triad (3-5-b7)`,
+            `${T(7)} minor triad (5-b7-9)`,
+            `Upper-structure triad: ${T(1)} major (b9-3-b5) or ${T(6)} major (#11-13-1) depending on color`,
+        ];
+    }
+    if (q === "dim7") {
+        return [
+            `${r} diminished triad + symmetric dim7 arpeggio`,
+            `Any note in the dim7 can be treated as root (symmetry)`,
+        ];
+    }
+    return [];
+}
+
+function __bb_cellsForContext(chord, nextChord, key) {
+    const p = parseChord(chord);
+    if (!p) return [];
+    const r = p.root;
+    const q = p.quality;
+
+    const isRes = __bb_isDominantToNext(chord, nextChord);
+
+    if (q === "maj7") {
+        return [
+            `3-5-7-9 cell: (${r}maj7) start on 3rd, climb to 9 (avoid root-heavy sound)`,
+            `Barry-style major 6th-dim idea: 1-6-5-#5 as passing motion`,
+        ];
+    }
+    if (q === "min7") {
+        return [
+            `3-5-b7-9 cell (Dorian flavor)`,
+            `C.E.S.H. internal motion: 1-7-b7-6 (chromatic inner voice)`,
+        ];
+    }
+    if (q === "min7b5") {
+        return [
+            `Locrian #2 cell: 1-2-b3-5 (brightens the half-dim)`,
+            `Guide-tone focus: b3 and b7 as anchors`,
+        ];
+    }
+    if (["dom7","dom9","dom13"].includes(q) && isRes) {
+        return [
+            `Dominant bebop fragment: 1-2-3-4-5-6-b7-7 (keeps chord tones on downbeats)`,
+            `3-to-b9 dim arpeggio: 3-5-b7-b9 (then resolve)`,
+            `Enclosure on target 3rd of next chord: (above-below-target) landing on beat 1`,
+        ];
+    }
+    if (["alt","dom7b9","dom7#9","dom7b5"].includes(q) && isRes) {
+        return [
+            `Altered cell from melodic minor (7th mode): b9-#9-3-b13`,
+            `Tritone-slip the motive a half-step and return (side-slipping)`,
+        ];
+    }
+    if (q === "dim7") {
+        return [
+            `Half-whole diminished scale cells (symmetry): 1-b9-#9-3 etc`,
+            `Resolve any dim tone by half-step into the next chord tone`,
+        ];
+    }
+    return [
+        `Guide tones: aim 3rd/7th on beats 1 and 3; tensions on offbeats (Forward Motion)`,
+    ];
+}
+
+function __bb_levelSuggestions(chord, nextChord, key) {
+    const p = parseChord(chord);
+    if (!p) {
+        return {
+            level1: "Unparsed chord token.",
+            level2: "",
+            level3: "",
+            level4: "",
+            level5: ""
+        };
+    }
+    const r = p.root;
+    const q = p.quality;
+    const isRes = __bb_isDominantToNext(chord, nextChord);
+
+    const level1 = `**Inside scale/mode:** ${__bb_modeFromQuality(r, q, key)}. Keep chord tones on beats 1 and 3.`;
+    const triads = __bb_triadsForQuality(chord);
+    const level2 = `**Triads + guide tones:** ${triads.slice(0,3).join("; ")}. Guide-tone line: 7→3 or 3→7 into **${nextChord || "next chord"}**.`;
+    const level3 = `**Bebop + chromatic:** Use enclosures into 3rd/7th. Add a passing tone so 8th-note runs land chord tones on downbeats. ${__bb_cellsForContext(chord, nextChord, key).slice(0,2).join(" ")}`;
+    let level4 = `**Harmonic/melodic minor color:** `;
+    if (q === "min7b5") level4 += `Try Locrian #2 (melodic minor a minor third up from root).`;
+    else if (["alt","dom7b9","dom7#9","dom7b5"].includes(q) && isRes) level4 += `Altered scale (melodic minor a half-step above the dominant root).`;
+    else if (["dom7","dom9","dom13"].includes(q) && isRes) level4 += `Phrygian dominant (harmonic minor from the resolution key) or half-whole diminished.`;
+    else if (q === "maj7") level4 += `Lydian (major with #11) for lift; melodic minor tonic color for maj7(#5/#11) moods.`;
+    else if (q === "min7") level4 += `Melodic minor on tonic minor for i- color, or Dorian with 6 as a bright target.`;
+    else level4 += `Choose a parent minor (harmonic or melodic) that voice-leads into the next chord.`;
+
+    let level5 = `**Superimposition + HFM:** `;
+    if (isRes) {
+        level5 += `Start implying **${nextChord}** 1.5 beats early (Harmonic Forward Motion). Try a tritone sub line (dom root ↔ tritone) or an upper-structure triad to spell b9/#9/b13, then resolve cleanly.`;
+    } else {
+        level5 += `Side-slip a motif up a half-step for 1 beat, then return. Use octave displacement to break scalar shapes while keeping guide-tone targets.`;
+    }
+
+    return { level1, level2, level3, level4, level5 };
+}
+
+function buildImprovGuideMarkdown() {
+    const key = (UI.elements.keySelect && UI.elements.keySelect.value) ? UI.elements.keySelect.value : "C";
+    const meta = (typeof progressions !== "undefined" && currentProgressionName && progressions[currentProgressionName])
+        ? progressions[currentProgressionName]
+        : (JSON.parse(localStorage.getItem('userBebopProgressions') || '{}')[currentProgressionName] || null);
+
+    const title = meta && meta.displayName ? meta.displayName : (currentProgressionName || "Current Song");
+    const tempo = meta && meta.defaultTempo ? meta.defaultTempo : (UI.elements.tempo ? UI.elements.tempo.value : "");
+    const desc = meta && meta.description ? meta.description : "";
+
+    // Flatten measures into chord tokens, preserving measure numbers
+    const measures = Array.isArray(currentFunctionalProgression) ? currentFunctionalProgression : [];
+    const flat = [];
+    measures.forEach((mTok, i) => {
+        const chords = __bb_splitMeasureChords(mTok);
+        chords.forEach((c, j) => flat.push({ measure: i + 1, slot: j + 1, chord: c }));
+    });
+
+    // Build lead-sheet style grid (4 bars per row)
+    const gridBars = measures.map((mTok) => String(mTok || "").trim());
+    const rows = [];
+    for (let i = 0; i < gridBars.length; i += 4) {
+        rows.push(gridBars.slice(i, i + 4));
+    }
+
+    let md = `# Bebop Blueprint Improv Guide\n\n`;
+    md += `## ${title}\n\n`;
+    md += `**Key:** ${key}${tempo ? `  |  **Tempo:** ${tempo}` : ""}\n\n`;
+    if (desc) md += `_${desc}_\n\n`;
+
+    md += `---\n\n`;
+    md += `## Lead Sheet Map\n\n`;
+    md += `| 1 | 2 | 3 | 4 |\n|---|---|---|---|\n`;
+    rows.forEach(r => {
+        const padded = [...r];
+        while (padded.length < 4) padded.push("");
+        md += `| ${padded[0] || ""} | ${padded[1] || ""} | ${padded[2] || ""} | ${padded[3] || ""} |\n`;
+    });
+
+    md += `\n---\n\n`;
+    md += `## How to Read the 5 Levels\n\n`;
+    md += `- **Level 1:** stay diatonic, spell changes with guide tones (3rd and 7th)\n`;
+    md += `- **Level 2:** triads over chords, smooth voice leading (7→3 / 3→7)\n`;
+    md += `- **Level 3:** bebop scales, enclosures, chromatic approach notes, C.E.S.H.\n`;
+    md += `- **Level 4:** harmonic minor and melodic minor modes for functional minor and altered dominants\n`;
+    md += `- **Level 5:** superimposition, side-slipping, tritone subs, Harmonic Forward Motion (anticipate 1.5 beats)\n\n`;
+
+    md += `---\n\n`;
+    md += `## Chord-by-Chord Roadmap\n\n`;
+
+    for (let i = 0; i < flat.length; i++) {
+        const item = flat[i];
+        const chord = item.chord;
+        const next = (i + 1 < flat.length) ? flat[i + 1].chord : null;
+
+        const parsed = parseChord(chord);
+        const label = parsed ? `${parsed.root} ${__bb_qualityLabel(parsed.quality)}` : chord;
+
+        const L = __bb_levelSuggestions(chord, next, key);
+
+        md += `### Bar ${item.measure}${item.slot > 1 ? `.${item.slot}` : ""}: **${chord}**  _(${label})_\n\n`;
+        md += `- ${L.level1}\n`;
+        md += `- ${L.level2}\n`;
+        md += `- ${L.level3}\n`;
+        md += `- ${L.level4}\n`;
+        md += `- ${L.level5}\n\n`;
+    }
+
+    md += `---\n\n`;
+    md += `## Two tiny Forward Motion drills (fast payoff)\n\n`;
+    md += `1. **Guide-tone song:** play only 3rds and 7ths as half-notes through the form. Then add eighth-note pickup into each target.\n`;
+    md += `2. **Everything is a pickup:** start every idea on an upbeat and aim to land a chord tone on the next bar's beat 1.\n\n`;
+
+    return md;
+}
+
+function generateAndDownloadImprovGuideMarkdown() {
+    try {
+        const md = buildImprovGuideMarkdown();
+        const meta = (typeof progressions !== "undefined" && currentProgressionName && progressions[currentProgressionName])
+            ? progressions[currentProgressionName]
+            : (JSON.parse(localStorage.getItem('userBebopProgressions') || '{}')[currentProgressionName] || null);
+        const title = meta && meta.displayName ? meta.displayName : (currentProgressionName || "song");
+        const key = (UI.elements.keySelect && UI.elements.keySelect.value) ? UI.elements.keySelect.value : "C";
+        const filename = __bb_sanitizeFilename(`${title}_${key}_improv_guide`) + ".md";
+
+        const blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        log(`Generated improv guide: ${filename}`);
+    } catch (e) {
+        console.error("Failed to generate improv guide markdown:", e);
+        alert("Improv guide generation failed. Check console for details.");
+    }
+}
+
 async function initializeApp() {
     UI.init(); // Cache DOM elements first
     
