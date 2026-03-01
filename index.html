@@ -5709,28 +5709,86 @@ function __bb_isDominantToNext(ch, nextCh) {
     return semis === 5; // up a 4th
 }
 
-function __bb_qualityLabel(q) {
-    const map = {
-        maj: "Major",
-        maj7: "Maj7",
-        maj6: "6",
-        min: "Minor",
-        min7: "Min7",
-        min6: "Min6",
-        min9: "Min9",
-        dom7: "Dom7",
-        dom9: "Dom9",
-        dom13: "Dom13",
-        alt: "Alt (Altered Dom)",
-        dom7b9: "Dom7(b9)",
-        dom7#9: "Dom7(#9)",
-        dom7b5: "Dom7(b5)",
-        dom7sus: "Dom7sus",
-        min7b5: "Half-diminished (m7b5)",
-        dim7: "Diminished 7"
-    };
-    return map[q] || q;
+function __bb_qualityLabel(raw) {
+    const key = (raw == null ? "" : String(raw))
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, "")
+        .replace(/[()]/g, "")
+        .replace(/♭/g, "b")
+        .replace(/♯/g, "#");
+
+    const labels = new Map([
+        // Major family
+        ["maj", "Maj"],
+        ["maj7", "Maj7"],
+        ["ma7", "Maj7"],
+        ["maj6", "6"],
+        ["6", "6"],
+        ["69", "6/9"],
+        ["6/9", "6/9"],
+        ["maj9", "Maj9"],
+        ["maj7#11", "Maj7(#11)"],
+
+        // Minor family
+        ["min", "Min"],
+        ["m", "Min"],
+        ["min7", "m7"],
+        ["m7", "m7"],
+        ["min6", "m6"],
+        ["m6", "m6"],
+        ["min9", "m9"],
+        ["m9", "m9"],
+        ["imaj7", "m(maj7)"],
+        ["mmaj7", "m(maj7)"],
+
+        // Dominant family
+        ["dom7", "7"],
+        ["7", "7"],
+        ["dom9", "9"],
+        ["9", "9"],
+        ["dom13", "13"],
+        ["13", "13"],
+        ["dom7sus", "7sus"],
+        ["7sus", "7sus"],
+        ["7sus4", "7sus4"],
+        ["dom7b9", "7(b9)"],
+        ["7b9", "7(b9)"],
+        ["dom7#9", "7(#9)"],
+        ["7#9", "7(#9)"],
+        ["dom7b5", "7(b5)"],
+        ["7b5", "7(b5)"],
+        ["7#11", "7(#11)"],
+        ["dom7alt", "7alt"],
+        ["7alt", "7alt"],
+        ["alt", "7alt"],
+
+        // Half-diminished / diminished
+        ["min7b5", "ø7"],
+        ["m7b5", "ø7"],
+        ["ø", "ø7"],
+        ["dim7", "°7"],
+        ["o7", "°7"],
+        ["dim", "dim"],
+
+        // Aug / sus / misc
+        ["aug", "aug"],
+        ["+", "aug"],
+        ["sus2", "sus2"],
+        ["sus4", "sus4"]
+    ]);
+
+    if (!key) return "";
+    if (labels.has(key)) return labels.get(key);
+
+    // Try stripping a leading 'dom' in case we got dom7#9 style
+    const stripped = key.replace(/^dom/, "");
+    if (labels.has(stripped)) return labels.get(stripped);
+
+    // Last resort: return original
+    return raw;
 }
+
 
 function __bb_modeFromQuality(root, quality, key) {
     // Use the app's existing scale suggester when possible.
