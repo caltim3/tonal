@@ -962,99 +962,140 @@ body.dark-mode-3 #anticipate-fretboard .note.anticipate-guide-tone{
 
 
 
+
 /* =========================
-   RUNWAY (lead sheet strip)
+   RUNWAY (clean spotlight)
    ========================= */
-.runway {
+.runway{
   margin: 10px auto 6px auto;
-  padding: 8px 8px;
-  border-radius: 10px;
-  background: rgba(0,0,0,0.06);
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(0,0,0,0.05);
   border: 1px solid rgba(0,0,0,0.10);
   overflow: hidden;
+  position: relative;
+
+  /* subtle beat grid: 4 quarters */
+  background-image:
+    linear-gradient(to right,
+      rgba(0,0,0,0.10) 0px,
+      rgba(0,0,0,0.10) 1px,
+      transparent 1px,
+      transparent 25%,
+      rgba(0,0,0,0.08) 25%,
+      rgba(0,0,0,0.08) calc(25% + 1px),
+      transparent calc(25% + 1px),
+      transparent 50%,
+      rgba(0,0,0,0.08) 50%,
+      rgba(0,0,0,0.08) calc(50% + 1px),
+      transparent calc(50% + 1px),
+      transparent 75%,
+      rgba(0,0,0,0.08) 75%,
+      rgba(0,0,0,0.08) calc(75% + 1px),
+      transparent calc(75% + 1px),
+      transparent 100%
+    );
 }
 body.dark-mode .runway,
 body.dark-mode-2 .runway,
 body.dark-mode-3 .runway{
   background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.14);
+  background-image:
+    linear-gradient(to right,
+      rgba(255,255,255,0.14) 0px,
+      rgba(255,255,255,0.14) 1px,
+      transparent 1px,
+      transparent 25%,
+      rgba(255,255,255,0.10) 25%,
+      rgba(255,255,255,0.10) calc(25% + 1px),
+      transparent calc(25% + 1px),
+      transparent 50%,
+      rgba(255,255,255,0.10) 50%,
+      rgba(255,255,255,0.10) calc(50% + 1px),
+      transparent calc(50% + 1px),
+      transparent 75%,
+      rgba(255,255,255,0.10) 75%,
+      rgba(255,255,255,0.10) calc(75% + 1px),
+      transparent calc(75% + 1px),
+      transparent 100%
+    );
 }
+
 .runway-track{
-  display: flex;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: 1.1fr 1.6fr 1.1fr;
+  gap: 14px;
   align-items: center;
-  overflow-x: auto;
-  scroll-behavior: smooth;
-  padding: 6px 2px;
-  -webkit-overflow-scrolling: touch;
+  justify-items: stretch;
+  overflow: hidden;
+  padding: 4px 2px;
 }
-.runway-track::-webkit-scrollbar { height: 0px; }
-.runway-track { scrollbar-width: none; }
 
 .runway-pill{
-  flex: 0 0 auto;
-  padding: 10px 14px;
-  border-radius: 999px;
+  position: relative;
+  padding: 12px 14px;
+  border-radius: 12px;
   font-weight: 800;
-  font-size: 20px;
+  font-size: 22px;
   line-height: 1;
   letter-spacing: 0.2px;
   color: white;
   user-select: none;
-  position: relative;
-  opacity: 0.55;
+  opacity: 0.42;
+  filter: grayscale(0.70) saturate(0.70);
   transform: scale(0.96);
-  transition: opacity 140ms ease, transform 140ms ease, box-shadow 140ms ease, filter 140ms ease;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.10);
+  transition: opacity 140ms ease, transform 140ms ease, filter 140ms ease, box-shadow 140ms ease;
+  box-shadow: 0 8px 22px rgba(0,0,0,0.10);
+  border: 1px solid rgba(0,0,0,0.16);
+  text-align: center;
 }
+
+body.dark-mode .runway-pill,
+body.dark-mode-2 .runway-pill,
+body.dark-mode-3 .runway-pill{
+  border-color: rgba(255,255,255,0.14);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.30);
+}
+
 .runway-pill.is-current{
   opacity: 1;
-  transform: scale(1.12);
-  filter: saturate(1.15) contrast(1.05);
-  z-index: 6;
-  box-shadow: 0 0 0 3px rgba(0,0,0,0.60), 0 14px 34px rgba(0,0,0,0.28);
-  outline: 2px solid rgba(255,255,255,0.90);
-  outline-offset: 2px;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.35);
+  filter: grayscale(0) saturate(1.05);
+  transform: scale(1.06);
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.92), 0 16px 42px rgba(0,0,0,0.26);
 }
 
-
-body.dark-mode .runway-pill.is-current::before,
-body.dark-mode-2 .runway-pill.is-current::before,
-body.dark-mode-3 .runway-pill.is-current::before{
-  background: rgba(255,255,255,0.92);
-  color: rgba(0,0,0,0.90);
-}
-
-/* In dark modes, use a lighter ring so "NOW" pops */
-body.dark-mode .runway-pill.is-current,
-body.dark-mode-2 .runway-pill.is-current,
-body.dark-mode-3 .runway-pill.is-current{
-  box-shadow: 0 0 0 3px rgba(255,255,255,0.75), 0 16px 38px rgba(0,0,0,0.42);
-  outline: 2px solid rgba(255,255,255,0.95);
-  outline-offset: 2px;
-}
 .runway-pill.is-next{
-  opacity: 0.85;
-}
-.runway-spacer{
-  width: 10px;
-  height: 1px;
-  flex: 0 0 auto;
-  opacity: 0.25;
+  opacity: 0.78;
+  filter: grayscale(0.35) saturate(0.85);
+  transform: scale(0.98);
 }
 
+.runway-pill.is-next2{
+  opacity: 0.58;
+  filter: grayscale(0.55) saturate(0.75);
+  transform: scale(0.97);
+}
 
-/* Slow Practice button: always red, intentional */
-.slow-practice-btn{
-    background-color: #c82333 !important;
-    border: 2px solid #8b1e26 !important;
-    color: #ffffff !important;
+/* progress line sits inside current pill */
+.runway-pill.is-current .runway-progress{
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 7px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.22);
+  overflow: hidden;
 }
-.slow-practice-btn:hover{
-    background-color: #a61d2a !important;
-    border-color: #6f1720 !important;
+.runway-pill.is-current .runway-progress-fill{
+  height: 100%;
+  width: var(--runway-progress, 0%);
+  border-radius: 999px;
+  background: rgba(255,255,255,0.92);
+  transition: width 80ms linear;
 }
+
 
 </style>
 <style data-emotion="css" data-s=""></style><style data-emotion="css" data-s=""></style><style data-emotion="css" data-s=""></style><style data-emotion="css" data-s=""></style></head>
@@ -4026,6 +4067,29 @@ function onMetronomeInstrumentChange(selectedInstrument) {
 // ==================================
 // === PLAYBACK ENGINE ============
 // ==================================
+
+function updateRunwayProgressFromBeat(currentBeat, beatsUI, timeSignatureNum, isSplitMeasure, activePartIndex) {
+    try {
+        const beatsPerMeasureUI = beatsUI.length;
+        if (beatsPerMeasureUI <= 0) return;
+
+        let start = 0;
+        let span = beatsPerMeasureUI;
+
+        // For split 4/4 measures displayed as 8ths, each chord lasts 4 UI beats
+        if (timeSignatureNum === 4 && isSplitMeasure && beatsPerMeasureUI === 8) {
+            start = (activePartIndex === 0) ? 0 : 4;
+            span = 4;
+        }
+
+        const pos = currentBeat - start;
+        const pct = ((pos + 1) / span) * 100; // +1 so you see motion immediately on beat 1
+        setRunwayProgress(pct);
+    } catch (e) {
+        // no-op
+    }
+}
+
 async function playBeat() {
     const beatsUI = UI.elements.beatsContainer.querySelectorAll('.beat');
     const measures = UI.elements.measures.children;
@@ -7314,7 +7378,21 @@ function buildChordTimelineFromMeasures() {
   return timeline;
 }
 
+
 function updateRunwayDisplay(measureIdx = AppState.currentMeasure, partIdx = 0) {
+
+function setRunwayProgress(pct) {
+  const track = UI.elements.runwayTrack;
+  if (!track) return;
+  const current = track.querySelector(".runway-pill.is-current");
+  if (!current) return;
+  const fill = current.querySelector(".runway-progress-fill");
+  if (!fill) return;
+
+  const clamped = Math.max(0, Math.min(100, pct));
+  fill.style.width = `${clamped}%`;
+}
+
   const track = UI.elements.runwayTrack;
   if (!track) return;
 
@@ -7328,46 +7406,42 @@ function updateRunwayDisplay(measureIdx = AppState.currentMeasure, partIdx = 0) 
   let currentIndex = timeline.findIndex(x => `${x.measureIdx}:${x.partIdx}` === currentKey);
   if (currentIndex < 0) currentIndex = 0;
 
-  const windowSize = 9;
-  const half = Math.floor(windowSize / 2);
-
-  const indices = [];
-  for (let i = currentIndex - half; i <= currentIndex + half; i++) {
-    let idx = i;
-    while (idx < 0) idx += timeline.length;
-    idx = idx % timeline.length;
-    indices.push(idx);
-  }
+  const current = timeline[currentIndex];
+  const next1 = timeline[(currentIndex + 1) % timeline.length];
+  const next2 = timeline[(currentIndex + 2) % timeline.length];
 
   track.innerHTML = "";
 
-  indices.forEach((idx, localPos) => {
-    const item = timeline[idx];
+  const items = [
+    { item: current, cls: "is-current" },
+    { item: next1, cls: "is-next" },
+    { item: next2, cls: "is-next2" }
+  ];
+
+  items.forEach(({ item, cls }) => {
     const pill = document.createElement("div");
-    pill.className = "runway-pill";
+    pill.className = `runway-pill ${cls}`;
     pill.textContent = item.label;
     pill.dataset.measureIdx = String(item.measureIdx);
     pill.dataset.partIdx = String(item.partIdx);
-
     pill.style.backgroundColor = getRunwayColorByCategory(item.category);
 
-    if (idx === currentIndex) pill.classList.add("is-current");
-    else if (localPos === half + 1 || localPos === half + 2) pill.classList.add("is-next");
+    if (cls === "is-current") {
+      const prog = document.createElement("div");
+      prog.className = "runway-progress";
+      const fill = document.createElement("div");
+      fill.className = "runway-progress-fill";
+      prog.appendChild(fill);
+      pill.appendChild(prog);
+    }
 
     track.appendChild(pill);
-
-    if (idx === currentIndex) {
-      const spacer = document.createElement("div");
-      spacer.className = "runway-spacer";
-      track.appendChild(spacer);
-    }
   });
 
-  const currentPill = track.querySelector(".runway-pill.is-current");
-  if (currentPill && typeof currentPill.scrollIntoView === "function") {
-    currentPill.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
-  }
+  // reset progress whenever we render a new current chord
+  setRunwayProgress(0);
 }
+
 
 </script>
 
