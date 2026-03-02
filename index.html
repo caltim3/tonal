@@ -6329,14 +6329,13 @@ const __BB_NOTION_VERSION = "2022-06-28";
 const __BB_NOTION_TOKEN_STORAGE_KEY = "bb_notion_integration_token";
 
 function __bb_getNotionTokenInteractive() {
-    let token = localStorage.getItem(__BB_NOTION_TOKEN_STORAGE_KEY);
-    if (token && token.trim()) return token.trim();
+    const token = prompt(
+        "Paste your Notion integration token (starts with 'secret_' or 'ntn_').\n\nThis will NOT be stored."
+    );
 
-    token = prompt("Paste your Notion integration token (starts with 'secret_' or 'ntn_').\n\nNote: This is stored in your browser localStorage on this device.");
     if (!token) return null;
-    token = token.trim();
-    localStorage.setItem(__BB_NOTION_TOKEN_STORAGE_KEY, token);
-    return token;
+
+    return token.trim();
 }
 
 function __bb_mdInlineToRichText(md) {
