@@ -3845,22 +3845,43 @@ noteElement.style.left = (fret === 0) ? `-2%` : `${((fret - 0.5) / numFrets) * 1
 function applySlowPracticeMode() {
     // 50 BPM + Drums + Standard Swing (Philly Joe-ish feel)
     try {
-        if (UI.elements.tempo) UI.elements.tempo.value = 50;
-        if (UI.elements.tempoDisplay) UI.elements.tempoDisplay.textContent = "50 BPM";
+        const newTempo = 50;
 
+        // Update AppState tempo (this is what playback uses)
+        AppState.tempo = newTempo;
+
+        // Update UI
+        if (UI.elements.tempo) {
+            UI.elements.tempo.value = newTempo;
+            // Trigger the same code path as manual tempo changes, without relying on duplicate logic
+            UI.elements.tempo.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        if (UI.elements.tempoDisplay) {
+            UI.elements.tempoDisplay.textContent = `${newTempo} BPM`;
+        }
+
+        // Switch metronome sound to drums
         if (UI.elements.soundType) {
             UI.elements.soundType.value = "drums";
             UI.elements.soundType.dispatchEvent(new Event("change", { bubbles: true }));
         }
 
+        // Force swing feel
         const rhythmicStyleSelect = document.getElementById('rhythmic-style-select');
         if (rhythmicStyleSelect) {
             rhythmicStyleSelect.value = "standardSwing";
             rhythmicStyleSelect.dispatchEvent(new Event("change", { bubbles: true }));
         }
 
+        // Ensure style UI is visible
         const rhythmicStyleContainer = document.getElementById('rhythmic-style-container');
         if (rhythmicStyleContainer) rhythmicStyleContainer.style.display = 'inline-flex';
+
+        // If we are currently playing, restart playback so the scheduler re-computes intervals
+        if (AppState.isPlaying) {
+            stopPlayback();
+            startPlayback();
+        }
 
         log("Slow Practice mode applied: 50 BPM, Drums, Standard Swing.");
     } catch (e) {
