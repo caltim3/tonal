@@ -1024,27 +1024,33 @@ body.dark-mode-3 .runway{
     );
 }
 
-.runway-track {
-    display: flex;
-    justify-content: center;
-    gap: 16px;
+.runway-track{
+  display: grid;
+  grid-template-columns: 1.1fr 1.6fr 1.1fr;
+  gap: 14px;
+  align-items: center;
+  justify-items: stretch;
+  overflow: hidden;
+  padding: 4px 2px;
 }
 
-.runway-pill {
-    width: 160px;           /* fixed width */
-    height: 70px;           /* fixed height */
-    flex: 0 0 160px;        /* prevent stretching */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    border-radius: 14px;
-    font-weight: 800;
-    font-size: 22px;
-
-    color: white;
-    opacity: 0.6;
-    transition: all 0.15s ease;
+.runway-pill{
+  position: relative;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 22px;
+  line-height: 1;
+  letter-spacing: 0.2px;
+  color: white;
+  user-select: none;
+  opacity: 0.42;
+  filter: grayscale(0.70) saturate(0.70);
+  transform: none;
+  transition: opacity 140ms ease, transform 140ms ease, filter 140ms ease, box-shadow 140ms ease;
+  box-shadow: 0 8px 22px rgba(0,0,0,0.10);
+  border: 1px solid rgba(0,0,0,0.16);
+  text-align: center;
 }
 
 body.dark-mode .runway-pill,
@@ -1054,13 +1060,15 @@ body.dark-mode-3 .runway-pill{
   box-shadow: 0 10px 24px rgba(0,0,0,0.30);
 }
 
-.runway-pill.is-current {
-    opacity: 1;
-    transform: scale(1);
+.runway-pill.is-current{
+  opacity: 1;
+  filter: grayscale(0) saturate(1.05);
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.92), 0 16px 42px rgba(0,0,0,0.26);
 }
 
-.runway-pill.is-next {
-    opacity: 0.75;
+.runway-pill.is-next{
+  opacity: 0.78;
+  filter: grayscale(0.35) saturate(0.85);
 }
 
 .runway-pill.is-next2{
@@ -1068,16 +1076,6 @@ body.dark-mode-3 .runway-pill{
   filter: grayscale(0.55) saturate(0.75);
 }
 
-.runway-pill.is-current::after{
-  content:"";
-  position:absolute;
-  left:10px;
-  right:10px;
-  bottom:7px;
-  height:4px;
-  background:#000;
-}
-    
 /* progress line sits inside current pill */
 .runway-pill.is-current .runway-progress{
   position: absolute;
@@ -1085,18 +1083,36 @@ body.dark-mode-3 .runway-pill{
   right: 10px;
   bottom: 7px;
   height: 4px;
-  background: transparent;   /* remove gray background */
+  border-radius: 999px;
+  background: rgba(0,0,0,0.18);
   overflow: hidden;
 }
-
 .runway-pill.is-current .runway-progress-fill{
   height: 100%;
   width: var(--runway-progress, 0%);
-  background: #000000;       /* pure black */
-  border-radius: 2px;        /* slight rounding, not bubble-soft */
+  border-radius: 999px;
+  background: rgba(0,0,0,0.92);
   transition: width 80ms linear;
 }
 
+
+
+/* Practice timer buttons */
+.practice-timer-btn{
+    min-width: 110px;
+    font-weight: 800;
+}
+.practice-timer-btn.is-running{
+    background-color: rgba(0,0,0,0.12) !important;
+    color: inherit !important;
+    border: 2px solid rgba(0,0,0,0.18) !important;
+}
+body.dark-mode .practice-timer-btn.is-running,
+body.dark-mode-2 .practice-timer-btn.is-running,
+body.dark-mode-3 .practice-timer-btn.is-running{
+    background-color: rgba(255,255,255,0.10) !important;
+    border-color: rgba(255,255,255,0.18) !important;
+}
 
 </style>
 <style data-emotion="css" data-s=""></style><style data-emotion="css" data-s=""></style><style data-emotion="css" data-s=""></style><style data-emotion="css" data-s=""></style></head>
@@ -1186,6 +1202,8 @@ body.dark-mode-3 .runway-pill{
 <button aria-label="Tap tempo" id="tap-tempo">Tap Tempo</button>
 <button aria-label="Start or stop metronome" id="start-stop">Start</button>
 <button id="slow-practice-btn" class="danger slow-practice-btn" aria-label="Set slow practice mode">Slow Practice</button>
+<button id="practice-timer-5" class="secondary practice-timer-btn" aria-label="Start 5 minute practice timer">5 minutes</button>
+<button id="practice-timer-10" class="secondary practice-timer-btn" aria-label="Start 10 minute practice timer">10 minutes</button>
 </div>
 <!-- MODIFIED: Collapsible Metronome Volume Controls -->
 <div class="collapsible-section">
@@ -2697,7 +2715,9 @@ anticipateToggle: document.getElementById('anticipate-toggle'),
             tapTempo: document.getElementById('tap-tempo'),
             startStopButton: document.getElementById('start-stop'),
             slowPracticeBtn: document.getElementById('slow-practice-btn'),
-metronomeVolumeControlsStack: document.getElementById('metronome-volume-controls-stack'),
+practiceTimer5Btn: document.getElementById('practice-timer-5'),
+        practiceTimer10Btn: document.getElementById('practice-timer-10'),
+        metronomeVolumeControlsStack: document.getElementById('metronome-volume-controls-stack'),
             metronomeVolume: document.getElementById('metronome-volume'),
             kickVolumeContainer: document.getElementById('kick-volume-container'),
             kickVolume: document.getElementById('kick-volume'),
@@ -5755,7 +5775,10 @@ function setupEventListeners() {
 
         // --- Metronome Controls ---
         UI.elements.startStopButton.addEventListener('click', () => AppState.isPlaying ? stopPlayback() : startPlayback());
-    safeAddEventListener(UI.elements.slowPracticeBtn, 'click', applySlowPracticeMode);
+    
+    if (UI.elements.practiceTimer5Btn) UI.elements.practiceTimer5Btn.addEventListener('click', () => startPracticeTimer(5, UI.elements.practiceTimer5Btn));
+    if (UI.elements.practiceTimer10Btn) UI.elements.practiceTimer10Btn.addEventListener('click', () => startPracticeTimer(10, UI.elements.practiceTimer10Btn));
+safeAddEventListener(UI.elements.slowPracticeBtn, 'click', applySlowPracticeMode);
 
     
 // --- Improv Guide Markdown ---
@@ -6947,7 +6970,91 @@ async function exportImprovMapToNotion() {
 
 
 async function initializeApp() {
-    UI.init(); // Cache DOM elements first
+    
+// =========================
+// === PRACTICE TIMERS ======
+// =========================
+let __bb_timerInterval = null;
+let __bb_timerEndMs = null;
+let __bb_timerActiveBtn = null;
+let __bb_timerDefaultText = null;
+
+function __bb_formatTimeMMSS(totalSeconds){
+    const m = Math.floor(totalSeconds / 60);
+    const s = totalSeconds % 60;
+    return `${m}:${String(s).padStart(2,'0')}`;
+}
+
+function __bb_stopMetronomeIfRunning(){
+    // Prefer a direct stop if your app exposes it, otherwise click Start/Stop button.
+    try{
+        if (typeof AppState !== 'undefined' && AppState && (AppState.isPlaying || AppState.playing)) {
+            if (typeof stopPlayback === 'function') {
+                stopPlayback();
+                return;
+            }
+        }
+    }catch(e){}
+
+    // Fallback: if the start button currently says "Stop", click it.
+    try{
+        const btn = UI?.elements?.startStopButton || document.getElementById('start-stop');
+        if (!btn) return;
+        const label = (btn.textContent || '').toLowerCase();
+        if (label.includes('stop')) btn.click();
+    }catch(e){}
+}
+
+function clearPracticeTimer(){
+    if (__bb_timerInterval) {
+        clearInterval(__bb_timerInterval);
+        __bb_timerInterval = null;
+    }
+    __bb_timerEndMs = null;
+    if (__bb_timerActiveBtn) {
+        __bb_timerActiveBtn.classList.remove('is-running');
+        __bb_timerActiveBtn.textContent = __bb_timerDefaultText || __bb_timerActiveBtn.textContent;
+        __bb_timerActiveBtn = null;
+        __bb_timerDefaultText = null;
+    }
+}
+
+function startPracticeTimer(minutes, btnEl){
+    // Toggle behavior: clicking the running timer cancels it.
+    if (__bb_timerActiveBtn === btnEl && __bb_timerInterval) {
+        clearPracticeTimer();
+        log(`Practice timer cancelled.`);
+        return;
+    }
+
+    // If another timer is running, replace it.
+    clearPracticeTimer();
+
+    __bb_timerActiveBtn = btnEl;
+    __bb_timerDefaultText = btnEl.textContent;
+
+    const totalSeconds = Math.round(minutes * 60);
+    __bb_timerEndMs = Date.now() + totalSeconds * 1000;
+
+    btnEl.classList.add('is-running');
+
+    const tick = () => {
+        const remaining = Math.max(0, Math.ceil((__bb_timerEndMs - Date.now()) / 1000));
+        btnEl.textContent = __bb_formatTimeMMSS(remaining);
+
+        if (remaining <= 0) {
+            clearPracticeTimer();
+            __bb_stopMetronomeIfRunning();
+            log(`Practice timer finished. Metronome stopped.`);
+        }
+    };
+
+    tick();
+    __bb_timerInterval = setInterval(tick, 250);
+    log(`Practice timer started: ${minutes} minutes.`);
+}
+
+UI.init(); // Cache DOM elements first
     
     // Initial UI setup based on default values
     createBeats();
