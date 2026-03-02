@@ -974,6 +974,8 @@ body.dark-mode-3 #anticipate-fretboard .note.anticipate-guide-tone{
   border: 1px solid rgba(0,0,0,0.10);
   overflow: hidden;
   position: relative;
+  max-width: 560px; /* ~6-fret visual span */
+  width: 100%;
 
   /* subtle beat grid: 4 quarters */
   background-image:
@@ -1044,7 +1046,7 @@ body.dark-mode-3 .runway{
   user-select: none;
   opacity: 0.42;
   filter: grayscale(0.70) saturate(0.70);
-  transform: scale(0.96);
+  transform: none;
   transition: opacity 140ms ease, transform 140ms ease, filter 140ms ease, box-shadow 140ms ease;
   box-shadow: 0 8px 22px rgba(0,0,0,0.10);
   border: 1px solid rgba(0,0,0,0.16);
@@ -1061,20 +1063,17 @@ body.dark-mode-3 .runway-pill{
 .runway-pill.is-current{
   opacity: 1;
   filter: grayscale(0) saturate(1.05);
-  transform: scale(1.06);
   box-shadow: 0 0 0 3px rgba(255,255,255,0.92), 0 16px 42px rgba(0,0,0,0.26);
 }
 
 .runway-pill.is-next{
   opacity: 0.78;
   filter: grayscale(0.35) saturate(0.85);
-  transform: scale(0.98);
 }
 
 .runway-pill.is-next2{
   opacity: 0.58;
   filter: grayscale(0.55) saturate(0.75);
-  transform: scale(0.97);
 }
 
 /* progress line sits inside current pill */
@@ -1085,14 +1084,14 @@ body.dark-mode-3 .runway-pill{
   bottom: 7px;
   height: 4px;
   border-radius: 999px;
-  background: rgba(255,255,255,0.22);
+  background: rgba(0,0,0,0.18);
   overflow: hidden;
 }
 .runway-pill.is-current .runway-progress-fill{
   height: 100%;
   width: var(--runway-progress, 0%);
   border-radius: 999px;
-  background: rgba(255,255,255,0.92);
+  background: rgba(0,0,0,0.92);
   transition: width 80ms linear;
 }
 
@@ -2557,6 +2556,8 @@ const AppState = {
     strongBeatPulseActive: false,
     sixthDimActive: false,
     hexModeActive: false,
+        slowPracticeActive: false,
+        slowPracticePrevTempo: null,
         anticipateActive: false,
     strongBeatPulseTimeoutId: null,
 loopingActive: false,
@@ -3884,47 +3885,65 @@ noteElement.style.left = (fret === 0) ? `-2%` : `${((fret - 0.5) / numFrets) * 1
 // === METRONOME UI & LOGIC ===
 
 function applySlowPracticeMode() {
-    // 50 BPM + Drums + Standard Swing (Philly Joe-ish feel)
+    // Toggle: first click -> 50 BPM, second click -> restore prior tempo
     try {
-        const newTempo = 50;
+        const slowTempo = 50;
+
+        // Capture the "song default" tempo as whatever you were running before Slow Practice
+        if (!AppState.slowPracticeActive) {
+            const currentTempo = (UI.elements.tempo && UI.elements.tempo.value) ? parseInt(UI.elements.tempo.value, 10) : (AppState.tempo || 120);
+            AppState.slowPracticePrevTempo = Number.isFinite(currentTempo) ? currentTempo : (AppState.tempo || 120);
+        }
+
+        const targetTempo = AppState.slowPracticeActive
+            ? (AppState.slowPracticePrevTempo || 120)
+            : slowTempo;
+
+        AppState.slowPracticeActive = !AppState.slowPracticeActive;
 
         // Update AppState tempo (this is what playback uses)
-        AppState.tempo = newTempo;
+        AppState.tempo = targetTempo;
 
-        // Update UI
+        // Update UI + trigger normal tempo-change path
         if (UI.elements.tempo) {
-            UI.elements.tempo.value = newTempo;
-            // Trigger the same code path as manual tempo changes, without relying on duplicate logic
+            UI.elements.tempo.value = targetTempo;
             UI.elements.tempo.dispatchEvent(new Event('input', { bubbles: true }));
         }
         if (UI.elements.tempoDisplay) {
-            UI.elements.tempoDisplay.textContent = `${newTempo} BPM`;
+            UI.elements.tempoDisplay.textContent = `${targetTempo} BPM`;
         }
 
-        // Switch metronome sound to drums
-        if (UI.elements.soundType) {
-            UI.elements.soundType.value = "drums";
-            UI.elements.soundType.dispatchEvent(new Event("change", { bubbles: true }));
+        // On enabling Slow Practice, force drums + standard swing (Philly Joe-ish feel)
+        if (AppState.slowPracticeActive) {
+            if (UI.elements.soundType) {
+                UI.elements.soundType.value = "drums";
+                UI.elements.soundType.dispatchEvent(new Event("change", { bubbles: true }));
+            }
+
+            const rhythmicStyleSelect = document.getElementById('rhythmic-style-select');
+            if (rhythmicStyleSelect) {
+                rhythmicStyleSelect.value = "standardSwing";
+                rhythmicStyleSelect.dispatchEvent(new Event("change", { bubbles: true }));
+            }
+
+            const rhythmicStyleContainer = document.getElementById('rhythmic-style-container');
+            if (rhythmicStyleContainer) rhythmicStyleContainer.style.display = 'inline-flex';
         }
 
-        // Force swing feel
-        const rhythmicStyleSelect = document.getElementById('rhythmic-style-select');
-        if (rhythmicStyleSelect) {
-            rhythmicStyleSelect.value = "standardSwing";
-            rhythmicStyleSelect.dispatchEvent(new Event("change", { bubbles: true }));
+        // Button label hint (doesn't affect legacy behavior)
+        if (UI.elements.slowPracticeBtn) {
+            UI.elements.slowPracticeBtn.textContent = AppState.slowPracticeActive ? "Slow Practice ON" : "Slow Practice";
         }
 
-        // Ensure style UI is visible
-        const rhythmicStyleContainer = document.getElementById('rhythmic-style-container');
-        if (rhythmicStyleContainer) rhythmicStyleContainer.style.display = 'inline-flex';
-
-        // If we are currently playing, restart playback so the scheduler re-computes intervals
+        // If currently playing, restart playback so the scheduler re-computes intervals
         if (AppState.isPlaying) {
             stopPlayback();
             startPlayback();
         }
 
-        log("Slow Practice mode applied: 50 BPM, Drums, Standard Swing.");
+        log(AppState.slowPracticeActive
+            ? "Slow Practice mode ON: 50 BPM, Drums, Standard Swing."
+            : `Slow Practice mode OFF: restored to ${targetTempo} BPM.`);
     } catch (e) {
         console.warn("Slow Practice mode failed:", e);
     }
