@@ -2640,7 +2640,7 @@ runwayTrack: document.getElementById('runway-track'),
             guideTonesToggle: document.getElementById('guide-tones-toggle'),
             strongBeatPulseToggle: document.getElementById('strong-beat-pulse-toggle'),
             sixthDimToggle: document.getElementById('sixth-dim-toggle'),
-            hexToggle: document.getElementById(\'hex-toggle\'),
+            hexToggle: document.getElementById('hex-toggle'),
 anticipateToggle: document.getElementById('anticipate-toggle'),
             anticipateFretboardSection: document.getElementById('anticipate-fretboard-section'),
             anticipateFretboard: document.getElementById('anticipate-fretboard'),
@@ -2652,7 +2652,7 @@ anticipateToggle: document.getElementById('anticipate-toggle'),
             tempoDisplay: document.getElementById('tempo-display'),
             tapTempo: document.getElementById('tap-tempo'),
             startStopButton: document.getElementById('start-stop'),
-            slowPracticeBtn: document.getElementById(\'slow-practice-btn\'),
+            slowPracticeBtn: document.getElementById('slow-practice-btn'),
 metronomeVolumeControlsStack: document.getElementById('metronome-volume-controls-stack'),
             metronomeVolume: document.getElementById('metronome-volume'),
             kickVolumeContainer: document.getElementById('kick-volume-container'),
@@ -5653,7 +5653,7 @@ function setupEventListeners() {
         
     
     if (UI.elements.slowPracticeBtn) UI.elements.slowPracticeBtn.addEventListener('click', applySlowPracticeMode);
-if (UI.elements.slowPracticeBtn) UI.elements.slowPracticeBtn.addEventListener(\'click\', applySlowPracticeMode);
+if (UI.elements.slowPracticeBtn) UI.elements.slowPracticeBtn.addEventListener('click', applySlowPracticeMode);
 // --- Improv Guide Markdown ---
         safeAddEventListener(UI.elements.generateImprovMdButton, 'click', generateAndDownloadImprovGuideMarkdown);
         if (UI.elements.exportNotionButton) {
@@ -5817,7 +5817,7 @@ if (UI.elements.slowPracticeBtn) UI.elements.slowPracticeBtn.addEventListener(\'
         if (UI.elements.sixthDimToggle) {
             UI.elements.sixthDimToggle.addEventListener('click', toggleSixthDim);
             
-    if (UI.elements.hexToggle) UI.elements.hexToggle.addEventListener(\'click\', toggleHexMode);
+    if (UI.elements.hexToggle) UI.elements.hexToggle.addEventListener('click', toggleHexMode);
 if (UI.elements.anticipateToggle) UI.elements.anticipateToggle.addEventListener('click', toggleAnticipateMode);
 }
 if (UI.elements.loopSelectedToggle) {
