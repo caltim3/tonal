@@ -1024,33 +1024,27 @@ body.dark-mode-3 .runway{
     );
 }
 
-.runway-track{
-  display: grid;
-  grid-template-columns: 1.1fr 1.6fr 1.1fr;
-  gap: 14px;
-  align-items: center;
-  justify-items: stretch;
-  overflow: hidden;
-  padding: 4px 2px;
+.runway-track {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
 }
 
-.runway-pill{
-  position: relative;
-  padding: 12px 14px;
-  border-radius: 12px;
-  font-weight: 800;
-  font-size: 22px;
-  line-height: 1;
-  letter-spacing: 0.2px;
-  color: white;
-  user-select: none;
-  opacity: 0.42;
-  filter: grayscale(0.70) saturate(0.70);
-  transform: none;
-  transition: opacity 140ms ease, transform 140ms ease, filter 140ms ease, box-shadow 140ms ease;
-  box-shadow: 0 8px 22px rgba(0,0,0,0.10);
-  border: 1px solid rgba(0,0,0,0.16);
-  text-align: center;
+.runway-pill {
+    width: 160px;           /* fixed width */
+    height: 70px;           /* fixed height */
+    flex: 0 0 160px;        /* prevent stretching */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 14px;
+    font-weight: 800;
+    font-size: 22px;
+
+    color: white;
+    opacity: 0.6;
+    transition: all 0.15s ease;
 }
 
 body.dark-mode .runway-pill,
@@ -1060,15 +1054,13 @@ body.dark-mode-3 .runway-pill{
   box-shadow: 0 10px 24px rgba(0,0,0,0.30);
 }
 
-.runway-pill.is-current{
-  opacity: 1;
-  filter: grayscale(0) saturate(1.05);
-  box-shadow: 0 0 0 3px rgba(255,255,255,0.92), 0 16px 42px rgba(0,0,0,0.26);
+.runway-pill.is-current {
+    opacity: 1;
+    transform: scale(1);
 }
 
-.runway-pill.is-next{
-  opacity: 0.78;
-  filter: grayscale(0.35) saturate(0.85);
+.runway-pill.is-next {
+    opacity: 0.75;
 }
 
 .runway-pill.is-next2{
@@ -1083,15 +1075,15 @@ body.dark-mode-3 .runway-pill{
   right: 10px;
   bottom: 7px;
   height: 4px;
-  border-radius: 999px;
-  background: rgba(0,0,0,0.18);
+  background: transparent;   /* remove gray background */
   overflow: hidden;
 }
+
 .runway-pill.is-current .runway-progress-fill{
   height: 100%;
   width: var(--runway-progress, 0%);
-  border-radius: 999px;
-  background: rgba(0,0,0,0.92);
+  background: #000000;       /* pure black */
+  border-radius: 2px;        /* slight rounding, not bubble-soft */
   transition: width 80ms linear;
 }
 
