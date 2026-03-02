@@ -5649,11 +5649,9 @@ function setupEventListeners() {
 
         // --- Metronome Controls ---
         UI.elements.startStopButton.addEventListener('click', () => AppState.isPlaying ? stopPlayback() : startPlayback());
+    safeAddEventListener(UI.elements.slowPracticeBtn, 'click', applySlowPracticeMode);
 
-        
     
-    if (UI.elements.slowPracticeBtn) UI.elements.slowPracticeBtn.addEventListener('click', applySlowPracticeMode);
-if (UI.elements.slowPracticeBtn) UI.elements.slowPracticeBtn.addEventListener('click', applySlowPracticeMode);
 // --- Improv Guide Markdown ---
         safeAddEventListener(UI.elements.generateImprovMdButton, 'click', generateAndDownloadImprovGuideMarkdown);
         if (UI.elements.exportNotionButton) {
