@@ -3578,6 +3578,15 @@ function getChordNotes(root, quality) {
     return intervals.map(interval => NOTES[(rootIndex + interval + 12) % 12]);
 }
 
+// Alias for legacy/compat: some newer improv-map code expects getChordTones(root, quality).
+// The app historically uses getChordNotes(root, quality) to build chord tones for playback.
+// Keep both names to avoid breaking older or newer code paths.
+function getChordTones(root, quality) {
+    return getChordNotes(root, quality);
+}
+
+
+
 function suggestScaleForQuality(quality) {
     const scaleMap = {
         'maj7': 'major', 'maj': 'major', 'maj6': 'major', 'maj9': 'major', '6/9': 'major',
@@ -6644,8 +6653,14 @@ const __BB_NOTION_VERSION = "2022-06-28";
 const __BB_NOTION_TOKEN_STORAGE_KEY = "bb_notion_integration_token";
 
 function __bb_getNotionTokenInteractive() {
-    // 🔐 HARDCODED NOTION TOKEN
-    return "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";
+    let token = localStorage.getItem(__BB_NOTION_TOKEN_STORAGE_KEY);
+    if (token && token.trim()) return token.trim();
+
+    token = prompt("Paste your Notion integration token (starts with 'secret_' or 'ntn_').\n\nNote: This is stored in your browser localStorage on this device.");
+    if (!token) return null;
+    token = token.trim();
+    localStorage.setItem(__BB_NOTION_TOKEN_STORAGE_KEY, token);
+    return token;
 }
 
 function __bb_mdInlineToRichText(md) {
