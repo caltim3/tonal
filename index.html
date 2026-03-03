@@ -7080,7 +7080,8 @@ async function initializeApp() {
         } else if (UI.elements.progressionSelect.options[0]) { // Fallback if no optgroups
             initialProgressionName = UI.elements.progressionSelect.options[0].value;
         }
-    }
+    });
+
     
     const initialProgData = progressions[initialProgressionName] || {};
     const initialKey = UI.elements.keySelect?.value || initialProgData.defaultKey || "C";
@@ -7090,9 +7091,7 @@ async function initializeApp() {
     setupEventListeners(); // Set up all event listeners
 
     // Attempt to initialize audio
-    try {
-        await AudioContextManager.initialize();
-    } catch (e) {
+    AudioContextManager.initialize().catch((e) => {
         // If audio init fails, show message and allow user to retry with a click
         updateLoadingStatus("Audio initialization failed. Click screen to retry.", true);
         document.body.addEventListener('click', async function retryAudioInit() {
@@ -7107,8 +7106,7 @@ async function initializeApp() {
                 console.error("Audio retry failed:", err);
             }
         }, { once: true });
-    }
-
+    });
     if (AppState.audioInitialized) {
         updateLoadingStatus("Application initialized.", true);
         setTimeout(() => updateLoadingStatus("", false), 1500);
