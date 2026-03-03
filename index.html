@@ -6973,6 +6973,16 @@ async function initializeApp() {
     
 // =========================
 // === PRACTICE TIMERS ======
+
+function __bb_safeLog(msg){
+    try{
+        if (typeof log === 'function') log(msg);
+        else console.log(msg);
+    }catch(e){
+        console.log(msg);
+    }
+}
+
 // =========================
 let __bb_timerInterval = null;
 let __bb_timerEndMs = null;
@@ -7023,7 +7033,7 @@ function startPracticeTimer(minutes, btnEl){
     // Toggle behavior: clicking the running timer cancels it.
     if (__bb_timerActiveBtn === btnEl && __bb_timerInterval) {
         clearPracticeTimer();
-        log(`Practice timer cancelled.`);
+        __bb_safeLog(`Practice timer cancelled.`);
         return;
     }
 
@@ -7045,16 +7055,29 @@ function startPracticeTimer(minutes, btnEl){
         if (remaining <= 0) {
             clearPracticeTimer();
             __bb_stopMetronomeIfRunning();
-            log(`Practice timer finished. Metronome stopped.`);
+            __bb_safeLog(`Practice timer finished. Metronome stopped.`);
         }
     };
 
     tick();
     __bb_timerInterval = setInterval(tick, 250);
-    log(`Practice timer started: ${minutes} minutes.`);
+    __bb_safeLog(`Practice timer started: ${minutes} minutes.`);
 }
 
-UI.init(); // Cache DOM elements first
+// Expose practice timer globally for any legacy listeners
+window.startPracticeTimer = startPracticeTimer;
+
+
+// Delegated clicks so timers work even if metronome controls are re-rendered
+function __bb_practiceTimerDelegation(e){
+    const t = e.target;
+    if (!t) return;
+    if (t.id === 'practice-timer-5') startPracticeTimer(5, t);
+    if (t.id === 'practice-timer-10') startPracticeTimer(10, t);
+}
+document.addEventListener('click', __bb_practiceTimerDelegation);
+
+ // Cache DOM elements first
     
     // Initial UI setup based on default values
     createBeats();
