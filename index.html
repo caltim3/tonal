@@ -1024,33 +1024,27 @@ body.dark-mode-3 .runway{
     );
 }
 
-.runway-track{
-  display: grid;
-  grid-template-columns: 1.1fr 1.6fr 1.1fr;
-  gap: 14px;
-  align-items: center;
-  justify-items: stretch;
-  overflow: hidden;
-  padding: 4px 2px;
+.runway-track {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
 }
 
-.runway-pill{
-  position: relative;
-  padding: 12px 14px;
-  border-radius: 12px;
-  font-weight: 800;
-  font-size: 22px;
-  line-height: 1;
-  letter-spacing: 0.2px;
-  color: white;
-  user-select: none;
-  opacity: 0.42;
-  filter: grayscale(0.70) saturate(0.70);
-  transform: none;
-  transition: opacity 140ms ease, transform 140ms ease, filter 140ms ease, box-shadow 140ms ease;
-  box-shadow: 0 8px 22px rgba(0,0,0,0.10);
-  border: 1px solid rgba(0,0,0,0.16);
-  text-align: center;
+.runway-pill {
+    width: 160px;           /* fixed width */
+    height: 70px;           /* fixed height */
+    flex: 0 0 160px;        /* prevent stretching */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 14px;
+    font-weight: 800;
+    font-size: 22px;
+
+    color: white;
+    opacity: 0.6;
+    transition: all 0.15s ease;
 }
 
 body.dark-mode .runway-pill,
@@ -1060,15 +1054,13 @@ body.dark-mode-3 .runway-pill{
   box-shadow: 0 10px 24px rgba(0,0,0,0.30);
 }
 
-.runway-pill.is-current{
-  opacity: 1;
-  filter: grayscale(0) saturate(1.05);
-  box-shadow: 0 0 0 3px rgba(255,255,255,0.92), 0 16px 42px rgba(0,0,0,0.26);
+.runway-pill.is-current {
+    opacity: 1;
+    transform: scale(1);
 }
 
-.runway-pill.is-next{
-  opacity: 0.78;
-  filter: grayscale(0.35) saturate(0.85);
+.runway-pill.is-next {
+    opacity: 0.75;
 }
 
 .runway-pill.is-next2{
@@ -1083,36 +1075,18 @@ body.dark-mode-3 .runway-pill{
   right: 10px;
   bottom: 7px;
   height: 4px;
-  border-radius: 999px;
-  background: rgba(0,0,0,0.18);
+  background: transparent;   /* remove gray background */
   overflow: hidden;
 }
+
 .runway-pill.is-current .runway-progress-fill{
   height: 100%;
   width: var(--runway-progress, 0%);
-  border-radius: 999px;
-  background: rgba(0,0,0,0.92);
+  background: #000000;       /* pure black */
+  border-radius: 2px;        /* slight rounding, not bubble-soft */
   transition: width 80ms linear;
 }
 
-
-
-/* Practice timer buttons */
-.practice-timer-btn{
-  min-width: 110px;
-  font-weight: 800;
-}
-.practice-timer-btn.is-running{
-  background-color: rgba(0,0,0,0.12) !important;
-  color: inherit !important;
-  border: 2px solid rgba(0,0,0,0.18) !important;
-}
-body.dark-mode .practice-timer-btn.is-running,
-body.dark-mode-2 .practice-timer-btn.is-running,
-body.dark-mode-3 .practice-timer-btn.is-running{
-  background-color: rgba(255,255,255,0.10) !important;
-  border-color: rgba(255,255,255,0.18) !important;
-}
 
 </style>
 <style data-emotion="css" data-s=""></style><style data-emotion="css" data-s=""></style><style data-emotion="css" data-s=""></style><style data-emotion="css" data-s=""></style></head>
@@ -1202,8 +1176,6 @@ body.dark-mode-3 .practice-timer-btn.is-running{
 <button aria-label="Tap tempo" id="tap-tempo">Tap Tempo</button>
 <button aria-label="Start or stop metronome" id="start-stop">Start</button>
 <button id="slow-practice-btn" class="danger slow-practice-btn" aria-label="Set slow practice mode">Slow Practice</button>
-<button id="practice-timer-5" class="secondary practice-timer-btn" aria-label="Start 5 minute practice timer">5 minutes</button>
-<button id="practice-timer-10" class="secondary practice-timer-btn" aria-label="Start 10 minute practice timer">10 minutes</button>
 </div>
 <!-- MODIFIED: Collapsible Metronome Volume Controls -->
 <div class="collapsible-section">
@@ -2715,9 +2687,7 @@ anticipateToggle: document.getElementById('anticipate-toggle'),
             tapTempo: document.getElementById('tap-tempo'),
             startStopButton: document.getElementById('start-stop'),
             slowPracticeBtn: document.getElementById('slow-practice-btn'),
-practiceTimer5Btn: document.getElementById('practice-timer-5'),
-        practiceTimer10Btn: document.getElementById('practice-timer-10'),
-        metronomeVolumeControlsStack: document.getElementById('metronome-volume-controls-stack'),
+metronomeVolumeControlsStack: document.getElementById('metronome-volume-controls-stack'),
             metronomeVolume: document.getElementById('metronome-volume'),
             kickVolumeContainer: document.getElementById('kick-volume-container'),
             kickVolume: document.getElementById('kick-volume'),
@@ -6966,101 +6936,6 @@ async function exportImprovMapToNotion() {
 
 
 
-async 
-// =========================
-// === PRACTICE TIMERS ======
-// =========================
-(function(){
-  let timerInterval = null;
-  let timerEndMs = null;
-  let activeBtn = null;
-  let defaultText = null;
-
-  function safeLog(msg){
-    try{
-      if (typeof log === 'function') log(msg);
-      else console.log(msg);
-    }catch(e){}
-  }
-
-  function formatMMSS(totalSeconds){
-    const m = Math.floor(totalSeconds / 60);
-    const s = totalSeconds % 60;
-    return `${m}:${String(s).padStart(2,'0')}`;
-  }
-
-  function stopPlaybackSafely(){
-    try{
-      if (typeof stopPlayback === 'function') { stopPlayback(); return; }
-    }catch(e){}
-    try{
-      const btn = (window.UI && UI.elements && UI.elements.startStopButton) || document.getElementById('start-stop');
-      if (!btn) return;
-      const label = (btn.textContent || '').toLowerCase();
-      if (label.includes('stop')) btn.click();
-    }catch(e){}
-  }
-
-  function clearTimer(){
-    if (timerInterval){
-      clearInterval(timerInterval);
-      timerInterval = null;
-    }
-    timerEndMs = null;
-    if (activeBtn){
-      activeBtn.classList.remove('is-running');
-      activeBtn.textContent = defaultText || activeBtn.textContent;
-      activeBtn = null;
-      defaultText = null;
-    }
-  }
-
-  function startPracticeTimer(minutes, btnEl){
-    if (!btnEl) return;
-
-    // Toggle cancel
-    if (activeBtn === btnEl && timerInterval){
-      clearTimer();
-      safeLog('[Bebop Blueprint Debug] Practice timer cancelled.');
-      return;
-    }
-
-    clearTimer();
-
-    activeBtn = btnEl;
-    defaultText = btnEl.textContent;
-
-    timerEndMs = Date.now() + Math.round(minutes * 60) * 1000;
-    btnEl.classList.add('is-running');
-
-    const tick = () => {
-      const remaining = Math.max(0, Math.ceil((timerEndMs - Date.now()) / 1000));
-      btnEl.textContent = formatMMSS(remaining);
-      if (remaining <= 0){
-        clearTimer();
-        stopPlaybackSafely();
-        safeLog('[Bebop Blueprint Debug] Practice timer finished. Playback stopped.');
-      }
-    };
-
-    tick();
-    timerInterval = setInterval(tick, 250);
-    safeLog(`[Bebop Blueprint Debug] Practice timer started: ${minutes} minutes.`);
-  }
-
-  // Export globally so existing listeners can call it
-  window.startPracticeTimer = startPracticeTimer;
-  window.clearPracticeTimer = clearTimer;
-
-  // Delegation so it survives UI rebuilds
-  document.addEventListener('click', (e) => {
-    const t = e.target;
-    if (!t) return;
-    if (t.id === 'practice-timer-5') startPracticeTimer(5, t);
-    if (t.id === 'practice-timer-10') startPracticeTimer(10, t);
-  });
-})();
-
 async function initializeApp() {
     UI.init(); // Cache DOM elements first
     
@@ -7080,8 +6955,7 @@ async function initializeApp() {
         } else if (UI.elements.progressionSelect.options[0]) { // Fallback if no optgroups
             initialProgressionName = UI.elements.progressionSelect.options[0].value;
         }
-    });
-
+    }
     
     const initialProgData = progressions[initialProgressionName] || {};
     const initialKey = UI.elements.keySelect?.value || initialProgData.defaultKey || "C";
@@ -7091,7 +6965,9 @@ async function initializeApp() {
     setupEventListeners(); // Set up all event listeners
 
     // Attempt to initialize audio
-    AudioContextManager.initialize().catch((e) => {
+    try {
+        await AudioContextManager.initialize();
+    } catch (e) {
         // If audio init fails, show message and allow user to retry with a click
         updateLoadingStatus("Audio initialization failed. Click screen to retry.", true);
         document.body.addEventListener('click', async function retryAudioInit() {
@@ -7106,7 +6982,8 @@ async function initializeApp() {
                 console.error("Audio retry failed:", err);
             }
         }, { once: true });
-    });
+    }
+
     if (AppState.audioInitialized) {
         updateLoadingStatus("Application initialized.", true);
         setTimeout(() => updateLoadingStatus("", false), 1500);
