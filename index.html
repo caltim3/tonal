@@ -1099,19 +1099,19 @@ body.dark-mode-3 .runway-pill{
 
 /* Practice timer buttons */
 .practice-timer-btn{
-    min-width: 110px;
-    font-weight: 800;
+  min-width: 110px;
+  font-weight: 800;
 }
 .practice-timer-btn.is-running{
-    background-color: rgba(0,0,0,0.12) !important;
-    color: inherit !important;
-    border: 2px solid rgba(0,0,0,0.18) !important;
+  background-color: rgba(0,0,0,0.12) !important;
+  color: inherit !important;
+  border: 2px solid rgba(0,0,0,0.18) !important;
 }
 body.dark-mode .practice-timer-btn.is-running,
 body.dark-mode-2 .practice-timer-btn.is-running,
 body.dark-mode-3 .practice-timer-btn.is-running{
-    background-color: rgba(255,255,255,0.10) !important;
-    border-color: rgba(255,255,255,0.18) !important;
+  background-color: rgba(255,255,255,0.10) !important;
+  border-color: rgba(255,255,255,0.18) !important;
 }
 
 </style>
@@ -5775,10 +5775,7 @@ function setupEventListeners() {
 
         // --- Metronome Controls ---
         UI.elements.startStopButton.addEventListener('click', () => AppState.isPlaying ? stopPlayback() : startPlayback());
-    
-    if (UI.elements.practiceTimer5Btn) UI.elements.practiceTimer5Btn.addEventListener('click', () => startPracticeTimer(5, UI.elements.practiceTimer5Btn));
-    if (UI.elements.practiceTimer10Btn) UI.elements.practiceTimer10Btn.addEventListener('click', () => startPracticeTimer(10, UI.elements.practiceTimer10Btn));
-safeAddEventListener(UI.elements.slowPracticeBtn, 'click', applySlowPracticeMode);
+    safeAddEventListener(UI.elements.slowPracticeBtn, 'click', applySlowPracticeMode);
 
     
 // --- Improv Guide Markdown ---
@@ -6969,115 +6966,103 @@ async function exportImprovMapToNotion() {
 
 
 
-async function initializeApp() {
-    
+async 
 // =========================
 // === PRACTICE TIMERS ======
-
-function __bb_safeLog(msg){
-    try{
-        if (typeof log === 'function') log(msg);
-        else console.log(msg);
-    }catch(e){
-        console.log(msg);
-    }
-}
-
 // =========================
-let __bb_timerInterval = null;
-let __bb_timerEndMs = null;
-let __bb_timerActiveBtn = null;
-let __bb_timerDefaultText = null;
+(function(){
+  let timerInterval = null;
+  let timerEndMs = null;
+  let activeBtn = null;
+  let defaultText = null;
 
-function __bb_formatTimeMMSS(totalSeconds){
+  function safeLog(msg){
+    try{
+      if (typeof log === 'function') log(msg);
+      else console.log(msg);
+    }catch(e){}
+  }
+
+  function formatMMSS(totalSeconds){
     const m = Math.floor(totalSeconds / 60);
     const s = totalSeconds % 60;
     return `${m}:${String(s).padStart(2,'0')}`;
-}
+  }
 
-function __bb_stopMetronomeIfRunning(){
-    // Prefer a direct stop if your app exposes it, otherwise click Start/Stop button.
+  function stopPlaybackSafely(){
     try{
-        if (typeof AppState !== 'undefined' && AppState && (AppState.isPlaying || AppState.playing)) {
-            if (typeof stopPlayback === 'function') {
-                stopPlayback();
-                return;
-            }
-        }
+      if (typeof stopPlayback === 'function') { stopPlayback(); return; }
     }catch(e){}
-
-    // Fallback: if the start button currently says "Stop", click it.
     try{
-        const btn = UI?.elements?.startStopButton || document.getElementById('start-stop');
-        if (!btn) return;
-        const label = (btn.textContent || '').toLowerCase();
-        if (label.includes('stop')) btn.click();
+      const btn = (window.UI && UI.elements && UI.elements.startStopButton) || document.getElementById('start-stop');
+      if (!btn) return;
+      const label = (btn.textContent || '').toLowerCase();
+      if (label.includes('stop')) btn.click();
     }catch(e){}
-}
+  }
 
-function clearPracticeTimer(){
-    if (__bb_timerInterval) {
-        clearInterval(__bb_timerInterval);
-        __bb_timerInterval = null;
+  function clearTimer(){
+    if (timerInterval){
+      clearInterval(timerInterval);
+      timerInterval = null;
     }
-    __bb_timerEndMs = null;
-    if (__bb_timerActiveBtn) {
-        __bb_timerActiveBtn.classList.remove('is-running');
-        __bb_timerActiveBtn.textContent = __bb_timerDefaultText || __bb_timerActiveBtn.textContent;
-        __bb_timerActiveBtn = null;
-        __bb_timerDefaultText = null;
+    timerEndMs = null;
+    if (activeBtn){
+      activeBtn.classList.remove('is-running');
+      activeBtn.textContent = defaultText || activeBtn.textContent;
+      activeBtn = null;
+      defaultText = null;
     }
-}
+  }
 
-function startPracticeTimer(minutes, btnEl){
-    // Toggle behavior: clicking the running timer cancels it.
-    if (__bb_timerActiveBtn === btnEl && __bb_timerInterval) {
-        clearPracticeTimer();
-        __bb_safeLog(`Practice timer cancelled.`);
-        return;
+  function startPracticeTimer(minutes, btnEl){
+    if (!btnEl) return;
+
+    // Toggle cancel
+    if (activeBtn === btnEl && timerInterval){
+      clearTimer();
+      safeLog('[Bebop Blueprint Debug] Practice timer cancelled.');
+      return;
     }
 
-    // If another timer is running, replace it.
-    clearPracticeTimer();
+    clearTimer();
 
-    __bb_timerActiveBtn = btnEl;
-    __bb_timerDefaultText = btnEl.textContent;
+    activeBtn = btnEl;
+    defaultText = btnEl.textContent;
 
-    const totalSeconds = Math.round(minutes * 60);
-    __bb_timerEndMs = Date.now() + totalSeconds * 1000;
-
+    timerEndMs = Date.now() + Math.round(minutes * 60) * 1000;
     btnEl.classList.add('is-running');
 
     const tick = () => {
-        const remaining = Math.max(0, Math.ceil((__bb_timerEndMs - Date.now()) / 1000));
-        btnEl.textContent = __bb_formatTimeMMSS(remaining);
-
-        if (remaining <= 0) {
-            clearPracticeTimer();
-            __bb_stopMetronomeIfRunning();
-            __bb_safeLog(`Practice timer finished. Metronome stopped.`);
-        }
+      const remaining = Math.max(0, Math.ceil((timerEndMs - Date.now()) / 1000));
+      btnEl.textContent = formatMMSS(remaining);
+      if (remaining <= 0){
+        clearTimer();
+        stopPlaybackSafely();
+        safeLog('[Bebop Blueprint Debug] Practice timer finished. Playback stopped.');
+      }
     };
 
     tick();
-    __bb_timerInterval = setInterval(tick, 250);
-    __bb_safeLog(`Practice timer started: ${minutes} minutes.`);
-}
+    timerInterval = setInterval(tick, 250);
+    safeLog(`[Bebop Blueprint Debug] Practice timer started: ${minutes} minutes.`);
+  }
 
-// Expose practice timer globally for any legacy listeners
-window.startPracticeTimer = startPracticeTimer;
+  // Export globally so existing listeners can call it
+  window.startPracticeTimer = startPracticeTimer;
+  window.clearPracticeTimer = clearTimer;
 
-
-// Delegated clicks so timers work even if metronome controls are re-rendered
-function __bb_practiceTimerDelegation(e){
+  // Delegation so it survives UI rebuilds
+  document.addEventListener('click', (e) => {
     const t = e.target;
     if (!t) return;
     if (t.id === 'practice-timer-5') startPracticeTimer(5, t);
     if (t.id === 'practice-timer-10') startPracticeTimer(10, t);
-}
-document.addEventListener('click', __bb_practiceTimerDelegation);
+  });
+})();
 
- // Cache DOM elements first
+function initializeApp() {
+    UI.init(); // Cache DOM elements first
     
     // Initial UI setup based on default values
     createBeats();
