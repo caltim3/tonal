@@ -1359,23 +1359,24 @@ body.dark-mode-3 .runway-pill{
          </div>
 
 <div class="control-group">
-<label for="comping-style-select">Comping Style</label>
-<select id="comping-style-select" aria-label="Select comping style">
-<option value="legacy_single">Legacy (Single Hit)</option>
-<option value="tommy_flanagan">Tommy Flanagan</option>
-<option value="wynton_kelly">Wynton Kelly</option>
-<option value="red_garland">Red Garland</option>
-<option value="herbie_hancock">Herbie Hancock</option>
-<option value="bill_evans">Bill Evans</option>
-<option value="mccoy_tyner">McCoy Tyner</option>
-<option value="thelonious_monk">Thelonious Monk</option>
-<option value="oscar_peterson">Oscar Peterson</option>
-<option value="ahmad_jamal">Ahmad Jamal</option>
-<option value="brad_mehldau">Brad Mehldau</option>
-<option value="art_tatum">Art Tatum</option>
-<option value="keith_jarrett">Keith Jarrett</option>
-</select>
+  <label for="comp-style-select">Piano Comping</label>
+  <select id="comp-style-select" style="min-width: 220px;">
+    <option value="winton_kelly" selected>Wynton Kelly</option>
+    <option value="red_garland">Red Garland</option>
+    <option value="tommy_flanagan">Tommy Flanagan</option>
+    <option value="herbie_hancock">Herbie Hancock</option>
+    <option value="bill_evans">Bill Evans</option>
+    <option value="mccoy_tyner">McCoy Tyner</option>
+    <option value="thelonious_monk">Thelonious Monk</option>
+    <option value="oscar_peterson">Oscar Peterson</option>
+    <option value="ahmad_jamal">Ahmad Jamal</option>
+    <option value="brad_mehldau">Brad Mehldau</option>
+    <option value="art_tatum">Art Tatum</option>
+    <option value="keith_jarrett">Keith Jarrett</option>
+    <option value="legacy_single">Legacy (Current)</option>
+  </select>
 </div>
+
 </div>
 <div class="app-section" id="fretflow-section">
 <h2>FretFlow</h2>
@@ -2573,6 +2574,7 @@ loopingActive: false,
     loopStartMeasure: -1,
     loopEndMeasure: -1,
     currentRhythmicStyle: "standardSwing", // NEW: Default style
+    currentCompingStyle: "winton_kelly", // NEW: Piano comping style
     currentStylePatternBeat: 0,        // NEW: Index within the *style's* pattern
     currentStyleBar: 0,                // NEW: For multi-bar patterns like Clave (0 or 1)
     listeners: [], 
@@ -2722,9 +2724,9 @@ metronomeVolumeControlsStack: document.getElementById('metronome-volume-controls
             saveProgressionButton: document.getElementById('save-progression-button'),
             chordsEnabled: document.getElementById('chordsEnabled'),
             chordVolume: document.getElementById('chord-volume'),
-            compingStyleSelect: document.getElementById('comping-style-select'),
             reverbDial: document.getElementById('reverb-dial'),
             reverbDialValue: document.getElementById('reverb-dial-value'),
+            compStyleSelect: document.getElementById('comp-style-select'),
             darkModeToggle: document.getElementById('dark-mode-toggle'),
             loadingIndicator: document.getElementById('loading-indicator'),
             rhythmicStyleContainer: document.getElementById('rhythmic-style-container'),
@@ -3457,265 +3459,39 @@ function getBestVoicing_VoiceLed(baseNotesInRootPosition, quality,
     }
 }
 
-// ==================================
-// === PIANO COMPING STYLE ENGINE  ===
-// ==================================
-const COMPING_STYLES = {
-    legacy_single: {
-        displayName: "Legacy (Single Hit)",
-        density: 1,
-        omitRootProb: 0.0,
-        variationProb: 0.0,
-        pattern4: [{ t: 0.0, vel: 1.0, type: "chord" }],
-        pattern2: [{ t: 0.0, vel: 1.0, type: "chord" }]
-    },
-    tommy_flanagan: {
-        displayName: "Tommy Flanagan",
-        density: 2,
-        omitRootProb: 0.25,
-        variationProb: 0.35,
-        pattern4: [{ t: 0.0, vel: 1.0, type: "chord" }, { t: 2.0, vel: 0.75, type: "chord" }],
-        pattern2: [{ t: 0.0, vel: 1.0, type: "chord" }]
-    },
-    wynton_kelly: {
-        displayName: "Wynton Kelly",
-        density: 3,
-        omitRootProb: 0.35,
-        variationProb: 0.45,
-        pattern4: [{ t: 0.0, vel: 1.0, type: "chord" }, { t: 1.5, vel: 0.70, type: "chord" }, { t: 3.0, vel: 0.80, type: "chord" }],
-        pattern2: [{ t: 0.0, vel: 1.0, type: "chord" }, { t: 1.0, vel: 0.75, type: "chord" }]
-    },
-    red_garland: {
-        displayName: "Red Garland",
-        density: 3,
-        omitRootProb: 0.15,
-        variationProb: 0.30,
-        pattern4: [{ t: 0.0, vel: 1.0, type: "chord" }, { t: 1.0, vel: 0.65, type: "chord" }, { t: 3.0, vel: 0.78, type: "chord" }],
-        pattern2: [{ t: 0.0, vel: 1.0, type: "chord" }]
-    },
-    herbie_hancock: {
-        displayName: "Herbie Hancock",
-        density: 3,
-        omitRootProb: 0.60,
-        variationProb: 0.70,
-        addTensionProb: 0.70,
-        pattern4: [{ t: 0.0, vel: 1.0, type: "chord" }, { t: 1.75, vel: 0.70, type: "chord" }, { t: 3.25, vel: 0.75, type: "chord" }],
-        pattern2: [{ t: 0.0, vel: 1.0, type: "chord" }, { t: 1.5, vel: 0.70, type: "chord" }]
-    },
-    bill_evans: {
-        displayName: "Bill Evans",
-        density: 2,
-        omitRootProb: 0.75,
-        variationProb: 0.55,
-        addTensionProb: 0.85,
-        pattern4: [{ t: 0.0, vel: 0.95, type: "chord" }, { t: 2.0, vel: 0.70, type: "chord" }],
-        pattern2: [{ t: 0.0, vel: 0.95, type: "chord" }]
-    },
-    mccoy_tyner: {
-        displayName: "McCoy Tyner",
-        density: 2,
-        omitRootProb: 0.10,
-        variationProb: 0.55,
-        quartalProb: 0.95,
-        pattern4: [{ t: 0.0, vel: 1.0, type: "chord" }, { t: 2.0, vel: 0.85, type: "chord" }],
-        pattern2: [{ t: 0.0, vel: 1.0, type: "chord" }]
-    },
-    thelonious_monk: {
-        displayName: "Thelonious Monk",
-        density: 2,
-        omitRootProb: 0.20,
-        variationProb: 0.75,
-        monkClusterProb: 0.60,
-        pattern4: [{ t: 0.0, vel: 1.0, type: "chord" }, { t: 2.5, vel: 0.65, type: "chord" }],
-        pattern2: [{ t: 0.0, vel: 1.0, type: "chord" }]
-    },
-    oscar_peterson: {
-        displayName: "Oscar Peterson",
-        density: 4,
-        omitRootProb: 0.20,
-        variationProb: 0.40,
-        pattern4: [{ t: 0.0, vel: 1.0, type: "bass" }, { t: 0.5, vel: 0.90, type: "chord" }, { t: 2.0, vel: 0.85, type: "bass" }, { t: 2.5, vel: 0.80, type: "chord" }],
-        pattern2: [{ t: 0.0, vel: 1.0, type: "bass" }, { t: 0.5, vel: 0.85, type: "chord" }]
-    },
-    ahmad_jamal: {
-        displayName: "Ahmad Jamal",
-        density: 1,
-        omitRootProb: 0.80,
-        variationProb: 0.50,
-        addTensionProb: 0.65,
-        pattern4: [{ t: 0.0, vel: 0.85, type: "chord" }],
-        pattern2: [{ t: 0.0, vel: 0.85, type: "chord" }]
-    },
-    brad_mehldau: {
-        displayName: "Brad Mehldau",
-        density: 3,
-        omitRootProb: 0.70,
-        variationProb: 0.80,
-        addTensionProb: 0.85,
-        pattern4: [{ t: 0.0, vel: 0.95, type: "chord" }, { t: 1.25, vel: 0.65, type: "chord" }, { t: 3.0, vel: 0.75, type: "chord" }],
-        pattern2: [{ t: 0.0, vel: 0.95, type: "chord" }, { t: 1.0, vel: 0.70, type: "chord" }]
-    },
-    art_tatum: {
-        displayName: "Art Tatum",
-        density: 4,
-        omitRootProb: 0.10,
-        variationProb: 0.70,
-        addTensionProb: 0.80,
-        pattern4: [{ t: 0.0, vel: 1.0, type: "bass" }, { t: 0.5, vel: 0.95, type: "chord" }, { t: 1.5, vel: 0.75, type: "chord" }, { t: 2.0, vel: 0.85, type: "bass" }, { t: 2.5, vel: 0.90, type: "chord" }, { t: 3.5, vel: 0.75, type: "chord" }],
-        pattern2: [{ t: 0.0, vel: 1.0, type: "bass" }, { t: 0.5, vel: 0.95, type: "chord" }, { t: 1.5, vel: 0.75, type: "chord" }]
-    },
-    keith_jarrett: {
-        displayName: "Keith Jarrett",
-        density: 3,
-        omitRootProb: 0.60,
-        variationProb: 0.85,
-        addTensionProb: 0.70,
-        pattern4: [{ t: 0.0, vel: 0.95, type: "chord" }, { t: 1.75, vel: 0.60, type: "chord" }, { t: 2.5, vel: 0.55, type: "chord" }],
-        pattern2: [{ t: 0.0, vel: 0.95, type: "chord" }, { t: 1.25, vel: 0.60, type: "chord" }]
-    }
-};
 
-function clamp(n, lo, hi) {
-    return Math.max(lo, Math.min(hi, n));
+function getCompingHitPlan(style, timeSigNum, isFullMeasure) {
+    // Fractions are measured across the chord's duration (0.0 = start, 0.5 = middle, 0.75 = beat 4 in 4/4).
+    // Keep it conservative: these are "feels", not sacred transcriptions.
+    if (!isFullMeasure) return [{ t: 0.0, vel: 1.0, len: 1.0 }];
+
+    const plans = {
+        legacy_single: [{ t: 0.0, vel: 1.0, len: 1.0 }, { t: 0.5, vel: 0.85, len: 0.5 }],
+        winton_kelly:  [{ t: 0.0, vel: 1.0, len: 1.0 }, { t: 0.5, vel: 0.85, len: 0.55 }, { t: 0.75, vel: 0.6, len: 0.35 }],
+        red_garland:   [{ t: 0.0, vel: 1.0, len: 1.0 }, { t: 0.5, vel: 0.9, len: 0.5 }],
+        tommy_flanagan:[{ t: 0.0, vel: 0.95, len: 1.0 }, { t: 0.5, vel: 0.75, len: 0.5 }, { t: 0.875, vel: 0.55, len: 0.25 }],
+        herbie_hancock:[{ t: 0.0, vel: 0.9, len: 0.9 }, { t: 0.375, vel: 0.7, len: 0.35 }, { t: 0.75, vel: 0.65, len: 0.35 }],
+        bill_evans:    [{ t: 0.0, vel: 0.75, len: 0.8 }, { t: 0.375, vel: 0.6, len: 0.35 }, { t: 0.625, vel: 0.55, len: 0.35 }],
+        mccoy_tyner:   [{ t: 0.0, vel: 1.0, len: 0.9 }, { t: 0.5, vel: 0.95, len: 0.6 }],
+        thelonious_monk:[{ t: 0.0, vel: 0.95, len: 0.55 }, { t: 0.375, vel: 0.8, len: 0.25 }],
+        oscar_peterson:[{ t: 0.0, vel: 1.0, len: 0.9 }, { t: 0.25, vel: 0.7, len: 0.25 }, { t: 0.5, vel: 0.85, len: 0.35 }, { t: 0.75, vel: 0.6, len: 0.25 }],
+        ahmad_jamal:   [{ t: 0.0, vel: 0.9, len: 0.85 }, { t: 0.75, vel: 0.55, len: 0.25 }],
+        brad_mehldau:  [{ t: 0.0, vel: 0.85, len: 0.85 }, { t: 0.375, vel: 0.65, len: 0.30 }, { t: 0.875, vel: 0.55, len: 0.22 }],
+        art_tatum:     [{ t: 0.0, vel: 1.0, len: 0.9 }, { t: 0.25, vel: 0.8, len: 0.25 }, { t: 0.5, vel: 0.9, len: 0.25 }, { t: 0.75, vel: 0.75, len: 0.25 }],
+        keith_jarrett: [{ t: 0.0, vel: 0.9, len: 0.85 }, { t: 0.375, vel: 0.7, len: 0.3 }, { t: 0.625, vel: 0.65, len: 0.25 }],
+    };
+
+    const plan = plans[style] || plans.legacy_single;
+
+    // If not 4/4, fall back to something sensible (avoid weird fractional syncopation)
+    if (timeSigNum !== 4) {
+        return [{ t: 0.0, vel: plan[0].vel || 1.0, len: plan[0].len || 1.0 }, { t: 0.5, vel: 0.8, len: 0.5 }];
+    }
+
+    return plan;
 }
 
-function __bb_addPitchClass(rootPC, semitoneOffset) {
-    const idx = NOTES_CHROMATIC.indexOf(standardizeNoteName(rootPC));
-    if (idx === -1) return rootPC;
-    return NOTES_CHROMATIC[(idx + semitoneOffset + 120) % 12];
-}
-
-function __bb_uniquePitchClasses(noteNames) {
-    const seen = new Set();
-    const out = [];
-    (noteNames || []).forEach(n => {
-        const pc = standardizeNoteName(n);
-        if (!pc) return;
-        if (!seen.has(pc)) { seen.add(pc); out.push(pc); }
-    });
-    return out;
-}
-
-function __bb_realizePitchClassesToOctaves(pitchClasses, targetOctaves) {
-    const pcs = __bb_uniquePitchClasses(pitchClasses);
-    if (pcs.length === 0) return [];
-
-    const lowOct = targetOctaves[0];
-    const highOct = targetOctaves[targetOctaves.length - 1];
-
-    const pcsSorted = pcs.slice().sort((a, b) => NOTES_CHROMATIC.indexOf(standardizeNoteName(a)) - NOTES_CHROMATIC.indexOf(standardizeNoteName(b)));
-
-    let realized = [];
-    let currentOct = lowOct;
-    let prevMidi = -9999;
-
-    pcsSorted.forEach((pc) => {
-        let midi = (currentOct * 12) + NOTES_CHROMATIC.indexOf(standardizeNoteName(pc));
-        while (midi <= prevMidi && currentOct < highOct) {
-            currentOct += 1;
-            midi = (currentOct * 12) + NOTES_CHROMATIC.indexOf(standardizeNoteName(pc));
-        }
-        if (currentOct > highOct) currentOct = highOct;
-        midi = (currentOct * 12) + NOTES_CHROMATIC.indexOf(standardizeNoteName(pc));
-        realized.push(`${standardizeNoteName(pc)}${currentOct}`);
-        prevMidi = midi;
-    });
-
-    return realized;
-}
-
-function __bb_pickCompPattern(styleKey, beatsInChord) {
-    const style = COMPING_STYLES[styleKey] || COMPING_STYLES.legacy_single;
-    const base = beatsInChord >= 4 ? (style.pattern4 || COMPING_STYLES.legacy_single.pattern4)
-                                  : (style.pattern2 || COMPING_STYLES.legacy_single.pattern2);
-    const filtered = (base || []).filter(e => e && typeof e.t === "number" && e.t < Math.max(0.01, beatsInChord - 0.05));
-    return filtered.length ? filtered : [{ t: 0.0, vel: 1.0, type: "chord" }];
-}
-
-function __bb_makeBassNote(root, quality) {
-    const rootPC = standardizeNoteName(root);
-    const useFifth = (quality || "").includes("7") && Math.random() < 0.25;
-    const pc = useFifth ? __bb_addPitchClass(rootPC, 7) : rootPC;
-    return [`${pc}2`];
-}
-
-function __bb_applyStyleToChordVoicing(styleKey, baseNotesInRootPosition, quality, voicingNotesWithOctaves, isRhythmicHit) {
-    const style = COMPING_STYLES[styleKey] || COMPING_STYLES.legacy_single;
-    let out = (voicingNotesWithOctaves || []).slice();
-
-    if (style.quartalProb && Math.random() < style.quartalProb) {
-        const r = standardizeNoteName(baseNotesInRootPosition[0] || "C");
-        let pcs = [];
-        if ((quality || "").includes("m") && !(quality || "").includes("maj")) {
-            pcs = [r, __bb_addPitchClass(r, 5), __bb_addPitchClass(r, 10), __bb_addPitchClass(r, 3)];
-        } else if ((quality || "").includes("7")) {
-            pcs = [__bb_addPitchClass(r, 5), __bb_addPitchClass(r, 10), __bb_addPitchClass(r, 3), __bb_addPitchClass(r, 8)];
-        } else {
-            pcs = [__bb_addPitchClass(r, 4), __bb_addPitchClass(r, 9), __bb_addPitchClass(r, 2), __bb_addPitchClass(r, 7)];
-        }
-        out = __bb_realizePitchClassesToOctaves(pcs, [2, 3]);
-    }
-
-    if (style.monkClusterProb && Math.random() < style.monkClusterProb) {
-        if (out.length >= 3) {
-            const idx = clamp(1 + Math.floor(Math.random() * (out.length - 2)), 1, out.length - 2);
-            const pc = out[idx].replace(/\d/, "");
-            const oct = parseInt(out[idx].match(/(\d)$/)?.[1] || "3");
-            const neighbor = Math.random() < 0.5 ? __bb_addPitchClass(pc, 1) : __bb_addPitchClass(pc, -1);
-            out.push(`${neighbor}${oct}`);
-        }
-    }
-
-    if (out.length >= 3 && style.omitRootProb && Math.random() < style.omitRootProb) {
-        const rootPC = standardizeNoteName(baseNotesInRootPosition[0] || "");
-        out = out.filter(n => standardizeNoteName(n.replace(/\d/, "")) !== rootPC);
-        if (out.length < 2) out = (voicingNotesWithOctaves || []).slice();
-    }
-
-    const addTensionProb = style.addTensionProb || 0;
-    if (addTensionProb > 0 && Math.random() < addTensionProb) {
-        const r = standardizeNoteName(baseNotesInRootPosition[0] || "C");
-        const nine = __bb_addPitchClass(r, 2);
-        const thirteen = __bb_addPitchClass(r, 9);
-        const targetOct = 3;
-        if (!out.some(n => standardizeNoteName(n.replace(/\d/, "")) === nine)) out.push(`${nine}${targetOct}`);
-        if (Math.random() < 0.35 && !out.some(n => standardizeNoteName(n.replace(/\d/, "")) === thirteen)) out.push(`${thirteen}${targetOct}`);
-    }
-
-    out = out.filter(Boolean);
-    if (out.length > 5) {
-        out.sort((a, b) => getMidiNoteNumber(a) - getMidiNoteNumber(b));
-        out = out.slice(0, 5);
-    }
-    if (style.density === 1) {
-        out.sort((a, b) => getMidiNoteNumber(a) - getMidiNoteNumber(b));
-        out = out.slice(0, 3);
-    }
-
-    if (isRhythmicHit && style.variationProb && Math.random() < style.variationProb) {
-        if (out.length >= 3) {
-            const idx = clamp(1 + Math.floor(Math.random() * (out.length - 1)), 1, out.length - 1);
-            const match = out[idx].match(/^([A-G][#bs]?)(\d)$/i);
-            if (match) {
-                const pc = match[1];
-                const oct = match[2];
-                const nudged = Math.random() < 0.5 ? __bb_addPitchClass(pc, 1) : __bb_addPitchClass(pc, -1);
-                out[idx] = `${nudged}${oct}`;
-            }
-        }
-    }
-
-    const seen = new Set();
-    out = out.filter(n => {
-        if (seen.has(n)) return false;
-        seen.add(n);
-        return true;
-    });
-
-    return out;
-}
-
-async function playChord(root, quality, startTime, duration, beatDurationSec = null) {
+async function playChord(root, quality, startTime, duration) {
     if (!UI.elements.chordsEnabled.classList.contains('active') || !AudioContextManager.samplesLoaded) {
         previousPlayedVoicingNotesWithOctaves = null;
         return;
@@ -3788,76 +3564,47 @@ async function playChord(root, quality, startTime, duration, beatDurationSec = n
         return;
     }
     
-        // Piano comping: schedule additional rhythmic hits depending on selected comping style
-    const compStyleKey = (UI.elements.compingStyleSelect && UI.elements.compingStyleSelect.value) ? UI.elements.compingStyleSelect.value : (AppState.currentCompingStyle || "legacy_single");
-    const beatDur = (beatDurationSec && isFinite(beatDurationSec) && beatDurationSec > 0) ? beatDurationSec : null;
-    const beatsInChord = beatDur ? Math.max(1, Math.round(duration / beatDur)) : 4;
-
-    const pattern = __bb_pickCompPattern(compStyleKey, beatsInChord);
-
-    // First hit: keep voice-leading stable
-    let lastVoicing = __bb_applyStyleToChordVoicing(compStyleKey, baseNotesInRootPosition, quality, firstVoicingNotesWithOctaves, false);
-    const firstDur = beatDur ? Math.min(duration, beatDur * 0.9) : duration;
-    playChordInstance(lastVoicing, startTime, firstDur, chordMasterGain);
-
-    // Extra hits: slight variation, shorter duration
-    for (let i = 1; i < pattern.length; i++) {
-        const evt = pattern[i];
-        const tSec = beatDur ? (evt.t * beatDur) : (evt.t * (duration / beatsInChord));
-        const evtStart = startTime + tSec;
-
-        if (evtStart >= startTime + duration - 0.03) continue;
-
-        let notesToPlay = null;
-        if (evt.type === "bass") {
-            notesToPlay = __bb_makeBassNote(root, quality);
-        } else {
-            const v = getBestVoicing_VoiceLed(
-                baseNotesInRootPosition,
-                quality,
-                lastVoicing,
-                PLAYBACK_OCTAVES,
-                true
-            );
-            notesToPlay = __bb_applyStyleToChordVoicing(compStyleKey, baseNotesInRootPosition, quality, v, true);
-            if (notesToPlay && notesToPlay.length) lastVoicing = notesToPlay.slice();
-        }
-
-        const evtDur = beatDur ? Math.min(beatDur * 0.55, (startTime + duration) - evtStart) : Math.min(0.25, (startTime + duration) - evtStart);
-        if (!notesToPlay || notesToPlay.length === 0 || evtDur <= 0.02) continue;
-
-        const vel = clamp(typeof evt.vel === "number" ? evt.vel : 1.0, 0.1, 1.2);
-        try {
-            chordMasterGain.gain.setValueAtTime(overallVolume * vel, evtStart);
-        } catch(e) {}
-        playChordInstance(notesToPlay, evtStart, evtDur, chordMasterGain);
-        try {
-            chordMasterGain.gain.setValueAtTime(overallVolume, evtStart + Math.min(0.02, evtDur * 0.5));
-        } catch(e) {}
-    }
-
-    previousPlayedVoicingNotesWithOctaves = [...lastVoicing];
+    
+    // Always play the initial hit
+    playChordInstance(firstVoicingNotesWithOctaves, startTime, duration, chordMasterGain);
 
     const beatDurationSec = 60 / AppState.tempo;
     const timeSigNum = parseInt(UI.elements.timeSignature.value);
-    const isLikelyFullMeasureChord = (timeSigNum === 4 && duration > (beatDurationSec * 2.5)) || (timeSigNum !== 4 && duration > (beatDurationSec * (timeSigNum / 2 + 0.5)));
+    const isLikelyFullMeasureChord =
+        (timeSigNum === 4 && duration > (beatDurationSec * 2.5)) ||
+        (timeSigNum !== 4 && duration > (beatDurationSec * (timeSigNum / 2 + 0.5)));
 
-    if (isLikelyFullMeasureChord) {
-        const secondVoicingNotesWithOctaves = getBestVoicing_VoiceLed(
-            baseNotesInRootPosition,
-            quality,
-            firstVoicingNotesWithOctaves,
-            PLAYBACK_OCTAVES,
-            true
-        );
-        if (!secondVoicingNotesWithOctaves || secondVoicingNotesWithOctaves.length === 0) {
-             console.warn("getBestVoicing_VoiceLed returned no notes for second hit.");
-        } else {
-            const secondHitStartTime = startTime + duration / 2;
-            playChordInstance(secondVoicingNotesWithOctaves, secondHitStartTime, duration / 2, chordMasterGain);
+    const style = (AppState.currentCompingStyle || "legacy_single");
+    const compHits = getCompingHitPlan(style, timeSigNum, isLikelyFullMeasureChord);
+
+    let lastVoicingForThisChord = [...firstVoicingNotesWithOctaves];
+
+    if (isLikelyFullMeasureChord && Array.isArray(compHits) && compHits.length > 1) {
+        for (let i = 1; i < compHits.length; i++) {
+            const hit = compHits[i] || {};
+            const frac = Math.max(0, Math.min(0.98, hit.t || 0.5));
+            const hitStartTime = startTime + (duration * frac);
+
+            const hitDuration = Math.max(0.06, duration * (hit.len || 0.5));
+
+            const nextVoicing = getBestVoicing_VoiceLed(
+                baseNotesInRootPosition,
+                quality,
+                lastVoicingForThisChord,
+                PLAYBACK_OCTAVES,
+                true
+            );
+
+            if (nextVoicing && nextVoicing.length) {
+                playChordInstance(nextVoicing, hitStartTime, hitDuration, chordMasterGain);
+                lastVoicingForThisChord = [...nextVoicing];
+            }
         }
     }
+
+    previousPlayedVoicingNotesWithOctaves = [...lastVoicingForThisChord];
 }
+
         
 async function playMetronomeSound(volumeForThisTick, soundsForThisTickString) { 
     if (!AudioContextManager.context || !soundsForThisTickString) return;
@@ -4522,7 +4269,7 @@ async function playBeat() {
                     if (is44Time && isSplitMeasure && numDisplayedBeats === 8) {
                          chordPlayDurationSec = beatDurationSec * 2; 
                     }
-                    await playChord(root, quality, AudioContextManager.context.currentTime, chordPlayDurationSec, beatDurationSec);
+                    await playChord(root, quality, AudioContextManager.context.currentTime, chordPlayDurationSec);
                 }
             }
         }
@@ -6182,16 +5929,17 @@ function setupEventListeners() {
                 AudioContextManager.reverbAmount = parseInt(e.target.value, 10) / 100;
                 UI.elements.reverbDialValue.textContent = e.target.value;
                 log(`Reverb: ${AudioContextManager.reverbAmount}`);
-            
+            });
+        }
 
-            if (UI.elements.compingStyleSelect) {
-                UI.elements.compingStyleSelect.value = AppState.currentCompingStyle || "legacy_single";
-                UI.elements.compingStyleSelect.addEventListener('change', () => {
-                    AppState.currentCompingStyle = UI.elements.compingStyleSelect.value;
-                    log(`Comping style set to: ${COMPING_STYLES[AppState.currentCompingStyle]?.displayName || AppState.currentCompingStyle}`);
-                });
-            }
-});
+
+        // --- Piano Comping Style ---
+        if (UI.elements.compStyleSelect) {
+            UI.elements.compStyleSelect.addEventListener('change', (e) => {
+                AppState.currentCompingStyle = e.target.value;
+                try { localStorage.setItem('bb_compStyle', AppState.currentCompingStyle); } catch (err) {}
+                log(`Comping style: ${e.target.options[e.target.selectedIndex].text}`);
+            });
         }
 
         // --- Progression Loading & Key Changes ---
@@ -7270,6 +7018,19 @@ async function exportImprovMapToNotion() {
 
 async function initializeApp() {
     UI.init(); // Cache DOM elements first
+
+    // Restore comping style preference (best-effort)
+    try {
+        const savedCompStyle = localStorage.getItem('bb_compStyle');
+        if (savedCompStyle) {
+            AppState.currentCompingStyle = savedCompStyle;
+            if (UI.elements.compStyleSelect) UI.elements.compStyleSelect.value = savedCompStyle;
+        } else {
+            if (UI.elements.compStyleSelect) UI.elements.compStyleSelect.value = AppState.currentCompingStyle;
+        }
+    } catch (e) {
+        if (UI.elements.compStyleSelect) UI.elements.compStyleSelect.value = AppState.currentCompingStyle;
+    }
     
     // Initial UI setup based on default values
     createBeats();
