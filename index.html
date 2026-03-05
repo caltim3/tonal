@@ -1352,6 +1352,22 @@ body.dark-mode-3 .runway-pill{
 <label for="chord-volume">Chord Volume:</label>
 <input aria-label="Chord volume" id="chord-volume" max="1" min="0" step="0.1" type="range" value="0.5">
 </div>
+<div class="controls" style="margin-top: 10px;">
+  <button class="toggle-button" id="bassEnabled" aria-label="Toggle bass" aria-pressed="false">Bass Off</button>
+  <label for="bass-style-select" style="font-weight: bold;">Bass Style:</label>
+  <select id="bass-style-select" aria-label="Select bass style">
+    <option value="PAUL_CHAMBERS" selected>Paul Chambers (Default)</option>
+    <option value="RAY_BROWN">Ray Brown</option>
+    <option value="RON_CARTER">Ron Carter</option>
+    <option value="CHARLES_MINGUS">Charles Mingus</option>
+    <option value="OSCAR_PETTIFORD">Oscar Pettiford</option>
+  </select>
+</div>
+<div class="volume-control">
+  <label for="bass-volume">Bass Volume:</label>
+  <input aria-label="Bass volume" id="bass-volume" max="1" min="0" step="0.1" type="range" value="0.6">
+</div>
+
 <div class="control-group">
 <label for="reverb-dial">Reverb</label>
 <input id="reverb-dial" max="100" min="0" style="width: 120px;" type="range" value="20">
@@ -2723,6 +2739,9 @@ metronomeVolumeControlsStack: document.getElementById('metronome-volume-controls
             deleteUserSongButton: document.getElementById('delete-user-song-button'),
             saveProgressionButton: document.getElementById('save-progression-button'),
             chordsEnabled: document.getElementById('chordsEnabled'),
+            bassEnabled: document.getElementById('bassEnabled'),
+            bassVolume: document.getElementById('bass-volume'),
+            bassStyleSelect: document.getElementById('bass-style-select'),
             chordVolume: document.getElementById('chord-volume'),
             reverbDial: document.getElementById('reverb-dial'),
             reverbDialValue: document.getElementById('reverb-dial-value'),
@@ -2757,6 +2776,9 @@ const AudioContextManager = {
     context: null,
     soundBuffers: {},
     pianoSampleBuffers: {},
+    bassSampleBuffers: {},
+    bassSamplesLoaded: false,
+    bassGainNode: null,
     reverbNode: null,
     samplesLoaded: false,
     reverbAmount: 0.2,
@@ -2891,6 +2913,375 @@ AudioContextManager.loadPianoSamplesSpecific = async function(octavesToLoad) {
     }
     this.samplesLoaded = Object.keys(this.pianoSampleBuffers).length > 0;
 };
+// ==================================
+// === BASS ENGINE (Samples + Styles)
+// ==================================
+
+// Your bass WAV files live at repo root (main branch) with exact names.
+// Important: spaces and '#' must be URL-encoded for fetch().
+const BASS_SAMPLE_FILES = [
+  "bass A0.wav",
+  "bass A1.wav",
+  "bass A2.wav",
+  "bass B0.wav",
+  "bass D#0.wav",
+  "bass D#2.wav",
+  "bass D1.wav",
+  "bass F#1.wav",
+  "bass F#2.wav",
+  "bass F0.wav",
+  "bass F2.wav"
+];
+
+const BASS_STYLES = {
+  PAUL_CHAMBERS: {
+    name: "Paul Chambers",
+    swing: 0.58,
+    chromaticApproachRate: 0.55,
+    diatonicPassingRate: 0.35,
+    enclosureRate: 0.12,
+    fifthOnBeat3Rate: 0.25,
+    anticipationsRate: 0.05,
+    leapiness: 0.12,
+    twoFeelRate: 0.10
+  },
+  RAY_BROWN: {
+    name: "Ray Brown",
+    swing: 0.62,
+    chromaticApproachRate: 0.25,
+    diatonicPassingRate: 0.55,
+    enclosureRate: 0.05,
+    fifthOnBeat3Rate: 0.45,
+    anticipationsRate: 0.03,
+    leapiness: 0.10,
+    twoFeelRate: 0.35
+  },
+  RON_CARTER: {
+    name: "Ron Carter",
+    swing: 0.56,
+    chromaticApproachRate: 0.45,
+    diatonicPassingRate: 0.35,
+    enclosureRate: 0.25,
+    fifthOnBeat3Rate: 0.18,
+    anticipationsRate: 0.18,
+    leapiness: 0.18,
+    twoFeelRate: 0.12
+  },
+  CHARLES_MINGUS: {
+    name: "Charles Mingus",
+    swing: 0.54,
+    chromaticApproachRate: 0.40,
+    diatonicPassingRate: 0.25,
+    enclosureRate: 0.10,
+    fifthOnBeat3Rate: 0.20,
+    anticipationsRate: 0.12,
+    leapiness: 0.32,
+    twoFeelRate: 0.15
+  },
+  OSCAR_PETTIFORD: {
+    name: "Oscar Pettiford",
+    swing: 0.60,
+    chromaticApproachRate: 0.30,
+    diatonicPassingRate: 0.45,
+    enclosureRate: 0.18,
+    fifthOnBeat3Rate: 0.22,
+    anticipationsRate: 0.08,
+    leapiness: 0.22,
+    twoFeelRate: 0.20
+  }
+};
+
+function __bb_bassClamp(n, lo, hi) { return Math.max(lo, Math.min(hi, n)); }
+
+function __bb_bassToSharpPitchClass(pc) {
+  const s = (pc || "").toString().trim().replace('♭','b').replace('♯','#');
+  const map = {
+    "Db":"C#","Eb":"D#","Gb":"F#","Ab":"G#","Bb":"A#",
+    "Cb":"B","Fb":"E","E#":"F","B#":"C"
+  };
+  return map[s] || s;
+}
+
+function __bb_bassEncodeFileName(fn){
+  // encode spaces and # safely without changing path
+  return fn.replace(/#/g, "%23").replace(/ /g, "%20");
+}
+
+function __bb_bassBuildSampleIndex() {
+  return BASS_SAMPLE_FILES.map(file => {
+    const note = file.replace(/^bass\s+/i, "").replace(/\.wav$/i, "").trim();
+    const midi = getMidiNoteNumber(note);
+    return { file, note, midi };
+  }).filter(x => Number.isFinite(x.midi) && x.midi > -500).sort((a,b)=>a.midi-b.midi);
+}
+
+function __bb_bassNearestSample(targetMidi, idx) {
+  let best = idx[0];
+  let bestDiff = Math.abs(targetMidi - best.midi);
+  for (let i = 1; i < idx.length; i++) {
+    const d = Math.abs(targetMidi - idx[i].midi);
+    if (d < bestDiff) { best = idx[i]; bestDiff = d; }
+  }
+  const semitoneShift = targetMidi - best.midi;
+  const playbackRate = Math.pow(2, semitoneShift / 12);
+  return { sample: best, semitoneShift, playbackRate, diff: bestDiff };
+}
+
+const BassManager = {
+  enabled: false,
+  styleKey: "PAUL_CHAMBERS",
+  sampleIndex: null,
+
+  async ensureLoaded(){
+    await AudioContextManager.ensureAudioContext();
+    if (!AudioContextManager.context) return false;
+
+    if (!AudioContextManager.bassGainNode) {
+      const g = AudioContextManager.context.createGain();
+      const v = UI?.elements?.bassVolume ? parseFloat(UI.elements.bassVolume.value) : 0.6;
+      g.gain.value = isFinite(v) ? v : 0.6;
+      g.connect(AudioContextManager.context.destination);
+      AudioContextManager.bassGainNode = g;
+    }
+
+    if (AudioContextManager.bassSamplesLoaded) return true;
+
+    const ctx = AudioContextManager.context;
+    const promises = [];
+    for (const file of BASS_SAMPLE_FILES) {
+      const key = file;
+      if (AudioContextManager.bassSampleBuffers[key]) continue;
+
+      const url = __bb_bassEncodeFileName(file);
+      promises.push(
+        fetch(url)
+          .then(r => {
+            if (!r.ok) return Promise.reject(new Error(`HTTP ${r.status} for ${file}`));
+            return r.arrayBuffer();
+          })
+          .then(ab => ctx.decodeAudioData(ab))
+          .then(buf => { AudioContextManager.bassSampleBuffers[key] = buf; })
+          .catch(e => {
+            // keep silent; missing files should not crash the app
+            // console.warn("Bass sample load failed:", file, e.message);
+          })
+      );
+    }
+    await Promise.allSettled(promises);
+
+    AudioContextManager.bassSamplesLoaded = Object.keys(AudioContextManager.bassSampleBuffers).length > 0;
+    if (AudioContextManager.bassSamplesLoaded) log("Bass samples loaded.");
+    return AudioContextManager.bassSamplesLoaded;
+  },
+
+  setEnabled(on){
+    this.enabled = !!on;
+  },
+  setStyle(key){
+    this.styleKey = BASS_STYLES[key] ? key : "PAUL_CHAMBERS";
+  },
+  setVolume(v){
+    if (AudioContextManager.bassGainNode) {
+      AudioContextManager.bassGainNode.gain.value = __bb_bassClamp(v, 0, 1.25);
+    }
+  },
+
+  async playMidiAt(targetMidi, whenSec, opts = {}){
+    if (!this.enabled) return;
+    const ok = await this.ensureLoaded();
+    if (!ok) return;
+
+    const ctx = AudioContextManager.context;
+    if (!this.sampleIndex) this.sampleIndex = __bb_bassBuildSampleIndex();
+    const idx = this.sampleIndex;
+    if (!idx || idx.length === 0) return;
+
+    const { sample, playbackRate } = __bb_bassNearestSample(targetMidi, idx);
+    const buf = AudioContextManager.bassSampleBuffers[sample.file];
+    if (!buf) return;
+
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.playbackRate.setValueAtTime(playbackRate, whenSec);
+
+    const g = ctx.createGain();
+    const vel = __bb_bassClamp(opts.velocity ?? 0.85, 0, 1);
+    g.gain.setValueAtTime(vel, whenSec);
+
+    // Upright-ish envelope
+    const attack = 0.005;
+    const release = 0.09;
+    const dur = Math.max(0.08, opts.durationSec ?? 0.32);
+    g.gain.linearRampToValueAtTime(vel, whenSec + attack);
+    g.gain.setTargetAtTime(0.0001, whenSec + Math.max(0.02, dur - release), release);
+
+    src.connect(g);
+    g.connect(AudioContextManager.bassGainNode);
+
+    // Humanize start slightly
+    const humanMs = opts.humanizeMs ?? 12;
+    const jitter = ((Math.random() * 2 - 1) * humanMs) / 1000;
+    const startTime = Math.max(ctx.currentTime, whenSec + jitter);
+
+    src.start(startTime);
+    src.stop(startTime + dur + 0.2);
+  }
+};
+
+// Decide next chord root to aim toward for approach notes.
+function __bb_getNextChordRootPitchClass(measuresEl, currentMeasureIndex, activePartIndex, isSplitMeasure, timeSignatureNum, beatsPerMeasureUI) {
+  try {
+    const measures = measuresEl;
+    if (!measures || measures.length === 0) return null;
+
+    // If split 4/4 with 8 UI beats, chord changes at beat 0 and 4 within the measure
+    if (timeSignatureNum === 4 && isSplitMeasure && beatsPerMeasureUI === 8) {
+      if (activePartIndex === 0) {
+        const part1 = measures[currentMeasureIndex].querySelectorAll('.measure-part')[1];
+        const r = part1?.querySelector('.root-note')?.value;
+        return r || null;
+      }
+      // activePartIndex === 1: next is next measure part 0 (respect loop)
+    }
+
+    // Next measure (respect looping)
+    let nextMeasureIndex = currentMeasureIndex + 1;
+
+    if (AppState.loopingActive && AppState.loopStartMeasure !== -1 && AppState.loopEndMeasure !== -1) {
+      if (currentMeasureIndex >= AppState.loopEndMeasure) nextMeasureIndex = AppState.loopStartMeasure;
+      if (nextMeasureIndex > AppState.loopEndMeasure) nextMeasureIndex = AppState.loopStartMeasure;
+    } else {
+      if (nextMeasureIndex >= measures.length) nextMeasureIndex = 0;
+    }
+
+    const nextMeasure = measures[nextMeasureIndex];
+    if (!nextMeasure) return null;
+    const nextPart = nextMeasure.querySelectorAll('.measure-part')[0];
+    const nextRoot = nextPart?.querySelector('.root-note')?.value;
+    return nextRoot || null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function __bb_pickOne(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+function __bb_chordTonesForQuality(rootMidi, quality){
+  const q = String(quality||"").toLowerCase();
+  let intervals;
+  if (q.includes("maj7")) intervals = [0,4,7,11];
+  else if (q.includes("min7b5") || q.includes("m7b5") || q.includes("ø")) intervals = [0,3,6,10];
+  else if (q.includes("m7") || (q.includes("min") && q.includes("7"))) intervals = [0,3,7,10];
+  else if (q.includes("dim7")) intervals = [0,3,6,9];
+  else if (q.includes("7")) intervals = [0,4,7,10];
+  else if (q.includes("maj")) intervals = [0,4,7,11];
+  else if (q.includes("min") || q === "m") intervals = [0,3,7,10];
+  else intervals = [0,4,7,10];
+  return intervals.map(i => rootMidi + i);
+}
+
+function __bb_bassRootMidiFromPitchClass(pc) {
+  // Aim for E1..C3 (28..48), choose octave 1 or 2 that lands inside.
+  const sharp = __bb_bassToSharpPitchClass(standardizeNoteName(pc));
+  const try1 = getMidiNoteNumber(`${sharp}1`);
+  const try2 = getMidiNoteNumber(`${sharp}2`);
+  // prefer octave 1 unless it falls below E1
+  const low = 28, high = 48;
+  const in1 = (try1 >= low && try1 <= high);
+  const in2 = (try2 >= low && try2 <= high);
+  if (in1) return try1;
+  if (in2) return try2;
+  // else clamp nearest
+  const d1 = Math.abs(try1 - 36);
+  const d2 = Math.abs(try2 - 36);
+  return __bb_bassClamp(d1 <= d2 ? try1 : try2, low, high);
+}
+
+function __bb_bassApproachMidi(targetMidi, style){
+  if (Math.random() < (style.enclosureRate || 0)) {
+    return targetMidi + (Math.random() < 0.5 ? -1 : 1);
+  }
+  // chromatic or diatonic-ish approach
+  if (Math.random() < (style.chromaticApproachRate || 0.4)) {
+    return targetMidi + (Math.random() < 0.5 ? -1 : 1);
+  }
+  // diatonic-ish: mostly below by whole step
+  return targetMidi - (Math.random() < 0.75 ? 2 : 1);
+}
+
+function __bb_bassNoteForBeat(rootPc, quality, beatInBar0to3, nextRootPc){
+  const style = BASS_STYLES[BassManager.styleKey] || BASS_STYLES.PAUL_CHAMBERS;
+  const low = 28, high = 48;
+
+  const rootMidi = __bb_bassRootMidiFromPitchClass(rootPc);
+  const chordTones = __bb_chordTonesForQuality(rootMidi, quality).map(m => __bb_bassClamp(m, low, high));
+
+  if (beatInBar0to3 === 0) return rootMidi;
+
+  if (beatInBar0to3 === 1) {
+    // favor 3rd or 7th, Chambers/Ron like this
+    const third = chordTones[1];
+    const seventh = chordTones[3];
+    return __bb_pickOne([third, seventh]);
+  }
+
+  if (beatInBar0to3 === 2) {
+    if (Math.random() < (style.fifthOnBeat3Rate || 0.25)) return __bb_bassClamp(rootMidi + 7, low, high);
+    return __bb_pickOne(chordTones);
+  }
+
+  // beat 4: approach next root if available
+  if (nextRootPc) {
+    const nextRootMidi = __bb_bassRootMidiFromPitchClass(nextRootPc);
+    let a = __bb_bassApproachMidi(nextRootMidi, style);
+
+    if (Math.random() < (style.leapiness || 0.1)) {
+      a = a + (Math.random() < 0.5 ? 12 : -12);
+    }
+    return __bb_bassClamp(a, low, high);
+  }
+
+  return __bb_bassClamp(rootMidi + 7, low, high);
+}
+
+async function __bb_maybePlayBassForCurrentBeat(activeMeasurePart, measuresEl, measureToPlayIndex, activePartIndex, isSplitMeasure, timeSignatureNum, beatsPerMeasureUI, subdivPerBeat) {
+  try {
+    if (!BassManager.enabled) return;
+    if (!activeMeasurePart) return;
+
+    const root = activeMeasurePart.querySelector('.root-note')?.value;
+    const quality = activeMeasurePart.querySelector('.chord-quality')?.value;
+    if (!root || !quality) return;
+
+    // Convert current UI beat into musical quarter-beat index (0..timeSignatureNum-1)
+    const beatInBar = Math.floor(AppState.currentBeat / Math.max(1, subdivPerBeat));
+    const beat0to3 = __bb_bassClamp(beatInBar, 0, 3);
+
+    const nextRoot = __bb_getNextChordRootPitchClass(measuresEl, measureToPlayIndex, activePartIndex, isSplitMeasure, timeSignatureNum, beatsPerMeasureUI);
+
+    const midi = __bb_bassNoteForBeat(root, quality, beat0to3, nextRoot);
+
+    const beatDur = 60 / AppState.tempo;
+    const when = AudioContextManager.context.currentTime;
+
+    // In 12/8 etc we keep it simple: one note per displayed beat bucket
+    const dur = Math.max(0.10, Math.min(0.45, beatDur * 0.60));
+
+    // Accent beats 2 and 4 a touch (swing feel)
+    const accent = (beat0to3 === 1 || beat0to3 === 3) ? 1.05 : 1.0;
+    const baseVol = UI?.elements?.bassVolume ? parseFloat(UI.elements.bassVolume.value) : 0.6;
+
+    BassManager.setVolume(isFinite(baseVol) ? baseVol : 0.6);
+
+    await BassManager.playMidiAt(midi, when, {
+      velocity: __bb_bassClamp(0.82 * accent * (0.92 + Math.random()*0.16), 0, 1),
+      durationSec: dur,
+      humanizeMs: 12
+    });
+  } catch (e) {
+    // no-op: bass should never crash playback
+  }
+}
+
 AudioContextManager.createDrumSound = async function(type) { 
     if (!this.context) { 
         console.warn("AudioContext not available for createDrumSound, attempting init.");
@@ -4250,6 +4641,21 @@ async function playBeat() {
             });
 
             const activeMeasurePart = currentMeasureElement.querySelectorAll('.measure-part')[activePartIndex];
+            // Bass: walk every beat (independent of chord playback toggle)
+            try {
+                const beatsPerMeasureUI = beatsUI.length;
+                const subdivPerBeat = Math.max(1, Math.round(beatsPerMeasureUI / timeSignatureNum));
+                await __bb_maybePlayBassForCurrentBeat(
+                    activeMeasurePart,
+                    measures,
+                    measureToPlayIndex,
+                    activePartIndex,
+                    isSplitMeasure,
+                    timeSignatureNum,
+                    beatsPerMeasureUI,
+                    subdivPerBeat
+                );
+            } catch(e) { /* no-op */ }
             if (activeMeasurePart && playChordOnThisBeat) { 
                 const root = activeMeasurePart.querySelector('.root-note')?.value;
                 const quality = activeMeasurePart.querySelector('.chord-quality')?.value;
@@ -5862,6 +6268,35 @@ function setupEventListeners() {
             UI.elements.chordsEnabled.textContent = isActive ? 'Chords Enabled' : 'Chords Disabled';
             log(`Chords ${isActive ? 'enabled' : 'disabled'}`);
         });
+        // --- Bass Enabled Toggle ---
+        if (UI.elements.bassEnabled) {
+            UI.elements.bassEnabled.addEventListener('click', async () => {
+                const isOn = UI.elements.bassEnabled.classList.toggle('active');
+                UI.elements.bassEnabled.textContent = isOn ? 'Bass On' : 'Bass Off';
+                BassManager.setEnabled(isOn);
+                log(`Bass ${isOn ? 'enabled' : 'disabled'}`);
+                if (isOn) {
+                    await BassManager.ensureLoaded();
+                }
+            });
+        }
+
+        // --- Bass Style ---
+        if (UI.elements.bassStyleSelect) {
+            UI.elements.bassStyleSelect.addEventListener('change', () => {
+                BassManager.setStyle(UI.elements.bassStyleSelect.value);
+                log(`Bass style: ${BASS_STYLES[BassManager.styleKey]?.name || BassManager.styleKey}`);
+            });
+        }
+
+        // --- Bass Volume ---
+        if (UI.elements.bassVolume) {
+            UI.elements.bassVolume.addEventListener('input', () => {
+                const v = parseFloat(UI.elements.bassVolume.value);
+                if (isFinite(v)) BassManager.setVolume(v);
+            });
+        }
+
 
         // --- Tempo Controls ---
         UI.elements.tempo.addEventListener('input', () => {
