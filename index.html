@@ -3038,6 +3038,7 @@ const BassManager = {
   complexity: 0.25,
   sampleIndex: null,
   barCache: new Map(),
+  sessionId: 0,
 
   async ensureLoaded(){
     await AudioContextManager.ensureAudioContext();
@@ -3083,9 +3084,11 @@ const BassManager = {
 
   setEnabled(on){
     this.enabled = !!on;
+    if (this.enabled) this.barCache.clear();
   },
   setStyle(key){
     this.styleKey = BASS_STYLES[key] ? key : "PAUL_CHAMBERS";
+    this.barCache.clear();
   },
   setVolume(v){
     if (AudioContextManager.bassGainNode) {
@@ -3094,7 +3097,10 @@ const BassManager = {
   },
   setComplexity(v){
     const n = parseFloat(v);
-    if (isFinite(n)) this.complexity = __bb_bassClamp(n, 0, 1);
+    if (isFinite(n)) {
+      this.complexity = __bb_bassClamp(n, 0, 1);
+      this.barCache.clear();
+    }
   },
 
   async playMidiAt(targetMidi, whenSec, opts = {}){
@@ -3236,16 +3242,19 @@ function __bb_bassApproachMidi(targetMidi, style){
   return targetMidi - (Math.random() < 0.75 ? 2 : 1);
 }
 
-function __bb_bassCacheKey(measureIndex, partIndex, rootPc, quality, nextRootPc, tempo){
-  return `${measureIndex}|${partIndex}|${rootPc||""}|${quality||""}|${nextRootPc||""}|${tempo||""}`;
+function __bb_bassCacheKey(measureIndex, partIndex, rootPc, quality, nextRootPc, tempo, styleKey, complexityBucket, sessionId){
+  return `${measureIndex}|${partIndex}|${rootPc||""}|${quality||""}|${nextRootPc||""}|${tempo||""}|${styleKey||""}|${complexityBucket||""}|${sessionId||0}`;
 }
 
-function __bb_generatePaulChambersBar(rootPc, quality, nextRootPc, complexity){
+function __bb_generateWalkingBassBar(styleKey, rootPc, quality, nextRootPc, complexity){
   // Returns an array of 4 values (midi or null) for beats 1..4.
   const c = __bb_bassClamp(Number.isFinite(complexity) ? complexity : 0.25, 0, 1);
-  const style = BASS_STYLES.PAUL_CHAMBERS;
+  const style = BASS_STYLES[styleKey] || BASS_STYLES.PAUL_CHAMBERS;
 
-  const low = 15, high = 40; // D#0..E2
+  // Target register: keep it in real bass land.
+  // A0..A2 works well with your current sample set and avoids "tenor bass" weirdness.
+  const low = 21, high = 45; // A0..A2
+
   const rootMidi = __bb_bassClamp(__bb_bassRootMidiFromPitchClass(rootPc), low, high);
 
   const tones = __bb_chordTonesForQuality(rootMidi, quality).map(m => __bb_bassClamp(m, low, high));
@@ -3253,100 +3262,143 @@ function __bb_generatePaulChambersBar(rootPc, quality, nextRootPc, complexity){
 
   const bar = [null, null, null, null];
 
-  // Density: at low complexity, move toward 2-feel (beats 1 & 3), still allow beat 4 approaches sometimes.
+  // Density control: low complexity leans toward 2-feel (beats 1 & 3).
+  // Each style can bias this with twoFeelRate.
+  const twoFeelBias = __bb_bassClamp(style.twoFeelRate ?? 0.10, 0, 0.85);
   const playBeat = (beatIdx0to3) => {
     if (beatIdx0to3 === 0) return true;
-    if (c >= 0.75) return true;
-    if (beatIdx0to3 === 2) return Math.random() < (0.65 + 0.30*c); // keep beat 3
-    if (beatIdx0to3 === 3) return Math.random() < (0.25 + 0.65*c); // beat 4 approach scales up
-    return Math.random() < (0.20 + 0.60*c); // beat 2
+
+    // At low complexity, skip beat 2 and 4 more often.
+    // At high complexity, play all beats.
+    if (c >= 0.85) return true;
+
+    // Style bias: more two-feel = more omissions on 2 and 4
+    const omitBoost = (1 - c) * (0.35 + 0.90 * twoFeelBias);
+
+    if (beatIdx0to3 === 1) return Math.random() > (0.55 + omitBoost); // beat 2
+    if (beatIdx0to3 === 2) return Math.random() > (0.10 + omitBoost * 0.45); // beat 3 is mostly kept
+    return Math.random() > (0.35 + omitBoost); // beat 4
   };
 
-  // Beat 1: root
+  // Beat 1: almost always root.
   bar[0] = rootMidi;
 
-  // Beat 2: 3rd or 5th (slightly prefer 3rd), but simplify at low complexity
+  // Beat 2: 3rd or 5th, with some root repeats at low complexity.
   if (playBeat(1)) {
-    if (c < 0.30 && Math.random() < 0.55) bar[1] = rootMidi;
-    else bar[1] = __bb_pickOne([third, fifth].filter(v => v != null));
+    if (c < 0.28 && Math.random() < 0.65) {
+      bar[1] = rootMidi;
+    } else {
+      const opts = [third, fifth].filter(v => v != null);
+      bar[1] = opts.length ? __bb_pickOne(opts) : rootMidi;
+    }
   }
 
-  // Beat 3: chord tone, often stepwise from beat 2 (downward bias)
+  // Beat 3: chord tone with stepwise preference, plus style-driven fifth option.
   if (playBeat(2)) {
     const prev = (bar[1] != null) ? bar[1] : bar[0];
     const candidates = [third, fifth, seventh, rootMidi].filter(v => v != null);
 
-    // Downward preference: score by closeness and slight reward if <= prev
-    let best = candidates[0];
+    let best = candidates[0] ?? rootMidi;
     let bestScore = 1e9;
+
+    // Stepwise preference + mild downward bias (Chambers-ish),
+    // but "leapier" styles allow more distance.
+    const leapiness = __bb_bassClamp(style.leapiness ?? 0.12, 0, 0.60);
     for (const cand of candidates) {
-      const stepCost = Math.abs(cand - prev);
-      const downBonus = (cand <= prev) ? -0.35 : 0.0;
-      const score = stepCost + downBonus;
+      const dist = Math.abs(cand - prev);
+      const downBonus = (cand <= prev) ? -0.25 : 0.0;
+      const leapPenalty = dist * (1.05 - leapiness); // higher leapiness reduces penalty
+      const score = leapPenalty + downBonus;
       if (score < bestScore) { bestScore = score; best = cand; }
     }
 
-    if (Math.random() < (style.fifthOnBeat3Rate || 0.25) * (0.35 + 0.65*c)) {
+    // Occasional fifth on beat 3 (Ray likes this more).
+    const fifthRate = __bb_bassClamp(style.fifthOnBeat3Rate ?? 0.25, 0, 0.80);
+    if (Math.random() < fifthRate * (0.35 + 0.65 * c)) {
       bar[2] = __bb_bassClamp(rootMidi + 7, low, high);
     } else {
       bar[2] = best;
     }
 
-    // Occasional passing tone when complexity is higher and leap is big
-    if (c > 0.55 && bar[1] != null && Math.abs(bar[2] - bar[1]) >= 4 && Math.random() < 0.35) {
-      const dir = (bar[2] > bar[1]) ? 1 : -1;
-      bar[2] = __bb_bassClamp(bar[1] + dir * 2, low, high);
+    // Passing tone if jump is big and complexity is higher.
+    if (c > 0.55 && bar[1] != null) {
+      const jump = Math.abs(bar[2] - bar[1]);
+      const passRate = __bb_bassClamp(style.diatonicPassingRate ?? 0.35, 0, 0.90);
+      if (jump >= 4 && Math.random() < passRate * (c - 0.40)) {
+        const dir = (bar[2] > bar[1]) ? 1 : -1;
+        // 2 semitone move is a decent "diatonic-ish" approximation without key context.
+        bar[2] = __bb_bassClamp(bar[1] + dir * 2, low, high);
+      }
     }
   }
 
-  // Beat 4: approach to NEXT ROOT
+  // Beat 4: aim at next chord.
+  // Core idea: approach tones (chromatic or diatonic), optional enclosure.
   if (nextRootPc && playBeat(3)) {
     const nextRootMidi = __bb_bassClamp(__bb_bassRootMidiFromPitchClass(nextRootPc), low, high);
 
-    const chrom = (0.10 + (style.chromaticApproachRate || 0.55) * c);
-    const encl = (0.02 + (style.enclosureRate || 0.12) * c);
+    const chromRate = __bb_bassClamp(style.chromaticApproachRate ?? 0.55, 0, 0.95);
+    const enclRate  = __bb_bassClamp(style.enclosureRate ?? 0.12, 0, 0.55);
+    const anticip   = __bb_bassClamp(style.anticipationsRate ?? 0.05, 0, 0.40);
 
     let approach;
-    if (Math.random() < encl) {
+
+    // Anticipation: sometimes just land on the next root on beat 4 (Ron does this more).
+    if (Math.random() < anticip * (0.35 + 0.65 * c)) {
+      approach = nextRootMidi;
+    } else if (Math.random() < enclRate * (0.20 + 0.80 * c)) {
+      // Single-note "enclosure hint" around target (real enclosure would be 2 notes, but we have one slot).
       approach = nextRootMidi + (Math.random() < 0.5 ? -1 : 1);
-    } else if (Math.random() < chrom) {
+    } else if (Math.random() < chromRate * (0.25 + 0.75 * c)) {
       approach = nextRootMidi + (Math.random() < 0.70 ? -1 : 1);
     } else {
+      // More diatonic-ish approach
       approach = nextRootMidi - (Math.random() < 0.75 ? 2 : 1);
+    }
+
+    // Mingus option: octave punctuation sometimes.
+    if (styleKey === "CHARLES_MINGUS" && c > 0.45 && Math.random() < 0.14) {
+      approach = __bb_bassClamp(nextRootMidi + (Math.random() < 0.5 ? 12 : -12), low, high);
     }
 
     bar[3] = __bb_bassClamp(approach, low, high);
   }
 
-  if (bar[1] == null && bar[2] != null && c > 0.80 && Math.random() < 0.40) {
-    bar[1] = __bb_pickOne([third, rootMidi].filter(v => v != null));
+  // Fill beat 2 lightly at high complexity if it was empty but beat 3 exists.
+  if (bar[1] == null && bar[2] != null && c > 0.82 && Math.random() < 0.42) {
+    const opts = [third, rootMidi].filter(v => v != null);
+    bar[1] = opts.length ? __bb_pickOne(opts) : rootMidi;
   }
 
   return bar;
 }
 
+// Back-compat wrapper name so other parts of the file can keep calling it if needed.
+function __bb_generatePaulChambersBar(rootPc, quality, nextRootPc, complexity){
+  return __bb_generateWalkingBassBar("PAUL_CHAMBERS", rootPc, quality, nextRootPc, complexity);
+}
+
+}
+
 function __bb_bassGetBarLine(measureIndex, partIndex, rootPc, quality, nextRootPc){
-  const key = __bb_bassCacheKey(measureIndex, partIndex, rootPc, quality, nextRootPc, AppState.tempo);
+  const styleKey = BassManager.styleKey || "PAUL_CHAMBERS";
+  const c = __bb_bassClamp(Number.isFinite(BassManager.complexity) ? BassManager.complexity : 0.25, 0, 1);
+  const cBucket = Math.round(c * 20) / 20; // 0.05 steps
+  const key = __bb_bassCacheKey(measureIndex, partIndex, rootPc, quality, nextRootPc, AppState.tempo, styleKey, cBucket, BassManager.sessionId);
+
   const cache = BassManager.barCache;
   const existing = cache.get(key);
   if (existing && Array.isArray(existing) && existing.length === 4) return existing;
 
-  const styleKey = BassManager.styleKey || "PAUL_CHAMBERS";
-  const c = __bb_bassClamp(Number.isFinite(BassManager.complexity) ? BassManager.complexity : 0.25, 0, 1);
-
-  let bar;
-  if (styleKey === "PAUL_CHAMBERS") {
-    bar = __bb_generatePaulChambersBar(rootPc, quality, nextRootPc, c);
-  } else {
-    bar = [0,1,2,3].map(b => __bb_bassLegacyNoteForBeat(rootPc, quality, b, nextRootPc));
-  }
+  const bar = __bb_generateWalkingBassBar(styleKey, rootPc, quality, nextRootPc, c);
 
   cache.set(key, bar);
-  if (cache.size > 256) {
+  if (cache.size > 512) {
     const firstKey = cache.keys().next().value;
     cache.delete(firstKey);
   }
   return bar;
+}
 }
 
 function __bb_bassLegacyNoteForBeat(rootPc, quality, beatInBar0to3, nextRootPc){
@@ -4874,6 +4926,12 @@ async function startPlayback() {
     try {
         await AudioContextManager.ensureAudioContext();
         if (AppState.isPlaying) return;
+
+        // New playback session: regenerate bass lines so style/complexity changes are audible.
+        if (typeof BassManager !== "undefined") {
+            BassManager.sessionId = (BassManager.sessionId || 0) + 1;
+            BassManager.barCache.clear();
+        }
 
         const timeSignatureNumerator = parseInt(UI.elements.timeSignature.value);
         let intervalMs = (60 / AppState.tempo) * 1000;
