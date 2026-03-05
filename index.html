@@ -1091,6 +1091,14 @@ body.dark-mode-3 .runway-pill{
 </style>
 <style data-emotion="css" data-s=""></style><style data-emotion="css" data-s=""></style><style data-emotion="css" data-s=""></style><style data-emotion="css" data-s=""></style></head>
 <body>
+<!-- Legacy placeholder buttons (hidden) to satisfy existing UI init code -->
+<div style="display:none;">
+  <button id="downloadButton" type="button"></button>
+  <button id="exportNotionButton" type="button"></button>
+  <button id="sendToNotionButton" type="button"></button>
+  <button id="downloadPngButton" type="button"></button>
+</div>
+
 <!-- MODIFIED: Top Controls / Global Panel -->
 <div class="top-controls app-section">
 <button aria-label="Toggle dark mode" id="dark-mode-toggle">Dark Mode</button>
@@ -3378,7 +3386,6 @@ function __bb_generatePaulChambersBar(rootPc, quality, nextRootPc, complexity){
   return __bb_generateWalkingBassBar("PAUL_CHAMBERS", rootPc, quality, nextRootPc, complexity);
 }
 
-
 function __bb_bassGetBarLine(measureIndex, partIndex, rootPc, quality, nextRootPc){
   const styleKey = BassManager.styleKey || "PAUL_CHAMBERS";
   const c = __bb_bassClamp(Number.isFinite(BassManager.complexity) ? BassManager.complexity : 0.25, 0, 1);
@@ -3397,6 +3404,7 @@ function __bb_bassGetBarLine(measureIndex, partIndex, rootPc, quality, nextRootP
     cache.delete(firstKey);
   }
   return bar;
+}
 }
 
 function __bb_bassLegacyNoteForBeat(rootPc, quality, beatInBar0to3, nextRootPc){
@@ -3469,6 +3477,11 @@ async function __bb_maybePlayBassForCurrentBeat(activeMeasurePart, measuresEl, m
     const root = activeMeasurePart.querySelector('.root-note')?.value;
     const quality = activeMeasurePart.querySelector('.chord-quality')?.value;
     if (!root || !quality) return;
+
+    // Prevent double hits when playback advances in subdivisions.
+    // Only play on the first subdivision of each beat.
+    const spb = Math.max(1, Number(subdivPerBeat) || 1);
+    if ((AppState.currentBeat % spb) !== 0) return;
 
     // Convert current UI beat into musical quarter-beat index (0..timeSignatureNum-1)
     const beatInBar = Math.floor(AppState.currentBeat / Math.max(1, subdivPerBeat));
